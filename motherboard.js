@@ -9,18 +9,18 @@
 //  ref: https://en.wikipedia.org/wiki/Apple_II_character_set
 //
 
-import {W65C02S} from "./w65c02s.js";
-import {Memory} from "./memory.js";
-import {IOManager} from "./io_manager.js";
-import {TextDisplay} from "./display_text.js";
-import {HiresDisplay} from "./display_hires.js";
-import {DoubleHiresDisplay} from "./display_double_hires.js";
-import {Keyboard} from "./keyboard.js";
-import {Floppy525} from "./floppy525.js";
-import {AppleAudio} from "./apple_audio.js";
-import {Joystick} from "./joystick.js";
-import {rom_342_0304_cd} from "./rom/342-0304-cd.js";
-import {rom_342_0303_ef} from "./rom/342-0303-ef.js";
+import {W65C02S} from "https://subnetpie.github.io/w65c02s.js";
+import {Memory} from "https://subnetpie.github.io/memory.js";
+import {IOManager} from "https://subnetpie.github.io/io_manager.js";
+import {TextDisplay} from "https://subnetpie.github.io/display_text.js";
+import {HiresDisplay} from "https://subnetpie.github.io/display_hires.js";
+import {DoubleHiresDisplay} from "https://subnetpie.github.io/display_double_hires.js";
+import {Keyboard} from "https://subnetpie.github.io/keyboard.js";
+import {Floppy525} from "https://subnetpie.github.io/floppy525.js";
+import {AppleAudio} from "https://subnetpie.github.io/apple_audio.js";
+import {Joystick} from "https://subnetpie.github.io/joystick.js";
+import {rom_342_0304_cd} from "https://subnetpie.github.io/rom/342-0304-cd.js";
+import {rom_342_0303_ef} from "https://subnetpie.github.io/rom/342-0303-ef.js";
 
 
 export class Motherboard
