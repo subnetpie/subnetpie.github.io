@@ -54,12 +54,12 @@ export class Joystick
     };
 
     get_button_pressed(btn) {
-   //     if(!this.gamepad) return false;
+        if(!this.gamepad) return false;
         return this.gamepad.buttons[ps4[btn]].pressed;
     }
 
     get_axis_value(axis) {
-   //     if(!this.gamepad) return 128;
+        if(!this.gamepad) return 128;
         let val = Math.floor((this.gamepad.axes[ps4[axis]] * 128) + 128);
         if(val < 0) val = 0;
         if(val > 255) val = 255;
