@@ -37,7 +37,7 @@ export class Joystick
         return this.get_button_pressed("button2");
     };
 
-    get axis0(input) {
+    get axis0() {
         return this.get_axis_value("axis0");
     };
 
