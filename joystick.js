@@ -7,8 +7,6 @@
 //  https://www.gnu.org/licenses/gpl.html
 //
 
-var test;
-
 const ps4 = {
     button0: 2,
     button1: 0,
@@ -59,12 +57,7 @@ export class Joystick
         return this.gamepad.buttons[ps4[btn]].pressed;
     }
 
-    set test1(val) {
-        test = val;
-        return;
-    }
-
-    get_axis_value(axis) {
+   get_axis_value(axis) {
         if(axis=="axis0") return test;
         if(!this.gamepad) return Math.floor(Math.random() * 255);
         let val = Math.floor((this.gamepad.axes[ps4[axis]] * 128) + 128);
@@ -75,3 +68,4 @@ export class Joystick
     }
 }
 
+var test;
