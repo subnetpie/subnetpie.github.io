@@ -59,6 +59,11 @@ export class Joystick
         return this.gamepad.buttons[ps4[btn]].pressed;
     }
 
+    set test1(val) {
+        test = val;
+        return;
+    }
+
     get_axis_value(axis) {
         if(axis=="axis0") return test;
         if(!this.gamepad) return Math.floor(Math.random() * 255);
