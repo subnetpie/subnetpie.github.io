@@ -21,7 +21,7 @@ const ps4 = {
 export class Joystick
 {
     constructor(joyval) {
-        this._joyval = joyval;
+        this.joyval = joyval;
         this.gamepad = undefined;
     }
 
