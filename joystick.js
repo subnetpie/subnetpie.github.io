@@ -59,7 +59,7 @@ export class Joystick
 
    get_axis_value(axis) {
         if(axis=="axis0") return 128;
-        if(axis=="axis1") return 129;
+        if(axis=="axis1") return joyval;
         if(!this.gamepad) return Math.floor(Math.random() * 255);
         let val = Math.floor((this.gamepad.axes[ps4[axis]] * 128) + 128);
         if(val < 0) val = 0;
