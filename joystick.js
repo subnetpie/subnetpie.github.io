@@ -38,19 +38,19 @@ export class Joystick
     };
 
     get axis0() {
-        return this.get_axis_value("axis0",128);
+        return this.get_axis_value("axis0");
     };
 
     get axis1() {
-        return this.get_axis_value("axis1",130);
+        return this.get_axis_value("axis1");
     };
 
     get axis2() {
-        return this.get_axis_value("axis2",128);
+        return this.get_axis_value("axis2");
     };
 
     get axis3() {
-        return this.get_axis_value("axis3",128);
+        return this.get_axis_value("axis3");
     };
 
     get_button_pressed(btn) {
@@ -58,9 +58,9 @@ export class Joystick
         return this.gamepad.buttons[ps4[btn]].pressed;
     }
 
-   get_axis_value(axis,val) {
-        if(axis=="axis0") return val;
-        if(axis=="axis1") return val;
+   get_axis_value(axis) {
+        if(axis=="axis0") return 128;
+        if(axis=="axis1") return 130;
         if(!this.gamepad) return Math.floor(Math.random() * 255);
         let val = Math.floor((this.gamepad.axes[ps4[axis]] * 128) + 128);
         if(val < 0) val = 0;
