@@ -7,6 +7,8 @@
 //  https://www.gnu.org/licenses/gpl.html
 //
 
+this.joyval = joyval;
+
 const ps4 = {
     button0: 2,
     button1: 0,
@@ -20,8 +22,7 @@ const ps4 = {
 
 export class Joystick
 {
-    constructor(joyval) {
-        this.joyval = joyval;
+    constructor() {
         this.gamepad = undefined;
     }
 
