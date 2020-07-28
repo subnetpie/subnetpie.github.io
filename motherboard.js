@@ -29,12 +29,13 @@ export class Motherboard
         this.memory = new Memory(rom_342_0304_cd, rom_342_0303_ef);
         this.cpu = new W65C02S(this.memory);
         this.keyboard = new Keyboard();
+        this.joyval = joyval;
         this.display_text = new TextDisplay(this.memory, canvas);
         this.display_hires = new HiresDisplay(this.memory, canvas);
         this.display_double_hires = new DoubleHiresDisplay(this.memory, canvas);
         this.floppy525 = new Floppy525(6, this.memory , floppy_led_cb);
         this.audio = new AppleAudio(khz);
-        this.joystick = new Joystick(joyval);
+        this.joystick = new Joystick();
         this.io_manager = new IOManager(this.memory, this.keyboard,
                                         this.display_text, this.display_hires, this.display_double_hires,
                                         this.audio_click.bind(this), this.joystick);
