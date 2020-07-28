@@ -20,7 +20,6 @@ const ps4 = {
 
 export class Joystick
 {
-    global joyval;
 
     constructor() {
         this.gamepad = undefined;
@@ -60,6 +59,7 @@ export class Joystick
     }
 
    get_axis_value(axis) {
+        global joyval;
         if(axis=="axis0") return 128;
         if(axis=="axis1") return joyval;
         if(!this.gamepad) return Math.floor(Math.random() * 255);
