@@ -7,7 +7,7 @@
 //  https://www.gnu.org/licenses/gpl.html
 //
 
-const ps4 = {
+const amdfc-controller = {
     button0: 2,
     button1: 0,
     button2: 1,
@@ -55,14 +55,12 @@ export class Joystick
 
     get_button_pressed(btn) {
         if(!this.gamepad) return false;
-        return this.gamepad.buttons[ps4[btn]].pressed;
+        return this.gamepad.buttons[amdfc-controller[btn]].pressed;
     }
 
    get_axis_value(axis) {
-        if(axis=="axis0") return 128;
-        if(axis=="axis1") return 140;
         if(!this.gamepad) return Math.floor(Math.random() * 255);
-        let val = Math.floor((this.gamepad.axes[ps4[axis]] * 128) + 128);
+        let val = Math.floor((this.gamepad.axes[amdfc-controller[axis]] * 128) + 128);
         if(val < 0) val = 0;
         if(val > 255) val = 255;
         if((val > 122) && (val < 133)) val = 128;
