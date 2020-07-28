@@ -90,7 +90,7 @@ const gamepadSimulator = {
       },
     ],
     connected: false,
-    id: "Standard gamepad by Alvaro Montoro",
+    id: "PS4",
     index: 0,
     mapping: "standard",
     timestamp: Math.floor(Date.now() / 1000),
