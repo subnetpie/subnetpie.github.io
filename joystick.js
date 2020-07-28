@@ -20,6 +20,8 @@ const ps4 = {
 
 export class Joystick
 {
+    global joyval;
+
     constructor() {
         this.gamepad = undefined;
     }
