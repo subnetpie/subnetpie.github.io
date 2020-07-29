@@ -54,14 +54,15 @@ export class Joystick
     };
 
     get_button_pressed(btn) {
+        if(btn=="button0") return this.gamepad.buttons[ps4[button0]].pressed;
         if(!this.gamepad) return false;
         return this.gamepad.buttons[ps4[btn]].pressed;
     }
 
    get_axis_value(axis) {
 
-        if(axis=="axis0") return this.gamepad.axes[0];
-        if(axis=="axis1") return this.gamepad.axes[1];
+        if(axis=="axis0") return this.gamepad.axes[0].value;
+        if(axis=="axis1") return this.gamepad.axes[1].value;
 
         if(!this.gamepad) return Math.floor(Math.random() * 255);
         let val = Math.floor((this.gamepad.axes[ps4[axis]] * 128) + 128);
