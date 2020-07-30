@@ -63,7 +63,7 @@ export class Joystick
    get_axis_value(axis) {
 
         if(axis=="axis0") return gamepadSimulator.fakeController.axes[0].touched;
-        if(axis=="axis1") return this.gamepad.axes[1].value;
+        if(axis=="axis1") return gamepadSimulator.fakeController.axes[1].value;
 
         if(!this.gamepad) return Math.floor(Math.random() * 255);
         let val = Math.floor((this.gamepad.axes[ps4[axis]] * 128) + 128);
