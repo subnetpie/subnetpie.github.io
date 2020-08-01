@@ -8,9 +8,9 @@
 //
 
 const ps4 = {
-    button0: 2,
-    button1: 0,
-    button2: 1,
+    button0: 0,
+    button1: 1,
+    button2: 2,
     axis0: 0,
     axis1: 1,
     axis2: 2,
