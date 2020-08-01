@@ -54,8 +54,8 @@ export class Joystick
     };
 
     get_button_pressed(btn) {
-        if(btn=="button1") return gamepadSimulator.fakeController.buttons[0].touched;
-        if(btn=="button2") return gamepadSimulator.fakeController.buttons[1].touched;
+        if(btn=="button0") return gamepadSimulator.fakeController.buttons[0].touched;
+        if(btn=="button1") return gamepadSimulator.fakeController.buttons[1].touched;
      if(!this.gamepad) return false;
         return this.gamepad.buttons[ps4[btn]].pressed;
     }
