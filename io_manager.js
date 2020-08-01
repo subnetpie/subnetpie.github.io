@@ -140,7 +140,7 @@ export class IOManager
                 case 0xc01f: // 80 col mode (0: 40 cols, 0x80: 80 cols)
                     return this._80col_mode ? 0x80 : 0;
                 case 0xc061: // js pb0
-                    return this._joystick.button1 ? 0x80 : 0;
+                    return this._joystick.button0 ? 0x80 : 0;
                 case 0xc062: // js pb1
                     return this._joystick.button1 ? 0x80 : 0;
                 case 0xc063: // js pb2
