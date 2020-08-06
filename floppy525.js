@@ -30,8 +30,8 @@
 //
 
 
-import {disk16_p5_rom_341_0027} from "./rom/disk16-p5_341-0027.js";
-//import {disk16_p6_rom_341_0028} from "./rom/disk16-p6_341-0028.js";
+import {disk16_p5_rom_341_0027} from "https://subnetpie.github.io/rom/disk16-p5_341-0027.js";
+//import {disk16_p6_rom_341_0028} from "https://subnetpie.github.io/rom/disk16-p6_341-0028.js";
 
 // ProDOS_2_4_2.dsk 8596-85d6
 const write_62 = [
