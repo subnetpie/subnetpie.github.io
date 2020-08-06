@@ -7,7 +7,7 @@
 //  https://www.gnu.org/licenses/gpl.html
 //
 
-import {rom_342_0265_a} from "./rom/342-0265-a.js";
+import {rom_342_0265_a} from "https://subnetpie.github.io/rom/342-0265-a.js";
 
 
 export class TextDisplay
