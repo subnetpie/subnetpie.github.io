@@ -12,9 +12,9 @@ const ps4 = {
     button1: 1,
     button2: 2,
     axis0: 0,
-    axis1: 1,
-    axis2: 2,
-    axis3: 3
+    axis1: 1
+ //   axis2: 2,
+ //   axis3: 3
 };
 
 
@@ -45,13 +45,13 @@ export class Joystick
         return this.get_axis_value("axis1");
     };
 
-    get axis2() {
-        return this.get_axis_value("axis2");
-    };
+//    get axis2() {
+//        return this.get_axis_value("axis2");
+//    };
 
-    get axis3() {
-        return this.get_axis_value("axis3");
-    };
+//    get axis3() {
+//        return this.get_axis_value("axis3");
+//    };
 
     get_button_pressed(btn) {
       if(btn=="button0") return gamepadSimulator.fakeController.buttons[0].touched;
@@ -66,11 +66,11 @@ export class Joystick
         if(axis=="axis0") return gamepadSimulator.fakeController.axes[0];
         if(axis=="axis1") return gamepadSimulator.fakeController.axes[1];
 
-        if(!this.gamepad) return Math.floor(Math.random() * 255);
-        let val = Math.floor((this.gamepad.axes[ps4[axis]] * 128) + 128);
-        if(val < 0) val = 0;
-        if(val > 255) val = 255;
-        if((val > 122) && (val < 133)) val = 128;
-        return val;
+//        if(!this.gamepad) return Math.floor(Math.random() * 255);
+//        let val = Math.floor((this.gamepad.axes[ps4[axis]] * 128) + 128);
+//        if(val < 0) val = 0;
+//        if(val > 255) val = 255;
+//        if((val > 122) && (val < 133)) val = 128;
+//        return val;
     }
 }
