@@ -10,7 +10,7 @@
 const ps4 = {
     button0: 0,
     button1: 1,
-    button2: 2,
+ //   button2: 2,
     axis0: 0,
     axis1: 1
  //   axis2: 2,
@@ -33,9 +33,9 @@ export class Joystick
         return this.get_button_pressed("button1");
     };
 
-    get button2() {
-        return this.get_button_pressed("button2");
-    };
+//    get button2() {
+//        return this.get_button_pressed("button2");
+//    };
 
     get axis0() {
         return this.get_axis_value("axis0");
@@ -56,9 +56,9 @@ export class Joystick
     get_button_pressed(btn) {
       if(btn=="button0") return gamepadSimulator.fakeController.buttons[0].touched;
       if(btn=="button1") return gamepadSimulator.fakeController.buttons[1].touched;
-      if(btn=="button2") return gamepadSimulator.fakeController.buttons[2].touched;
-      if(!this.gamepad) return false;
-        return this.gamepad.buttons[ps4[btn]].pressed;
+//      if(btn=="button2") return gamepadSimulator.fakeController.buttons[2].touched;
+//      if(!this.gamepad) return false;
+//        return this.gamepad.buttons[ps4[btn]].pressed;
     }
 
    get_axis_value(axis) {
