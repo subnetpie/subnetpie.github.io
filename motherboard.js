@@ -25,7 +25,7 @@ import {rom_342_0303_ef} from "https://subnetpie.github.io/rom/342-0303-ef.js";
 
 export class Motherboard
 {
-    constructor(khz, canvas, floppy_led_cb, joypad) {
+    constructor(khz, canvas, floppy_led_cb) {
         this.memory = new Memory(rom_342_0304_cd, rom_342_0303_ef);
         this.cpu = new W65C02S(this.memory);
         this.keyboard = new Keyboard();
