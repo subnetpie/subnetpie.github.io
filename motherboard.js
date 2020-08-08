@@ -18,7 +18,6 @@ import {DoubleHiresDisplay} from "https://subnetpie.github.io/display_double_hir
 import {Keyboard} from "https://subnetpie.github.io/keyboard.js";
 import {Floppy525} from "https://subnetpie.github.io/floppy525.js";
 import {AppleAudio} from "https://subnetpie.github.io/apple_audio.js";
-import {Joystick} from "https://subnetpie.github.io/joystick.js";
 import {rom_342_0304_cd} from "https://subnetpie.github.io/rom/342-0304-cd.js";
 import {rom_342_0303_ef} from "https://subnetpie.github.io/rom/342-0303-ef.js";
 
@@ -34,7 +33,6 @@ export class Motherboard
         this.display_double_hires = new DoubleHiresDisplay(this.memory, canvas);
         this.floppy525 = new Floppy525(6, this.memory , floppy_led_cb);
         this.audio = new AppleAudio(khz);
-        this.joystick = new Joystick();
         this.io_manager = new IOManager(this.memory, this.keyboard,
                                         this.display_text, this.display_hires, this.display_double_hires,
                                         this.audio_click.bind(this), joyValues);
