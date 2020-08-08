@@ -63,13 +63,14 @@
 
 export class IOManager
 {
-    constructor(memory, keyboard, display_text, display_hires, display_double_hires, audio_cb, joystick) {
+    constructor(memory, keyboard, display_text, display_hires, display_double_hires, audio_cb, cycles, joystick) {
         this._mem = memory;
         this._kbd = keyboard;
         this._display_text = display_text;
         this._display_hires = display_hires;
         this._display_double_hires = display_double_hires;
         this._audio_cb = audio_cb;
+        this._cycles = cycles;
         this._joystick = joystick;
 
         this._c3_rom = false;
