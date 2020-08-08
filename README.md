@@ -3,7 +3,7 @@ Apple IIe Computer written in ES6
 
 &nbsp;
 
-Virtual Apple IIe <a target="_blank" href="https://subnetpie.github.io/apple2e/index.html">test</a>
+Virtual Apple IIe <a target="_blank" href="https://subnetpie.github.io/index.html">test</a>
 
 &nbsp;
 
