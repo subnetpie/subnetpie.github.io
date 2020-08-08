@@ -90,9 +90,15 @@ export class IOManager
         this._mem.add_write_hook(this.write.bind(this));
     }
 
+    var _trigger = 0;
 
     ////////////////////////////////////////////
     read(addr) {
+
+        var result = 0;
+        var now = this._cycles;
+        var delta = now - _trigger;
+
         if((addr & 0xf000) != 0xc000) return undefined; // default read
 
         // c000-c0ff: read switches
@@ -147,7 +153,8 @@ export class IOManager
                 case 0xc063: // js pb2
                     return this._joystick.button2 ? 0x80 : 0;
                 case 0xc064: // js pdl-0
-                    return this._joystick.axis0;
+                    return  (delta < (_joystick.axis0 * 2756) ? 0x80 : 0x00);
+              //      return this._joystick.axis0;
                 case 0xc065: // js pdl-1
                     return this._joystick.axis1;
                 case 0xc066: // js pdl-2
@@ -155,8 +162,9 @@ export class IOManager
                 case 0xc067: // js pdl-3
                     return this._joystick.axis3;
                 case 0xc070: // trigger paddle read
+                    _trigger = this._cycles;
                     return 0;
-                case 0xc07e: // iou disable (0: iou is enabled, 0x80: iou is disabled)
+                case 0xc07e  _trigger = cpu.cycles();: // iou disable (0: iou is enabled, 0x80: iou is disabled)
                     //console.log("iou disable: " + this._iou_disable);
                     return this._iou_disable ? 0x80 : 0;
                 case 0xc07f: // double hires (0: double hires inactive, 0x80: double hires active)
