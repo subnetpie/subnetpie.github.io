@@ -162,7 +162,7 @@ export class IOManager
                 case 0xc067: // js pdl-3
                     return this._joystick.axis3;
                 case 0xc070: // trigger paddle read
-             //       this._trigger = this._cycles;
+                    this._trigger = this._cycles;
                     return 0;
                 case 0xc07e: // iou disable (0: iou is enabled, 0x80: iou is disabled)
                     //console.log("iou disable: " + this._iou_disable);
