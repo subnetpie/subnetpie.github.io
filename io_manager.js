@@ -63,14 +63,13 @@
 
 export class IOManager
 {
-    constructor(memory, keyboard, display_text, display_hires, display_double_hires, audio_cb, cycles, joystick) {
+    constructor(memory, keyboard, display_text, display_hires, display_double_hires, audio_cb, joystick) {
         this._mem = memory;
         this._kbd = keyboard;
         this._display_text = display_text;
         this._display_hires = display_hires;
         this._display_double_hires = display_double_hires;
         this._audio_cb = audio_cb;
-        this._cycles = cycles;
         this._joystick = joystick;
         this._trigger = 0;
 
@@ -95,7 +94,7 @@ export class IOManager
     read(addr) {
 
         var result = 0;
-        var now = this._cycles;
+        var now = this._joystick.cycles;
         var delta = now - this._trigger;
 
         if((addr & 0xf000) != 0xc000) return undefined; // default read
@@ -163,8 +162,8 @@ export class IOManager
                 case 0xc067: // js pdl-3
                     return this._joystick.axis3;
                 case 0xc070: // trigger paddle read
-                    this._trigger = this._cycles;
-                    return 0;
+                    this._trigger = this._joystick.cycles;
+                    return this._trigger;
                 case 0xc07e: // iou disable (0: iou is enabled, 0x80: iou is disabled)
                     //console.log("iou disable: " + this._iou_disable);
                     return this._iou_disable ? 0x80 : 0;
