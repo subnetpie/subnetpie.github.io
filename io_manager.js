@@ -153,7 +153,7 @@ export class IOManager
                     return this._joystick.button2 ? 0x80 : 0;
                 case 0xc064: // js pdl-0
                     console.log("delta: " + this._cycles);
-                    result = (delta < (this._joystick.axis0 * 2000) ? 0x80 : 0x00);
+                    result = (delta < (this._joystick.axis0) ? 0x80 : 0x00);
               //      return this._joystick.axis0;
                     return result;
                 case 0xc065: // js pdl-1
