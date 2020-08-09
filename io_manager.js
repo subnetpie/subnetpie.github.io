@@ -94,9 +94,9 @@ export class IOManager
     ////////////////////////////////////////////
     read(addr) {
 
-    //    var result = 0;
-    //    var now = this._cycles;
-    //    var delta = now - this._trigger;
+        var result = 0;
+        var now = this._cycles;
+        var delta = now - this._trigger;
 
         if((addr & 0xf000) != 0xc000) return undefined; // default read
 
