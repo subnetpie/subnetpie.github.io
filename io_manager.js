@@ -152,8 +152,9 @@ export class IOManager
                 case 0xc063: // js pb2
                     return this._joystick.button2 ? 0x80 : 0;
                 case 0xc064: // js pdl-0
-              //     return  (delta < (_joystick.axis0 * 2756) ? 0x80 : 0x00);
-                    return this._joystick.axis0;
+              //    result = (delta < (_joystick.axis0 * 2756) ? 0x80 : 0x00);
+              //      return this._joystick.axis0;
+                    return result;
                 case 0xc065: // js pdl-1
                     return this._joystick.axis1;
                 case 0xc066: // js pdl-2
