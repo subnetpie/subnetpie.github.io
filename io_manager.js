@@ -70,9 +70,9 @@ export class IOManager
         this._display_hires = display_hires;
         this._display_double_hires = display_double_hires;
         this._audio_cb = audio_cb;
-   //     this._cycles = cycles;
+        this._cycles = cycles;
         this._joystick = joystick;
-   //     this._trigger = 0;
+        this._trigger = 0;
 
         this._c3_rom = false;
         this._c8_rom = false;
