@@ -163,7 +163,7 @@ export class IOManager
                 case 0xc070: // trigger paddle read
              //       this._trigger = this._cycles;
                     return 0;
-                case 0xc07e  _trigger = cpu.cycles();: // iou disable (0: iou is enabled, 0x80: iou is disabled)
+                case 0xc07e: // iou disable (0: iou is enabled, 0x80: iou is disabled)
                     //console.log("iou disable: " + this._iou_disable);
                     return this._iou_disable ? 0x80 : 0;
                 case 0xc07f: // double hires (0: double hires inactive, 0x80: double hires active)
