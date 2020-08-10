@@ -71,7 +71,6 @@ export class IOManager
         this._display_double_hires = display_double_hires;
         this._audio_cb = audio_cb;
         this._joystick = joystick;
-        this._trigger = 0;
 
         this._c3_rom = false;
         this._c8_rom = false;
@@ -95,7 +94,7 @@ export class IOManager
 
         var result = 0;
         var now = this._joystick.cycles;
-        var delta = now - this._trigger;
+        var delta = now - this._joystick.trigger;
 
         if((addr & 0xf000) != 0xc000) return undefined; // default read
 
@@ -162,8 +161,8 @@ export class IOManager
                 case 0xc067: // js pdl-3
                     return this._joystick.axis3;
                 case 0xc070: // trigger paddle read
-                    this._trigger = this._joystick.cycles;
-                    return this._trigger;
+                    this._joystick.trigger = this._joystick.cycles;
+                    return this._joystick.trigger;
                 case 0xc07e: // iou disable (0: iou is enabled, 0x80: iou is disabled)
                     //console.log("iou disable: " + this._iou_disable);
                     return this._iou_disable ? 0x80 : 0;
