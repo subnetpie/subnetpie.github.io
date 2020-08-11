@@ -92,7 +92,7 @@ export class IOManager
     ////////////////////////////////////////////
     read(addr) 
 
-        joyValues.delta = (this._joystick.cycles - the joyValues.trigger);
+        this._joystick.delta = (this._joystick.cycles - this._joystick.trigger);
 
         if((addr & 0xf000) != 0xc000) return undefined; // default read
 
