@@ -92,6 +92,8 @@ export class IOManager
     ////////////////////////////////////////////
     read(addr) {
 
+        this._joystick.cycles++;
+
         if((addr & 0xf000) != 0xc000) return undefined; // default read
 
         // c000-c0ff: read switches
