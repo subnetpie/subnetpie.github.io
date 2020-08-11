@@ -92,7 +92,7 @@ export class IOManager
     ////////////////////////////////////////////
     read(addr) 
 
-        this._joystick.delta = (this._joystick.cycles - this._joystick.trigger);
+        var delta = (this._joystick.cycles - this._joystick.trigger);
 
         if((addr & 0xf000) != 0xc000) return undefined; // default read
 
