@@ -71,6 +71,8 @@ export class IOManager
         this._display_double_hires = display_double_hires;
         this._audio_cb = audio_cb;
         this._cycles = 0;
+        this._delta = 0;
+        this._trigger = 0;
         this._joystick = joystick;
 
         this._c3_rom = false;
@@ -93,7 +95,7 @@ export class IOManager
     ////////////////////////////////////////////
     read(addr) {
         this._cycles++
-        this._joystick.delta = (this._cycles - this._joystick.trigger);
+        this._delta = (this._cycles - this._trigger);
 
         if((addr & 0xf000) != 0xc000) return undefined; // default read
 
@@ -149,17 +151,16 @@ export class IOManager
                 case 0xc063: // js pb2
                     return this._joystick.button2 ? 0x80 : 0;
                 case 0xc064: // js pdl-0
-                    return this._joystick.delta < this._joystick.axis0 ? 0x80 : 0x00;
+                    return this._delta < this._joystick.axis0 ? 0x80 : 0x00;
                 case 0xc065: // js pdl-1
-                    return this._joystick.delta < this._joystick.axis1 ? 0x80 : 0x00;
+                    return this._delta < this._joystick.axis1 ? 0x80 : 0x00;
                 case 0xc066: // js pdl-2
-                    return this._joystick.axis2;
+                    return this._delta < this._joystick.axis2 ? 0x80 : 0x00;
                 case 0xc067: // js pdl-3
-                    return this._joystick.axis3;
+                    return this._delta < this._joystick.axis3 ? 0x80 : 0x00;
                 case 0xc070: // trigger paddle read
-                    this._joystick.trigger = this._cycles;
-                  //  console.log("Trigger: " + this._joystick.trigger);
-                    return this._joystick.trigger;
+                    this._trigger = this._cycles;
+                    return this._trigger;
                 case 0xc07e: // iou disable (0: iou is enabled, 0x80: iou is disabled)
                     //console.log("iou disable: " + this._iou_disable);
                     return this._iou_disable ? 0x80 : 0;
