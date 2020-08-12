@@ -92,7 +92,7 @@ export class IOManager
     ////////////////////////////////////////////
     read(addr) {
 
-        this._joystick.delta = (this._joystick.cycles - this._joystick.trigger);
+        this._joystick.delta = (motherboard.cycles - this._joystick.trigger);
 
         if((addr & 0xf000) != 0xc000) return undefined; // default read
 
@@ -156,7 +156,7 @@ export class IOManager
                 case 0xc067: // js pdl-3
                     return this._joystick.axis3;
                 case 0xc070: // trigger paddle read
-                    this._joystick.trigger = this._joystick.cycles;
+                    this._joystick.trigger = motherboard.cycles;
                   //  console.log("Trigger: " + this._joystick.trigger);
                     return this._joystick.trigger;
                 case 0xc07e: // iou disable (0: iou is enabled, 0x80: iou is disabled)
