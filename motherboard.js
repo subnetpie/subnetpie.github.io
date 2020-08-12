@@ -36,7 +36,7 @@ export class Motherboard
         this.cycles = 0;
         this.io_manager = new IOManager(this.memory, this.keyboard,
                                         this.display_text, this.display_hires, this.display_double_hires,
-                                        this.audio_click.bind(this), joyValues);
+                                        this.audio_click.bind(this), this.cycles, joyValues);
     }
 
     clock(count) {
