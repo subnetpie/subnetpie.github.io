@@ -69,6 +69,11 @@ export class Motherboard
         this.cpu.register.pc = this.memory.read_word(0xfffc);
     }
 
+    // clear message on text page 1
+    messageclear() {
+      for(let i=0; i<160; i++) this.memory.write(0x43b+i, 0x00);
+    }
+
     // write message to text page 1
     message(text) {
         const addr = 0x43b - ((text.length / 2) & 0x0f);
