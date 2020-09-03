@@ -71,7 +71,7 @@ export class Motherboard
 
     // clear message on text page 1
     messageclear() {
-      for(let i=0; i<160; i++) this.memory.write(0x430+i, 0x20+0x80);
+      for(let i=0; i<30; i++) this.memory.write(0x42C+i, 0xA0);
     }
 
     // write message to text page 1
