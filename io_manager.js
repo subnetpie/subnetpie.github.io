@@ -442,9 +442,7 @@ export class IOManager
                 (((addr & 0xe000) == 0x4000) && this._mem.dms_page2 && !this._mem.dms_80store) ) {
                 if(this._mem.dms_hires) {
                     // hires graphics modes
-// this._double_hires = true;
                     if(this._double_hires) {
-alert("test");
                         this._display_double_hires.draw(addr);
                     } else {
                         this._display_hires.draw(addr, val);
@@ -473,7 +471,7 @@ alert("test");
             // TODO: mixed modes
             if(this._mem.dms_hires) {
                 if(this._double_hires) {
-                    alert("enabling double-hires graphics mode: " + (is_page2 ? "page2" : "page1"));
+              //      alert("enabling double-hires graphics mode: " + (is_page2 ? "page2" : "page1"));
                     this._display_double_hires.set_active_page(is_page2 ? 2 : 1);
                 } else {
                     //console.log("enabling hires graphics mode: " + (is_page2 ? "page2" : "page1"));
