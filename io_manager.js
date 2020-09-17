@@ -384,6 +384,7 @@ export class IOManager
                 if(this._iou_disable) {
                     //console.log("double hires on");
                     if(!this._mem._double_hires) {
+                        this._80col_mode = true;
                         this._double_hires = true;
                         this.switch_display_mode();
                     }
