@@ -14,7 +14,7 @@ import {Memory} from "https://subnetpie.github.io/memory.js";
 import {IOManager} from "https://subnetpie.github.io/io_manager.js";
 import {TextDisplay} from "https://subnetpie.github.io/display_text.js";
 import {HiresDisplay} from "https://subnetpie.github.io/display_hires.js";
-import {DoubleHiresDisplay} from "https://subnetpie.github.io/display_double_hires.js";
+//import {DoubleHiresDisplay} from "https://subnetpie.github.io/display_double_hires.js";
 import {Keyboard} from "https://subnetpie.github.io/keyboard.js";
 import {Floppy525} from "https://subnetpie.github.io/floppy525.js";
 import {AppleAudio} from "https://subnetpie.github.io/apple_audio.js";
