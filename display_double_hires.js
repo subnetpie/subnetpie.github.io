@@ -116,6 +116,8 @@ export class DoubleHiresDisplay
     draw_cell(id, row, col, b0, b1, b2, b3) {
         const pal = (this._monochrome > 0) ? this.mpal : this.cpal;
 
+        console.log(b0,b1,b2,b3);
+
         //         main     aux
         // 2000: xddccccb xbbbaaaa
         // 2001: xggggfff xfeeeedd
