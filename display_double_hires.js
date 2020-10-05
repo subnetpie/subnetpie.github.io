@@ -125,7 +125,7 @@ export class DoubleHiresDisplay
         const pca = [
             //         bbbaaaa.             ...xbbba
             // a           ^^^                     ^
-        //    pal[((b0 << 1) & 0x0e) | ((b0 >> 3) & 0x01)],
+            //pal[((b0 << 1) & 0x0e) | ((b0 >> 3) & 0x01)],
 
             pal[((b0 << 0) & 0x0f)],
 
@@ -147,7 +147,10 @@ export class DoubleHiresDisplay
 
             //         .xfeeeed             .....xfe
             // e           ^^^                     ^
-            pal[((b2 >> 1) & 0x0e) | ((b2 >> 5) & 0x01)],
+            //pal[((b2 >> 1) & 0x0e) | ((b2 >> 5) & 0x01)],
+
+            pal[((b2 >> 2) & 0x0f)],
+
             //         gggfff..             .....xfe             ..xggggf
             // f           ^^                     ^                     ^
             pal[((b3 << 2) & 0x0c) | ((b2 >> 5) & 0x02) | ((b3 >> 2) & 0x01)],
