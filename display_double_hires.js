@@ -131,7 +131,10 @@ export class DoubleHiresDisplay
 
             //         ...xbbba            xddccccb
             // b           ^^^                    ^
-            pal[((b0 >> 3) & 0x0e) | (b1 & 0x01)],
+        //    pal[((b0 >> 3) & 0x0e) | (b1 & 0x01)],
+
+            pal[((b1 >> 1) & 0x0f)],
+
             //        xddccccb       ....xddc
             // c          ^^^               ^
             pal[(b1 & 0x0e) | ((b1 >> 4) & 0x01)],
