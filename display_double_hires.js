@@ -142,45 +142,54 @@ export class DoubleHiresDisplay
         // 2001: xggggfff xfeeeedd
         //         <--- read ---
         const pca = [
+
+                        pal[((b0 & 0x0f) >> 0)], // a
+                        pal[((b0 & 0x70) >> 4) | ((b1 & 0x01) << 3)], // b
+                        pal[((b1 & 0x1e) >> 1)], // c
+                        pal[((b1 & 0x60) >> 5) | ((b2 & 0x03) << 2)], // d
+                        pal[((b2 & 0x3c) >> 2)], // e
+                        pal[((b2 & 0x40) >> 6) | ((b3 & 0x07) << 1)], // f
+                        pal[((b3 & 0x78) >> 3)] // g
+
             //         bbbaaaa.             ...xbbba
             // a           ^^^                     ^
             //pal[((b0 << 1) & 0x0e) | ((b0 >> 3) & 0x01)],
 
-            pal[((b0 << 0) & 0x0f)],
+            //pal[((b0 << 0) & 0x0f)],
 
             //         ...xbbba            xddccccb
             // b           ^^^                    ^
-            pal[((b0 >> 3) & 0x0e) | (b1 & 0x01)],
+            //pal[((b0 >> 3) & 0x0e) | (b1 & 0x01)],
 
             //        xddccccb       ....xddc
             // c          ^^^               ^
             //pal[(b1 & 0x0e) | ((b1 >> 4) & 0x01)],
 
-            pal[((b1 >> 1) & 0x0f)],
+            //pal[((b1 >> 1) & 0x0f)],
 
             //         eeedd...             ....xddc             .xfeeeed
             // d           ^                     ^^                     ^
             //pal[((b2 << 3) & 0x08) | ((b1 >> 4) & 0x06) | ((b2 >> 1) & 0x01)],
 
-            pal[((b1 >> 3) & 0x0f) | (b2 & 0x03)],
+            //pal[((b1 >> 3) & 0x0f) | (b2 & 0x03)],
 
             //         .xfeeeed             .....xfe
             // e           ^^^                     ^
             //pal[((b2 >> 1) & 0x0e) | ((b2 >> 5) & 0x01)],
 
-            pal[((b2 >> 2) & 0x0f)],
+            //pal[((b2 >> 2) & 0x0f)],
 
             //         gggfff..             .....xfe             ..xggggf
             // f           ^^                     ^                     ^
             //pal[((b3 << 2) & 0x0c) | ((b2 >> 5) & 0x02) | ((b3 >> 2) & 0x01)],
 
-            pal[((b2 >> 3) & 0xf) | (b3 & 0x07)],
+            //pal[((b2 >> 3) & 0xf) | (b3 & 0x07)],
 
             //         ..xggggf             ......xg
             // g           ^^^                     ^
             //pal[((b3 >> 2) & 0x0e) | ((b3 >> 6) & 0x01)]
 
-            pal[((b3 >> 3) & 0x0f)]
+            //pal[((b3 >> 3) & 0x0f)]
         ];
 
         // row: 0-191, col: 0-39
