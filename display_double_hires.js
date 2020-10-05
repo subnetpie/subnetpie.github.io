@@ -153,10 +153,15 @@ export class DoubleHiresDisplay
 
             //         gggfff..             .....xfe             ..xggggf
             // f           ^^                     ^                     ^
-            pal[((b3 << 2) & 0x0c) | ((b2 >> 5) & 0x02) | ((b3 >> 2) & 0x01)],
+            //pal[((b3 << 2) & 0x0c) | ((b2 >> 5) & 0x02) | ((b3 >> 2) & 0x01)],
+
+            pal[((b2 >> 3) & 0xf) | (b3 & 0x07)],
+
             //         ..xggggf             ......xg
             // g           ^^^                     ^
-            pal[((b3 >> 2) & 0x0e) | ((b3 >> 6) & 0x01)]
+            //pal[((b3 >> 2) & 0x0e) | ((b3 >> 6) & 0x01)]
+
+            pal[((b3 >> 3) & 0x0f)]
         ];
 
         // row: 0-191, col: 0-39
