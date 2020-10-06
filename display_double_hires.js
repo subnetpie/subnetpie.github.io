@@ -190,13 +190,21 @@ export class DoubleHiresDisplay
         for(let x=lo, xmax=lo+112; x<xmax; x+=16) {
             const rgb = pca[po++];
 
-        data[x + 0] = data[x + 4] = data[x + 8] = data[x + 12] = rgb[0];
-        data[x + 1] = data[x + 5] = data[x + 9] = data[x + 13] = rgb[1];
-        data[x + 2] = data[x + 6] = data[x + 10] = data[x + 14] = rgb[2];
-        var nextOff = x + 2256;
-        data[nextOff] = data[nextOff + 4] = data[nextOff + 8] = data[nextOff + 12] = rgb[0];
-        data[nextOff + 1] = data[nextOff + 5] = data[nextOff + 9] = data[nextOff + 13] = rgb[1];
-        data[nextOff + 2] = data[nextOff + 6] = data[nextOff + 10] = data[nextOff + 14] = rgb[2];
+        data[x + 0] = data[x + 4] = rgb[0];
+        data[x + 1] = data[x + 5] = rgb[1];
+        data[x + 2] = data[x + 6] = rgb[2];
+        var nextOff = x + 560 * 4;
+        data[nextOff] = data[nextOff + 4] = rgb[0];
+        data[nextOff + 1] = data[nextOff + 5] = rgb[1];
+        data[nextOff + 2] = data[nextOff + 6] = rgb[2];
+
+   //     data[x + 0] = data[x + 4] = data[x + 8] = data[x + 12] = rgb[0];
+   //     data[x + 1] = data[x + 5] = data[x + 9] = data[x + 13] = rgb[1];
+   //     data[x + 2] = data[x + 6] = data[x + 10] = data[x + 14] = rgb[2];
+   //     var nextOff = x + 2256;
+   //     data[nextOff] = data[nextOff + 4] = data[nextOff + 8] = data[nextOff + 12] = rgb[0];
+   //     data[nextOff + 1] = data[nextOff + 5] = data[nextOff + 9] = data[nextOff + 13] = rgb[1];
+   //     data[nextOff + 2] = data[nextOff + 6] = data[nextOff + 10] = data[nextOff + 14] = rgb[2];
 
       //      data[x]   = data[x+4] = data[x+8]  = data[x+12] = data[x+2256] = data[x+2260] = data[x+2264] = data[x+2268] = rgb[0];
       //      data[x+1] = data[x+5] = data[x+9]  = data[x+13] = data[x+2257] = data[x+2261] = data[x+2265] = data[x+2269] = rgb[1];
