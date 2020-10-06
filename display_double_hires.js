@@ -193,7 +193,7 @@ export class DoubleHiresDisplay
         data[x + 0] = data[x + 4] = data[x + 8] = data[x + 12] = rgb[0];
         data[x + 1] = data[x + 5] = data[x + 9] = data[x + 13] = rgb[1];
         data[x + 2] = data[x + 6] = data[x + 10] = data[x + 14] = rgb[2];
-        var nextOff = x + 560 * 4;
+        var nextOff = x + 2256;
         data[nextOff] = data[nextOff + 4] = data[nextOff + 8] = data[nextOff + 12] = rgb[0];
         data[nextOff + 1] = data[nextOff + 5] = data[nextOff + 9] = data[nextOff + 13] = rgb[1];
         data[nextOff + 2] = data[nextOff + 6] = data[nextOff + 10] = data[nextOff + 14] = rgb[2];
