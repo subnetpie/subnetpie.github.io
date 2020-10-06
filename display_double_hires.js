@@ -52,20 +52,20 @@ export class DoubleHiresDisplay
 //          [0x11,0xdd,0x00], [0xff,0xff,0x00], [0x44,0xff,0x99], [0xee,0xee,0xee]
 
         [  0,   0,   0], // 0x0 black
-        [227,  30,  96], // 0x1 deep red
         [ 96,  78, 189], // 0x2 dark blue
-        [255,  68, 253], // 0x3 purple
         [  0, 163,  96], // 0x4 dark green
-        [156, 156, 156], // 0x5 dark gray
         [ 20, 207, 253], // 0x6 medium blue
-        [208, 195, 255], // 0x7 light blue
         [ 96, 114,   3], // 0x8 brown
-        [255, 106,  60], // 0x9 orange
         [156, 156, 156], // 0xa light gray
-        [255, 160, 208], // 0xb pink
         [ 20, 245,  60], // 0xc green
-        [208, 221, 141], // 0xd yellow
         [114, 255, 208], // 0xe aquamarine
+        [227,  30,  96], // 0x1 deep red
+        [255,  68, 253], // 0x3 purple
+        [156, 156, 156], // 0x5 dark gray
+        [208, 195, 255], // 0x7 light blue
+        [255, 106,  60], // 0x9 orange
+        [255, 160, 208], // 0xb pink
+        [208, 221, 141], // 0xd yellow
         [255, 255, 255] // 0xf white
 
         ];
