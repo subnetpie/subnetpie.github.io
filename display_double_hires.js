@@ -187,19 +187,17 @@ export class DoubleHiresDisplay
         const data = id.data;
 
         let po = 0;
-//        for(let x=lo, xmax=lo+112; x<xmax; x+=16) {
+        for(let x=lo, xmax=lo+112; x<xmax; x+=16) {
 
-for (x = 1; x < 8; x++) {
+          const rgb = pca[po++];
 
-            const rgb = pca[po++];
-
-        data[x + 0] = rgb[0];
-        data[x + 1] = rgb[1];
-        data[x + 2] = rgb[2];
-        var nextOff = x + 2256;
-        data[nextOff + 0] = rgb[0];
-        data[nextOff + 1] = rgb[1];
-        data[nextOff + 2] = rgb[2];
+          data[x + 0] = data[x + 4] = rgb[0];
+          data[x + 1] = rgb[1];
+          data[x + 2] = rgb[2];
+          var nextOff = x + 2256;
+          data[nextOff + 0] = rgb[0];
+          data[nextOff + 1] = rgb[1];
+          data[nextOff + 2] = rgb[2];
 
    //     data[x + 0] = data[x + 4] = data[x + 8] = data[x + 12] = rgb[0];
    //     data[x + 1] = data[x + 5] = data[x + 9] = data[x + 13] = rgb[1];
