@@ -191,7 +191,7 @@ export class DoubleHiresDisplay
 
           const rgb = pca[po++];
 
-          data[x + 0] = data[x + 4] = rgb[0];
+          data[x + 0] = data[x + 8] = rgb[0];
           data[x + 1] = rgb[1];
           data[x + 2] = rgb[2];
           var nextOff = x + 2256;
