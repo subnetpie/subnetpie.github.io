@@ -189,7 +189,7 @@ export class DoubleHiresDisplay
         let po = 0;
 //        for(let x=lo, xmax=lo+112; x<xmax; x+=16) {
 
-for (idx = 1; idx < 8; idx++) {
+for (x = 1; x < 8; x++) {
 
             const rgb = pca[po++];
 
