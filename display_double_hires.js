@@ -178,6 +178,30 @@ export class DoubleHiresDisplay
     }
 
     draw_cell(id, row, col, b0, b1, b2, b3) {
+
+c = [
+  0,
+  ((b0 & 0x0f) >> 0), // 0
+  ((b0 & 0x70) >> 4) | ((b1 & 0x01) << 3), // 1
+  ((b1 & 0x1e) >> 1), // 2
+  ((b1 & 0x60) >> 5) | ((b2 & 0x03) << 2), // 3
+  ((b2 & 0x3c) >> 2), // 4
+  ((b2 & 0x40) >> 6) | ((b3 & 0x07) << 1), // 5
+  ((b3 & 0x78) >> 3), // 6
+  0
+] // 7
+hb = [
+  0,
+  b0 & 0x80, // 0
+  b0 & 0x80, // 1
+  b1 & 0x80, // 2
+  b2 & 0x80, // 3
+  b2 & 0x80, // 4
+  b3 & 0x80, // 5
+  b3 & 0x80, // 6
+  0
+]; // 7
+
         const pal = (this._monochrome > 0) ? this.mpal : this.cpal;
 
         //         main     aux
@@ -234,7 +258,9 @@ export class DoubleHiresDisplay
 
           const rgb = pca[po++];
 
-          data[x + 0] = data[x + 8] = rgb[0];
+       //   var dcolor = dcolors[r4[c[idx]]];
+
+          data[x + 0] = rgb[0];
           data[x + 1] = data[x + 9] = rgb[1];
           data[x + 2] = rgb[2];
           var nextOff = x + 2256;
