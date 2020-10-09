@@ -45,71 +45,67 @@ export class DoubleHiresDisplay
         // modified to soften black & white
 
 
-   var r4 = [
-        0,   // Black
-        2,   // Dark Blue
-        4,   // Dark Green
-        6,   // Medium Blue
+        this.r4 = [
+          0,   // Black
+          2,   // Dark Blue
+          4,   // Dark Green
+          6,   // Medium Blue
+          8,   // Brown
+          5,   // Gray 1
+          12,  // Light Green
+          14,  // Aqua
+          1,   // Red
+          3,   // Purple
+          10,  // Gray 2
+          7,   // Pink
+          9,   // Orange
+          11,  // Light Blue
+          13,  // Yellow
+          15   // White
+        ];
 
-        8,   // Brown
-        5,   // Gray 1
-        12,  // Light Green
-        14,  // Aqua
-
-        1,   // Red
-        3,   // Purple
-        10,  // Gray 2
-        7,   // Pink
-
-        9,   // Orange
-        11,  // Light Blue
-        13,  // Yellow
-        15   // White
-    ];
-
-    var dcolors = [
-        [  0,   0,   0], // 0x0 black
-        [227,  30,  96], // 0x1 deep red
-        [ 96,  78, 189], // 0x2 dark blue
-        [255,  68, 253], // 0x3 purple
-        [  0, 163,  96], // 0x4 dark green
-        [156, 156, 156], // 0x5 dark gray
-        [ 20, 207, 253], // 0x6 medium blue
-        [208, 195, 255], // 0x7 light blue
-        [ 96, 114,   3], // 0x8 brown
-        [255, 106,  60], // 0x9 orange
-        [156, 156, 156], // 0xa light gray
-        [255, 160, 208], // 0xb pink
-        [ 20, 245,  60], // 0xc green
-        [208, 221, 141], // 0xd yellow
-        [114, 255, 208], // 0xe aquamarine
-        [255, 255, 255], // 0xf white
-    ];
+        this.dcolors = [
+          [  0,   0,   0], // 0x0 black
+          [227,  30,  96], // 0x1 deep red
+          [ 96,  78, 189], // 0x2 dark blue
+          [255,  68, 253], // 0x3 purple
+          [  0, 163,  96], // 0x4 dark green
+          [156, 156, 156], // 0x5 dark gray
+          [ 20, 207, 253], // 0x6 medium blue
+          [208, 195, 255], // 0x7 light blue
+          [ 96, 114,   3], // 0x8 brown
+          [255, 106,  60], // 0x9 orange
+          [156, 156, 156], // 0xa light gray
+          [255, 160, 208], // 0xb pink
+          [ 20, 245,  60], // 0xc green
+          [208, 221, 141], // 0xd yellow
+          [114, 255, 208], // 0xe aquamarine
+          [255, 255, 255], // 0xf white
+       ];
 
        this.cpal = [
-
 
 //          [0x11,0x11,0x11], [0xdd,0x00,0x33], [0x00,0x00,0x99], [0xdd,0x22,0xdd],
 //          [0x00,0x77,0x22], [0x55,0x55,0x55], [0x22,0x22,0xff], [0x66,0xaa,0xff],
 //          [0x88,0x55,0x00], [0xff,0x66,0x00], [0xaa,0xaa,0xaa], [0xff,0x99,0x88],
 //          [0x11,0xdd,0x00], [0xff,0xff,0x00], [0x44,0xff,0x99], [0xee,0xee,0xee]
 
-        [  0,   0,   0], // 0x0 black
-        [ 96,  78, 189], // 0x2 dark blue
-        [  0, 163,  96], // 0x4 dark green
-        [ 20, 207, 253], // 0x6 medium blue
-        [ 96, 114,   3], // 0x8 brown
-        [156, 156, 156], // 0xa light gray
-        [ 20, 245,  60], // 0xc green
-        [114, 255, 208], // 0xe aquamarine
-        [227,  30,  96], // 0x1 deep red
-        [255,  68, 253], // 0x3 purple
-        [156, 156, 156], // 0x5 dark gray
-        [208, 195, 255], // 0x7 light blue
-        [255, 106,  60], // 0x9 orange
-        [255, 160, 208], // 0xb pink
-        [208, 221, 141], // 0xd yellow
-        [255, 255, 255] // 0xf white
+          [  0,   0,   0], // 0x0 black
+          [ 96,  78, 189], // 0x2 dark blue
+          [  0, 163,  96], // 0x4 dark green
+          [ 20, 207, 253], // 0x6 medium blue
+          [ 96, 114,   3], // 0x8 brown
+          [156, 156, 156], // 0xa light gray
+          [ 20, 245,  60], // 0xc green
+          [114, 255, 208], // 0xe aquamarine
+          [227,  30,  96], // 0x1 deep red
+          [255,  68, 253], // 0x3 purple
+          [156, 156, 156], // 0x5 dark gray
+          [208, 195, 255], // 0x7 light blue
+          [255, 106,  60], // 0x9 orange
+          [255, 160, 208], // 0xb pink
+          [208, 221, 141], // 0xd yellow
+          [255, 255, 255] // 0xf white
 
         ];
 
@@ -179,28 +175,28 @@ export class DoubleHiresDisplay
 
     draw_cell(id, row, col, b0, b1, b2, b3) {
 
-c = [
-  0,
-  ((b0 & 0x0f) >> 0), // 0
-  ((b0 & 0x70) >> 4) | ((b1 & 0x01) << 3), // 1
-  ((b1 & 0x1e) >> 1), // 2
-  ((b1 & 0x60) >> 5) | ((b2 & 0x03) << 2), // 3
-  ((b2 & 0x3c) >> 2), // 4
-  ((b2 & 0x40) >> 6) | ((b3 & 0x07) << 1), // 5
-  ((b3 & 0x78) >> 3), // 6
-  0
-] // 7
-hb = [
-  0,
-  b0 & 0x80, // 0
-  b0 & 0x80, // 1
-  b1 & 0x80, // 2
-  b2 & 0x80, // 3
-  b2 & 0x80, // 4
-  b3 & 0x80, // 5
-  b3 & 0x80, // 6
-  0
-]; // 7
+    const c = [
+      0,
+      ((b0 & 0x0f) >> 0), // 0
+      ((b0 & 0x70) >> 4) | ((b1 & 0x01) << 3), // 1
+      ((b1 & 0x1e) >> 1), // 2
+      ((b1 & 0x60) >> 5) | ((b2 & 0x03) << 2), // 3
+      ((b2 & 0x3c) >> 2), // 4
+      ((b2 & 0x40) >> 6) | ((b3 & 0x07) << 1), // 5
+      ((b3 & 0x78) >> 3), // 6
+      0
+    ]; // 7
+    const hb = [
+      0,
+      b0 & 0x80, // 0
+      b0 & 0x80, // 1
+      b1 & 0x80, // 2
+      b2 & 0x80, // 3
+      b2 & 0x80, // 4
+      b3 & 0x80, // 5
+      b3 & 0x80, // 6
+      0
+    ]; // 7
 
         const pal = (this._monochrome > 0) ? this.mpal : this.cpal;
 
