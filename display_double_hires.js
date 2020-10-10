@@ -135,17 +135,18 @@ export class DoubleHiresDisplay
 
     draw_cell(id, row, col, b0, b1, b2, b3) {
 
-//    const c = [
-//      0,
-//      ((b0 & 0x0f) >> 0), // 0
-//      ((b0 & 0x70) >> 4) | ((b1 & 0x01) << 3), // 1
-//      ((b1 & 0x1e) >> 1), // 2
-//      ((b1 & 0x60) >> 5) | ((b2 & 0x03) << 2), // 3
-//      ((b2 & 0x3c) >> 2), // 4
-//      ((b2 & 0x40) >> 6) | ((b3 & 0x07) << 1), // 5
-//      ((b3 & 0x78) >> 3), // 6
-//      0
-//    ]; // 7
+    const c = [
+      0,
+      ((b0 & 0x0f) >> 0), // 0
+      ((b0 & 0x70) >> 4) | ((b1 & 0x01) << 3), // 1
+      ((b1 & 0x1e) >> 1), // 2
+      ((b1 & 0x60) >> 5) | ((b2 & 0x03) << 2), // 3
+      ((b2 & 0x3c) >> 2), // 4
+      ((b2 & 0x40) >> 6) | ((b3 & 0x07) << 1), // 5
+      ((b3 & 0x78) >> 3), // 6
+      0
+    ]; // 7
+
 //    const hb = [
 //      0,
 //      b0 & 0x80, // 0
@@ -174,33 +175,6 @@ export class DoubleHiresDisplay
           pal[((b2 & 0x40) >> 6) | ((b3 & 0x07) << 1)], // f
           pal[((b3 & 0x78) >> 3)] // g
 
-         //         bbbaaaa.             ...xbbba
-         // a           ^^^                     ^
-         //pal[((b0 << 1) & 0x0e) | ((b0 >> 3) & 0x01)],
-         //pal[((b0 << 0) & 0x0f)],
-         //         ...xbbba            xddccccb
-         // b           ^^^                    ^
-         //pal[((b0 >> 3) & 0x0e) | (b1 & 0x01)],
-         //        xddccccb       ....xddc
-         // c          ^^^               ^
-         //pal[(b1 & 0x0e) | ((b1 >> 4) & 0x01)],
-         //pal[((b1 >> 1) & 0x0f)],
-         //         eeedd...             ....xddc             .xfeeeed
-         // d           ^                     ^^                     ^
-         //pal[((b2 << 3) & 0x08) | ((b1 >> 4) & 0x06) | ((b2 >> 1) & 0x01)],
-         //pal[((b1 >> 3) & 0x0f) | (b2 & 0x03)],
-         //         .xfeeeed             .....xfe
-         // e           ^^^                     ^
-         //pal[((b2 >> 1) & 0x0e) | ((b2 >> 5) & 0x01)],
-         //pal[((b2 >> 2) & 0x0f)],
-         //         gggfff..             .....xfe             ..xggggf
-         // f           ^^                     ^                     ^
-         //pal[((b3 << 2) & 0x0c) | ((b2 >> 5) & 0x02) | ((b3 >> 2) & 0x01)],
-         //pal[((b2 >> 3) & 0xf) | (b3 & 0x07)],
-         //         ..xggggf             ......xg
-         // g           ^^^                     ^
-         //pal[((b3 >> 2) & 0x0e) | ((b3 >> 6) & 0x01)]
-         //pal[((b3 >> 3) & 0x0f)]
          ];
 
         // row: 0-191, col: 0-39
@@ -219,28 +193,13 @@ export class DoubleHiresDisplay
  //        var bits = c[idx-1] | (c[idx] << 4) | (c[idx+1] << 8);
  //        for (jdx = 0; jdx < 4; jdx++, off += 4) {
 
- //function _drawHalfPixel(data, off, color) {
+ //       function _drawHalfPixel(data, off, color) {
  //         var c0 = dcolor[0], c1 = dcolor[1], c2 = dcolor[2];
- 
-   //       data[x + 0] = rgb[0];
-   //       data[x + 1] = data[x + 9] = rgb[1];
-   //       data[x + 2] = rgb[2];
-   //       var nextOff = x + 2256;
-   //       data[nextOff + 0] = data[nextOff + 8] = rgb[0];
-   //       data[nextOff + 1] = rgb[1];
-   //       data[nextOff + 2] = rgb[2];
-
-   //     data[x + 0] = data[x + 4] = data[x + 8] = data[x + 12] = rgb[0];
-   //     data[x + 1] = data[x + 5] = data[x + 9] = data[x + 13] = rgb[1];
-   //     data[x + 2] = data[x + 6] = data[x + 10] = data[x + 14] = rgb[2];
-   //     var nextOff = x + 2256;
-   //     data[nextOff] = data[nextOff + 4] = data[nextOff + 8] = data[nextOff + 12] = rgb[0];
-   //     data[nextOff + 1] = data[nextOff + 5] = data[nextOff + 9] = data[nextOff + 13] = rgb[1];
-   //     data[nextOff + 2] = data[nextOff + 6] = data[nextOff + 10] = data[nextOff + 14] = rgb[2];
 
             data[x]   = data[x+4] = data[x+8]  = data[x+12] = data[x+2256] = data[x+2260] = data[x+2264] = data[x+2268] = rgb[0];
             data[x+1] = data[x+5] = data[x+9]  = data[x+13] = data[x+2257] = data[x+2261] = data[x+2265] = data[x+2269] = rgb[1];
             data[x+2] = data[x+6] = data[x+10] = data[x+14] = data[x+2258] = data[x+2262] = data[x+2266] = data[x+2270] = rgb[2];
+
         }
         if(id == this._id) this._context.putImageData(this._id, 0, 0, ox, oy, 28, 2);
     }
