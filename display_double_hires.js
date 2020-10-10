@@ -43,45 +43,6 @@ export class DoubleHiresDisplay
         // https://www.apple.asimov.net/documentation/misc/Apple2TechNotes1993.pdf
         // modified to soften black & white
 
-
-        const r4 = [
-          0,   // Black
-          2,   // Dark Blue
-          4,   // Dark Green
-          6,   // Medium Blue
-          8,   // Brown
-          5,   // Gray 1
-          12,  // Light Green
-          14,  // Aqua
-          1,   // Red
-          3,   // Purple
-          10,  // Gray 2
-          7,   // Pink
-          9,   // Orange
-          11,  // Light Blue
-          13,  // Yellow
-          15   // White
-        ];
-
-        const dcolors = [
-          [  0,   0,   0], // 0x0 black
-          [227,  30,  96], // 0x1 deep red
-          [ 96,  78, 189], // 0x2 dark blue
-          [255,  68, 253], // 0x3 purple
-          [  0, 163,  96], // 0x4 dark green
-          [156, 156, 156], // 0x5 dark gray
-          [ 20, 207, 253], // 0x6 medium blue
-          [208, 195, 255], // 0x7 light blue
-          [ 96, 114,   3], // 0x8 brown
-          [255, 106,  60], // 0x9 orange
-          [156, 156, 156], // 0xa light gray
-          [255, 160, 208], // 0xb pink
-          [ 20, 245,  60], // 0xc green
-          [208, 221, 141], // 0xd yellow
-          [114, 255, 208], // 0xe aquamarine
-          [255, 255, 255], // 0xf white
-       ];
-
        this.cpal = [
 
 //          [0x11,0x11,0x11], [0xdd,0x00,0x33], [0x00,0x00,0x99], [0xdd,0x22,0xdd],
@@ -174,28 +135,28 @@ export class DoubleHiresDisplay
 
     draw_cell(id, row, col, b0, b1, b2, b3) {
 
-    const c = [
-      0,
-      ((b0 & 0x0f) >> 0), // 0
-      ((b0 & 0x70) >> 4) | ((b1 & 0x01) << 3), // 1
-      ((b1 & 0x1e) >> 1), // 2
-      ((b1 & 0x60) >> 5) | ((b2 & 0x03) << 2), // 3
-      ((b2 & 0x3c) >> 2), // 4
-      ((b2 & 0x40) >> 6) | ((b3 & 0x07) << 1), // 5
-      ((b3 & 0x78) >> 3), // 6
-      0
-    ]; // 7
-    const hb = [
-      0,
-      b0 & 0x80, // 0
-      b0 & 0x80, // 1
-      b1 & 0x80, // 2
-      b2 & 0x80, // 3
-      b2 & 0x80, // 4
-      b3 & 0x80, // 5
-      b3 & 0x80, // 6
-      0
-    ]; // 7
+//    const c = [
+//      0,
+//      ((b0 & 0x0f) >> 0), // 0
+//      ((b0 & 0x70) >> 4) | ((b1 & 0x01) << 3), // 1
+//      ((b1 & 0x1e) >> 1), // 2
+//      ((b1 & 0x60) >> 5) | ((b2 & 0x03) << 2), // 3
+//      ((b2 & 0x3c) >> 2), // 4
+//      ((b2 & 0x40) >> 6) | ((b3 & 0x07) << 1), // 5
+//      ((b3 & 0x78) >> 3), // 6
+//      0
+//    ]; // 7
+//    const hb = [
+//      0,
+//      b0 & 0x80, // 0
+//      b0 & 0x80, // 1
+//      b1 & 0x80, // 2
+//      b2 & 0x80, // 3
+//      b2 & 0x80, // 4
+//      b3 & 0x80, // 5
+//      b3 & 0x80, // 6
+//      0
+//    ]; // 7
 
         const pal = (this._monochrome > 0) ? this.mpal : this.cpal;
 
@@ -255,12 +216,12 @@ export class DoubleHiresDisplay
 
  //      for (idx = 1; idx < 8; idx++) {
  //        hbs = hb[idx];
-         var dcolor = dcolors[r4[c[po++]]];
+ //        var dcolor = dcolors[r4[c[po++]]];
  //        var bits = c[idx-1] | (c[idx] << 4) | (c[idx+1] << 8);
  //        for (jdx = 0; jdx < 4; jdx++, off += 4) {
 
-//function _drawHalfPixel(data, off, color) {
-         var c0 = dcolor[0], c1 = dcolor[1], c2 = dcolor[2];
+ //function _drawHalfPixel(data, off, color) {
+ //         var c0 = dcolor[0], c1 = dcolor[1], c2 = dcolor[2];
  
    //       data[x + 0] = rgb[0];
    //       data[x + 1] = data[x + 9] = rgb[1];
