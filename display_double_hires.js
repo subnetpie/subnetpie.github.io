@@ -255,8 +255,8 @@ export class DoubleHiresDisplay
        //   const rgb = pca[po++];
 
        for (idx = 1; idx < 8; idx++) {
-         hbs = hb[idx];
-         var dcolor = dcolors[r4[c[idx]]];
+ //        hbs = hb[idx];
+         var dcolor = this.dcolors[this.r4[c[idx]]];
  //        var bits = c[idx-1] | (c[idx] << 4) | (c[idx+1] << 8);
          for (jdx = 0; jdx < 4; jdx++, off += 4) {
 
