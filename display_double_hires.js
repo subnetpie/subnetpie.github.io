@@ -44,7 +44,7 @@ export class DoubleHiresDisplay
         // modified to soften black & white
 
 
-        r4 = [
+        const r4 = [
           0,   // Black
           2,   // Dark Blue
           4,   // Dark Green
@@ -63,7 +63,7 @@ export class DoubleHiresDisplay
           15   // White
         ];
 
-        dcolors = [
+        const dcolors = [
           [  0,   0,   0], // 0x0 black
           [227,  30,  96], // 0x1 deep red
           [ 96,  78, 189], // 0x2 dark blue
