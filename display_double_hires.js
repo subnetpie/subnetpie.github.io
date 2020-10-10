@@ -44,7 +44,7 @@ export class DoubleHiresDisplay
         // modified to soften black & white
 
 
-        this.r4 = [
+        r4 = [
           0,   // Black
           2,   // Dark Blue
           4,   // Dark Green
@@ -63,7 +63,7 @@ export class DoubleHiresDisplay
           15   // White
         ];
 
-        this.dcolors = [
+        dcolors = [
           [  0,   0,   0], // 0x0 black
           [227,  30,  96], // 0x1 deep red
           [ 96,  78, 189], // 0x2 dark blue
@@ -251,24 +251,17 @@ export class DoubleHiresDisplay
        // let po = 0;
       for(let x=lo, xmax=lo+112; x<xmax; x+=16) {
 
-       //   const rgb = pca[po++];
+         const rgb = pca[po++];
 
  //      for (idx = 1; idx < 8; idx++) {
  //        hbs = hb[idx];
-         var dcolor = this.dcolors[this.r4[c[po++]]];
+         var dcolor = dcolors[r4[c[po++]]];
  //        var bits = c[idx-1] | (c[idx] << 4) | (c[idx+1] << 8);
  //        for (jdx = 0; jdx < 4; jdx++, off += 4) {
 
 //function _drawHalfPixel(data, off, color) {
-        var c0 = dcolor[0], c1 = dcolor[1], c2 = dcolor[2];
-        data[x + 0] = c0;
-        data[x + 1] = c1;
-        data[x + 2] = c2;
-        var nextOff = x + 2256;
-        data[nextOff] = c0;
-        data[nextOff + 1] = c1;
-        data[nextOff + 2] = c2;
-    //  };
+         var c0 = dcolor[0], c1 = dcolor[1], c2 = dcolor[2];
+ 
    //       data[x + 0] = rgb[0];
    //       data[x + 1] = data[x + 9] = rgb[1];
    //       data[x + 2] = rgb[2];
@@ -285,9 +278,9 @@ export class DoubleHiresDisplay
    //     data[nextOff + 1] = data[nextOff + 5] = data[nextOff + 9] = data[nextOff + 13] = rgb[1];
    //     data[nextOff + 2] = data[nextOff + 6] = data[nextOff + 10] = data[nextOff + 14] = rgb[2];
 
-      //      data[x]   = data[x+4] = data[x+8]  = data[x+12] = data[x+2256] = data[x+2260] = data[x+2264] = data[x+2268] = rgb[0];
-      //      data[x+1] = data[x+5] = data[x+9]  = data[x+13] = data[x+2257] = data[x+2261] = data[x+2265] = data[x+2269] = rgb[1];
-      //      data[x+2] = data[x+6] = data[x+10] = data[x+14] = data[x+2258] = data[x+2262] = data[x+2266] = data[x+2270] = rgb[2];
+            data[x]   = data[x+4] = data[x+8]  = data[x+12] = data[x+2256] = data[x+2260] = data[x+2264] = data[x+2268] = rgb[0];
+            data[x+1] = data[x+5] = data[x+9]  = data[x+13] = data[x+2257] = data[x+2261] = data[x+2265] = data[x+2269] = rgb[1];
+            data[x+2] = data[x+6] = data[x+10] = data[x+14] = data[x+2258] = data[x+2262] = data[x+2266] = data[x+2270] = rgb[2];
         }
         if(id == this._id) this._context.putImageData(this._id, 0, 0, ox, oy, 28, 2);
     }
