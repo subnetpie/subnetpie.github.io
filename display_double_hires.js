@@ -249,20 +249,34 @@ export class DoubleHiresDisplay
         const lo = (ox + oy * 564) * 4;
         const data = id.data;
 
-        let po = 0;
-        for(let x=lo, xmax=lo+112; x<xmax; x+=16) {
+       // let po = 0;
+       // for(let x=lo, xmax=lo+112; x<xmax; x+=16) {
 
-          const rgb = pca[po++];
+       //   const rgb = pca[po++];
 
-       //   var dcolor = dcolors[r4[c[idx]]];
+       for (idx = 1; idx < 8; idx++) {
+         hbs = hb[idx];
+         var dcolor = dcolors[r4[c[idx]]];
+ //        var bits = c[idx-1] | (c[idx] << 4) | (c[idx+1] << 8);
+         for (jdx = 0; jdx < 4; jdx++, off += 4) {
 
-          data[x + 0] = rgb[0];
-          data[x + 1] = data[x + 9] = rgb[1];
-          data[x + 2] = rgb[2];
-          var nextOff = x + 2256;
-          data[nextOff + 0] = data[nextOff + 8] = rgb[0];
-          data[nextOff + 1] = rgb[1];
-          data[nextOff + 2] = rgb[2];
+//function _drawHalfPixel(data, off, color) {
+        var c0 = dcolor[0], c1 = dcolor[1], c2 = dcolor[2];
+        data[off + 0] = c0;
+        data[off + 1] = c1;
+        data[off + 2] = c2;
+        var nextOff = off + 560 * 4;
+        data[nextOff] = c0;
+        data[nextOff + 1] = c1;
+        data[nextOff + 2] = c2;
+      };
+   //       data[x + 0] = rgb[0];
+   //       data[x + 1] = data[x + 9] = rgb[1];
+   //       data[x + 2] = rgb[2];
+   //       var nextOff = x + 2256;
+   //       data[nextOff + 0] = data[nextOff + 8] = rgb[0];
+   //       data[nextOff + 1] = rgb[1];
+   //       data[nextOff + 2] = rgb[2];
 
    //     data[x + 0] = data[x + 4] = data[x + 8] = data[x + 12] = rgb[0];
    //     data[x + 1] = data[x + 5] = data[x + 9] = data[x + 13] = rgb[1];
