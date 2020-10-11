@@ -186,6 +186,10 @@ export class DoubleHiresDisplay
         let po = 0;
         for(let x=lo, xmax=lo+112; x<xmax; x+=16) {
           const rgb = pca[po++];
+        
+          if ((pca[po] != pca[po - 1]) && (pca[po] != pca[po + 1])) { 
+            rgb = [255,255,255]; 
+          };
 
  //      for (idx = 1; idx < 8; idx++) {
  //        hbs = hb[idx];
