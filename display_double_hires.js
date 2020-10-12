@@ -209,6 +209,7 @@ export class DoubleHiresDisplay
             data[x+off+1] = data[x+off+2257] = rgb[1];
             data[x+off+2] = data[x+off+2258] = rgb[2];
             off += 4;
+          }
         }
         if(id == this._id) this._context.putImageData(this._id, 0, 0, ox, oy, 28, 2);
     }
