@@ -184,6 +184,7 @@ export class DoubleHiresDisplay
         const data = id.data;
 
         let po = 0;
+        Let off = 0;
         for(let x=lo, xmax=lo+112; x<xmax; x+=16) {
           const rgb = pca[po++];
           var bits = c[po-1] | (c[po] << 4) | (c[po+1] << 8);
@@ -199,14 +200,16 @@ export class DoubleHiresDisplay
  //      for (idx = 1; idx < 8; idx++) {
  //        hbs = hb[idx];
  //        var dcolor = dcolors[r4[c[po++]]];
- //        for (jdx = 0; jdx < 4; jdx++, off += 4) {
+         for (jdx = 0; jdx < 4; jdx++) {
 
  //       function _drawHalfPixel(data, off, color) {
  //         var c0 = dcolor[0], c1 = dcolor[1], c2 = dcolor[2];
 
-            data[x]   = data[x+4] = data[x+8]  = data[x+12] = data[x+2256] = data[x+2260] = data[x+2264] = data[x+2268] = rgb[0];
-            data[x+1] = data[x+5] = data[x+9]  = data[x+13] = data[x+2257] = data[x+2261] = data[x+2265] = data[x+2269] = rgb[1];
-            data[x+2] = data[x+6] = data[x+10] = data[x+14] = data[x+2258] = data[x+2262] = data[x+2266] = data[x+2270] = rgb[2];
+            data[x+off]   = data[x+off+2256] = rgb[0];
+            data[x+Off+1] = data[x+off+2257] = rgb[1];
+            data[x+Off+2] = data[x+off+2258] = rgb[2];
+
+            off += 4;
 
         }
         if(id == this._id) this._context.putImageData(this._id, 0, 0, ox, oy, 28, 2);
