@@ -188,7 +188,7 @@ export class DoubleHiresDisplay
           const rgb = pca[po++];
         
           if ((pca[po] != pca[po - 1]) && (pca[po] != pca[po + 1])) { 
-            rgb = [255,255,255]; 
+            pca[po] = [255,255,255]; 
           };
 
  //      for (idx = 1; idx < 8; idx++) {
