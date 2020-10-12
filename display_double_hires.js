@@ -147,24 +147,20 @@ export class DoubleHiresDisplay
       0
     ]; // 7
 
-//    const hb = [
-//      0,
-//      b0 & 0x80, // 0
-//      b0 & 0x80, // 1
-//      b1 & 0x80, // 2
-//      b2 & 0x80, // 3
-//      b2 & 0x80, // 4
-//      b3 & 0x80, // 5
-//      b3 & 0x80, // 6
-//      0
-//    ]; // 7
+    const hb = [
+      0,
+      b0 & 0x80, // 0
+      b0 & 0x80, // 1
+      b1 & 0x80, // 2
+      b2 & 0x80, // 3
+      b2 & 0x80, // 4
+      b3 & 0x80, // 5
+      b3 & 0x80, // 6
+      0
+    ]; // 7
 
         const pal = (this._monochrome > 0) ? this.mpal : this.cpal;
 
-        //         main     aux
-        // 2000: xddccccb xbbbaaaa
-        // 2001: xggggfff xfeeeedd
-        //         <--- read ---
         const pca = [
 
           pal[((b0 & 0x0f) >> 0)], // a
@@ -175,7 +171,7 @@ export class DoubleHiresDisplay
           pal[((b2 & 0x40) >> 6) | ((b3 & 0x07) << 1)], // f
           pal[((b3 & 0x78) >> 3)] // g
 
-         ];
+        ];
 
         // row: 0-191, col: 0-39
         const ox = (col * 14) + 1;
@@ -184,7 +180,7 @@ export class DoubleHiresDisplay
         const data = id.data;
 
         let po = 0;
-        let rgb = 0;
+        let rgb = c[po+1];
         for(let x=lo, xmax=lo+112; x<xmax; x+=16) {
           var bits = c[po-1] | (c[po] << 4) | (c[po+1] << 8);      
 
@@ -198,14 +194,14 @@ export class DoubleHiresDisplay
          let off = 0;
          for(let jdx = 0; jdx < 5; jdx++) {
 
-            if ((pca[po] != pca[po - 1]) && (pca[po] != pca[po + 1]) &&
+            if ((c[po] != c[po - 1]) && (c[po] != c[po + 1]) &&
                (((bits & 0x1c) == 0x1c) ||
                ((bits & 0x70) == 0x70) ||
                ((bits & 0x38) == 0x38))) 
             {
               rgb[0] = 255; rgb[1] = 255; rgb[2] = 255;
             } else {
-              rgb = pca[po++];
+              rgb = c[po+1];
             }
 
             data[x+off]   = data[x+off+2256] = rgb[0];
