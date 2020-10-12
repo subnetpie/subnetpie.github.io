@@ -201,7 +201,7 @@ export class DoubleHiresDisplay
             {
               rgb[0] = 255; rgb[1] = 255; rgb[2] = 255;
             } else {
-              rgb = c[po+1];
+              rgb = c[po++];
             }
 
             data[x+off]   = data[x+off+2256] = rgb[0];
