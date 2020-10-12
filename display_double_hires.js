@@ -184,11 +184,9 @@ export class DoubleHiresDisplay
         const data = id.data;
 
         let po = 0;
+        let rgb = 0;
         for(let x=lo, xmax=lo+112; x<xmax; x+=16) {
-          const rgb = pca[po++];
-          var bits = c[po-1] | (c[po] << 4) | (c[po+1] << 8);
-        
-         
+          var bits = c[po-1] | (c[po] << 4) | (c[po+1] << 8);      
 
  //      for (idx = 1; idx < 8; idx++) {
  //        hbs = hb[idx];
@@ -204,8 +202,10 @@ export class DoubleHiresDisplay
                (((bits & 0x1c) == 0x1c) ||
                ((bits & 0x70) == 0x70) ||
                ((bits & 0x38) == 0x38))) 
-            { 
-              pca[po] = [255,255,255];
+            {
+              rgb[0] = 255; rgb[1] = 255; rgb[2] = 255;
+            } else {
+              rgb = pca[po++];
             }
 
             data[x+off]   = data[x+off+2256] = rgb[0];
