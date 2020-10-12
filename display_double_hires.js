@@ -186,15 +186,19 @@ export class DoubleHiresDisplay
         let po = 0;
         for(let x=lo, xmax=lo+112; x<xmax; x+=16) {
           const rgb = pca[po++];
+          var bits = pca[po-1] | (pca[po] << 4) | (pca[po+1] << 8);
         
-          if ((pca[po] != pca[po - 1]) && (pca[po] != pca[po + 1])) { 
+          if ((pca[po] != pca[po - 1]) && (pca[po] != pca[po + 1]) &&
+             (((bits & 0x1c) == 0x1c) ||
+              ((bits & 0x70) == 0x70) ||
+              ((bits & 0x38) == 0x38))
+          ) { 
             pca[po] = [255,255,255]; 
           };
 
  //      for (idx = 1; idx < 8; idx++) {
  //        hbs = hb[idx];
  //        var dcolor = dcolors[r4[c[po++]]];
- //        var bits = c[idx-1] | (c[idx] << 4) | (c[idx+1] << 8);
  //        for (jdx = 0; jdx < 4; jdx++, off += 4) {
 
  //       function _drawHalfPixel(data, off, color) {
