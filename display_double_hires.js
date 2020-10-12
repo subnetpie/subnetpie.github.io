@@ -204,14 +204,14 @@ export class DoubleHiresDisplay
  //         var c0 = dcolor[0], c1 = dcolor[1], c2 = dcolor[2];
 
          let off = 0;
-         for (jdx = 0; jdx < 4; jdx++) {
+         for(let jdx = 0; jdx < 4; jdx++) {
             data[x+off]   = data[x+off+2256] = rgb[0];
             data[x+off+1] = data[x+off+2257] = rgb[1];
             data[x+off+2] = data[x+off+2258] = rgb[2];
             off += 4;
           }
         }
-        if(id == this._id) this._context.putImageData(this._id, 0, 0, ox, oy, 28, 2);
+      if(id == this._id) this._context.putImageData(this._id, 0, 0, ox, oy, 28, 2);
     }
 
     refresh() {
