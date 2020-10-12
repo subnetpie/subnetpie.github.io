@@ -188,13 +188,7 @@ export class DoubleHiresDisplay
           const rgb = pca[po++];
           var bits = c[po-1] | (c[po] << 4) | (c[po+1] << 8);
         
-          if ((pca[po] != pca[po - 1]) && (pca[po] != pca[po + 1]) &&
-             (((bits & 0x1c) == 0x1c) ||
-              ((bits & 0x70) == 0x70) ||
-              ((bits & 0x38) == 0x38))
-          ) { 
-            pca[po] = [255,255,255];
-          };
+         
 
  //      for (idx = 1; idx < 8; idx++) {
  //        hbs = hb[idx];
@@ -205,6 +199,15 @@ export class DoubleHiresDisplay
 
          let off = 0;
          for(let jdx = 0; jdx < 5; jdx++) {
+
+            if ((pca[po] != pca[po - 1]) && (pca[po] != pca[po + 1]) &&
+               (((bits & 0x1c) == 0x1c) ||
+               ((bits & 0x70) == 0x70) ||
+               ((bits & 0x38) == 0x38))) 
+            { 
+              pca[po] = [255,255,255];
+            }
+
             data[x+off]   = data[x+off+2256] = rgb[0];
             data[x+off+1] = data[x+off+2257] = rgb[1];
             data[x+off+2] = data[x+off+2258] = rgb[2];
