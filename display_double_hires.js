@@ -193,7 +193,7 @@ export class DoubleHiresDisplay
               ((bits & 0x70) == 0x70) ||
               ((bits & 0x38) == 0x38))
           ) { 
-            pca[po] = [255,255,255]; 
+            rgb = [255,255,255]; 
           };
 
  //      for (idx = 1; idx < 8; idx++) {
