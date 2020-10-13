@@ -35,22 +35,10 @@ export class DoubleHiresDisplay
     this._page1_init = false;
     this._page2_init = false;
 
-    function _drawPixel(data, off, color) {
-      var c0 = color[0], c1 = color[1], c2 = color[2];
-      data[off + 0] = c0;
-      data[off + 1] = c1;
-      data[off + 2] = c2;
-      var nextOff = off + 564 * 4;
-      data[nextOff + 0] = c0;
-      data[nextOff + 1] = c1;
-      data[nextOff + 2] = c2;
-    }
-
     // when set, this over-rides color
     this._monochrome = 0;
     this.mpal = [];
     this.cpal = [
-
       [  0,   0,   0], // 0x0 black
       [ 96,  78, 189], // 0x2 dark blue
       [  0, 163,  96], // 0x4 dark green
@@ -67,7 +55,6 @@ export class DoubleHiresDisplay
       [255, 160, 208], // 0xb pink
       [208, 221, 141], // 0xd yellow
       [255, 255, 255]  // 0xf white
-
     ];
 
     this.reset();
@@ -124,6 +111,8 @@ export class DoubleHiresDisplay
                                  this._mem._aux[ao], this._mem._main[ao]);
   }
 
+
+
   draw_cell(id, row, col, b0, b1, b2, b3) {
 
     const c = [
@@ -173,11 +162,6 @@ export class DoubleHiresDisplay
       var bits = c[po-1] | (c[po] << 4) | (c[po+1] << 8);      
 
  //      for (idx = 1; idx < 8; idx++) {
- //        hbs = hb[idx];
- //        var dcolor = dcolors[r4[c[po++]]];
-
- //       function _drawHalfPixel(data, off, color) {
- //         var c0 = dcolor[0], c1 = dcolor[1], c2 = dcolor[2];
 
          let off = 0;
          for(let jdx = 0; jdx < 5; jdx++) {
@@ -252,4 +236,15 @@ export class DoubleHiresDisplay
         this._page2_init = false;
     }
 }
+
+   function _drawPixel(data, off, color) {
+      var c0 = color[0], c1 = color[1], c2 = color[2];
+      data[off + 0] = c0;
+      data[off + 1] = c1;
+      data[off + 2] = c2;
+      var nextOff = off + 564 * 4;
+      data[nextOff + 0] = c0;
+      data[nextOff + 1] = c1;
+      data[nextOff + 2] = c2;
+    }
 
