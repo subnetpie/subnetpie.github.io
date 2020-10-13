@@ -19,113 +19,112 @@
 
 export class DoubleHiresDisplay
 {
-    constructor(memory, canvas, hlines, vlines) {
-        this._mem = memory;
+  constructor(memory, canvas, hlines, vlines) {
+    this._mem = memory;
 
-        canvas.width = 564;  // 7*2*40 + 4
-        canvas.height = 390; // 8*2*24 + 6
+    canvas.width = 564;  // 7*2*40 + 4
+    canvas.height = 390; // 8*2*24 + 6
 
-        this._context = canvas.getContext('2d', {alpha: false});
-        this._context.imageSmoothingEnabled = false;
-        this._context.webkitImageSmoothingEnabled = false;
+    this._context = canvas.getContext('2d', {alpha: false});
+    this._context.imageSmoothingEnabled = false;
+    this._context.webkitImageSmoothingEnabled = false;
 
-        this._id1 = this._context.createImageData(564, 390);
-        this._id2 = this._context.createImageData(564, 390);
-        this._id = undefined;
-        this._page1_init = false;
-        this._page2_init = false;
+    this._id1 = this._context.createImageData(564, 390);
+    this._id2 = this._context.createImageData(564, 390);
+    this._id = undefined;
+    this._page1_init = false;
+    this._page2_init = false;
 
-        function _drawHalfPixel(data, off, color) {
-          var c0 = color[0], c1 = color[1], c2 = color[2];
-          data[off + 0] = c0;
-          data[off + 1] = c1;
-          data[off + 2] = c2;
-          var nextOff = off + 564 * 4;
-          data[nextOff + 0] = c0;
-          data[nextOff + 1] = c1;
-          data[nextOff + 2] = c2;
-        }
+    function _drawPixel(data, off, color) {
+      var c0 = color[0], c1 = color[1], c2 = color[2];
+      data[off + 0] = c0;
+      data[off + 1] = c1;
+      data[off + 2] = c2;
+      var nextOff = off + 564 * 4;
+      data[nextOff + 0] = c0;
+      data[nextOff + 1] = c1;
+      data[nextOff + 2] = c2;
+    }
 
-        // when set, this over-rides color
-        this._monochrome = 0;
-        this.mpal = [];
-        this.cpal = [
+    // when set, this over-rides color
+    this._monochrome = 0;
+    this.mpal = [];
+    this.cpal = [
 
-          [  0,   0,   0], // 0x0 black
-          [ 96,  78, 189], // 0x2 dark blue
-          [  0, 163,  96], // 0x4 dark green
-          [ 20, 207, 253], // 0x6 medium blue
-          [ 96, 114,   3], // 0x8 brown
-          [156, 156, 156], // 0xa light gray
-          [ 20, 245,  60], // 0xc green
-          [114, 255, 208], // 0xe aquamarine
-          [227,  30,  96], // 0x1 deep red
-          [255,  68, 253], // 0x3 purple
-          [156, 156, 156], // 0x5 dark gray
-          [208, 195, 255], // 0x7 light blue
-          [255, 106,  60], // 0x9 orange
-          [255, 160, 208], // 0xb pink
-          [208, 221, 141], // 0xd yellow
-          [255, 255, 255] // 0xf white
+      [  0,   0,   0], // 0x0 black
+      [ 96,  78, 189], // 0x2 dark blue
+      [  0, 163,  96], // 0x4 dark green
+      [ 20, 207, 253], // 0x6 medium blue
+      [ 96, 114,   3], // 0x8 brown
+      [156, 156, 156], // 0xa light gray
+      [ 20, 245,  60], // 0xc green
+      [114, 255, 208], // 0xe aquamarine
+      [227,  30,  96], // 0x1 deep red
+      [255,  68, 253], // 0x3 purple
+      [156, 156, 156], // 0x5 dark gray
+      [208, 195, 255], // 0x7 light blue
+      [255, 106,  60], // 0x9 orange
+      [255, 160, 208], // 0xb pink
+      [208, 221, 141], // 0xd yellow
+      [255, 255, 255]  // 0xf white
 
+    ];
+
+    this.reset();
+  }
+
+  get fore() {
+    return this._monochrome;
+  };
+  set fore(rgb) {
+    this._monochrome = rgb;
+    if (rgb > 0) {
+      const r = (rgb >> 16) & 0xff;
+      const g = (rgb >> 8) & 0xff;
+      const b = rgb & 0xff;
+      for (let i=0; i<16; i++) {
+        const bf = (0.34 * this.cpal[i][0] + 0.5 * this.cpal[i][1] + 0.16 * this.cpal[i][2]) / 0xff;
+        this.mpal[i] = [
+          Math.floor(bf * r),
+          Math.floor(bf * g),
+          Math.floor(bf * b)
         ];
-
-        this.reset();
-
-    }
-
-    get fore() {
-        return this._monochrome;
-    };
-    set fore(rgb) {
-      this._monochrome = rgb;
-      if(rgb > 0) {
-        const r = (rgb >> 16) & 0xff;
-        const g = (rgb >> 8) & 0xff;
-        const b = rgb & 0xff;
-        for(let i=0; i<16; i++) {
-          const bf = (0.34 * this.cpal[i][0] + 0.5 * this.cpal[i][1] + 0.16 * this.cpal[i][2]) / 0xff;
-          this.mpal[i] = [
-            Math.floor(bf * r),
-            Math.floor(bf * g),
-            Math.floor(bf * b)
-          ];
-        }
       }
-      this.refresh();
-    };
-
-    get back() {
-      return (this.pal[0][0] << 16) | (this.pal[0][1] << 8) | this.pal[0][2];
-    };
-    set back(rgb) {
-      this.mpal[0][0] = (rgb >> 16) & 0xff;
-      this.mpal[0][1] = (rgb >> 8) & 0xff;
-      this.mpal[0][2] = rgb & 0xff;
-
-      this.cpal[0][0] = (rgb >> 16) & 0xff;
-      this.cpal[0][1] = (rgb >> 8) & 0xff;
-      this.cpal[0][2] = rgb & 0xff;
-
-      this.refresh();
-    };
-
-    draw(addr) {
-      const ae = addr & 0xfffe; // even
-      const ao = addr | 0x0001; // odd
-
-      const col = (ae & 0x7f) % 40;  // column: 0-39
-      const ac0 = ae - col;  // col 0, 40, 80 address in bits 6,5
-      const row = ((ac0 << 1) & 0xc0) | ((ac0 >> 4) & 0x38) | ((ac0 >> 10) & 0x07);
-      if(row > 191) return;
-
-      // data is spread across four bytes in main & aux memory
-      const id = (addr < 0x4000) ? this._id1 : this._id2;
-      this.draw_cell(id, row, col, this._mem._aux[ae], this._mem._main[ae],
-                                   this._mem._aux[ao], this._mem._main[ao]);
     }
+    this.refresh();
+  };
 
-    draw_cell(id, row, col, b0, b1, b2, b3) {
+  get back() {
+    return (this.pal[0][0] << 16) | (this.pal[0][1] << 8) | this.pal[0][2];
+  };
+  set back(rgb) {
+    this.mpal[0][0] = (rgb >> 16) & 0xff;
+    this.mpal[0][1] = (rgb >> 8) & 0xff;
+    this.mpal[0][2] = rgb & 0xff;
+
+    this.cpal[0][0] = (rgb >> 16) & 0xff;
+    this.cpal[0][1] = (rgb >> 8) & 0xff;
+    this.cpal[0][2] = rgb & 0xff;
+
+    this.refresh();
+  };
+
+  draw(addr) {
+    const ae = addr & 0xfffe; // even
+    const ao = addr | 0x0001; // odd
+
+    const col = (ae & 0x7f) % 40;  // column: 0-39
+    const ac0 = ae - col;  // col 0, 40, 80 address in bits 6,5
+    const row = ((ac0 << 1) & 0xc0) | ((ac0 >> 4) & 0x38) | ((ac0 >> 10) & 0x07);
+    if(row > 191) return;
+
+    // data is spread across four bytes in main & aux memory
+    const id = (addr < 0x4000) ? this._id1 : this._id2;
+    this.draw_cell(id, row, col, this._mem._aux[ae], this._mem._main[ae],
+                                 this._mem._aux[ao], this._mem._main[ao]);
+  }
+
+  draw_cell(id, row, col, b0, b1, b2, b3) {
 
     const c = [
       0,
@@ -193,9 +192,11 @@ export class DoubleHiresDisplay
             rgb = pca[po];
           }
 
-          data[x+off+0] = data[x+off+2256] = rgb[0];
-          data[x+off+1] = data[x+off+2257] = rgb[1];
-          data[x+off+2] = data[x+off+2258] = rgb[2];
+          _drawPixel(data, off, rgb);
+
+//          data[x+off+0] = data[x+off+2256] = rgb[0];
+//          data[x+off+1] = data[x+off+2257] = rgb[1];
+//          data[x+off+2] = data[x+off+2258] = rgb[2];
           off += 4;
         }
       }
