@@ -96,7 +96,7 @@ export class DoubleHiresDisplay
     this.refresh();
   };
 
-  drawPixel(data, off, color) {
+  drawPixel(off, color) {
     var c0 = color[0], c1 = color[1], c2 = color[2];
     data[off + 0] = c0;
     data[off + 1] = c1;
@@ -187,11 +187,11 @@ export class DoubleHiresDisplay
             rgb = pca[po];
           }
 
- //         drawPixel(data, x+off, rgb);
+          drawPixel(x+off, rgb);
 
-          data[x+off+0] = data[x+off+2256] = rgb[0];
-          data[x+off+1] = data[x+off+2257] = rgb[1];
-          data[x+off+2] = data[x+off+2258] = rgb[2];
+ //         data[x+off+0] = data[x+off+2256] = rgb[0];
+ //         data[x+off+1] = data[x+off+2257] = rgb[1];
+ //         data[x+off+2] = data[x+off+2258] = rgb[2];
           off += 4;
         }
       }
