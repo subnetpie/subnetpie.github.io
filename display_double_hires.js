@@ -96,6 +96,17 @@ export class DoubleHiresDisplay
     this.refresh();
   };
 
+  drawPixel(data, off, color) {
+    var c0 = color[0], c1 = color[1], c2 = color[2];
+    data[off + 0] = c0;
+    data[off + 1] = c1;
+    data[off + 2] = c2;
+    var nextOff = off + 564 * 4;
+    data[nextOff + 0] = c0;
+    data[nextOff + 1] = c1;
+    data[nextOff + 2] = c2;
+  }
+
   draw(addr) {
     const ae = addr & 0xfffe; // even
     const ao = addr | 0x0001; // odd
@@ -176,7 +187,7 @@ export class DoubleHiresDisplay
             rgb = pca[po];
           }
 
-          _drawPixel(data, off, rgb);
+          drawPixel(data, off, rgb);
 
 //          data[x+off+0] = data[x+off+2256] = rgb[0];
 //          data[x+off+1] = data[x+off+2257] = rgb[1];
@@ -236,15 +247,4 @@ export class DoubleHiresDisplay
         this._page2_init = false;
     }
 }
-
-   function _drawPixel(data, off, color) {
-      var c0 = color[0], c1 = color[1], c2 = color[2];
-      data[off + 0] = c0;
-      data[off + 1] = c1;
-      data[off + 2] = c2;
-      var nextOff = off + 564 * 4;
-      data[nextOff + 0] = c0;
-      data[nextOff + 1] = c1;
-      data[nextOff + 2] = c2;
-    }
 
