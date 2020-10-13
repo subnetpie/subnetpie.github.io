@@ -187,7 +187,7 @@ export class DoubleHiresDisplay
             rgb = pca[po];
           }
 
-          drawPixel(data, off, rgb);
+          drawPixel(data, x+off, rgb);
 
 //          data[x+off+0] = data[x+off+2256] = rgb[0];
 //          data[x+off+1] = data[x+off+2257] = rgb[1];
