@@ -177,20 +177,22 @@ export class DoubleHiresDisplay
          let off = 0;
          for(let jdx = 0; jdx <= 4; jdx++) {
 
+          rgb = pca[po];
+
           if ((c[po] != c[po - 1]) && (c[po] != c[po + 1]) &&
              (((bits & 0x1c) == 0x1c) ||
              ((bits & 0x70) == 0x70) ||
              ((bits & 0x38) == 0x38))) 
           {
-            rgb[0] = rgb[1] = rgb[2] = 255;
-          } else {
-            rgb = pca[po];
+  //          rgb[0] = rgb[1] = rgb[2] = 255;
+  //        } else {
+  
           }
 
  //         drawPixel(x+off, rgb);
 
           data[x+off+0] = data[x+off+2256] = rgb[0];
- //         data[x+off+1] = data[x+off+2257] = rgb[1];
+          data[x+off+1] = data[x+off+2257] = rgb[1];
           data[x+off+2] = data[x+off+2258] = rgb[2];
           off += 4;
         }
