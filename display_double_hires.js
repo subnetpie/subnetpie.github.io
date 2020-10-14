@@ -208,7 +208,7 @@ export class DoubleHiresDisplay
     const lo = (ox + oy * 564) * 4;
     const data = id.data;
 
-    let po = 0;
+    let po = 1;
     let rgb = pca[po];
     for(let x=lo, xmax=lo+112; x<xmax; x+=16, po++) {
       hbs = hb[po];
