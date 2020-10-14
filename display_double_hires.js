@@ -211,7 +211,7 @@ export class DoubleHiresDisplay
     let po = 1;
     let rgb = pca[po];
     for(let x=lo, xmax=lo+112; x<xmax; x+=16, po++) {
-      hbs = hb[po];
+      var hbs = hb[po];
       var dcolor = dcolors[r4[c[po]]];
       var bits = c[po-1] | (c[po] << 4) | (c[po+1] << 8);      
 
