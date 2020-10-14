@@ -211,9 +211,9 @@ export class DoubleHiresDisplay
     let po = 1;
     let rgb = pca[po];
     for(let x=lo, xmax=lo+112; x<xmax; x+=16, po++) {
-      var hbs = hb[po];
-      var dcolor = dcolors[r4[c[po]]];
-      var bits = c[po-1] | (c[po] << 4) | (c[po+1] << 8);      
+ //     var hbs = hb[po];
+ //     var dcolor = dcolors[r4[c[po]]];
+ //     var bits = c[po-1] | (c[po] << 4) | (c[po+1] << 8);      
 
  //      for (idx = 1; idx < 8; idx++) {
 
@@ -222,15 +222,15 @@ export class DoubleHiresDisplay
 
           rgb = pca[po];
 
-          if ((c[po] != c[po - 1]) && (c[po] != c[po + 1]) &&
-             (((bits & 0x1c) == 0x1c) ||
-             ((bits & 0x70) == 0x70) ||
-             ((bits & 0x38) == 0x38))) 
-          {
+//          if ((c[po] != c[po - 1]) && (c[po] != c[po + 1]) &&
+//             (((bits & 0x1c) == 0x1c) ||
+//             ((bits & 0x70) == 0x70) ||
+//             ((bits & 0x38) == 0x38))) 
+//          {
   //          rgb[0] = rgb[1] = rgb[2] = 255;
   //        } else {
   
-          }
+//          }
 
  //         drawPixel(x+off, rgb);
 
