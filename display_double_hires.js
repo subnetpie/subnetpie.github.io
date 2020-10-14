@@ -93,7 +93,7 @@ export class DoubleHiresDisplay
         [ 20, 245,  60], // 0xc green
         [208, 221, 141], // 0xd yellow
         [114, 255, 208], // 0xe aquamarine
-        [255, 255, 255], // 0xf white
+        [255, 255, 255] // 0xf white
     ];
 
     this.reset();
