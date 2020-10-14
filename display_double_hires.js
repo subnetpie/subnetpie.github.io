@@ -220,7 +220,7 @@ export class DoubleHiresDisplay
          let off = 0;
          for(let jdx = 0; jdx <= 4; jdx++) {
 
-          rgb = dcolor;
+          rgb = pca[po];
 
           if ((c[po] != c[po - 1]) && (c[po] != c[po + 1]) &&
              (((bits & 0x1c) == 0x1c) ||
