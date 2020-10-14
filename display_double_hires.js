@@ -56,6 +56,45 @@ export class DoubleHiresDisplay
       [208, 221, 141], // 0xd yellow
       [255, 255, 255]  // 0xf white
     ];
+    this.r4 = [
+        0,   // Black
+        2,   // Dark Blue
+        4,   // Dark Green
+        6,   // Medium Blue
+
+        8,   // Brown
+        5,   // Gray 1
+        12,  // Light Green
+        14,  // Aqua
+
+        1,   // Red
+        3,   // Purple
+        10,  // Gray 2
+        7,  // Pink
+
+        9,   // Orange
+        11,   // Light Blue
+        13,  // Yellow
+        15   // White
+    ];
+    this.dcolors = [
+        [  0,   0,   0], // 0x0 black
+        [227,  30,  96], // 0x1 deep red
+        [ 96,  78, 189], // 0x2 dark blue
+        [255,  68, 253], // 0x3 purple
+        [  0, 163,  96], // 0x4 dark green
+        [156, 156, 156], // 0x5 dark gray
+        [ 20, 207, 253], // 0x6 medium blue
+        [208, 195, 255], // 0x7 light blue
+        [ 96, 114,   3], // 0x8 brown
+        [255, 106,  60], // 0x9 orange
+        [156, 156, 156], // 0xa light gray
+        [255, 160, 208], // 0xb pink
+        [ 20, 245,  60], // 0xc green
+        [208, 221, 141], // 0xd yellow
+        [114, 255, 208], // 0xe aquamarine
+        [255, 255, 255], // 0xf white
+    ];
 
     this.reset();
   }
@@ -151,6 +190,8 @@ export class DoubleHiresDisplay
     ]; // 7
 
     const pal = (this._monochrome > 0) ? this.mpal : this.cpal;
+    const r4 = this.r4;
+    const dcolors = this.dcolors;
     const pca = [
       pal[((b0 & 0x0f) >> 0)], // a
       pal[((b0 & 0x70) >> 4) | ((b1 & 0x01) << 3)], // b
@@ -170,6 +211,8 @@ export class DoubleHiresDisplay
     let po = 0;
     let rgb = pca[po];
     for(let x=lo, xmax=lo+112; x<xmax; x+=16, po++) {
+      hbs = hb[po];
+      var dcolor = dcolors[r4[c[po]]];
       var bits = c[po-1] | (c[po] << 4) | (c[po+1] << 8);      
 
  //      for (idx = 1; idx < 8; idx++) {
@@ -177,7 +220,7 @@ export class DoubleHiresDisplay
          let off = 0;
          for(let jdx = 0; jdx <= 4; jdx++) {
 
-          rgb = pca[po];
+          rgb = dcolor;
 
           if ((c[po] != c[po - 1]) && (c[po] != c[po + 1]) &&
              (((bits & 0x1c) == 0x1c) ||
