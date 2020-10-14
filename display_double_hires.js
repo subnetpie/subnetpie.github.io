@@ -135,7 +135,7 @@ export class DoubleHiresDisplay
     this.refresh();
   };
 
-  drawPixel(off, color) {
+  drawPixel(data, off, color) {
     var c0 = color[0], c1 = color[1], c2 = color[2];
     data[off + 0] = c0;
     data[off + 1] = c1;
