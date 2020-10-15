@@ -57,40 +57,40 @@ export class DoubleHiresDisplay
       [255, 255, 255]  // 0xf white
     ];
     this.r4 = [
-        0,   // Black
-        2,   // Dark Blue
-        4,   // Dark Green
-        6,   // Medium Blue
-        8,   // Brown
-        5,   // Gray 1
-        12,  // Light Green
-        14,  // Aqua
-        1,   // Red
-        3,   // Purple
-        10,  // Gray 2
-        7,  // Pink
-        9,   // Orange
-        11,   // Light Blue
-        13,  // Yellow
-        15   // White
+      0,   // Black
+      2,   // Dark Blue
+      4,   // Dark Green
+      6,   // Medium Blue
+      8,   // Brown
+      5,   // Gray 1
+      12,  // Light Green
+      14,  // Aqua
+      1,   // Red
+      3,   // Purple
+      10,  // Gray 2
+      7,  // Pink
+      9,   // Orange
+      11,   // Light Blue
+      13,  // Yellow
+      15   // White
     ];
     this.dcolors = [
-        [  0,   0,   0], // 0x0 black
-        [227,  30,  96], // 0x1 deep red
-        [ 96,  78, 189], // 0x2 dark blue
-        [255,  68, 253], // 0x3 purple
-        [  0, 163,  96], // 0x4 dark green
-        [156, 156, 156], // 0x5 dark gray
-        [ 20, 207, 253], // 0x6 medium blue
-        [208, 195, 255], // 0x7 light blue
-        [ 96, 114,   3], // 0x8 brown
-        [255, 106,  60], // 0x9 orange
-        [156, 156, 156], // 0xa light gray
-        [255, 160, 208], // 0xb pink
-        [ 20, 245,  60], // 0xc green
-        [208, 221, 141], // 0xd yellow
-        [114, 255, 208], // 0xe aquamarine
-        [255, 255, 255] // 0xf white
+      [  0,   0,   0], // 0x0 black
+      [227,  30,  96], // 0x1 deep red
+      [ 96,  78, 189], // 0x2 dark blue
+      [255,  68, 253], // 0x3 purple
+      [  0, 163,  96], // 0x4 dark green
+      [156, 156, 156], // 0x5 dark gray
+      [ 20, 207, 253], // 0x6 medium blue
+      [208, 195, 255], // 0x7 light blue
+      [ 96, 114,   3], // 0x8 brown
+      [255, 106,  60], // 0x9 orange
+      [156, 156, 156], // 0xa light gray
+      [255, 160, 208], // 0xb pink
+      [ 20, 245,  60], // 0xc green
+      [208, 221, 141], // 0xd yellow
+      [114, 255, 208], // 0xe aquamarine
+      [255, 255, 255] // 0xf white
     ];
     this.reset();
   }
@@ -208,7 +208,7 @@ Thank
     for(let x=lo, xmax=lo+112; x<xmax; x+=16, po++) {
       var hbs = hb[po];
       var dcolor = dcolors[r4[c[po]]];
-      console.log(dcolor);
+      console.log(c[po]+" "+dcolor);
 //      var bits = c[po-1] | (c[po] << 4) | (c[po+1] << 8);      
 //      for (idx = 1; idx < 8; idx++) {
       let off = 0;
@@ -223,7 +223,6 @@ Thank
 //        } else {
 //        }
 //        drawPixel(x+off, rgb);
-
         data[x+off+0] = data[x+off+2256] = rgb[0];
         data[x+off+1] = data[x+off+2257] = rgb[1];
         data[x+off+2] = data[x+off+2258] = rgb[2];
