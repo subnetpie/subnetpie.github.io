@@ -196,22 +196,21 @@ export class DoubleHiresDisplay
       pal[((b2 & 0x40) >> 6) | ((b3 & 0x07) << 1)], // f
       pal[((b3 & 0x78) >> 3)] // g
     ];
-
+Thank 
     // row: 0-191, col: 0-39
     const ox = (col * 14) + 1;
     const oy = (row * 2) + 3;
     const lo = (ox + oy * 564) * 4;
     const data = id.data;
 
-    let po = 0; 
-    let off = 0;
+    let po = 0;
     let rgb = pca[po];
     for(let x=lo, xmax=lo+112; x<xmax; x+=16, po++) {
-//      var hbs = hb[po];
+      var hbs = hb[po];
 //      var dcolor = dcolors[r4[c[po]]];
 //      var bits = c[po-1] | (c[po] << 4) | (c[po+1] << 8);      
 //      for (idx = 1; idx < 8; idx++) {
-
+      let off = 0;
       for(let jdx = 0; jdx <= 4; jdx++) {
         rgb = pca[po];
 //        if ((c[po] != c[po - 1]) && (c[po] != c[po + 1]) &&
