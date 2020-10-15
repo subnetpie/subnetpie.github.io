@@ -187,15 +187,15 @@ export class DoubleHiresDisplay
     const pal = (this._monochrome > 0) ? this.mpal : this.cpal;
     var r4 = this.r4;
     var dcolors = this.dcolors;
-    const pca = [
-      pal[((b0 & 0x0f) >> 0)], // a
-      pal[((b0 & 0x70) >> 4) | ((b1 & 0x01) << 3)], // b
-      pal[((b1 & 0x1e) >> 1)], // c
-      pal[((b1 & 0x60) >> 5) | ((b2 & 0x03) << 2)], // d
-      pal[((b2 & 0x3c) >> 2)], // e
-      pal[((b2 & 0x40) >> 6) | ((b3 & 0x07) << 1)], // f
-      pal[((b3 & 0x78) >> 3)] // g
-    ];
+//    const pca = [
+//      pal[((b0 & 0x0f) >> 0)], // a
+//      pal[((b0 & 0x70) >> 4) | ((b1 & 0x01) << 3)], // b
+//      pal[((b1 & 0x1e) >> 1)], // c
+//      pal[((b1 & 0x60) >> 5) | ((b2 & 0x03) << 2)], // d
+//      pal[((b2 & 0x3c) >> 2)], // e
+//      pal[((b2 & 0x40) >> 6) | ((b3 & 0x07) << 1)], // f
+//      pal[((b3 & 0x78) >> 3)] // g
+//    ];
 
     // row: 0-191, col: 0-39
     const ox = (col * 14) + 1;
@@ -208,8 +208,7 @@ export class DoubleHiresDisplay
     for(let x=lo, xmax=lo+112; x<xmax; x+=16, po++) {
       var hbs = hb[po];
       var dcolor = dcolors[r4[c[po]]];
-//      console.log(c[po]+" "+dcolor);
-//      var bits = c[po-1] | (c[po] << 4) | (c[po+1] << 8);      
+      var bits = c[po-1] | (c[po] << 4) | (c[po+1] << 8);      
 //      for (idx = 1; idx < 8; idx++) {
       let off = 0;
       for(let jdx = 0; jdx <= 4; jdx++) {
