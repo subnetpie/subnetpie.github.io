@@ -22,8 +22,8 @@ export class DoubleHiresDisplay
   constructor(memory, canvas, hlines, vlines) {
     this._mem = memory;
 
-    canvas.width = 564;  // 7*2*40 + 4
-    canvas.height = 390; // 8*2*24 + 6
+    canvas.width = 560;  // 7*2*40 + 4
+    canvas.height = 384; // 8*2*24 + 6
 
     this._context = canvas.getContext('2d', {alpha: false});
     this._context.imageSmoothingEnabled = false;
