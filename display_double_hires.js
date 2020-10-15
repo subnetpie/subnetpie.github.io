@@ -123,7 +123,7 @@ export class DoubleHiresDisplay
     var rgb;
     for(let x=lo, xmax=lo+112; x<xmax; x+=16, po++) {
       var hbs = hb[po];
-      var dcolor = dcolors[r4[c[po]]];
+      var dcolor = dcolors[r4[c[po+1]]];
       var bits = c[po-1] | (c[po] << 4) | (c[po+1] << 8);
       let off = 0;
       for(let jdx = 0; jdx < 4; jdx++, off+=4) {
