@@ -113,22 +113,22 @@ export class DoubleHiresDisplay
  //       ];
  //     }
  //   }
-    this.refresh();
-  };
+ //   this.refresh();
+ // };
 
-  get back() {
-    return (this.pal[0][0] << 16) | (this.pal[0][1] << 8) | this.pal[0][2];
-  };
+ // get back() {
+ //   return (this.pal[0][0] << 16) | (this.pal[0][1] << 8) | this.pal[0][2];
+ // };
 
-  set back(rgb) {
-    this.mpal[0][0] = (rgb >> 16) & 0xff;
-    this.mpal[0][1] = (rgb >> 8) & 0xff;
-    this.mpal[0][2] = rgb & 0xff;
-    this.cpal[0][0] = (rgb >> 16) & 0xff;
-    this.cpal[0][1] = (rgb >> 8) & 0xff;
-    this.cpal[0][2] = rgb & 0xff;
-    this.refresh();
-  };
+ // set back(rgb) {
+ //   this.mpal[0][0] = (rgb >> 16) & 0xff;
+ //   this.mpal[0][1] = (rgb >> 8) & 0xff;
+ //   this.mpal[0][2] = rgb & 0xff;
+ //   this.cpal[0][0] = (rgb >> 16) & 0xff;
+ //   this.cpal[0][1] = (rgb >> 8) & 0xff;
+ //   this.cpal[0][2] = rgb & 0xff;
+ //   this.refresh();
+ // };
 
   drawPixel(data, val, color) {
     var c0 = color[0], c1 = color[1], c2 = color[2];
@@ -184,23 +184,23 @@ export class DoubleHiresDisplay
       b3 & 0x80, // 6
       0
     ]; // 7
-    const pal = (this._monochrome > 0) ? this.mpal : this.cpal;
+ //   const pal = (this._monochrome > 0) ? this.mpal : this.cpal;
     var r4 = this.r4;
     var dcolors = this.dcolors;
-    const pca = [
-      pal[((b0 & 0x0f) >> 0)], // a
-      pal[((b0 & 0x70) >> 4) | ((b1 & 0x01) << 3)], // b
-      pal[((b1 & 0x1e) >> 1)], // c
-      pal[((b1 & 0x60) >> 5) | ((b2 & 0x03) << 2)], // d
-      pal[((b2 & 0x3c) >> 2)], // e
-      pal[((b2 & 0x40) >> 6) | ((b3 & 0x07) << 1)], // f
-      pal[((b3 & 0x78) >> 3)] // g
-    ];
+ //   const pca = [
+ //     pal[((b0 & 0x0f) >> 0)], // a
+ //     pal[((b0 & 0x70) >> 4) | ((b1 & 0x01) << 3)], // b
+ //     pal[((b1 & 0x1e) >> 1)], // c
+ //     pal[((b1 & 0x60) >> 5) | ((b2 & 0x03) << 2)], // d
+ //     pal[((b2 & 0x3c) >> 2)], // e
+ //     pal[((b2 & 0x40) >> 6) | ((b3 & 0x07) << 1)], // f
+ //     pal[((b3 & 0x78) >> 3)] // g
+ //   ];
 
     // row: 0-191, col: 0-39
     const ox = col * 14 - 2;
     const oy = (row * 2);
-    const lo = (ox + oy * 560) * 4;
+    const lo = (ox + oy * 564) * 4;
     const data = id.data;
 
     let po = 0;
@@ -277,7 +277,7 @@ export class DoubleHiresDisplay
       }
 
       reset() {
-        const imax = 560 * 384 * 4; // (560+4, 384+6) * rgba
+        const imax = 564 * 390 * 4; // (560+4, 384+6) * rgba
         for (let i=0; i<imax; i+=4) {
           this._id1.data[i+0] = this._id2.data[i+0] = 0x00;
           this._id1.data[i+1] = this._id2.data[i+1] = 0x00;
