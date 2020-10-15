@@ -135,7 +135,7 @@ export class DoubleHiresDisplay
     data[val + 0] = c0;
     data[val + 1] = c1;
     data[val + 2] = c2;
-    var nextOff = val + 564 * 4;
+    var nextOff = (val + 560) * 4;
     data[nextOff + 0] = c0;
     data[nextOff + 1] = c1;
     data[nextOff + 2] = c2;
@@ -200,7 +200,7 @@ export class DoubleHiresDisplay
     // row: 0-191, col: 0-39
     const ox = (col * 14) + 1;
     const oy = (row * 2) + 3;
-    const lo = (ox + oy * 564) * 4;
+    const lo = (ox + oy * 560) * 4;
     const data = id.data;
 
     let po = 0;
@@ -232,9 +232,9 @@ export class DoubleHiresDisplay
 //      }
 //      var val=x+off;
 //      drawPixel(data, val, dcolor);
-        data[x+off+0] = data[x+off+2256] = rgb[0];
-        data[x+off+1] = data[x+off+2257] = rgb[1];
-        data[x+off+2] = data[x+off+2258] = rgb[2];
+        data[x+off+0] = data[(x+off+(560*4)+0)] = rgb[0];
+        data[x+off+1] = data[(x+off+(560*4)+1)] = rgb[1];
+        data[x+off+2] = data[(x+off+(560*4)+2)] = rgb[2];
         off += 4;
         bits >>= 1;
       }
