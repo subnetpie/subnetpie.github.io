@@ -232,9 +232,9 @@ export class DoubleHiresDisplay
 //      }
 //      var val=x+off;
 //      drawPixel(data, val, dcolor);
-        data[x+off+0] = data[x+off+560*4+0] = rgb[0];
-        data[x+off+1] = data[x+off+560*4+1] = rgb[1];
-        data[x+off+2] = data[x+off+560*4+2] = rgb[2];
+        data[x+off+0] = data[x+off+564*4+0] = rgb[0];
+        data[x+off+1] = data[x+off+564*4+1] = rgb[1];
+        data[x+off+2] = data[x+off+564*4+2] = rgb[2];
         bits >>= 1;
       }
     }
