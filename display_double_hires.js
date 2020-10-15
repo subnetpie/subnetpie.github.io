@@ -226,7 +226,7 @@ export class DoubleHiresDisplay
           rgb[1] = dcolor[1]*.75;
           rgb[2] = dcolor[2]*.75;
         } else {
-          rgb[0] = rgb[1] = rgb[2] = 0;
+          rgb[0] = rgb[1] = rgb[2] = 25;
 //          rgb = dcolor;
         }
 //        var val=x+off;
@@ -235,7 +235,7 @@ export class DoubleHiresDisplay
         data[x+off+1] = data[x+off+2257] = rgb[1];
         data[x+off+2] = data[x+off+2258] = rgb[2];
         off += 4;
-//        bits >>= 1;
+        bits >>= 1;
       }
     }
     if(id == this._id) this._context.putImageData(this._id, 0, 0, ox, oy, 28, 2);
