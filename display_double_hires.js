@@ -128,13 +128,13 @@ export class DoubleHiresDisplay
       let off = 0;
       for(let jdx = 0; jdx < 4; jdx++, off+=4) {
         var c0 = dcolor[0], c1 = dcolor[1], c2 = dcolor[2];
-        data[x + off + 0] = c0;
-        data[x + off + 1] = c1;
-        data[x + off + 2] = c2;
+        data[x+off+0] = c0;
+        data[x+off+1] = c1;
+        data[x+off+2] = c2;
         var nextOff = (x + off + 560) * 4;
-        data[nextOff + 0] = c0;
-        data[nextOff + 1] = c1;
-        data[nextOff + 2] = c2;
+        data[x+nextOff+0] = c0;
+        data[x+nextOff+1] = c1;
+        data[x+nextOff+2] = c2;
 
 //        if ((c[po] != c[po - 1]) && (c[po] != c[po + 1]) &&
 //        (((bits & 0x1c) == 0x1c) ||
