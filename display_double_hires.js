@@ -34,28 +34,6 @@ export class DoubleHiresDisplay
     this._id = undefined;
     this._page1_init = false;
     this._page2_init = false;
-
-    // when set, this over-rides color
- //   this._monochrome = 0;
- //   this.mpal = [];
- //   this.cpal = [
- //     [  0,   0,   0], // 0x0 black
- //     [ 96,  78, 189], // 0x2 dark blue
- //     [  0, 163,  96], // 0x4 dark green
- //     [ 20, 207, 253], // 0x6 medium blue
- //     [ 96, 114,   3], // 0x8 brown
- //     [156, 156, 156], // 0xa light gray
- //     [ 20, 245,  60], // 0xc green
- //     [114, 255, 208], // 0xe aquamarine
- //     [227,  30,  96], // 0x1 deep red
- //     [255,  68, 253], // 0x3 purple
- //     [156, 156, 156], // 0x5 dark gray
- //     [208, 195, 255], // 0x7 light blue
- //     [255, 106,  60], // 0x9 orange
- //     [255, 160, 208], // 0xb pink
- //     [208, 221, 141], // 0xd yellow
- //     [255, 255, 255]  // 0xf white
- //   ];
     this.r4 = [
       0,   // Black
       2,   // Dark Blue
@@ -95,52 +73,6 @@ export class DoubleHiresDisplay
     this.reset();
   }
 
- // get fore() {
- //   return this._monochrome;
- // };
- // set fore(rgb) {
- //   this._monochrome = rgb;
- //   if (rgb > 0) {
- //     const r = (rgb >> 16) & 0xff;
- //     const g = (rgb >> 8) & 0xff;
- //     const b = rgb & 0xff;
- //     for (let i=0; i<16; i++) {
- //       const bf = (0.34 * this.cpal[i][0] + 0.5 * this.cpal[i][1] + 0.16 * this.cpal[i][2]) / 0xff;
- //       this.mpal[i] = [
- //         Math.floor(bf * r),
- //         Math.floor(bf * g),
- //         Math.floor(bf * b)
- //       ];
- //     }
- //   }
- //   this.refresh();
- // };
-
- // get back() {
- //   return (this.pal[0][0] << 16) | (this.pal[0][1] << 8) | this.pal[0][2];
- // };
-
- // set back(rgb) {
- //   this.mpal[0][0] = (rgb >> 16) & 0xff;
- //   this.mpal[0][1] = (rgb >> 8) & 0xff;
- //   this.mpal[0][2] = rgb & 0xff;
- //   this.cpal[0][0] = (rgb >> 16) & 0xff;
- //   this.cpal[0][1] = (rgb >> 8) & 0xff;
- //   this.cpal[0][2] = rgb & 0xff;
- //   this.refresh();
- // };
-
-  drawPixel(data, val, color) {
-    var c0 = color[0], c1 = color[1], c2 = color[2];
-    data[val + 0] = c0;
-    data[val + 1] = c1;
-    data[val + 2] = c2;
-    var nextOff = (val + 560) * 4;
-    data[nextOff + 0] = c0;
-    data[nextOff + 1] = c1;
-    data[nextOff + 2] = c2;
-  }
-
   draw(addr) {
     const ae = addr & 0xfffe; // even
     const ao = addr | 0x0001; // odd
@@ -151,13 +83,7 @@ export class DoubleHiresDisplay
     // data is spread across four bytes in main & aux memory
     const id = (addr < 0x4000) ? this._id1 : this._id2;
     this.draw_cell (
-      id,
-      row,
-      col,
-      this._mem._aux[ae], 
-      this._mem._main[ae],
-      this._mem._aux[ao],
-      this._mem._main[ao]
+      id, row, col, this._mem._aux[ae], this._mem._main[ae], this._mem._aux[ao], this._mem._main[ao]
     );
   }
 
@@ -184,21 +110,11 @@ export class DoubleHiresDisplay
       b3 & 0x80, // 6
       0
     ]; // 7
- //   const pal = (this._monochrome > 0) ? this.mpal : this.cpal;
     var r4 = this.r4;
     var dcolors = this.dcolors;
- //   const pca = [
- //     pal[((b0 & 0x0f) >> 0)], // a
- //     pal[((b0 & 0x70) >> 4) | ((b1 & 0x01) << 3)], // b
- //     pal[((b1 & 0x1e) >> 1)], // c
- //     pal[((b1 & 0x60) >> 5) | ((b2 & 0x03) << 2)], // d
- //     pal[((b2 & 0x3c) >> 2)], // e
- //     pal[((b2 & 0x40) >> 6) | ((b3 & 0x07) << 1)], // f
- //     pal[((b3 & 0x78) >> 3)] // g
- //   ];
 
     // row: 0-191, col: 0-39
-    const ox = col * 14 - 2;
+    const ox = col * 14;
     const oy = (row * 2);
     const lo = (ox + oy * 564) * 4;
     const data = id.data;
@@ -211,17 +127,15 @@ export class DoubleHiresDisplay
       var bits = c[po-1] | (c[po] << 4) | (c[po+1] << 8);
       let off = 0;
       for(let jdx = 0; jdx < 4; jdx++, off+=4) {
-
         var c0 = dcolor[0], c1 = dcolor[1], c2 = dcolor[2];
         data[x + off + 0] = c0;
         data[x + off + 1] = c1;
         data[x + off + 2] = c2;
-        var nextOff = (x + off + 564) * 4;
+        var nextOff = (x + off + 560) * 4;
         data[nextOff + 0] = c0;
         data[nextOff + 1] = c1;
         data[nextOff + 2] = c2;
 
-//        rgb = dcolor;
 //        if ((c[po] != c[po - 1]) && (c[po] != c[po + 1]) &&
 //        (((bits & 0x1c) == 0x1c) ||
 //        ((bits & 0x70) == 0x70) ||
@@ -240,11 +154,6 @@ export class DoubleHiresDisplay
 //        rgb[0] = rgb[1] = rgb[2] = 25;
 //        rgb = dcolor;
 //      }
-//      var val=x+off;
-//      drawPixel(data, val, dcolor);
-//        data[x+off+0] = data[x+off+564*4+0] = rgb[0];
-//        data[x+off+1] = data[x+off+564*4+1] = rgb[1];
-//        data[x+off+2] = data[x+off+564*4+2] = rgb[2];
         bits >>= 1;
       }
     }
