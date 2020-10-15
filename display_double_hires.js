@@ -198,7 +198,7 @@ export class DoubleHiresDisplay
     ];
 
     // row: 0-191, col: 0-39
-    const ox = (col * 14);
+    const ox = col * 14 - 2;
     const oy = (row * 2);
     const lo = (ox + oy * 560) * 4;
     const data = id.data;
@@ -279,7 +279,7 @@ export class DoubleHiresDisplay
       reset() {
         const imax = 560 * 384 * 4; // (560+4, 384+6) * rgba
         for (let i=0; i<imax; i+=4) {
-          this._id1.data[i]   = this._id2.data[i]   = 0x00;
+          this._id1.data[i+0] = this._id2.data[i+0] = 0x00;
           this._id1.data[i+1] = this._id2.data[i+1] = 0x00;
           this._id1.data[i+2] = this._id2.data[i+2] = 0x00;
           this._id1.data[i+3] = this._id2.data[i+3] = 0xff;
