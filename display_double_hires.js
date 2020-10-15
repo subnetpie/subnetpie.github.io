@@ -36,26 +36,26 @@ export class DoubleHiresDisplay
     this._page2_init = false;
 
     // when set, this over-rides color
-    this._monochrome = 0;
-    this.mpal = [];
-    this.cpal = [
-      [  0,   0,   0], // 0x0 black
-      [ 96,  78, 189], // 0x2 dark blue
-      [  0, 163,  96], // 0x4 dark green
-      [ 20, 207, 253], // 0x6 medium blue
-      [ 96, 114,   3], // 0x8 brown
-      [156, 156, 156], // 0xa light gray
-      [ 20, 245,  60], // 0xc green
-      [114, 255, 208], // 0xe aquamarine
-      [227,  30,  96], // 0x1 deep red
-      [255,  68, 253], // 0x3 purple
-      [156, 156, 156], // 0x5 dark gray
-      [208, 195, 255], // 0x7 light blue
-      [255, 106,  60], // 0x9 orange
-      [255, 160, 208], // 0xb pink
-      [208, 221, 141], // 0xd yellow
-      [255, 255, 255]  // 0xf white
-    ];
+ //   this._monochrome = 0;
+ //   this.mpal = [];
+ //   this.cpal = [
+ //     [  0,   0,   0], // 0x0 black
+ //     [ 96,  78, 189], // 0x2 dark blue
+ //     [  0, 163,  96], // 0x4 dark green
+ //     [ 20, 207, 253], // 0x6 medium blue
+ //     [ 96, 114,   3], // 0x8 brown
+ //     [156, 156, 156], // 0xa light gray
+ //     [ 20, 245,  60], // 0xc green
+ //     [114, 255, 208], // 0xe aquamarine
+ //     [227,  30,  96], // 0x1 deep red
+ //     [255,  68, 253], // 0x3 purple
+ //     [156, 156, 156], // 0x5 dark gray
+ //     [208, 195, 255], // 0x7 light blue
+ //     [255, 106,  60], // 0x9 orange
+ //     [255, 160, 208], // 0xb pink
+ //     [208, 221, 141], // 0xd yellow
+ //     [255, 255, 255]  // 0xf white
+ //   ];
     this.r4 = [
       0,   // Black
       2,   // Dark Blue
@@ -95,24 +95,24 @@ export class DoubleHiresDisplay
     this.reset();
   }
 
-  get fore() {
-    return this._monochrome;
-  };
-  set fore(rgb) {
-    this._monochrome = rgb;
-    if (rgb > 0) {
-      const r = (rgb >> 16) & 0xff;
-      const g = (rgb >> 8) & 0xff;
-      const b = rgb & 0xff;
-      for (let i=0; i<16; i++) {
-        const bf = (0.34 * this.cpal[i][0] + 0.5 * this.cpal[i][1] + 0.16 * this.cpal[i][2]) / 0xff;
-        this.mpal[i] = [
-          Math.floor(bf * r),
-          Math.floor(bf * g),
-          Math.floor(bf * b)
-        ];
-      }
-    }
+ // get fore() {
+ //   return this._monochrome;
+ // };
+ // set fore(rgb) {
+ //   this._monochrome = rgb;
+ //   if (rgb > 0) {
+ //     const r = (rgb >> 16) & 0xff;
+ //     const g = (rgb >> 8) & 0xff;
+ //     const b = rgb & 0xff;
+ //     for (let i=0; i<16; i++) {
+ //       const bf = (0.34 * this.cpal[i][0] + 0.5 * this.cpal[i][1] + 0.16 * this.cpal[i][2]) / 0xff;
+ //       this.mpal[i] = [
+ //         Math.floor(bf * r),
+ //         Math.floor(bf * g),
+ //         Math.floor(bf * b)
+ //       ];
+ //     }
+ //   }
     this.refresh();
   };
 
