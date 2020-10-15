@@ -186,7 +186,7 @@ export class DoubleHiresDisplay
     ]; // 7
     const pal = (this._monochrome > 0) ? this.mpal : this.cpal;
     var r4 = this.r4;
- //   var dcolors = this.dcolors;
+    var dcolors = this.dcolors;
     const pca = [
       pal[((b0 & 0x0f) >> 0)], // a
       pal[((b0 & 0x70) >> 4) | ((b1 & 0x01) << 3)], // b
