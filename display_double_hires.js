@@ -211,7 +211,17 @@ export class DoubleHiresDisplay
       var bits = c[po-1] | (c[po] << 4) | (c[po+1] << 8);
       let off = 0;
       for(let jdx = 0; jdx < 4; jdx++, off+=4) {
-        rgb = dcolor;
+
+        var c0 = color[0], c1 = color[1], c2 = color[2];
+        data[x + off + 0] = c0;
+        data[x + off + 1] = c1;
+        data[x + off + 2] = c2;
+        var nextOff = (x + off + 564) * 4;
+        data[nextOff + 0] = c0;
+        data[nextOff + 1] = c1;
+        data[nextOff + 2] = c2;
+
+//        rgb = dcolor;
 //        if ((c[po] != c[po - 1]) && (c[po] != c[po + 1]) &&
 //        (((bits & 0x1c) == 0x1c) ||
 //        ((bits & 0x70) == 0x70) ||
@@ -232,9 +242,9 @@ export class DoubleHiresDisplay
 //      }
 //      var val=x+off;
 //      drawPixel(data, val, dcolor);
-        data[x+off+0] = data[x+off+564*4+0] = rgb[0];
-        data[x+off+1] = data[x+off+564*4+1] = rgb[1];
-        data[x+off+2] = data[x+off+564*4+2] = rgb[2];
+//        data[x+off+0] = data[x+off+564*4+0] = rgb[0];
+//        data[x+off+1] = data[x+off+564*4+1] = rgb[1];
+//        data[x+off+2] = data[x+off+564*4+2] = rgb[2];
         bits >>= 1;
       }
     }
