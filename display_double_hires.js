@@ -157,11 +157,16 @@ export class DoubleHiresDisplay
 
     // data is spread across four bytes in main & aux memory
     const id = (addr < 0x4000) ? this._id1 : this._id2;
-    this.draw_cell(id, row, col, this._mem._aux[ae], this._mem._main[ae],
-                                 this._mem._aux[ao], this._mem._main[ao]);
+    this.draw_cell(
+      id,
+      row,
+      col,
+      this._mem._aux[ae], 
+      this._mem._main[ae],
+      this._mem._aux[ao],
+      this._mem._main[ao]
+    );
   }
-
-
 
   draw_cell(id, row, col, b0, b1, b2, b3) {
 
@@ -190,8 +195,8 @@ export class DoubleHiresDisplay
     ]; // 7
 
     const pal = (this._monochrome > 0) ? this.mpal : this.cpal;
-    const r4 = this.r4;
-    const dcolors = this.dcolors;
+ //   var r4 = this.r4;
+ //   var dcolors = this.dcolors;
     const pca = [
       pal[((b0 & 0x0f) >> 0)], // a
       pal[((b0 & 0x70) >> 4) | ((b1 & 0x01) << 3)], // b
@@ -214,25 +219,20 @@ export class DoubleHiresDisplay
  //     var hbs = hb[po];
  //     var dcolor = dcolors[r4[c[po]]];
  //     var bits = c[po-1] | (c[po] << 4) | (c[po+1] << 8);      
-
- //      for (idx = 1; idx < 8; idx++) {
-
-         let off = 0;
-         for(let jdx = 0; jdx <= 4; jdx++) {
-
-          rgb = pca[po];
+ //     for (idx = 1; idx < 8; idx++) {
+      let off = 0;
+      for(let jdx = 0; jdx <= 4; jdx++) {
+        rgb = pca[po];
 
 //          if ((c[po] != c[po - 1]) && (c[po] != c[po + 1]) &&
 //             (((bits & 0x1c) == 0x1c) ||
 //             ((bits & 0x70) == 0x70) ||
 //             ((bits & 0x38) == 0x38))) 
 //          {
-  //          rgb[0] = rgb[1] = rgb[2] = 255;
-  //        } else {
-  
+//            rgb[0] = rgb[1] = rgb[2] = 255;
+//          } else {
 //          }
-
- //         drawPixel(x+off, rgb);
+//          drawPixel(x+off, rgb);
 
           data[x+off+0] = data[x+off+2256] = rgb[0];
           data[x+off+1] = data[x+off+2257] = rgb[1];
