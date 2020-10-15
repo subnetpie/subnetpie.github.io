@@ -68,9 +68,9 @@ export class DoubleHiresDisplay
       1,   // Red
       3,   // Purple
       10,  // Gray 2
-      7,  // Pink
+      7,   // Pink
       9,   // Orange
-      11,   // Light Blue
+      11,  // Light Blue
       13,  // Yellow
       15   // White
     ];
@@ -90,7 +90,7 @@ export class DoubleHiresDisplay
       [ 20, 245,  60], // 0xc green
       [208, 221, 141], // 0xd yellow
       [114, 255, 208], // 0xe aquamarine
-      [255, 255, 255] // 0xf white
+      [255, 255, 255]  // 0xf white
     ];
     this.reset();
   }
@@ -222,11 +222,11 @@ export class DoubleHiresDisplay
 //        (c[po] == c[po - 1])) {
 //          rgb = dcolor;
 //        } else 
-if (bits & 0x28) {
+  if (bits & 0x28) {
 
-          rgb[0] * 0.75 & 0xff;
-          rgb[1] * 0.75 & 0xff;
-          rgb[2] * 0.75 & 0xff;
+          rgb[0] = rgb[0] * 0.75 & 0xff;
+          rgb[1] = rgb[1] * 0.75 & 0xff;
+          rgb[2] = rgb[2] * 0.75 & 0xff;
 
         } else {
 //          rgb[0] = rgb[1] = rgb[2] = 25;
