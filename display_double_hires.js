@@ -213,7 +213,7 @@ export class DoubleHiresDisplay
 //      for (idx = 1; idx < 8; idx++) {
       let off = 0;
       for(let jdx = 0; jdx <= 4; jdx++) {
-        rgb = pca[po];
+        rgb = dcolor;
 //        if ((c[po] != c[po - 1]) && (c[po] != c[po + 1]) &&
 //           (((bits & 0x1c) == 0x1c) ||
 //           ((bits & 0x70) == 0x70) ||
