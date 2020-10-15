@@ -208,8 +208,7 @@ export class DoubleHiresDisplay
     for(let x=lo, xmax=lo+112; x<xmax; x+=16, po++) {
       var hbs = hb[po];
       var dcolor = dcolors[r4[c[po]]];
-      var bits = c[po-1] | (c[po] << 4) | (c[po+1] << 8);      
-//      for (idx = 1; idx < 8; idx++) {
+      var bits = c[po-1] | (c[po] << 4) | (c[po+1] << 8);
       let off = 0;
       for(let jdx = 0; jdx <= 4; jdx++) {
         rgb = dcolor;
@@ -238,7 +237,7 @@ export class DoubleHiresDisplay
         data[x+off+1] = data[x+off+2257] = rgb[1];
         data[x+off+2] = data[x+off+2258] = rgb[2];
         off += 4;
-        bits >>= 1;
+//        bits >>= 1;
       }
     }
     if(id == this._id) this._context.putImageData(this._id, 0, 0, ox, oy, 28, 2);
