@@ -278,7 +278,7 @@ export class DoubleHiresDisplay
       }
 
       reset() {
-        const imax = 564 * 390 * 4; // (560+4, 384+6) * rgba
+        const imax = 560 * 384 * 4; // (560+4, 384+6) * rgba
         for (let i=0; i<imax; i+=4) {
           this._id1.data[i]   = this._id2.data[i]   = 0x00;
           this._id1.data[i+1] = this._id2.data[i+1] = 0x00;
