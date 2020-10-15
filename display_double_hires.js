@@ -219,15 +219,26 @@ export class DoubleHiresDisplay
            ((bits & 0x38) == 0x38))) 
         {
           rgb[0] = rgb[1] = rgb[2] = 255;
-        } else {
+        } else  if ((bits & 0x38) ||
+            (c[idx] == c[idx + 1]) ||
+            (c[idx] == c[idx - 1])) 
+        {
           rgb = dcolor;
+        } else if (bits & 0x28)
+        {
+          rgb[0] = dcolor[0]*.75;
+          rgb[1] = dcolor[1]*.75;
+          rgb[2] = dcolor[2]*.75;
+        } else 
+          rgb[0] = rgb[1] = rgb[2] = 0;
         }
-        var val=x+off;
-        drawPixel(data, val, dcolor);
-//        data[x+off+0] = data[x+off+2256] = rgb[0];
-//        data[x+off+1] = data[x+off+2257] = rgb[1];
-//        data[x+off+2] = data[x+off+2258] = rgb[2];
+//        var val=x+off;
+//        drawPixel(data, val, dcolor);
+        data[x+off+0] = data[x+off+2256] = rgb[0];
+        data[x+off+1] = data[x+off+2257] = rgb[1];
+        data[x+off+2] = data[x+off+2258] = rgb[2];
         off += 4;
+        bits >>= 1;
       }
     }
     if(id == this._id) this._context.putImageData(this._id, 0, 0, ox, oy, 28, 2);
