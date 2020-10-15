@@ -227,6 +227,7 @@ export class DoubleHiresDisplay
           rgb[2] = dcolor[2]*.75;
         } else {
           rgb[0] = rgb[1] = rgb[2] = 0;
+          rgb = dcolor;
         }
 //        var val=x+off;
 //        drawPixel(data, val, dcolor);
