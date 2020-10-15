@@ -196,7 +196,7 @@ export class DoubleHiresDisplay
       pal[((b2 & 0x40) >> 6) | ((b3 & 0x07) << 1)], // f
       pal[((b3 & 0x78) >> 3)] // g
     ];
-Thank 
+
     // row: 0-191, col: 0-39
     const ox = (col * 14) + 1;
     const oy = (row * 2) + 3;
