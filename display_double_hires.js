@@ -61,17 +61,14 @@ export class DoubleHiresDisplay
         2,   // Dark Blue
         4,   // Dark Green
         6,   // Medium Blue
-
         8,   // Brown
         5,   // Gray 1
         12,  // Light Green
         14,  // Aqua
-
         1,   // Red
         3,   // Purple
         10,  // Gray 2
         7,  // Pink
-
         9,   // Orange
         11,   // Light Blue
         13,  // Yellow
@@ -188,7 +185,7 @@ export class DoubleHiresDisplay
       0
     ]; // 7
     const pal = (this._monochrome > 0) ? this.mpal : this.cpal;
- //   var r4 = this.r4;
+    var r4 = this.r4;
  //   var dcolors = this.dcolors;
     const pca = [
       pal[((b0 & 0x0f) >> 0)], // a
