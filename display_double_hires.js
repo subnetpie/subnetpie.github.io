@@ -213,18 +213,15 @@ export class DoubleHiresDisplay
       for(let jdx = 0; jdx <= 4; jdx++) {
         rgb = dcolor;
         if ((c[po] != c[po - 1]) && (c[po] != c[po + 1]) &&
-           (((bits & 0x1c) == 0x1c) ||
-           ((bits & 0x70) == 0x70) ||
-           ((bits & 0x38) == 0x38))) 
-        {
+        (((bits & 0x1c) == 0x1c) ||
+        ((bits & 0x70) == 0x70) ||
+        ((bits & 0x38) == 0x38))) {
           rgb[0] = rgb[1] = rgb[2] = 255;
         } else if ((bits & 0x38) ||
-            (c[idx] == c[idx + 1]) ||
-            (c[idx] == c[idx - 1])) 
-        {
+        (c[idx] == c[idx + 1]) ||
+        (c[idx] == c[idx - 1])) {
           rgb = dcolor;
-        } else if (bits & 0x28)
-        {
+        } else if (bits & 0x28) {
           rgb[0] = dcolor[0]*.75;
           rgb[1] = dcolor[1]*.75;
           rgb[2] = dcolor[2]*.75;
