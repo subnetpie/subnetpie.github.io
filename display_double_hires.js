@@ -212,7 +212,7 @@ export class DoubleHiresDisplay
       let off = 0;
       for(let jdx = 0; jdx < 4; jdx++, off+=4) {
 
-        var c0 = color[0], c1 = color[1], c2 = color[2];
+        var c0 = dcolor[0], c1 = dcolor[1], c2 = dcolor[2];
         data[x + off + 0] = c0;
         data[x + off + 1] = c1;
         data[x + off + 2] = c2;
