@@ -131,7 +131,7 @@ export class DoubleHiresDisplay
         data[x+off+0] = c0;
         data[x+off+1] = c1;
         data[x+off+2] = c2;
-        var nextOff = (x + off + 560) * 4;
+        var nextOff = off + 564 * 4;
         data[x+nextOff+0] = c0;
         data[x+nextOff+1] = c1;
         data[x+nextOff+2] = c2;
