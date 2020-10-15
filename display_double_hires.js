@@ -205,12 +205,12 @@ export class DoubleHiresDisplay
 
     let po = 0;
     var rgb;
-    for(let x=lo, xmax=lo; x<xmax; x+=16, po++) {
+    for(let x=lo, xmax=lo+112; x<xmax; x+=16, po++) {
       var hbs = hb[po];
       var dcolor = dcolors[r4[c[po]]];
       var bits = c[po-1] | (c[po] << 4) | (c[po+1] << 8);
       let off = 0;
-      for(let jdx = 0; jdx <= 4; jdx++) {
+      for(let jdx = 0; jdx < 4; jdx++, off+=4) {
         rgb = dcolor;
 //        if ((c[po] != c[po - 1]) && (c[po] != c[po + 1]) &&
 //        (((bits & 0x1c) == 0x1c) ||
@@ -235,7 +235,6 @@ export class DoubleHiresDisplay
         data[x+off+0] = data[x+off+560*4+0] = rgb[0];
         data[x+off+1] = data[x+off+560*4+1] = rgb[1];
         data[x+off+2] = data[x+off+560*4+2] = rgb[2];
-        off += 4;
         bits >>= 1;
       }
     }
