@@ -223,9 +223,11 @@ export class DoubleHiresDisplay
 //          rgb = dcolor;
 //        } else 
 if (bits & 0x28) {
-          rgb[0] = dcolor[0]*.75;
-          rgb[1] = dcolor[1]*.75;
-          rgb[2] = dcolor[2]*.75;
+
+          rgb[0] * 0.75 & 0xff;
+          rgb[1] * 0.75 & 0xff;
+          rgb[2] * 0.75 & 0xff;
+
         } else {
 //          rgb[0] = rgb[1] = rgb[2] = 25;
           rgb = dcolor;
