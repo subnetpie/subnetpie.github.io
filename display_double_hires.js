@@ -222,18 +222,16 @@ export class DoubleHiresDisplay
 //        (c[po] == c[po - 1])) {
 //          rgb = dcolor;
 //        } else 
-//  if (bits & 0x28) {
-
-  //        rgb[0] = rgb[0] * 0.75 & 0xff;
-  //        rgb[1] = rgb[1] * 0.75 & 0xff;
-  //        rgb[2] = rgb[2] * 0.75 & 0xff;
-
- //       } else {
-//          rgb[0] = rgb[1] = rgb[2] = 25;
-//          rgb = dcolor;
-//        }
-//        var val=x+off;
-//        drawPixel(data, val, dcolor);
+//      if (bits & 0x28) {
+//        rgb[0] = rgb[0] * 0.75 & 0xff;
+//        rgb[1] = rgb[1] * 0.75 & 0xff;
+//        rgb[2] = rgb[2] * 0.75 & 0xff;
+//      } else {
+//        rgb[0] = rgb[1] = rgb[2] = 25;
+//        rgb = dcolor;
+//      }
+//      var val=x+off;
+//      drawPixel(data, val, dcolor);
         data[x+off+0] = data[x+off+2256] = rgb[0];
         data[x+off+1] = data[x+off+2257] = rgb[1];
         data[x+off+2] = data[x+off+2258] = rgb[2];
