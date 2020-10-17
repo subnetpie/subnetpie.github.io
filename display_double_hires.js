@@ -81,6 +81,7 @@ export class DoubleHiresDisplay
     const row = ((ac0 << 1) & 0xc0) | ((ac0 >> 4) & 0x38) | ((ac0 >> 10) & 0x07);
     if(row > 191) return;
     // data is spread across four bytes in main & aux memory
+    const id = (addr < 0x4000) ? this._id1 : this._id2;
     this.draw_cell (
       id, row, col, this._mem._aux[ae], this._mem._main[ae], this._mem._aux[ao], this._mem._main[ao]
     );
@@ -116,7 +117,6 @@ export class DoubleHiresDisplay
     const ox = col * 14 - 2;
     const oy = (row * 2);
     const lo = (ox + oy * 560) * 4;
-    const id = (addr < 0x4000) ? this._id1 : this._id2;
     const data = id.data;
 
     let po = 1;
@@ -136,7 +136,9 @@ export class DoubleHiresDisplay
         } else if ((bits & 0x38) ||
         (c[po] == c[po + 1]) ||
         (c[po] == c[po - 1])) {
-          var c0 = dcolor[0], c1 = dcolor[1], c2 = dcolor[2];
+          c0 = dcolor[0];
+          c1 = dcolor[1];
+          c2 = dcolor[2];
         } else if (bits & 0x28) {
           c0 = dcolor[0] * 0.75 & 0xff;
           c1 = dcolor[1] * 0.75 & 0xff;
