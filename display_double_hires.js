@@ -114,7 +114,7 @@ export class DoubleHiresDisplay
     var dcolors = this.dcolors;
 
     // row: 0-191, col: 0-39
-    const ox = col * 14;
+    const ox = col * 14 - 2;
     const oy = (row * 2);
     const lo = (ox + oy * 564) * 4;
     const data = id.data;
