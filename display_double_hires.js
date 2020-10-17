@@ -22,15 +22,15 @@ export class DoubleHiresDisplay
   constructor(memory, canvas, hlines, vlines) {
     this._mem = memory;
 
-    canvas.width = 564;  // 7*2*40 + 4
-    canvas.height = 390; // 8*2*24 + 6
+    canvas.width = 560;  // 7*2*40 + 4
+    canvas.height = 384; // 8*2*24 + 6
 
     this._context = canvas.getContext('2d', {alpha: false});
     this._context.imageSmoothingEnabled = false;
     this._context.webkitImageSmoothingEnabled = false;
 
-    this._id1 = this._context.createImageData(564, 390);
-    this._id2 = this._context.createImageData(564, 390);
+    this._id1 = this._context.createImageData(560, 384);
+    this._id2 = this._context.createImageData(560, 384);
     this._id = undefined;
     this._page1_init = false;
     this._page2_init = false;
@@ -116,7 +116,7 @@ export class DoubleHiresDisplay
     // row: 0-191, col: 0-39
     const ox = col * 14 - 2;
     const oy = (row * 2);
-    const lo = (ox + oy * 564) * 4;
+    const lo = (ox + oy * 560) * 4;
     const data = id.data;
 
     let po = 1;
@@ -148,7 +148,7 @@ export class DoubleHiresDisplay
         data[x+off+0] = c0;
         data[x+off+1] = c1;
         data[x+off+2] = c2;
-        var nextOff = off + 564 * 4;
+        var nextOff = off + 560 * 4;
         data[x+nextOff+0] = c0;
         data[x+nextOff+1] = c1;
         data[x+nextOff+2] = c2;
@@ -195,7 +195,7 @@ export class DoubleHiresDisplay
       }
 
       reset() {
-        const imax = 564 * 390 * 4; // (560+4, 384+6) * rgba
+        const imax = 560 * 384 * 4; // (560+4, 384+6) * rgba
         for (let i=0; i<imax; i+=4) {
           this._id1.data[i+0] = this._id2.data[i+0] = 0x00;
           this._id1.data[i+1] = this._id2.data[i+1] = 0x00;
