@@ -142,6 +142,8 @@ export class DoubleHiresDisplay
           c0 = dcolor[0] * 0.75 & 0xff;
           c1 = dcolor[1] * 0.75 & 0xff;
           c2 = dcolor[2] * 0.75 & 0xff;
+        } else {
+          c0 = c1 = c2 = 0;
         }
 
         data[x+off+0] = c0;
@@ -151,10 +153,7 @@ export class DoubleHiresDisplay
         data[x+nextOff+0] = c0;
         data[x+nextOff+1] = c1;
         data[x+nextOff+2] = c2;
-//      } else {
-//        rgb[0] = rgb[1] = rgb[2] = 25;
-//        rgb = dcolor;
-//        }
+
         bits >>= 1;
       }
     }
