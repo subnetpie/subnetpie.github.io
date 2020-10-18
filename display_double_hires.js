@@ -117,7 +117,6 @@ export class DoubleHiresDisplay
     const ox = col * 14 - 2;
     const oy = (row * 2);
     const lo = (ox + oy * 560) * 4;
-    id = (addr < 0x4000) ? this._id1 : this._id2;
     const data = id.data;
 
     let po = 1;
