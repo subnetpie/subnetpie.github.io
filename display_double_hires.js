@@ -110,6 +110,17 @@ export class DoubleHiresDisplay
       b3 & 0x80, // 6
       0
     ]; // 7
+    if (col > 0) {
+ //     c[0] = (bz & 0x78) >> 3;
+ //     hb[0] = bz & 0x80;
+    }
+    if (col < 39) {
+ //     c[8] = b4 & 0x0f;
+ //     hb[8] = b4 & 0x80;
+    }
+ //   dx = mcol * 14;
+ //   off = dx * 4 + dy * 280 * 4 * 2;
+
     var r4 = this.r4;
     var dcolors = this.dcolors;
 
