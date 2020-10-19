@@ -118,35 +118,36 @@ export class DoubleHiresDisplay
  //     c[8] = b4 & 0x0f;
  //     hb[8] = b4 & 0x80;
     }
- //   dx = mcol * 14;
- //   off = dx * 4 + dy * 280 * 4 * 2;
+//    dx = mcol * 14;
+//    off = dx * 4 + dy * 280 * 4 * 2;
 
     var r4 = this.r4;
     var dcolors = this.dcolors;
 
     // row: 0-191, col: 0-39
-    const ox = col * 14 - 2;
+    const ox = (col * 14);
     const oy = (row * 2);
     const lo = (ox + oy * 560) * 4;
     const data = id.data;
 
-    let po = 1;
-    for(let x=lo, xmax=lo+112; x<xmax; x+=16, po++) {
-      var hbs = hb[po];
-      var dcolor = dcolors[r4[c[po]]];
-      var bits = c[po-1] | (c[po] << 4) | (c[po+1] << 8);
-      let off = 0;
+    let off = lo;
+    for (idx = 1; idx < 8; idx++, off+=20) {
+//    let po = 1;
+//    for(let x=lo, xmax=lo+112; x<xmax; x+=16, po++) {
+      var hbs = hb[idx];
+      var dcolor = dcolors[r4[c[idx]]];
+      var bits = c[idx-1] | (c[idx] << 4) | (c[idx+1] << 8);
       for(let jdx = 0; jdx < 4; jdx++, off+=4) {
         var c0 = dcolor[0], c1 = dcolor[1], c2 = dcolor[2];
 
-        if ((c[po] != c[po - 1]) && (c[po] != c[po + 1]) &&
+        if ((c[idx] != c[idx - 1]) && (c[idx] != c[idx + 1]) &&
         (((bits & 0x1c) == 0x1c) ||
         ((bits & 0x70) == 0x70) ||
         ((bits & 0x38) == 0x38))) {
           c0 = c1 = c2 = 255;
         } else if ((bits & 0x38) ||
-        (c[po] == c[po + 1]) ||
-        (c[po] == c[po - 1])) {
+        (c[idx] == c[idx + 1]) ||
+        (c[idx] == c[idx - 1])) {
           c0 = dcolor[0];
           c1 = dcolor[1];
           c2 = dcolor[2];
@@ -158,13 +159,13 @@ export class DoubleHiresDisplay
           c0 = c1 = c2 = 0;
         }
 
-        data[x+off+0] = c0;
-        data[x+off+1] = c1;
-        data[x+off+2] = c2;
+        data[off+0] = c0;
+        data[off+1] = c1;
+        data[off+2] = c2;
         var nextOff = off + 560 * 4;
-        data[x+nextOff+0] = c0;
-        data[x+nextOff+1] = c1;
-        data[x+nextOff+2] = c2;
+        data[nextOff+0] = c0;
+        data[nextOff+1] = c1;
+        data[nextOff+2] = c2;
 
         bits >>= 1;
       }
