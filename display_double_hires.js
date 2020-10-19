@@ -121,7 +121,7 @@ export class DoubleHiresDisplay
     const data = id.data;
 
     let off = lo;
-    for (idx = 1; idx < 8; idx++, off+=20) {
+    for (idx = 1; idx < 8; idx++, off+=16) {
 //      let po = 1;
 //      for(let x=lo, xmax=lo+112; x<xmax; x+=16, po++) {
       var hbs = hb[idx];
@@ -149,13 +149,13 @@ export class DoubleHiresDisplay
           c0 = c1 = c2 = 0;
         }
 
-        data[off+0] = c0;
-        data[off+1] = c1;
-        data[off+2] = c2;
+        data[off+(jdx*4)+0] = c0;
+        data[off+(jdx*4)+1] = c1;
+        data[off+(jdx*4)+2] = c2;
         var nextOff = off + 560 * 4;
-        data[nextOff+0] = c0;
-        data[nextOff+1] = c1;
-        data[nextOff+2] = c2;
+        data[nextOff+(jdx*4)+0] = c0;
+        data[nextOff+(jdx*4)+1] = c1;
+        data[nextOff+(jdx*4)+2] = c2;
 
         bits >>= 1;
       }
