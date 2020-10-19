@@ -110,16 +110,6 @@ export class DoubleHiresDisplay
       b3 & 0x80, // 6
       0
     ]; // 7
-    if (col > 0) {
- //     c[0] = (bz & 0x78) >> 3;
- //     hb[0] = bz & 0x80;
-    }
-    if (col < 39) {
- //     c[8] = b4 & 0x0f;
- //     hb[8] = b4 & 0x80;
-    }
-//    dx = mcol * 14;
-//    off = dx * 4 + dy * 280 * 4 * 2;
 
     var r4 = this.r4;
     var dcolors = this.dcolors;
@@ -132,12 +122,12 @@ export class DoubleHiresDisplay
 
     let off = lo;
     for (idx = 1; idx < 8; idx++, off+=20) {
-//    let po = 1;
-//    for(let x=lo, xmax=lo+112; x<xmax; x+=16, po++) {
+//      let po = 1;
+//      for(let x=lo, xmax=lo+112; x<xmax; x+=16, po++) {
       var hbs = hb[idx];
       var dcolor = dcolors[r4[c[idx]]];
       var bits = c[idx-1] | (c[idx] << 4) | (c[idx+1] << 8);
-      for(let jdx = 0; jdx < 4; jdx++, off+=4) {
+      for(let jdx = 0; jdx < 4; jdx++) {
         var c0 = dcolor[0], c1 = dcolor[1], c2 = dcolor[2];
 
         if ((c[idx] != c[idx - 1]) && (c[idx] != c[idx + 1]) &&
