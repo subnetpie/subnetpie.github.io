@@ -128,7 +128,7 @@ export class DoubleHiresDisplay
       var dcolor = dcolors[r4[c[idx]]];
       var bits = c[idx-1] | (c[idx] << 4) | (c[idx+1] << 8);
       let off=0;
-      for(let jdx = 0; jdx < 4; jdx++) {
+      for(let jdx = 0; jdx < 4; jdx++, off+=4) {
         var c0 = dcolor[0], c1 = dcolor[1], c2 = dcolor[2];
 
         if ((c[idx] != c[idx - 1]) && (c[idx] != c[idx + 1]) &&
