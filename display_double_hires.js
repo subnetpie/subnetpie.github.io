@@ -161,7 +161,8 @@ export class DoubleHiresDisplay
         bits >>= 1;
       }
     }
-    if(id == this._id) this._context.putImageData(this._id, 0, 0, ox, oy, 28, 2);
+    if(id == this._id) this._context.putImageData(this._id, 0, 0, ox, oy, 30, 2);
+   //                        context.putImageData(_ageData, 0, 0, left, top, right - left, bottom - top
   }
 
     refresh() {
