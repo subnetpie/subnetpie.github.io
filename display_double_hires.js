@@ -136,12 +136,12 @@ export class DoubleHiresDisplay
         ((bits & 0x70) == 0x70) ||
         ((bits & 0x38) == 0x38))) {
           c0 = c1 = c2 = 255;
-        } else if ((bits & 0x38) ||
-        (c[idx] == c[idx + 1]) ||
-        (c[idx] == c[idx - 1])) {
-          c0 = dcolor[0];
-          c1 = dcolor[1];
-          c2 = dcolor[2];
+  //      } else if ((bits & 0x38) ||
+  //      (c[idx] == c[idx + 1]) ||
+  //      (c[idx] == c[idx - 1])) {
+  //        c0 = dcolor[0];
+  //        c1 = dcolor[1];
+  //        c2 = dcolor[2];
         } else if (bits & 0x28) {
           c0 = dcolor[0] * 0.75 & 0xff;
           c1 = dcolor[1] * 0.75 & 0xff;
