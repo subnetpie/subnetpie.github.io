@@ -112,6 +112,15 @@ export class DoubleHiresDisplay
       0
     ]; // 7
 
+    if (col > 0) {
+       c[0] = (bz & 0x78) >> 3;
+       hb[0] = bz & 0x80;
+     }
+     if (col < 39) {
+       c[8] = b4 & 0x0f;
+       hb[8] = b4 & 0x80;
+     }
+
     var r4 = this.r4;
     var dcolors = this.dcolors;
 
@@ -150,7 +159,7 @@ export class DoubleHiresDisplay
           c1 = 0x00; //dcolor[1] * 0.75 & 0xff;
           c2 = 0x00; //dcolor[2] * 0.75 & 0xff;
         } else {
- //         c0 = c1 = c2 = 0;
+          c0 = c1 = c2 = 0;
         }
 
         data[x+off+0] = c0;
