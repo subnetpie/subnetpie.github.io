@@ -162,7 +162,7 @@ export class DoubleHiresDisplay
       }
     }
  // void ctx.putImageData(imageData, dx, dy, dirtyX, dirtyY, dirtyWidth, dirtyHeight);
-    if(id == this._id) this._context.putImageData(this._id, 0, 0, ox+5, oy, 28, 2);
+    if (id == this._id) this._context.putImageData(this._id, 5, 0, ox, oy, 28, 2);
   }
 
     refresh() {
