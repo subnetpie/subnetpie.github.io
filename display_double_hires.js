@@ -131,18 +131,20 @@ export class DoubleHiresDisplay
       for(let jdx = 0; jdx < 4; jdx++, off+=4) {
         var c0 = dcolor[0], c1 = dcolor[1], c2 = dcolor[2];
 
+// 1c = 28, 28 = 40, 38 = 56 (2x28), 70 = 112 (4x28)
+
         if ((c[idx] != c[idx - 1]) && (c[idx] != c[idx + 1]) &&
         (((bits & 0x1c) == 0x1c) ||
         ((bits & 0x70) == 0x70) ||
         ((bits & 0x38) == 0x38))) {
           c0 = c1 = c2 = 255;
-  //      } else if ((bits & 0x38) ||
-  //      (c[idx] == c[idx + 1]) ||
-  //      (c[idx] == c[idx - 1])) {
-  //        c0 = dcolor[0];
-  //        c1 = dcolor[1];
-  //        c2 = dcolor[2];
-        } else if (bits & 0x28) {
+        } else if ((bits & 0x38) ||
+        (c[idx] == c[idx + 1]) ||
+        (c[idx] == c[idx - 1])) {
+          c0 = dcolor[0];
+          c1 = dcolor[1];
+          c2 = dcolor[2];
+        } else if (bits & 0x2a) {
           c0 = dcolor[0] * 0.75 & 0xff;
           c1 = dcolor[1] * 0.75 & 0xff;
           c2 = dcolor[2] * 0.75 & 0xff;
