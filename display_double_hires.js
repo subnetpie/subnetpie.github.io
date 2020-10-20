@@ -144,12 +144,11 @@ export class DoubleHiresDisplay
           c0 = dcolor[0];
           c1 = dcolor[1];
           c2 = dcolor[2];
+        } else if (bits & 0x28) {
+          c0 = 0xff; //dcolor[0] * 0.75 & 0xff;
+          c1 = 0x00; //dcolor[1] * 0.75 & 0xff;
+          c2 = 0x00; //dcolor[2] * 0.75 & 0xff;
         } else {
-//if (bits & 0x2a) {
-          c0 = dcolor[0] * 0.75 & 0xff;
-          c1 = dcolor[1] * 0.75 & 0xff;
-          c2 = dcolor[2] * 0.75 & 0xff;
- //       } else {
  //         c0 = c1 = c2 = 0;
         }
 
