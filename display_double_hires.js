@@ -74,6 +74,7 @@ export class DoubleHiresDisplay
   }
 
   draw(addr) {
+    const az = addr - 1 & 0xfffe;
     const ae = addr & 0xfffe; // even
     const ao = addr | 0x0001; // odd
     const col = (ae & 0x7f) % 40;  // column: 0-39
@@ -83,11 +84,11 @@ export class DoubleHiresDisplay
     // data is spread across four bytes in main & aux memory
     const id = (addr < 0x4000) ? this._id1 : this._id2;
     this.draw_cell (
-      id, row, col, this._mem._aux[ae], this._mem._main[ae], this._mem._aux[ao], this._mem._main[ao]
+      id, row, col, this._mem._main[ae-1], this._mem._aux[ae], this._mem._main[ae], this._mem._aux[ao], this._mem._main[ao], this._mem._aux[ao+1]
     );
   }
 
-  draw_cell(id, row, col, b0, b1, b2, b3) {
+  draw_cell(id, row, col, bz, b0, b1, b2, b3, b4) {
     const c = [
       0,
       ((b0 & 0x0f) >> 0), // 0
