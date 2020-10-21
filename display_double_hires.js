@@ -130,8 +130,6 @@ export class DoubleHiresDisplay
     const lo = (ox + oy * 560) * 4;
     const data = id.data;
 
-//    let off = lo;
-//    for (idx = 1; idx < 8; idx++, off+=16) {
       let idx = 1;
       for(let x=lo, xmax=lo+112; x<xmax; x+=16, idx++) {
       var hbs = hb[idx];
@@ -140,9 +138,6 @@ export class DoubleHiresDisplay
       let off=0;
       for(let jdx = 0; jdx < 4; jdx++, off+=4) {
         var c0 = dcolor[0], c1 = dcolor[1], c2 = dcolor[2];
-
-// 1c = 28, 28 = 40, 38 = 56 (2x28), 70 = 112 (4x28)
-
         if ((c[idx] != c[idx - 1]) && (c[idx] != c[idx + 1]) &&
         (((bits & 0x1c) == 0x1c) ||
         ((bits & 0x70) == 0x70) ||
@@ -174,7 +169,8 @@ export class DoubleHiresDisplay
       }
     }
  // void ctx.putImageData(imageData, dx, dy, dirtyX, dirtyY, dirtyWidth, dirtyHeight);
-    if (id == this._id) this._context.putImageData(this._id, -1, 0, ox, oy, 28, 2);
+ //   if (id == this._id) 
+this._context.putImageData(this._id, -1, 0, ox, oy, 28, 2);
   }
 
     refresh() {
