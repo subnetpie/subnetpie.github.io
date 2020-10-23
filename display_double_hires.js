@@ -169,7 +169,7 @@ export class DoubleHiresDisplay
       }
     }
  // void ctx.putImageData(imageData, dx, dy, dirtyX, dirtyY, dirtyWidth, dirtyHeight);
-    if (id == this._id) this._context.putImageData(this._id, -1, 0, ox, oy, 28, 2);
+    if (id == this._id) this._context.putImageData(this._id, 0, 0, ox, oy, 28, 2);
   }
 
     refresh() {
@@ -177,13 +177,12 @@ export class DoubleHiresDisplay
         this._id = undefined; // suspend rendering
         for (let a=0x2000; a<0x4000; a++) this.draw(a);
           this._id = this._id1;
-          this._context.putImageData(this._id, 0, 0);
         } else if (this._id == this._id2) {
           this._id = undefined; // suspend rendering
           for (let a=0x4000; a<0x6000; a++) this.draw(a);
           this._id = this._id2;
-          this._context.putImageData(this._id, 0, 0);
         }
+        this._context.putImageData(this._id, 0, 0);
       }
     
       set_active_page(page) {
