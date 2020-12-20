@@ -176,47 +176,49 @@ export class DoubleHiresDisplay
       if (this._id == this._id1) {
         this._id = undefined; // suspend rendering
         for (let a=0x2000; a<0x4000; a++) this.draw(a);
-          this._id = this._id1;
-        } else if (this._id == this._id2) {
+        for (let a=0x4000; a<0x6000; a++) this.draw(a);
+        this._id = this._id1;
+      } else if (this._id == this._id2) {
+        this._id = undefined; // suspend rendering
+        for (let a=0x2000; a<0x4000; a++) this.draw(a);
+        for (let a=0x4000; a<0x6000; a++) this.draw(a);
+        this._id = this._id2;
+      }
+      this._context.putImageData(this._id, 0, 0);
+    }
+    
+    set_active_page(page) {
+      if (page != 2) {
+        // select page 1
+        if (!this._page1_init) {
+          this._id = undefined; // suspend rendering
+          for (let a=0x2000; a<0x4000; a++) this.draw(a);
+          this._page1_init = true;
+        }
+        this._id = this._id1;
+      } else {
+        // select page 2
+        if (!this._page2_init) {
           this._id = undefined; // suspend rendering
           for (let a=0x4000; a<0x6000; a++) this.draw(a);
-          this._id = this._id2;
+          this._page2_init = true;
         }
-        this._context.putImageData(this._id, 0, 0);
+        this._id = this._id2;
       }
-    
-      set_active_page(page) {
-        if (page != 2) {
-          // select page 1
- //         if (!this._page1_init) {
-            this._id = undefined; // suspend rendering
-            for (let a=0x2000; a<0x4000; a++) this.draw(a);
-            this._page1_init = true;
- //         }
-          this._id = this._id1;
-        } else {
-          // select page 2
- //         if (!this._page2_init) {
-            this._id = undefined; // suspend rendering
-            for (let a=0x4000; a<0x6000; a++) this.draw(a);
-            this._page2_init = true;
- //         }
-          this._id = this._id2;
-        }
-        this._context.putImageData(this._id, 0, 0);
-      }
+      this._context.putImageData(this._id, 0, 0);
+    }
 
-      reset() {
-        const imax = 560 * 384 * 4; // (560+4, 384+6) * rgba
-        for (let i=0; i<imax; i+=4) {
-          this._id1.data[i+0] = this._id2.data[i+0] = 0x00;
-          this._id1.data[i+1] = this._id2.data[i+1] = 0x00;
-          this._id1.data[i+2] = this._id2.data[i+2] = 0x00;
-          this._id1.data[i+3] = this._id2.data[i+3] = 0xff;
-        }
-        this._context.putImageData(this._id1, 0, 0);
-        this._id = undefined;
-        this._page1_init = false;
-        this._page2_init = false;
+    reset() {
+      const imax = 560 * 384 * 4; // (560+4, 384+6) * rgba
+      for (let i=0; i<imax; i+=4) {
+        this._id1.data[i+0] = this._id2.data[i+0] = 0x00;
+        this._id1.data[i+1] = this._id2.data[i+1] = 0x00;
+        this._id1.data[i+2] = this._id2.data[i+2] = 0x00;
+        this._id1.data[i+3] = this._id2.data[i+3] = 0xff;
+       }
+       this._context.putImageData(this._id1, 0, 0);
+       this._id = undefined;
+       this._page1_init = false;
+       this._page2_init = false;
     }
 }
