@@ -22,8 +22,8 @@ export class DoubleHiresDisplay
   constructor(memory, canvas, hlines, vlines) {
     this._mem = memory;
 
-    canvas.width = 556;  // 7*2*40 + 4
-    canvas.height = 378; // 8*2*24 + 6
+    canvas.width = 560;  // 7*2*40 + 4
+    canvas.height = 384; // 8*2*24 + 6
 
     this._context = canvas.getContext('2d', {alpha: false});
     this._context.imageSmoothingEnabled = false;
@@ -116,7 +116,7 @@ export class DoubleHiresDisplay
        c[0] = (bz & 0x78) >> 3;
        hb[0] = bz & 0x80;
      }
-     if (col < 39) {
+     if (col < 80) {
        c[8] = b4 & 0x0f;
        hb[8] = b4 & 0x80;
      }
@@ -176,12 +176,12 @@ export class DoubleHiresDisplay
       if (this._id == this._id1) {
         this._id = undefined; // suspend rendering
         for (let a=0x2000; a<0x4000; a++) this.draw(a);
-        for (let b=0x4000; b<0x6000; b++) this.draw(b);
+  //      for (let b=0x4000; b<0x6000; b++) this.draw(b);
         this._id = this._id1;
       } else if (this._id == this._id2) {
         this._id = undefined; // suspend rendering
         for (let a=0x2000; a<0x4000; a++) this.draw(a);
-        for (let b=0x4000; b<0x6000; b++) this.draw(b);
+  //      for (let b=0x4000; b<0x6000; b++) this.draw(b);
         this._id = this._id2;
       }
       this._context.putImageData(this._id, 0, 0);
