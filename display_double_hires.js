@@ -131,7 +131,7 @@ export class DoubleHiresDisplay
     const data = id.data;
 
       let idx = 1;
-      for(let x=lo, xmax=lo+112; x<xmax; x+=8, idx++) {
+      for(let x=lo, xmax=lo+112; x<xmax; x+=16, idx++) {
       var hbs = hb[idx];
       var dcolor = dcolors[r4[c[idx]]];
       var bits = c[idx-1] | (c[idx] << 4) | (c[idx+1] << 8);
