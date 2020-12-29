@@ -175,13 +175,13 @@ export class DoubleHiresDisplay
     refresh() {
       if (this._id == this._id1) {
         this._id = undefined; // suspend rendering
-        for (let a=0x2000; a<0x4000; a++) this.draw(a);
-        for (let b=0x4000; b<0x6000; b++) this.draw(b);
+        for (let a=0x2000; a<0x6000; a++) this.draw(a);
+  //      for (let b=0x4000; b<0x6000; b++) this.draw(b);
         this._id = this._id1;
       } else if (this._id == this._id2) {
         this._id = undefined; // suspend rendering
-        for (let a=0x2000; a<0x4000; a++) this.draw(a);
-        for (let b=0x4000; b<0x6000; b++) this.draw(b);
+        for (let a=0x2000; a<0x6000; a++) this.draw(a);
+  //      for (let b=0x4000; b<0x6000; b++) this.draw(b);
         this._id = this._id2;
       }
       this._context.putImageData(this._id, 0, 0);
@@ -192,8 +192,8 @@ export class DoubleHiresDisplay
         // select page 1
         if (!this._page1_init) {
           this._id = undefined; // suspend rendering
-          for (let a=0x2000; a<0x4000; a++) this.draw(a);
-          for (let b=0x4000; b<0x6000; b++) this.draw(b);
+          for (let a=0x2000; a<0x6000; a++) this.draw(a);
+   //       for (let b=0x4000; b<0x6000; b++) this.draw(b);
           this._page1_init = true;
         }
         this._id = this._id1;
@@ -201,8 +201,8 @@ export class DoubleHiresDisplay
         // select page 2
         if (!this._page2_init) {
           this._id = undefined; // suspend rendering
-          for (let a=0x2000; a<0x4000; a++) this.draw(a);
-          for (let b=0x4000; b<0x6000; b++) this.draw(b);
+          for (let a=0x2000; a<0x6000; a++) this.draw(a);
+   //       for (let b=0x4000; b<0x6000; b++) this.draw(b);
           this._page2_init = true;
         }
         this._id = this._id2;
