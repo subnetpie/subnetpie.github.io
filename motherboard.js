@@ -40,7 +40,7 @@ export class Motherboard
     }
 
     clock(count) {
- //       this.audio.begin_segment(this.cycles);
+        this.audio.begin_segment(this.cycles);
         const total = this.cycles + count;
         while(this.cycles < total) {
             this.cycles += this.cpu.step();
