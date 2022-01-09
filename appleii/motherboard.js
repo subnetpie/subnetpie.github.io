@@ -54,19 +54,19 @@ export class Motherboard
     reset(cold) {
         if(cold) this.memory.reset();
         this.cpu.reset();
-        this.display_text.reset();
-        this.display_hires.reset();
-        this.display_double_hires.reset();
-        this.floppy525.reset();
-        this.audio.reset();
-        this.io_manager.reset();
+    //    this.display_text.reset();
+    //    this.display_hires.reset();
+    //    this.display_double_hires.reset();
+    //    this.floppy525.reset();
+    //    this.audio.reset();
+    //    this.io_manager.reset();
 
         this.cycles = 0;
 
-        for(let a=0x0400; a<0x0800; a++) this.memory._main[a] = 0xa0;
-        this.display_text.set_active_page(1);  // text page 1 is default
+    //    for(let a=0x0400; a<0x0800; a++) this.memory._main[a] = 0xa0;
+    //    this.display_text.set_active_page(1);  // text page 1 is default
 
-        this.cpu.register.pc = this.memory.read_word(0xfffc);
+    //    this.cpu.register.pc = this.memory.read_word(0xfffc);
     }
 
     // clear message on text page 1
