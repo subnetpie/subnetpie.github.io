@@ -443,11 +443,11 @@ export class IOManager
                 (((addr & 0xe000) == 0x4000) && this._mem.dms_page2 && !this._mem.dms_80store) ) {
                 if(this._mem.dms_hires) {
                     // hires graphics modes
-                    if(this._double_hires) {
-                        this._display_double_hires.draw(addr);
-                    } else {
+             //       if(this._double_hires) {
+             //           this._display_double_hires.draw(addr);
+             //       } else {
                         this._display_hires.draw(addr, val);
-                    }
+             //       }
                 } else {
                     // TODO: lores graphics modes
                 }
