@@ -33,7 +33,7 @@ export class Motherboard
         this.display_double_hires = new DoubleHiresDisplay(this.memory, canvas);
         this.floppy525 = new Floppy525(6, this.memory , floppy_led_cb);
         this.audio = new AppleAudio(khz);
-        this.cycles = 0;
+//        this.cycles = 0;
         this.io_manager = new IOManager(this.memory, this.keyboard,
                                         this.display_text, this.display_hires, this.display_double_hires,
                                         this.audio_click.bind(this), joyValues);
