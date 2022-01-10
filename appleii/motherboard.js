@@ -63,8 +63,8 @@ export class Motherboard
 
         this.cycles = 0;
 
-    //    for(let a=0x0400; a<0x0800; a++) this.memory._main[a] = 0xa0;
-    //    this.display_text.set_active_page(1);  // text page 1 is default
+        for(let a=0x0400; a<0x0800; a++) this.memory._main[a] = 0xa0;
+        this.display_text.set_active_page(1);  // text page 1 is default
 
         this.cpu.register.pc = this.memory.read_word(0xfffc);
     }
