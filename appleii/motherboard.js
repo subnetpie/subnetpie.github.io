@@ -53,13 +53,13 @@ export class Motherboard
 
     reset(cold) {
         if(cold) this.memory.reset();
-    //    this.cpu.reset();
-    //    this.display_text.reset();
-    //    this.display_hires.reset();
-    //    this.display_double_hires.reset();
-    //    this.floppy525.reset();
-    //    this.audio.reset();
-    //    this.io_manager.reset();
+        this.cpu.reset();
+        this.display_text.reset();
+        this.display_hires.reset();
+        this.display_double_hires.reset();
+        this.floppy525.reset();
+        this.audio.reset();
+        this.io_manager.reset();
 
         this.cycles = 0;
 
