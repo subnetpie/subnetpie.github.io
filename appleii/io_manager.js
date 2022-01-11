@@ -326,28 +326,28 @@ export class IOManager
                 //console.log("text mode off");
                 if(this._text_mode) {
                     this._text_mode = false;
-       //             this.switch_display_mode();
+                    this.switch_display_mode();
                 }
                 break;
             case 0xc051: // text mode on
                 //console.log("text mode on");
                 if(!this._text_mode) {
                     this._text_mode = true;
-    //                this.switch_display_mode();
+                    this.switch_display_mode();
                 }
                 break;
             case 0xc052: // mixed mode off
                 //console.log("mixed mode off");
                 if(this._mixed_mode) {
                     this._mixed_mode = false;
-    //                this.switch_display_mode();
+                    this.switch_display_mode();
                 }
                 break;
             case 0xc053: // mixed mode on
                 //console.log("mixed mode on");
                 if(!this._mixed_mode) {
                     this._mixed_mode = true;
-     //               this.switch_display_mode();
+                    this.switch_display_mode();
                 }
                 break;
             case 0xc054: // page2 off
@@ -361,14 +361,14 @@ export class IOManager
                 //console.log("page2 on");
                 if(!this._mem.dms_page2) {
                     this._mem.dms_page2 = true;
-        //            if(!this._mem.dms_80store) this.switch_display_mode();
+                    if(!this._mem.dms_80store) this.switch_display_mode();
                 }
                 break;
             case 0xc056: // hires off
                 //console.log("hires off");
                 if(this._mem.dms_hires) {
                     this._mem.dms_hires = false;
-       //             this.switch_display_mode();
+                    this.switch_display_mode();
                 }
                 break;
             case 0xc057: // hires on
@@ -377,7 +377,7 @@ export class IOManager
                     this._mem.dms_hires = true;
 // TODO: emperical testing suggests we clear the ram before enabling
 //for(let a=0x2000; a<0x4000; a++) this._mem._main[a] = 0;
-      //              this.switch_display_mode();
+                    this.switch_display_mode();
                 }
                 break;
             case 0xc05e: // double hires on
@@ -395,7 +395,7 @@ export class IOManager
                     //console.log("double hires off");
                     if(this._mem._double_hires) {
                         this._double_hires = false;
-      //                  this.switch_display_mode();
+                        this.switch_display_mode();
                     }
                 }
                 break;
@@ -466,17 +466,17 @@ export class IOManager
         if(this._text_mode) {
             // text mode
             //alert("enabling text mode: " + (is_page2 ? "page2" : "page1"));
-            this._display_text.set_active_page(is_page2 ? 2 : 1);
+        //    this._display_text.set_active_page(is_page2 ? 2 : 1);
         } else {
             // graphics modes
             // TODO: mixed modes
             if(this._mem.dms_hires) {
                 if(this._double_hires) {
                     //alert("enabling double-hires graphics mode: " + (is_page2 ? "page2" : "page1"));
-                    this._display_double_hires.set_active_page(is_page2 ? 2 : 1);
+        //            this._display_double_hires.set_active_page(is_page2 ? 2 : 1);
                 } else {
                     //console.log("enabling hires graphics mode: " + (is_page2 ? "page2" : "page1"));
-                    this._display_hires.set_active_page(is_page2 ? 2 : 1);
+        //            this._display_hires.set_active_page(is_page2 ? 2 : 1);
                 }
             } else {
                 // TODO: lores graphics
