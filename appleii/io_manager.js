@@ -326,14 +326,14 @@ export class IOManager
                 //console.log("text mode off");
                 if(this._text_mode) {
                     this._text_mode = false;
-      //              this.switch_display_mode();
+                    this.switch_display_mode();
                 }
                 break;
             case 0xc051: // text mode on
                 //console.log("text mode on");
                 if(!this._text_mode) {
                     this._text_mode = true;
-      //              this.switch_display_mode();
+                    this.switch_display_mode();
                 }
                 break;
             case 0xc052: // mixed mode off
@@ -361,7 +361,7 @@ export class IOManager
                 //console.log("page2 on");
                 if(!this._mem.dms_page2) {
                     this._mem.dms_page2 = true;
-                    if(!this._mem.dms_80store) this.switch_display_mode();
+        //            if(!this._mem.dms_80store) this.switch_display_mode();
                 }
                 break;
             case 0xc056: // hires off
@@ -466,7 +466,7 @@ export class IOManager
       if(this._text_mode) {
         // text mode
         alert("enabling text mode: " + (is_page2 ? "page2" : "page1"));
-     //   this._display_text.set_active_page(is_page2 ? 2 : 1);
+        this._display_text.set_active_page(is_page2 ? 2 : 1);
       } else {
         // graphics modes
         // TODO: mixed modes
