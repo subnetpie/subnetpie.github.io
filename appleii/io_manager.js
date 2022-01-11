@@ -476,7 +476,7 @@ export class IOManager
         //            this._display_double_hires.set_active_page(is_page2 ? 2 : 1);
                 } else {
                     //console.log("enabling hires graphics mode: " + (is_page2 ? "page2" : "page1"));
-        //            this._display_hires.set_active_page(is_page2 ? 2 : 1);
+                    this._display_hires.set_active_page(is_page2 ? 2 : 1);
                 }
             } else {
                 // TODO: lores graphics
