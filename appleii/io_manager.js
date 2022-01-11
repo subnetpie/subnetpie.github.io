@@ -466,7 +466,7 @@ export class IOManager
         if(this._text_mode) {
             // text mode
             //alert("enabling text mode: " + (is_page2 ? "page2" : "page1"));
-        //    this._display_text.set_active_page(is_page2 ? 2 : 1);
+            this._display_text.set_active_page(is_page2 ? 2 : 1);
         } else {
             // graphics modes
             // TODO: mixed modes
@@ -475,7 +475,7 @@ export class IOManager
                     //alert("enabling double-hires graphics mode: " + (is_page2 ? "page2" : "page1"));
         //            this._display_double_hires.set_active_page(is_page2 ? 2 : 1);
                 } else {
-                    //console.log("enabling hires graphics mode: " + (is_page2 ? "page2" : "page1"));
+                    alert.log("enabling hires graphics mode: " + (is_page2 ? "page2" : "page1"));
                     this._display_hires.set_active_page(is_page2 ? 2 : 1);
                 }
             } else {
