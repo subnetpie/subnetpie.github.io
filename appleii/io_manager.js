@@ -353,15 +353,15 @@ export class IOManager
             case 0xc054: // page2 off
                 //console.log("page2 off");
                 if(this._mem.dms_page2) {
-      //              this._mem.dms_page2 = false;
-      //              if(!this._mem.dms_80store) this.switch_display_mode();
+                    this._mem.dms_page2 = false;
+                    if(!this._mem.dms_80store) this.switch_display_mode();
                 }
                 break;
             case 0xc055: // page2 on
                 //console.log("page2 on");
                 if(!this._mem.dms_page2) {
-      //              this._mem.dms_page2 = true;
-      //              if(!this._mem.dms_80store) this.switch_display_mode();
+                    this._mem.dms_page2 = true;
+                    if(!this._mem.dms_80store) this.switch_display_mode();
                 }
                 break;
             case 0xc056: // hires off
@@ -384,8 +384,8 @@ export class IOManager
                 if(this._iou_disable) {
                     //console.log("double hires on");
                     if(!this._mem._double_hires) {
-     //                   this._80col_mode = true;
-     //                   this._double_hires = true;
+                        this._80col_mode = true;
+                        this._double_hires = true;
      //                   this.switch_display_mode();
                     }
                 }
