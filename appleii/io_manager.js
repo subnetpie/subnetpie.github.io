@@ -360,24 +360,24 @@ export class IOManager
             case 0xc055: // page2 on
                 //console.log("page2 on");
                 if(!this._mem.dms_page2) {
-       //             this._mem.dms_page2 = true;
-       //             if(!this._mem.dms_80store) this.switch_display_mode();
+      //              this._mem.dms_page2 = true;
+      //              if(!this._mem.dms_80store) this.switch_display_mode();
                 }
                 break;
             case 0xc056: // hires off
                 //console.log("hires off");
                 if(this._mem.dms_hires) {
-      //              this._mem.dms_hires = false;
-      //              this.switch_display_mode();
+                    this._mem.dms_hires = false;
+                    this.switch_display_mode();
                 }
                 break;
             case 0xc057: // hires on
                 //console.log("hires on");
                 if(!this._mem.dms_hires) {
-    //                this._mem.dms_hires = true;
+                    this._mem.dms_hires = true;
 // TODO: emperical testing suggests we clear the ram before enabling
 //for(let a=0x2000; a<0x4000; a++) this._mem._main[a] = 0;
-    //                this.switch_display_mode();
+                    this.switch_display_mode();
                 }
                 break;
             case 0xc05e: // double hires on
