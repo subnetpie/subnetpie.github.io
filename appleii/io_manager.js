@@ -325,68 +325,68 @@ export class IOManager
             case 0xc050: // text mode off
                 //console.log("text mode off");
                 if(this._text_mode) {
-                    this._text_mode = false;
-                    this.switch_display_mode();
+       //             this._text_mode = false;
+       //             this.switch_display_mode();
                 }
                 break;
             case 0xc051: // text mode on
                 //console.log("text mode on");
                 if(!this._text_mode) {
-                    this._text_mode = true;
-                    this.switch_display_mode();
+    //                this._text_mode = true;
+    //                this.switch_display_mode();
                 }
                 break;
             case 0xc052: // mixed mode off
                 //console.log("mixed mode off");
                 if(this._mixed_mode) {
-                    this._mixed_mode = false;
-                    this.switch_display_mode();
+    //                this._mixed_mode = false;
+    //                this.switch_display_mode();
                 }
                 break;
             case 0xc053: // mixed mode on
                 //console.log("mixed mode on");
                 if(!this._mixed_mode) {
-                    this._mixed_mode = true;
-                    this.switch_display_mode();
+     //               this._mixed_mode = true;
+     //               this.switch_display_mode();
                 }
                 break;
             case 0xc054: // page2 off
                 //console.log("page2 off");
                 if(this._mem.dms_page2) {
-                    this._mem.dms_page2 = false;
-                    if(!this._mem.dms_80store) this.switch_display_mode();
+      //              this._mem.dms_page2 = false;
+      //              if(!this._mem.dms_80store) this.switch_display_mode();
                 }
                 break;
             case 0xc055: // page2 on
                 //console.log("page2 on");
                 if(!this._mem.dms_page2) {
-                    this._mem.dms_page2 = true;
-                    if(!this._mem.dms_80store) this.switch_display_mode();
+       //             this._mem.dms_page2 = true;
+       //             if(!this._mem.dms_80store) this.switch_display_mode();
                 }
                 break;
             case 0xc056: // hires off
                 //console.log("hires off");
                 if(this._mem.dms_hires) {
-                    this._mem.dms_hires = false;
-                    this.switch_display_mode();
+      //              this._mem.dms_hires = false;
+      //              this.switch_display_mode();
                 }
                 break;
             case 0xc057: // hires on
                 //console.log("hires on");
                 if(!this._mem.dms_hires) {
-                    this._mem.dms_hires = true;
+    //                this._mem.dms_hires = true;
 // TODO: emperical testing suggests we clear the ram before enabling
 //for(let a=0x2000; a<0x4000; a++) this._mem._main[a] = 0;
-                    this.switch_display_mode();
+    //                this.switch_display_mode();
                 }
                 break;
             case 0xc05e: // double hires on
                 if(this._iou_disable) {
                     //console.log("double hires on");
                     if(!this._mem._double_hires) {
-                        this._80col_mode = true;
-                        this._double_hires = true;
-                        this.switch_display_mode();
+     //                   this._80col_mode = true;
+     //                   this._double_hires = true;
+     //                   this.switch_display_mode();
                     }
                 }
                 break;
@@ -394,8 +394,8 @@ export class IOManager
                 if(this._iou_disable) {
                     //console.log("double hires off");
                     if(this._mem._double_hires) {
-                        this._double_hires = false;
-                        this.switch_display_mode();
+      //                  this._double_hires = false;
+      //                  this.switch_display_mode();
                     }
                 }
                 break;
