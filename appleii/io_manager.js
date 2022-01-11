@@ -276,14 +276,14 @@ export class IOManager
                     //console.log("80 col off");
                     if(this._80col_mode) {
                         this._80col_mode = false;
-      //                  this.switch_display_mode();
+                        this.switch_display_mode();
                     }
                     return 0; // write handled
                 case 0xc00d: // 80 col on
                     //console.log("80 col on");
                     if(!this._80col_mode) {
                         this._80col_mode = true;
-     //                   this.switch_display_mode();
+                        this.switch_display_mode();
                     }
                     return 0; // write handled
                 case 0xc00e: // alt char off
@@ -481,9 +481,9 @@ export class IOManager
         } else {
           // TODO: lores graphics
           if(this._double_hires) {
-            //console.log("enabling " + (this._mixed_mode ? "mixed " : "") + "double-lores graphics mode, " + (is_page2 ? "page2" : "page1"));
+            alert("enabling " + (this._mixed_mode ? "mixed " : "") + "double-lores graphics mode, " + (is_page2 ? "page2" : "page1"));
           } else {
-            //console.log("enabling " + (this._mixed_mode ? "mixed " : "") + "lores graphics mode, " + (is_page2 ? "page2" : "page1"));
+            alert("enabling " + (this._mixed_mode ? "mixed " : "") + "lores graphics mode, " + (is_page2 ? "page2" : "page1"));
           }
         }
       }
