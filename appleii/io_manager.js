@@ -466,17 +466,17 @@ export class IOManager
         if(this._text_mode) {
             // text mode
             alert("enabling text mode: " + (is_page2 ? "page2" : "page1"));
-     //       this._display_text.set_active_page(is_page2 ? 2 : 1);
+            this._display_text.set_active_page(is_page2 ? 2 : 1);
         } else {
             // graphics modes
             // TODO: mixed modes
             if(this._mem.dms_hires) {
                 if(this._double_hires) {
                     //alert("enabling double-hires graphics mode: " + (is_page2 ? "page2" : "page1"));
-        //            this._display_double_hires.set_active_page(is_page2 ? 2 : 1);
+                    this._display_double_hires.set_active_page(is_page2 ? 2 : 1);
                 } else {
                     //console.log("enabling hires graphics mode: " + (is_page2 ? "page2" : "page1"));
-        //            this._display_hires.set_active_page(is_page2 ? 2 : 1);
+                    this._display_hires.set_active_page(is_page2 ? 2 : 1);
                 }
             } else {
                 // TODO: lores graphics
