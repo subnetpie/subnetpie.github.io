@@ -275,15 +275,15 @@ export class IOManager
                 case 0xc00c: // 80 col off
                     //console.log("80 col off");
                     if(this._80col_mode) {
-                        this._80col_mode = false;
-                        this.switch_display_mode();
+                      this._80col_mode = false;
+                      this.switch_display_mode();
                     }
                     return 0; // write handled
                 case 0xc00d: // 80 col on
                     //console.log("80 col on");
                     if(!this._80col_mode) {
-                        this._80col_mode = true;
-                        this.switch_display_mode();
+                      this._80col_mode = true;
+                      this.switch_display_mode();
                     }
                     return 0; // write handled
                 case 0xc00e: // alt char off
@@ -376,7 +376,7 @@ export class IOManager
                 if(!this._mem.dms_hires) {
                     this._mem.dms_hires = true;
 // TODO: emperical testing suggests we clear the ram before enabling
-//for(let a=0x2000; a<0x4000; a++) this._mem._main[a] = 0;
+  for(let a=0x2000; a<0x4000; a++) this._mem._main[a] = 0;
                     this.switch_display_mode();
                 }
                 break;
@@ -384,9 +384,9 @@ export class IOManager
                 if(this._iou_disable) {
                     //console.log("double hires on");
                     if(!this._mem._double_hires) {
-                        this._80col_mode = true;
-                        this._double_hires = true;
-                        this.switch_display_mode();
+                      this._80col_mode = true;
+                      this._double_hires = true;
+                      this.switch_display_mode();
                     }
                 }
                 break;
@@ -442,12 +442,12 @@ export class IOManager
             if( ((addr & 0xe000) == 0x2000) ||
                 (((addr & 0xe000) == 0x4000) && this._mem.dms_page2 && !this._mem.dms_80store) ) {
                 if(this._mem.dms_hires) {
-                    // hires graphics modes
-                    if(this._double_hires) {
-                        this._display_double_hires.draw(addr);
-                    } else {
-                        this._display_hires.draw(addr, val);
-                    }
+                  // hires graphics modes
+                  if(this._double_hires) {
+                    this._display_double_hires.draw(addr);
+                  } else {
+                    this._display_hires.draw(addr,val);
+                  }
                 } else {
                     // TODO: lores graphics modes
                 }
