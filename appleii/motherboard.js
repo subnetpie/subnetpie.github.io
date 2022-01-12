@@ -13,8 +13,8 @@ import {W65C02S} from "https://subnetpie.github.io/appleii/w65c02s.js";
 import {Memory} from "https://subnetpie.github.io/appleii/memory.js";
 import {IOManager} from "https://subnetpie.github.io/appleii/io_manager.js";
 import {TextDisplay} from "https://subnetpie.github.io/appleii/display_text.js";
-import {HiresDisplay} from "https://subnetpie.github.io/appleii/display_hires.js";
-import {DoubleHiresDisplay} from "https://subnetpie.github.io/appleii/display_double_hires.js";
+//import {HiresDisplay} from "https://subnetpie.github.io/appleii/display_hires.js";
+//import {DoubleHiresDisplay} from "https://subnetpie.github.io/appleii/display_double_hires.js";
 import {Keyboard} from "https://subnetpie.github.io/appleii/keyboard.js";
 import {Floppy525} from "https://subnetpie.github.io/appleii/floppy525.js";
 import {AppleAudio} from "https://subnetpie.github.io/appleii/apple_audio.js";
@@ -64,7 +64,7 @@ export class Motherboard
         this.cycles = 0;
 
         for(let a=0x0400; a<0x0800; a++) this.memory._main[a] = 0xa0;
-        this.display_hires.set_active_page(1);  // text page 1 is default
+        this.display_text.set_active_page(1);  // text page 1 is default
 
         this.cpu.register.pc = this.memory.read_word(0xfffc);
     }
