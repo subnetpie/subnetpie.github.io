@@ -376,7 +376,7 @@ export class IOManager
                 if(!this._mem.dms_hires) {
                     this._mem.dms_hires = true;
 // TODO: emperical testing suggests we clear the ram before enabling
-  for(let a=0x2000; a<0x4000; a++) this._mem._main[a] = 0;
+// for(let a=0x2000; a<0x4000; a++) this._mem._main[a] = 0;
                     this.switch_display_mode();
                 }
                 break;
