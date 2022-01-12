@@ -29,8 +29,8 @@ export class Motherboard
         this.cpu = new W65C02S(this.memory);
         this.keyboard = new Keyboard();
         this.display_text = new TextDisplay(this.memory, canvas);
-        this.display_hires = new HiresDisplay(this.memory, canvas);
-        this.display_double_hires = new DoubleHiresDisplay(this.memory, canvas);
+     //   this.display_hires = new HiresDisplay(this.memory, canvas);
+     //   this.display_double_hires = new DoubleHiresDisplay(this.memory, canvas);
         this.floppy525 = new Floppy525(6, this.memory , floppy_led_cb);
         this.audio = new AppleAudio(khz);
         this.cycles = 0;
@@ -54,7 +54,7 @@ export class Motherboard
     reset(cold) {
         if(cold) this.memory.reset();
         this.cpu.reset();
- //       this.display_text.reset();
+        this.display_text.reset();
  //       this.display_hires.reset();
  //       this.display_double_hires.reset();
         this.floppy525.reset();
