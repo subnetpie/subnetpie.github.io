@@ -67,8 +67,8 @@ export class IOManager
         this._mem = memory;
         this._kbd = keyboard;
         this._display_text = display_text;
-        this._display_hires = display_hires;
-        this._display_double_hires = display_double_hires;
+    //    this._display_hires = display_hires;
+    //    this._display_double_hires = display_double_hires;
         this._audio_cb = audio_cb;
         this._cycles = 0;
         this._delta = 0;
@@ -444,9 +444,9 @@ export class IOManager
                 if(this._mem.dms_hires) {
                   // hires graphics modes
                   if(this._double_hires) {
-                    this._display_double_hires.draw(addr);
+             //       this._display_double_hires.draw(addr);
                   } else {
-                    this._display_hires.draw(addr,val);
+             //       this._display_hires.draw(addr,val);
                   }
                 } else {
                     // TODO: lores graphics modes
@@ -458,8 +458,8 @@ export class IOManager
 
 switch_display_mode() {
         this._display_text.reset();
-        this._display_hires.reset();
-        this._display_double_hires.reset();
+  //      this._display_hires.reset();
+  //      this._display_double_hires.reset();
 
         const is_page2 = this._mem.dms_page2 && !this._mem.dms_80store;
 
@@ -473,18 +473,18 @@ switch_display_mode() {
             if(this._mem.dms_hires) {
                 if(this._double_hires) {
                     //console.log("enabling double-hires graphics mode: " + (is_page2 ? "page2" : "page1"));
-                    this._display_double_hires.set_active_page(is_page2 ? 2 : 1);
+      //              this._display_double_hires.set_active_page(is_page2 ? 2 : 1);
                 } else {
                     //console.log("enabling hires graphics mode: " + (is_page2 ? "page2" : "page1"));
-                    this._display_hires.set_active_page(is_page2 ? 2 : 1);
+       //             this._display_hires.set_active_page(is_page2 ? 2 : 1);
                 }
             } else {
                 // TODO: lores graphics
-                if(this._double_hires) {
+           //     if(this._double_hires) {
                     //console.log("enabling " + (this._mixed_mode ? "mixed " : "") + "double-lores graphics mode, " + (is_page2 ? "page2" : "page1"));
-                } else {
+           //     } else {
                     //console.log("enabling " + (this._mixed_mode ? "mixed " : "") + "lores graphics mode, " + (is_page2 ? "page2" : "page1"));
-                }
+           //     }
             }
         }
     }
@@ -499,7 +499,7 @@ switch_display_mode() {
         this._mixed_mode = false;
         this._altchar_mode = false;
         this._80col_mode = false;
-        this._double_hires = false;
+  //      this._double_hires = false;
         this._iou_disable = true;
 
         this._bsr_write_count = 0;
