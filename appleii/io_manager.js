@@ -466,7 +466,7 @@ switch_display_mode() {
         if(this._text_mode) {
             // text mode
             //console.log("enabling text mode: " + (is_page2 ? "page2" : "page1"));
-            this._display_text.set_active_page(is_page2 ? 2 : 1);
+    //        this._display_text.set_active_page(is_page2 ? 2 : 1);
         } else {
             // graphics modes
             // TODO: mixed modes
@@ -499,7 +499,7 @@ switch_display_mode() {
         this._mixed_mode = false;
         this._altchar_mode = false;
         this._80col_mode = false;
-  //      this._double_hires = false;
+        this._double_hires = false;
         this._iou_disable = true;
 
         this._bsr_write_count = 0;
