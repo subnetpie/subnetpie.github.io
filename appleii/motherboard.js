@@ -71,13 +71,13 @@ export class Motherboard
 
     // clear message on text page 1
     messageclear() {
-      for(let i=0; i<30; i++) this.memory.write(0x42C+i, 0xA0);
+  //    for(let i=0; i<30; i++) this.memory.write(0x42C+i, 0xA0);
     }
 
     // write message to text page 1
     message(text) {
-        const addr = 0x43b - ((text.length / 2) & 0x0f);
-        for(let i=0; i<text.length; i++) this.memory.write(addr+i, text.charCodeAt(i)+0x80);
+  //      const addr = 0x43b - ((text.length / 2) & 0x0f);
+  //      for(let i=0; i<text.length; i++) this.memory.write(addr+i, text.charCodeAt(i)+0x80);
     }
 }
 
