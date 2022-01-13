@@ -444,9 +444,9 @@ export class IOManager
                 if(this._mem.dms_hires) {
                   // hires graphics modes
                   if(this._double_hires) {
-             //       this._display_double_hires.draw(addr);
+                    this._display_double_hires.draw(addr);
                   } else {
-             //       this._display_hires.draw(addr,val);
+                    this._display_hires.draw(addr,val);
                   }
                 } else {
                     // TODO: lores graphics modes
@@ -473,10 +473,10 @@ switch_display_mode() {
             if(this._mem.dms_hires) {
                 if(this._double_hires) {
                     //console.log("enabling double-hires graphics mode: " + (is_page2 ? "page2" : "page1"));
-      //              this._display_double_hires.set_active_page(is_page2 ? 2 : 1);
+                    this._display_double_hires.set_active_page(is_page2 ? 2 : 1);
                 } else {
                     //console.log("enabling hires graphics mode: " + (is_page2 ? "page2" : "page1"));
-       //             this._display_hires.set_active_page(is_page2 ? 2 : 1);
+                    this._display_hires.set_active_page(is_page2 ? 2 : 1);
                 }
             } else {
                 // TODO: lores graphics
