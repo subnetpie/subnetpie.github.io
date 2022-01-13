@@ -52,7 +52,7 @@ export class Motherboard
     }
 
     reset(cold) {
-        if(cold) this.memory.reset();
+     //   if(cold) this.memory.reset();
         this.cpu.reset();
         this.display_text.reset();
         this.display_hires.reset();
