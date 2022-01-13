@@ -458,15 +458,15 @@ export class IOManager
 
 switch_display_mode() {
         this._display_text.reset();
-  //      this._display_hires.reset();
-  //      this._display_double_hires.reset();
+        this._display_hires.reset();
+        this._display_double_hires.reset();
 
         const is_page2 = this._mem.dms_page2 && !this._mem.dms_80store;
 
         if(this._text_mode) {
             // text mode
             //console.log("enabling text mode: " + (is_page2 ? "page2" : "page1"));
-    //        this._display_text.set_active_page(is_page2 ? 2 : 1);
+            this._display_text.set_active_page(is_page2 ? 2 : 1);
         } else {
             // graphics modes
             // TODO: mixed modes
