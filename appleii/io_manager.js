@@ -129,7 +129,7 @@ export class IOManager
                 case 0xc017: // c3-rom (0: use internal rom, 0x80: slot 3 io active)
                     //console.log("c3 rom: " + this._c3_rom);
                     return this._c3_rom ? 0 : 0x80;
-                case 0xc018: // 80store (0: 80store off, 0x80: 80store on)
+                case 0x0018: // 80store (0: 80store off, 0x80: 80store on)
                     //console.log("80 store: " + this._mem.dms_80store);
                     return this._mem.dms_80store ? 0x80 : 0;
                 case 0xc01a: // text (0: graphics mode, 0x80: text mode)
