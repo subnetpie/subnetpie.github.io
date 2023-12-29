@@ -228,7 +228,7 @@ export class IOManager
                     //console.log("80store off");
                     this._mem.dms_80store = false;
                     return 0; // write handled
-                case 0xc001: // 80store on
+                case 0x0001: // 80store on
                     //console.log("80store on");
                     this._mem.dms_80store = true;
                     return 0; // write handled
