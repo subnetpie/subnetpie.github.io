@@ -129,7 +129,7 @@ export class IOManager
                 case 0xc017: // c3-rom (0: use internal rom, 0x80: slot 3 io active)
                     //console.log("c3 rom: " + this._c3_rom);
                     return this._c3_rom ? 0 : 0x80;
-                case 0x0018: // 80store (0: 80store off, 0x80: 80store on)
+                case 0xc018: // 80store (0: 80store off, 0x80: 80store on)
                     //console.log("80 store: " + this._mem.dms_80store);
                     return this._mem.dms_80store ? 0x80 : 0;
                 case 0xc01a: // text (0: graphics mode, 0x80: text mode)
@@ -228,7 +228,7 @@ export class IOManager
                     //console.log("80store off");
                     this._mem.dms_80store = false;
                     return 0; // write handled
-                case 0x0001: // 80store on
+                case 0xc001: // 80store on
                     //console.log("80store on");
                     this._mem.dms_80store = true;
                     return 0; // write handled
@@ -357,7 +357,7 @@ export class IOManager
                     if(!this._mem.dms_80store) this.switch_display_mode();
                 }
                 break;
-            case 0x0055: // page2 on
+            case 0xc055: // page2 on
                 //console.log("page2 on");
                 if(!this._mem.dms_page2) {
                     this._mem.dms_page2 = true;
