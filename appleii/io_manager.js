@@ -82,7 +82,7 @@ export class IOManager
         this._text_mode = true;
         this._mixed_mode = false;
         this._altchar_mode = false;
-        this._80col_mode = false;
+        this._80col_mode = true;
         this._double_hires = false;
         this._iou_disable = true;
 
