@@ -84,7 +84,7 @@ export class IOManager
         this._altchar_mode = false;
         this._80col_mode = false;
         this._double_hires = false;
-        this._iou_disable = true;
+        this._iou_disable = false;
 
         this._bsr_write_count = 0;
 
