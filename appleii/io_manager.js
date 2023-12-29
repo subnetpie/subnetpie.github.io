@@ -357,7 +357,7 @@ export class IOManager
                     if(!this._mem.dms_80store) this.switch_display_mode();
                 }
                 break;
-            case 0xc055: // page2 on
+            case 0x0055: // page2 on
                 //console.log("page2 on");
                 if(!this._mem.dms_page2) {
                     this._mem.dms_page2 = true;
