@@ -27,23 +27,23 @@
 //    Rd80Col     R7      $C01F   read 80Col switch (1 = on)
 //    --------------------------------------------------------------------------------------
 //    80Store     W       $C000   off: cause Page2 on to select auxiliary RAM
-//    80Store     W       $0001   on:  allow Page2 to switch main RAM areas
+//    80Store     W       $C001   on:  allow Page2 to switch main RAM areas
 //    Rd80Store   R7      $0018   read 80Store switch (1 = on)
 //    --------------------------------------------------------------------------------------
 //    Page2       R/W     $C054   off: select page 1
-//    Page2       R/W     $0055   on:  select Page2 or, if 80Store on, page 1 in auxiliary memory
+//    Page2       R/W     $C055   on:  select Page2 or, if 80Store on, page 1 in auxiliary memory
 //    RdPage2     R7      $C01C   read Page2 switch (1 = on)
 //    --------------------------------------------------------------------------------------
 //    TEXT        R/W     $0050   off: display graphics or (if MIXED on) mixed
-//    TEXT        R/W     $0051   on:  display text
+//    TEXT        R/W     $C051   on:  display text
 //    RdTEXT      R7      $C01A   read TEXT switch (1 = on)
 //    --------------------------------------------------------------------------------------
-//    MIXED       R/W     $0052   off: display only text or only graphics
-//    MIXED       R/W     $0053   on:  (if TEXT off) display text and graphics
+//    MIXED       R/W     $C052   off: display only text or only graphics
+//    MIXED       R/W     $C053   on:  (if TEXT off) display text and graphics
 //    RdMIXED     R7      $C01B   read MIXED switch (1 = on)
 //    --------------------------------------------------------------------------------------
-//    HiRes       R/W     $0056   off: (if TEXT off) display low-resolution graphics
-//    HiRes       R/W     $0057   on:  (if TEXT off) display high-resolution or (if DHiRes on) double-high-resolution graphics
+//    HiRes       R/W     $C056   off: (if TEXT off) display low-resolution graphics
+//    HiRes       R/W     $C057   on:  (if TEXT off) display high-resolution or (if DHiRes on) double-high-resolution graphics
 //    RdHiRes     R7      $C01D   read HiRes switch (1 = on)
 //    --------------------------------------------------------------------------------------
 //    IOUDis      W       $C07E   on:  disable IOU access for addresses $0058 to $C05F; enable access to DHiRes switch *
@@ -399,6 +399,7 @@ export class IOManager
                     }
                 }
                 break;
+                
             default: // bsr: c080-c08f
                 // bank select switches
                 // apple tech ref p.82
