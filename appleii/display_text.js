@@ -1,4 +1,4 @@
-o//
+//
 //  apple2e text display emulation
 //
 //  Copyright 2018, John Clark
@@ -119,7 +119,7 @@ export class TextDisplay
                 cp >>= 1;
             }
         }
-        if(id == this._id) this._context.putImageData(this._id, 0, 0, ox, oy, 14, 16);
+        if(id == this._id) this._context.putImageData(this._id, 0, 0, ox, oy, 28, 16);
     }
 
 //let offset = (col * 14 + (bank ? 0 : 1) * 7 + row * 560 * 8) * 4;
