@@ -86,15 +86,16 @@ export class TextDisplay
     draw_char40(id, row, col, char) {
         if((row > 23) || (col > 79)) return;
 
-        const ox = (col * 7) + 2;
+        const ox = (col * 14) + 2;
         const oy = (row * 16) + 4;
-        const lo = (ox + oy * 564) * 4;
+        const lo = (ox + oy * 564) * 8;
         const data = id.data;
 
         // 7x8 font
         let csl = char * 8;
         // 64 * 564 = 36096,  8 * 564 = 4512
-        for(let y=0; y<36096; y+=4512) {
+        for(let y=0; y<36096; y+=4512
+        ) {
             let cp = this._font_rom[csl++];
             // 7 * 8 = 56
             for(let x=lo, xmax=lo+56; x<xmax; x+=8) {
@@ -108,6 +109,7 @@ export class TextDisplay
                     //data[p+2257] = this._bg;
                     //data[p+2258] = this._bg;
                 } else {
+                    if 
                     data[p]    = this._fr;
                     data[p+1]  = this._fg;
                     data[p+2]  = this._fb;
