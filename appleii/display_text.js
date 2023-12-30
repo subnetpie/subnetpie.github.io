@@ -100,7 +100,6 @@ export class TextDisplay
             for(let x=lo, xmax=lo+56; x<xmax; x+=8) {
                 const p = x + y;
                 if(cp & 0x01) {
-                    
                     //data[p]   = this._br;
                     //data[p+1] = this._bg;
                     //data[p+2] = this._bb;
@@ -109,7 +108,7 @@ export class TextDisplay
                     //data[p+2257] = this._bg;
                     //data[p+2258] = this._bg;
                 } else {
-                    if (p<ox-7) {
+                    if (x<28) {
                         data[p]    = this._fr;
                         data[p+1]  = this._fg;
                         data[p+2]  = this._fb;
