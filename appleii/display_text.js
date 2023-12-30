@@ -76,7 +76,7 @@ export class TextDisplay
         // 8 rows wrapping 3 times creates a total of 24 rows
         // bits 6,5 ($60) of columns 0,40,80 yield the wrap row 0,1,2
         // bits 9,8,7 yield the 0-7 relative row number
-        const col = (addr & 0x7f) % 80;  // column: 0-39
+        const col = (addr & 0x7f) % 40;  // column: 0-39
         const row = (((addr - col) >> 2) & 0x18) | ((addr >> 7) & 0x07);
         const id = (addr < 0x0800) ? this._id1 : this._id2;
         this.draw_char40(id, row, col, val);
@@ -84,11 +84,11 @@ export class TextDisplay
 
     // draw 14x16 char
     draw_char40(id, row, col, char) {
-        if((row > 23) || (col > 79)) return;
+        if((row > 23) || (col > 39)) return;
 
-        const ox = (col * 7) + 2;
+        const ox = (col * 14) + 2;
         const oy = (row * 16) + 4;
-        const lo = (ox + oy * 564) * 8;
+        const lo = (ox + oy * 564) * 4;
         const data = id.data;
 
         // 7x8 font
@@ -125,7 +125,7 @@ export class TextDisplay
                 cp >>= 1;
             }
         }
-        if(id == this._id) this._context.putImageData(this._id, 0, 0, ox, oy, 28, 16);
+        if(id == this._id) this._context.putImageData(this._id, 0, 0, ox, oy, 14, 16);
     }
 
 //let offset = (col * 14 + (bank ? 0 : 1) * 7 + row * 560 * 8) * 4;
