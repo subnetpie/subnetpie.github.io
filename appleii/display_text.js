@@ -79,7 +79,7 @@ export class TextDisplay
         const col = (addr & 0x7f) % 40;  // column: 0-39
         const row = (((addr - col) >> 2) & 0x18) | ((addr >> 7) & 0x07);
         const id = (addr < 0x0800) ? this._id1 : this._id2;
-        this.draw_char80(id, row, col, val);
+        this.draw_char40(id, row, col, val);
     }
 
     // draw 14x16 char
