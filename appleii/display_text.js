@@ -86,7 +86,7 @@ export class TextDisplay
     draw_char40(id, row, col, char) {
         if((row > 23) || (col > 79)) return;
 
-        const ox = (col * 7) + 1;
+        const ox = (col * 7) + 2;
         const oy = (row * 16) + 4;
         const lo = (ox + oy * 564) * 4;
         const data = id.data;
