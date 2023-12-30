@@ -111,15 +111,15 @@ export class TextDisplay
                     data[p+1]  = this._fg;
                     data[p+2]  = this._fb;
     
-                    data[p+2263] = this._frl;
-                    data[p+2264] = this._fgl;
-                    data[p+2265] = this._fb1;
+                    data[p+2256] = this._frl;
+                    data[p+2257] = this._fgl;
+                    data[p+2258] = this._fb1;
                     
                 }
                 cp >>= 1;
             }
         }
-        if(id == this._id) this._context.putImageData(this._id, 0, 0, ox, oy, 14, 16);
+        if(id == this._id) this._context.putImageData(this._id, 0, 0, ox, oy, 28, 16);
     }
 
 //let offset = (col * 14 + (bank ? 0 : 1) * 7 + row * 560 * 8) * 4;
