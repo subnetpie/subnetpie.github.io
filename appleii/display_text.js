@@ -109,7 +109,7 @@ export class TextDisplay
                     //data[p+2257] = this._bg;
                     //data[p+2258] = this._bg;
                 } else {
-                    if (p>ox-7) {
+                    if (p<ox-7) {
                         data[p]    = this._fr;
                         data[p+1]  = this._fg;
                         data[p+2]  = this._fb;
