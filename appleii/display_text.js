@@ -76,7 +76,7 @@ export class TextDisplay
         // 8 rows wrapping 3 times creates a total of 24 rows
         // bits 6,5 ($60) of columns 0,40,80 yield the wrap row 0,1,2
         // bits 9,8,7 yield the 0-7 relative row number
-        const col = (addr & 0x7f) % 80;  // column: 0-39
+        const col = (addr & 0x7f) % 40;  // column: 0-39
         const row = (((addr - col) >> 2) & 0x18) | ((addr >> 7) & 0x07);
         const id = (addr < 0x0800) ? this._id1 : this._id2;
         this.draw_char40(id, row, col, val);
@@ -94,13 +94,13 @@ export class TextDisplay
         // 7x8 font
         let csl = char * 8;
         // 64 * 564 = 36096,  8 * 564 = 4512
-        for(let y=0; y<36096; y+=4512
-        ) {
+        for(let y=0; y<36096; y+=4512) {
             let cp = this._font_rom[csl++];
             // 7 * 8 = 56
             for(let x=lo, xmax=lo+56; x<xmax; x+=8) {
                 const p = x + y;
                 if(cp & 0x01) {
+                    
                     //data[p]   = this._br;
                     //data[p+1] = this._bg;
                     //data[p+2] = this._bb;
@@ -109,15 +109,15 @@ export class TextDisplay
                     //data[p+2257] = this._bg;
                     //data[p+2258] = this._bg;
                 } else {
-
-                    //data[p]    = this._fr;
-                    //data[p+1]  = this._fg;
-                    //data[p+2]  = this._fb;
-                    
-                    data[p+2256] = this._fr;
-                    data[p+2257] = this._fg;
-                    data[p+2258] = this._fb;
-
+                    if (p>ox-7) {
+                        data[p]    = this._fr;
+                        data[p+1]  = this._fg;
+                        data[p+2]  = this._fb;
+                    } else {
+                        data[p+2256] = this._fr;
+                        data[p+2257] = this._fg;
+                        data[p+2258] = this._fb;
+                    }
                 }
                 cp >>= 1;
             }
