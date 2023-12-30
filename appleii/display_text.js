@@ -111,7 +111,6 @@ export class TextDisplay
                     data[p+2257] = this._fgl;
                     data[p+2258] = this._fbl;
                 }
-                }
                 cp >>= 1;
             }
         }
