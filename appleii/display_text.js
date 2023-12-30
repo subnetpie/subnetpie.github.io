@@ -101,19 +101,25 @@ export class TextDisplay
                 const p = x + y;
                 if(cp & 0x01) {
                     
-                    data[p]    = this._br;
+                    data[p+0]  = this._br;
                     data[p+1]  = this._bg;
                     data[p+2]  = this._bb;
                     
                 } else {
                     
-                    data[p]    = this._fr;
-                    data[p+1]  = this._fg;
-                    data[p+2]  = this._fb;
-    
-                    data[p+2256] = this._frl;
-                    data[p+2257] = this._fgl;
-                    data[p+2258] = this._fb1;
+                    data[p+2256]  = this._fr;
+                    data[p+2257]  = this._fg;
+                    data[p+2258]  = this._fb;
+                    
+                    //var nextOff = off + 564 * 4;
+        
+                    //data[x+nextOff+0] = c0;
+                    //data[x+nextOff+1] = c1;
+                    //data[x+nextOff+2] = c2;
+        
+                    data[p+0] = this._frl;
+                    data[p+1] = this._fgl;
+                    data[p+2] = this._fb1;
                     
                 }
                 cp >>= 1;
