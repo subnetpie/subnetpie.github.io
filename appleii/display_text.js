@@ -86,7 +86,7 @@ export class TextDisplay
     draw_char40(id, row, col, char) {
         if((row > 23) || (col > 79)) return;
 
-        const ox = (col * 7) + 2;
+        const ox = (col * 14) + 2;
         const oy = (row * 16) + 4;
         const lo = (ox + oy * 564) * 4;
         const data = id.data;
@@ -100,10 +100,13 @@ export class TextDisplay
             for(let x=lo, xmax=lo+56; x<xmax; x+=8) {
                 const p = x + y;
                 if(cp & 0x01) {
-                    data[p]   = this._br;
-                    data[p+1] = this._bg;
-                    data[p+2] = this._bb;
+                    
+                    data[p]    = this._br;
+                    data[p+1]  = this._bg;
+                    data[p+2]  = this._bb;
+                    
                 } else {
+                    
                     data[p]    = this._fr;
                     data[p+1]  = this._fg;
                     data[p+2]  = this._fb;
@@ -111,6 +114,7 @@ export class TextDisplay
                     data[p+2256] = this._frl;
                     data[p+2257] = this._fgl;
                     data[p+2258] = this._fb1;
+                    
                 }
                 cp >>= 1;
             }
