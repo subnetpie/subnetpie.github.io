@@ -88,7 +88,7 @@ export class TextDisplay
 
         const ox = (col * 7) + 2;
         const oy = (row * 16) + 4;
-        const lo = (ox + oy * 564) * 4;
+        const lo = (ox + oy * 564) * 8;
         const data = id.data;
 
         // 7x8 font
