@@ -110,16 +110,16 @@ export class TextDisplay
                     //data[p+2258] = this._bg;
                 } else {
 
-                    data[p]    = this._fr;
-                    data[p+1]  = this._fg;
-                    data[p+2]  = this._fb;
+                    //data[p]    = this._fr;
+                    //data[p+1]  = this._fg;
+                    //data[p+2]  = this._fb;
                     
                     data[p+2256] = this._fr;
                     data[p+2257] = this._fg;
                     data[p+2258] = this._fb;
 
                 }
-                cp >>= .5;
+                cp >>= 1;
             }
         }
         if(id == this._id) this._context.putImageData(this._id, 0, 0, ox, oy, 14, 16);
