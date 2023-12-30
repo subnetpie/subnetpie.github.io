@@ -110,7 +110,7 @@ export class TextDisplay
                     data[p]    = this._fr;
                     data[p+1]  = this._fg;
                     data[p+2]  = this._fb;
-                    
+                    p=p=7;
                     data[p+2256] = this._frl;
                     data[p+2257] = this._fgl;
                     data[p+2258] = this._fb1;
