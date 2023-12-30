@@ -107,9 +107,9 @@ export class TextDisplay
                     
                 } else {
                     
-                    //data[p+2256]  = this._fr;
-                    //data[p+2257]  = this._fg;
-                    //data[p+2258]  = this._fb;
+                    data[p+2256]  = this._fr;
+                    data[p+2257]  = this._fg;
+                    data[p+2258]  = this._fb;
                     
                     //var nextOff = off + 564 * 4;
         
