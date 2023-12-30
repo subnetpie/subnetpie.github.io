@@ -86,8 +86,8 @@ export class TextDisplay
     draw_char40(id, row, col, char) {
         if((row > 23) || (col > 39)) return;
 
-        const ox = (col * 14) + 2;
-        const oy = (row * 16) + 4;
+        const ox = (col * 7) + 2;
+        const oy = (row * 8) + 4;
         const lo = (ox + oy * 564) * 4;
         const data = id.data;
 
@@ -117,6 +117,20 @@ export class TextDisplay
 
         if(id == this._id) this._context.putImageData(this._id, 0, 0, ox, oy, 14, 16);
     }
+    
+    
+    
+//let offset = (col * 14 + (bank ? 0 : 1) * 7 + row * 560 * 8) * 4;
+//for (let jdx = 0; jdx < 8; jdx++) {
+//  let b = this.charset[val * 8 + jdx];
+//  for (let idx = 0; idx < 7; idx++) {
+//    const color = b & 0x01 ? back : fore;
+//    this._drawHalfPixel(data, offset, color);
+//    b >>= 1;
+//    offset += 4;
+//  }
+//  offset += 553 * 4;
+//}
     
     // draw XxX char
     draw_char80(id, row, col, char) {
