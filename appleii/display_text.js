@@ -98,7 +98,7 @@ export class TextDisplay
         ) {
             let cp = this._font_rom[csl++];
             // 7 * 8 = 56
-            for(let x=lo, xmax=lo+112; x<xmax; x+=8) {
+            for(let x=lo, xmax=lo+56; x<xmax; x+=8) {
                 const p = x + y;
                 if(cp & 0x01) {
                     //data[p]   = this._br;
@@ -109,7 +109,7 @@ export class TextDisplay
                     //data[p+2257] = this._bg;
                     //data[p+2258] = this._bg;
                 } else {
-                    if 
+
                     data[p]    = this._fr;
                     data[p+1]  = this._fg;
                     data[p+2]  = this._fb;
@@ -117,12 +117,14 @@ export class TextDisplay
                     data[p+2256] = this._fr;
                     data[p+2257] = this._fg;
                     data[p+2258] = this._fb;
+
                 }
-                cp >>= 1;
+                cp >>= .5;
             }
         }
         if(id == this._id) this._context.putImageData(this._id, 0, 0, ox, oy, 14, 16);
     }
+
 
 //let offset = (col * 14 + (bank ? 0 : 1) * 7 + row * 560 * 8) * 4;
 //for (let jdx = 0; jdx < 8; jdx++) {
