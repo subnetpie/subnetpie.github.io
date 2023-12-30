@@ -117,9 +117,9 @@ export class TextDisplay
                     //data[x+nextOff+1] = c1;
                     //data[x+nextOff+2] = c2;
         
-                    data[p+0] = this._frl;
-                    data[p+1] = this._fgl;
-                    data[p+2] = this._fb1;
+                    //data[p+0] = this._frl;
+                    //data[p+1] = this._fgl;
+                    //data[p+2] = this._fb1;
                     
                 }
                 cp >>= 1;
