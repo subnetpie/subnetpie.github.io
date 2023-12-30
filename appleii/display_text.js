@@ -94,7 +94,7 @@ export class TextDisplay
         // 7x8 font
         let csl = char * 8;
         // 64 * 564 = 36096,  8 * 564 = 4512
-        for(let y=0; y<36096; y+=2256) {
+        for(let y=0; y<36096; y+=4512) {
             let cp = this._font_rom[csl++];
             // 7 * 8 = 56
             for(let x=lo, xmax=lo+56; x<xmax; x+=8) {
@@ -104,17 +104,17 @@ export class TextDisplay
                     //data[p+1] = this._bg;
                     //data[p+2] = this._bb;
                     
-                    data[p+2256] = this._bg;
-                    data[p+2257] = this._bg;
-                    data[p+2258] = this._bg;
+           //         data[p+2256] = this._bg;
+                    //data[p+2257] = this._bg;
+                    //data[p+2258] = this._bg;
                 } else {
                     data[p]    = this._fr;
                     data[p+1]  = this._fg;
                     data[p+2]  = this._fb;
                     
-                    data[p+2256] = data[p+2260] = this._br;
-                    data[p+2257] = data[p+2261] = this._br;
-                    data[p+2258] = data[p+2262] = this._br;
+                    data[p+2256] = this._fr;
+                    data[p+2257] = this._fg;
+                    data[p+2258] = this._fb;
                 }
                 cp >>= 1;
             }
