@@ -107,12 +107,16 @@ export class TextDisplay
                     data[p]    = this._fr;
                     data[p+1]  = this._fg;
                     data[p+2]  = this._fb;
+                    data[p+2256] = data[p+2260] = this._frl;
+                    data[p+2257] = data[p+2261] = this._fgl;
+                    data[p+2258] = data[p+2262] = this._fbl;
+                }
                 }
                 cp >>= 1;
             }
         }
 
-        if(id == this._id) this._context.putImageData(this._id, 0, 0, ox, oy, 7, 16);
+        if(id == this._id) this._context.putImageData(this._id, 0, 0, ox, oy, 14, 16);
     }
     
     
