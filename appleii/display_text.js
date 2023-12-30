@@ -103,10 +103,10 @@ export class TextDisplay
                     data[p]   = this._br;
                     data[p+1] = this._bg;
                     data[p+2] = this._bb;
-                } else {
-                    data[p]    = this._fr;
-                    data[p+1]  = this._fg;
-                    data[p+2]  = this._fb;
+        //        } else {
+        //            data[p]    = this._fr;
+        //            data[p+1]  = this._fg;
+        //            data[p+2]  = this._fb;
                 }
                 cp >>= 1;
             }
