@@ -88,7 +88,7 @@ export class TextDisplay
 
         const ox = (col * 14) + 2;
         const oy = (row * 16) + 4;
-        const lo = (ox + oy * 564) * 8;
+        const lo = (ox + oy * 564) * 4;
         const data = id.data;
 
         // 7x8 font
@@ -98,14 +98,14 @@ export class TextDisplay
         ) {
             let cp = this._font_rom[csl++];
             // 7 * 8 = 56
-            for(let x=lo, xmax=lo+56; x<xmax; x+=8) {
+            for(let x=lo, xmax=lo+112; x<xmax; x+=8) {
                 const p = x + y;
                 if(cp & 0x01) {
                     //data[p]   = this._br;
                     //data[p+1] = this._bg;
                     //data[p+2] = this._bb;
                     
-           //         data[p+2256] = this._bg;
+                    //data[p+2256] = this._bg;
                     //data[p+2257] = this._bg;
                     //data[p+2258] = this._bg;
                 } else {
