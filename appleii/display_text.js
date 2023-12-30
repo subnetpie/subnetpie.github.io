@@ -111,12 +111,9 @@ export class TextDisplay
                 cp >>= 1;
             }
         }
-
         if(id == this._id) this._context.putImageData(this._id, 0, 0, ox, oy, 14, 16);
     }
-    
-    
-    
+
 //let offset = (col * 14 + (bank ? 0 : 1) * 7 + row * 560 * 8) * 4;
 //for (let jdx = 0; jdx < 8; jdx++) {
 //  let b = this.charset[val * 8 + jdx];
@@ -141,7 +138,7 @@ export class TextDisplay
         // 7x8 font
         let csl = char * 8;
         // 64 * 564 = 36096,  8 * 564 = 4512
-        for(let y=0; y<36096; y+=4512) {
+        for(let y=0; y<36096; y+=2256) {
             let cp = this._font_rom[csl++];
             // 7 * 8 = 56
             for(let x=lo, xmax=lo+56; x<xmax; x+=8) {
