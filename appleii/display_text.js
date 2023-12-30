@@ -79,12 +79,12 @@ export class TextDisplay
         const col = (addr & 0x7f) % 40;  // column: 0-39
         const row = (((addr - col) >> 2) & 0x18) | ((addr >> 7) & 0x07);
         const id = (addr < 0x0800) ? this._id1 : this._id2;
-        this.draw_char40(id, row, col, val);
+        this.draw_char80(id, row, col, val);
     }
 
     // draw 14x16 char
     draw_char40(id, row, col, char) {
-        if((row > 23) || (col > 39)) return;
+        if((row > 23) || (col > 79)) return;
 
         const ox = (col * 7) + 2;
         const oy = (row * 16) + 4;
@@ -100,30 +100,19 @@ export class TextDisplay
             for(let x=lo, xmax=lo+56; x<xmax; x+=8) {
                 const p = x + y;
                 if(cp & 0x01) {
-                    //data[p]   = this._br;
-                    //data[p+1] = this._bg;
-                    //data[p+2] = this._bb;
-                    
-                    //data[p+2256] = this._bg;
-                    //data[p+2257] = this._bg;
-                    //data[p+2258] = this._bg;
+                    data[p]   = this._br;
+                    data[p+1] = this._bg;
+                    data[p+2] = this._bb;
                 } else {
-                    if (x<28) {
-                        data[p]    = this._fr;
-                        data[p+1]  = this._fg;
-                        data[p+2]  = this._fb;
-                    } else {
-                        data[p+2256] = this._fr;
-                        data[p+2257] = this._fg;
-                        data[p+2258] = this._fb;
-                    }
+                    data[p]    = this._fr;
+                    data[p+1]  = this._fg;
+                    data[p+2]  = this._fb;
                 }
                 cp >>= 1;
             }
         }
-        if(id == this._id) this._context.putImageData(this._id, 0, 0, ox, oy, 14, 16);
+        if(id == this._id) this._context.putImageData(this._id, 0, 0, ox, oy, 7, 16);
     }
-
 
 //let offset = (col * 14 + (bank ? 0 : 1) * 7 + row * 560 * 8) * 4;
 //for (let jdx = 0; jdx < 8; jdx++) {
