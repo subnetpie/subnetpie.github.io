@@ -8,6 +8,8 @@
 //
 
 import {rom_342_0265_a} from "https://subnetpie.github.io/appleii/rom/342-0265-a.js";
+const fore: Color = [255, 255, 255];
+const back: Color = [0, 0, 0];
 
 export class TextDisplay
 {
@@ -104,7 +106,7 @@ export class TextDisplay
 
             let offset = (col * 14 + (bank ? 0 : 1) * 7 + row * 560 * 8) * 4;
             for (let jdx = 0; jdx < 8; jdx++) {
-                let b = this.charset[val * 8 + jdx];
+                let b = this.charset[char * 8 + jdx];
                 for (let idx = 0; idx < 7; idx++) {
                     const color = b & 0x01 ? back : fore;
                     this._drawHalfPixel(data, offset, color);
