@@ -125,9 +125,9 @@ export class TextDisplay
                 const p = x + y;
                 if(cp & 0x01) {
                     
-                    data[p+0]  = data[p+3]  = this._br;
-                    data[p+1]  = data[p+4]  = this._bg;
-                    data[p+2]  = data[p+5]  = this._bb;
+                    data[p+0]  = this._br;
+                    data[p+1]  = this._bg;
+                    data[p+2]  = this._bb;
                     
                     //data[p+2256]  = this._br;
                     //data[p+2257]  = this._bg;
@@ -135,9 +135,9 @@ export class TextDisplay
                     
                 } else {
                     
-                    //data[p+2256]  = this._fr;
-                    //data[p+2257]  = this._fg;
-                    //data[p+2258]  = this._fb;
+                    data[p+2256]  = this._fr;
+                    data[p+2257]  = this._fg;
+                    data[p+2258]  = this._fb;
                     
                     //var nextOff = off + 564 * 4;
         
