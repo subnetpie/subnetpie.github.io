@@ -86,7 +86,7 @@ export class TextDisplay
         // bits 6,5 ($60) of columns 0,40,80 yield the wrap row 0,1,2
         // bits 9,8,7 yield the 0-7 relative row number
         const col = (addr & 0x7f) % 40;  // column: 0-39
-        const row = (((addr - col + 2256) >> 2) & 0x18) | ((addr >> 7) & 0x07);
+        const row = (((addr - col) >> 2) & 0x18) | ((addr >> 7) & 0x07);
         const id = (addr < 0x0800) ? this._id1 : this._id2;
         
         this.draw_char40(id, row, col, val);
