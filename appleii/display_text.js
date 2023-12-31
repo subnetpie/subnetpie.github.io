@@ -95,7 +95,7 @@ export class TextDisplay
 
     // draw 14x16 char
     draw_char40(id, row, col, char) {
-        const ox = (col * 14) + 2;
+        /* const ox = (col * 14) + 2;
         const oy = (row * 16) + 4;
         const lo = (ox + oy * 564) * 4;
         const data = id.data;
@@ -115,7 +115,7 @@ export class TextDisplay
                 }
                 offset += 553 * 4;
             }
-        }
+        }*/
     }
             // 7x8 font
             //let csl = char * 8;
