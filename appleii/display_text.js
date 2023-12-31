@@ -119,7 +119,7 @@ export class TextDisplay
             // 7x8 font
             let csl = char * 8;
             // 64 * 564 = 36096,  8 * 564 = 4512
-            for(let y=0; y<36096; y+=2256) {
+            for(let y=0; y<36096*2; y+=4512*2) {
                 let cp = this._font_rom[csl++];
                 // 7 * 8 = 56
                 for(let x=lo, xmax=lo+112; x<xmax; x+=8) {
