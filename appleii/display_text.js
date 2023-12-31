@@ -114,45 +114,45 @@ export class TextDisplay
                 offset += 553 * 4;
             }
         }*/
-    if (row < 24 && col < 40) {
-        // 7x8 font
-        let csl = char * 8;
-        // 64 * 564 = 36096,  8 * 564 = 4512
-        for(let y=0; y<36096; y+=2256) {
-            let cp = this._font_rom[csl++];
-            // 7 * 8 = 56
-            for(let x=lo, xmax=lo+56; x<xmax; x+=8) {
-                const p = x + y;
-                if(cp & 0x01) {
+        if (row < 24 && col < 40) {
+            // 7x8 font
+            let csl = char * 8;
+            // 64 * 564 = 36096,  8 * 564 = 4512
+            for(let y=0; y<36096; y+=2256) {
+                let cp = this._font_rom[csl++];
+                // 7 * 8 = 56
+                for(let x=lo, xmax=lo+56; x<xmax; x+=8) {
+                    const p = x + y;
+                    if(cp & 0x01) {
                     
-                    data[p+0]  = this._br;
-                    data[p+1]  = this._bg;
-                    data[p+2]  = this._bb;
+                        data[p+0]  = this._br;
+                        data[p+1]  = this._bg;
+                        data[p+2]  = this._bb;
                     
-                    //data[p+2256]  = this._br;
-                    //data[p+2257]  = this._bg;
-                    //data[p+2258]  = this._bb;
+                        //data[p+2256]  = this._br;
+                        //data[p+2257]  = this._bg;
+                        //data[p+2258]  = this._bb;
                     
-                } else {
+                    } else {
                     
-                    //data[p+2256]  = this._fr;
-                    //data[p+2257]  = this._fg;
-                    //data[p+2258]  = this._fb;
+                        //data[p+2256]  = this._fr;
+                        //data[p+2257]  = this._fg;
+                        //data[p+2258]  = this._fb;
                     
-                    //var nextOff = off + 564 * 4;
-                    //data[x+nextOff+0] = c0;
-                    //data[x+nextOff+1] = c1;
-                    //data[x+nextOff+2] = c2;
+                        //var nextOff = off + 564 * 4;
+                        //data[x+nextOff+0] = c0;
+                        //data[x+nextOff+1] = c1;
+                        //data[x+nextOff+2] = c2;
         
-                    data[p+0] = this._frl;
-                    data[p+1] = this._fgl;
-                    data[p+2] = this._fb1;
+                        data[p+0] = this._frl;
+                        data[p+1] = this._fgl;
+                        data[p+2] = this._fb1;
                     
+                    }
+                    cp >>= 1;
                 }
-                cp >>= 1;
             }
-        }
-        if(id == this._id) this._context.putImageData(this._id, 0, 0, ox, oy, 14, 16);
+            if(id == this._id) this._context.putImageData(this._id, 0, 0, ox, oy, 14, 16);
         }
     }
 
