@@ -103,8 +103,8 @@ export class TextDisplay
         if (row < 24 && col < 40) {
             let y = row << 3;
             let x = col * 14;
-
-            let offset = (col * 14 + (bank ? 0 : 1) * 7 + row * 560 * 8) * 4;
+            let offset=1;
+            //let offset = (col * 14 + (bank ? 0 : 1) * 7 + row * 560 * 8) * 4;
             for (let jdx = 0; jdx < 8; jdx++) {
                 let b = this.charset[char * 8 + jdx];
                 for (let idx = 0; idx < 7; idx++) {
