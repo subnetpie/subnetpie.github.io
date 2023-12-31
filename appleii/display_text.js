@@ -118,7 +118,7 @@ export class TextDisplay
         // 7x8 font
         let csl = char * 8;
         // 64 * 564 = 36096,  8 * 564 = 4512
-        for(let y=0; y<36096; y+=4512) {
+        for(let y=0; y<36096; y+=2256) {
             let cp = this._font_rom[csl++];
             // 7 * 8 = 56
             for(let x=lo, xmax=lo+56; x<xmax; x+=8) {
@@ -140,7 +140,6 @@ export class TextDisplay
                     //data[p+2258]  = this._fb;
                     
                     //var nextOff = off + 564 * 4;
-        
                     //data[x+nextOff+0] = c0;
                     //data[x+nextOff+1] = c1;
                     //data[x+nextOff+2] = c2;
