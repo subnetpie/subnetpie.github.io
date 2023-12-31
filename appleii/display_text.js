@@ -8,8 +8,8 @@
 //
 
 import {rom_342_0265_a} from "https://subnetpie.github.io/appleii/rom/342-0265-a.js";
-const fore: Color = [255, 255, 255];
-const back: Color = [0, 0, 0];
+//const fore: Color = [255, 255, 255];
+//const back: Color = [0, 0, 0];
 
 export class TextDisplay
 {
@@ -116,6 +116,7 @@ export class TextDisplay
                 offset += 553 * 4;
             }
         }
+    }
             // 7x8 font
             //let csl = char * 8;
             // 64 * 564 = 36096,  8 * 564 = 4512
@@ -155,7 +156,7 @@ export class TextDisplay
       //      }
       //  }
         //if(id == this._id) this._context.putImageData(this._id, 0, 0, ox, oy, 14, 16);
-    }
+//    }
 
 //let offset = (col * 14 + (bank ? 0 : 1) * 7 + row * 560 * 8) * 4;
 //for (let jdx = 0; jdx < 8; jdx++) {
