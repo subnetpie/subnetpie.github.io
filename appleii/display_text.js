@@ -70,6 +70,15 @@ export class TextDisplay
         this.refresh();
     };
 
+    private _drawHalfPixel(data: Uint8ClampedArray, off: number, color: Color) {
+        const c0 = color[0],
+            c1 = color[1],
+            c2 = color[2];
+        data[off + 0] = c0;
+        data[off + 1] = c1;
+        data[off + 2] = c2;
+    }
+
     draw_text(addr, val) {
         // rows are 120 columns wide consuming 128 bytes (0-119)+8
         // every 40 columns rows wrap for a total of three wraps
