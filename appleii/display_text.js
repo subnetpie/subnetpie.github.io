@@ -93,12 +93,12 @@ export class TextDisplay
 
     // draw 14x16 char
     draw_char40(id, row, col, char) {
-        /* const ox = (col * 14) + 2;
+        const ox = (col * 14) + 2;
         const oy = (row * 16) + 4;
         const lo = (ox + oy * 564) * 4;
         const data = id.data;
 
-        if (row < 24 && col < 40) {
+        /*if (row < 24 && col < 40) {
             let y = row << 3;
             let x = col * 14;
             let offset=1;
@@ -114,7 +114,7 @@ export class TextDisplay
                 offset += 553 * 4;
             }
         }*/
-    
+    if (row < 24 && col < 40) {
         // 7x8 font
         let csl = char * 8;
         // 64 * 564 = 36096,  8 * 564 = 4512
@@ -154,6 +154,7 @@ export class TextDisplay
             }
         }
         if(id == this._id) this._context.putImageData(this._id, 0, 0, ox, oy, 14, 16);
+        }
     }
 
 //let offset = (col * 14 + (bank ? 0 : 1) * 7 + row * 560 * 8) * 4;
