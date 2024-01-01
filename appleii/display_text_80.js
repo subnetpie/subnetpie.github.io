@@ -96,12 +96,12 @@ export class TextDisplay80
 
     // draw 14x16 char
     draw_char80(id, row, col, char) {
-        /*const ox = (col * 14) + 2;
+        const ox = (col * 14) + 2;
         const oy = (row * 16) + 4;
         const lo = (ox + oy * 564) * 4;
         const data = id.data;
 
-        if (row < 24 && col < 40) {
+        /*if (row < 24 && col < 40) {
             let y = row << 3;
             let x = col * 14;
             let offset=1;
