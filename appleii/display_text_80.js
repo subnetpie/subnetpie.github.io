@@ -124,9 +124,9 @@ export class TextDisplay80
             for(let y=0; y<36096; y+=4512) {
                 let cp = this._font_rom[csl++];
                 // 7 * 8 = 56
-                /*for(let x=lo, xmax=lo+112; x<xmax; x+=8) {
+                for(let x=lo, xmax=lo+112; x<xmax; x+=8) {
                     const p = x + y;
-                    if(cp & 0x01) {
+                    /*if(cp & 0x01) {
                     
                         data[p+0]  = this._br;
                         data[p+1]  = this._bg;
@@ -151,9 +151,9 @@ export class TextDisplay80
                         data[p+1] = this._fgl;
                         data[p+2] = this._fb1;
                     
-                    }
+                    }*/
                     cp >>= 1;
-                }*/
+                }
             }
             if(id == this._id) this._context.putImageData(this._id, 0, 0, ox, oy, 14, 16);
         }
