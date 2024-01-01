@@ -459,7 +459,7 @@ export class IOManager
 
 switch_display_mode() {
         this._display_text.reset();
-        //this._display_text_80.reset();
+        this._display_text_80.reset();
         this._display_hires.reset();
         this._display_double_hires.reset();
 
