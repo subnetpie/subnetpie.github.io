@@ -72,15 +72,6 @@ export class TextDisplay80
         this.refresh();
     };
 
-    /*private _drawHalfPixel(data: Uint8ClampedArray, off: number, color: Color) {
-        const c0 = color[0],
-            c1 = color[1],
-            c2 = color[2];
-        data[off + 0] = c0;
-        data[off + 1] = c1;
-        data[off + 2] = c2;
-    }*/
-
     draw_text(addr, val) {
         // rows are 120 columns wide consuming 128 bytes (0-119)+8
         // every 40 columns rows wrap for a total of three wraps
@@ -101,22 +92,6 @@ export class TextDisplay80
         const lo = (ox + oy * 564) * 4;
         const data = id.data;
 
-        /*if (row < 24 && col < 40) {
-            let y = row << 3;
-            let x = col * 14;
-            let offset = (col * 14 + (bank ? 0 : 1) * 7 + row * 560 * 8) * 4;
-            for (let jdx = 0; jdx < 8; jdx++) {
-                let b = this.charset[char * 8 + jdx];
-                for (let idx = 0; idx < 7; idx++) {
-                    const color = b & 0x01 ? back : fore;
-                    this._drawHalfPixel(data, offset, color);
-                    b >>= 1;
-                    offset += 4;
-                }
-                offset += 553 * 4;
-            }
-        }*/
-
         if (row < 24 && col < 40) {
             // 7x8 font
             let csl = char * 8;
@@ -132,30 +107,26 @@ export class TextDisplay80
                         data[p+1]  = this._bg;
                         data[p+2]  = this._bb;
                     
-                        //data[p+2256]  = this._br;
-                        //data[p+2257]  = this._bg;
-                        //data[p+2258]  = this._bb;
+                        data[p+2256]  = this._br;
+                        data[p+2257]  = this._bg;
+                        data[p+2258]  = this._bb;
                     
                     } else {
-                    
-                        data[p+2256]  = this._fr;
-                        data[p+2257]  = this._fg;
-                        data[p+2258]  = this._fb;
-                    
-                        //var nextOff = off + 564 * 4;
-                        //data[x+nextOff+0] = c0;
-                        //data[x+nextOff+1] = c1;
-                        //data[x+nextOff+2] = c2;
-        
+                        
                         data[p+0] = this._frl;
                         data[p+1] = this._fgl;
                         data[p+2] = this._fb1;
                     
+                        data[p+2256]  = this._fr;
+                        data[p+2257]  = this._fg;
+                        data[p+2258]  = this._fb;
+
                     }
                     cp >>= 1;
                 }
             }
             if(id == this._id) this._context.putImageData(this._id, 0, 0, ox, oy, 14, 16);
+            alert(id+" - "+this.id);
         }
     }
 
