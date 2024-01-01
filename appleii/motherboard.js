@@ -37,8 +37,9 @@ export class Motherboard
         this.audio = new AppleAudio(khz);
         this.cycles = 0;
         this.io_manager = new IOManager(this.memory, this.keyboard,
-                                        this.display_text, this.display_hires, this.display_double_hires,
-                                        this.audio_click.bind(this), joyValues);
+                                        this.display_text, this.display_text_80, this.display_hires, 
+                                        this.display_double_hires, this.audio_click.bind(this), 
+                                        joyValues);
     }
 
     clock(count) {
