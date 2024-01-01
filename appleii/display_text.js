@@ -10,7 +10,7 @@
 export class TextDisplay
 {
     constructor(memory, canvas) {
-        this._font_rom = motherboard.rom_342_0265_a;
+        this._font_rom = motherboard.font_rom;
         this._mem = memory;
 
         canvas.width  = 564;  // 7*2*40 + 4
