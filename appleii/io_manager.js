@@ -470,6 +470,9 @@ switch_display_mode() {
             // text mode
             //console.log("enabling text mode: " + (is_page2 ? "page2" : "page1"));
             this._display_text.set_active_page(is_page2 ? 2 : 1);
+        } else if(this._80col_mode) {
+            //console.log("enabling text mode: " + (is_page2 ? "page2" : "page1"));
+            this._display_text_80.set_active_page(is_page2 ? 2 : 1);
         } else {
             // graphics modes
             // TODO: mixed modes
@@ -482,12 +485,12 @@ switch_display_mode() {
                     this._display_hires.set_active_page(is_page2 ? 2 : 1);
                 }
             } else {
-                // TODO: lores graphics
-           //     if(this._double_hires) {
-                    //console.log("enabling " + (this._mixed_mode ? "mixed " : "") + "double-lores graphics mode, " + (is_page2 ? "page2" : "page1"));
-           //     } else {
-                    //console.log("enabling " + (this._mixed_mode ? "mixed " : "") + "lores graphics mode, " + (is_page2 ? "page2" : "page1"));
-           //     }
+            //TODO: lores graphics
+            //if(this._double_hires) {
+            //console.log("enabling " + (this._mixed_mode ? "mixed " : "") + "double-lores graphics mode, " + (is_page2 ? "page2" : "page1"));
+            //} else {
+            //console.log("enabling " + (this._mixed_mode ? "mixed " : "") + "lores graphics mode, " + (is_page2 ? "page2" : "page1"));
+            //}
             }
         }
     }
