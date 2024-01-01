@@ -39,6 +39,7 @@ export class TextDisplay80
     get fore() {
         return (this._fr << 16) | (this._fg << 8) | this._fb;
     };
+    
     set fore(rgb) {
         this._fr = (rgb >> 16) & 0xff;
         this._fg = (rgb >> 8) & 0xff;
