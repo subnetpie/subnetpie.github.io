@@ -56,8 +56,8 @@ export class Motherboard
     reset(cold) {
      //   if(cold) this.memory.reset();
         this.cpu.reset();
-        this.disalay_text.reset();
-        this.didplay_text_80.reset();
+        this.display_text.reset();
+        this.display_text_80.reset();
         this.display_hires.reset();
         this.display_double_hires.reset();
         this.floppy525.reset();
