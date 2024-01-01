@@ -127,7 +127,7 @@ export class TextDisplay80
                 for(let x=lo, xmax=lo+112; x<xmax; x+=8) {
                     const p = x + y;
                     if(cp & 0x01) {
-                    alert(x);
+                    
                         data[p+0]  = this._br;
                         data[p+1]  = this._bg;
                         data[p+2]  = this._bb;
@@ -138,9 +138,9 @@ export class TextDisplay80
                     
                     } else {
                     
-                        //data[p+2256]  = this._fr;
-                        //data[p+2257]  = this._fg;
-                        //data[p+2258]  = this._fb;
+                        data[p+2256]  = this._fr;
+                        data[p+2257]  = this._fg;
+                        data[p+2258]  = this._fb;
                     
                         //var nextOff = off + 564 * 4;
                         //data[x+nextOff+0] = c0;
