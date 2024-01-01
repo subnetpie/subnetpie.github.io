@@ -21,13 +21,11 @@ import {Floppy525} from "https://subnetpie.github.io/appleii/floppy525.js";
 import {AppleAudio} from "https://subnetpie.github.io/appleii/apple_audio.js";
 import {rom_342_0304_cd} from "https://subnetpie.github.io/appleii/rom/342-0304-cd.js";
 import {rom_342_0303_ef} from "https://subnetpie.github.io/appleii/rom/342-0303-ef.js";
-//import {rom_342_0265_a} from "https://subnetpie.github.io/appleii/rom/342-0265-a.js";
 
 export class Motherboard
 {
     constructor(khz, canvas, joyValues, floppy_led_cb) {
         this.memory = new Memory(rom_342_0304_cd, rom_342_0303_ef);
-        //this.font_rom = new Memory(rom_342_0265_a);
         this.cpu = new W65C02S(this.memory);
         this.keyboard = new Keyboard();
         this.display_text = new TextDisplay(this.memory, canvas);
@@ -59,7 +57,7 @@ export class Motherboard
      //   if(cold) this.memory.reset();
         this.cpu.reset();
         this.display_text.reset();
-        //this.display_text_80.reset();
+        this.display_text_80.reset();
         this.display_hires.reset();
         this.display_double_hires.reset();
         this.floppy525.reset();
