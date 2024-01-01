@@ -104,8 +104,7 @@ export class TextDisplay80
         /*if (row < 24 && col < 40) {
             let y = row << 3;
             let x = col * 14;
-            let offset=1;
-            //let offset = (col * 14 + (bank ? 0 : 1) * 7 + row * 560 * 8) * 4;
+            let offset = (col * 14 + (bank ? 0 : 1) * 7 + row * 560 * 8) * 4;
             for (let jdx = 0; jdx < 8; jdx++) {
                 let b = this.charset[char * 8 + jdx];
                 for (let idx = 0; idx < 7; idx++) {
@@ -119,13 +118,13 @@ export class TextDisplay80
         }*/
 
         if (row < 24 && col < 40) {
-         /*   // 7x8 font
+            // 7x8 font
             let csl = char * 8;
             // 64 * 564 = 36096,  8 * 564 = 4512
             for(let y=0; y<36096; y+=4512) {
                 let cp = this._font_rom[csl++];
                 // 7 * 8 = 56
-                for(let x=lo, xmax=lo+112; x<xmax; x+=8) {
+                /*for(let x=lo, xmax=lo+112; x<xmax; x+=8) {
                     const p = x + y;
                     if(cp & 0x01) {
                     
@@ -154,8 +153,8 @@ export class TextDisplay80
                     
                     }
                     cp >>= 1;
-                }
-            }*/
+                }*/
+            }
             if(id == this._id) this._context.putImageData(this._id, 0, 0, ox, oy, 14, 16);
         }
     }
