@@ -126,7 +126,7 @@ export class TextDisplay80
                 // 7 * 8 = 56
                 for(let x=lo, xmax=lo+112; x<xmax; x+=8) {
                     const p = x + y;
-                    /*if(cp & 0x01) {
+                    if(cp & 0x01) {
                     
                         data[p+0]  = this._br;
                         data[p+1]  = this._bg;
@@ -136,7 +136,7 @@ export class TextDisplay80
                         //data[p+2257]  = this._bg;
                         //data[p+2258]  = this._bb;
                     
-                    } else {
+                    } /*else {
                     
                         //data[p+2256]  = this._fr;
                         //data[p+2257]  = this._fg;
