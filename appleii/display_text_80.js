@@ -7,12 +7,12 @@
 //  https://www.gnu.org/licenses/gpl.html
 //
 
-//import {rom_342_0265_a} from "https://subnetpie.github.io/appleii/rom/342-0265-a.js";
+import {rom_342_0265_a80} from "https://subnetpie.github.io/appleii/rom/342-0265-a.js";
 
 export class TextDisplay80
 {
     constructor(memory, canvas) {
-        this._font_rom = rom_342_0265_a;
+        this._font_rom = rom_342_0265_a80;
         this._mem = memory;
 
         canvas.width = 564;  // 7*2*40 + 4
@@ -62,6 +62,7 @@ export class TextDisplay80
     get hscan() {
         return this._hscan;
     };
+    
     set hscan(val) {
         this._hscan = (val != 0);
         this._frl = this._hscan ? this._fr>>1 : this._fr;
