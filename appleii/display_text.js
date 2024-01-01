@@ -15,7 +15,7 @@ export class TextDisplay
         this._font_rom = rom_342_0265_a;
         this._mem = memory;
 
-        canvas.width  = 564;  // 7*2*40 + 4
+        canvas.width = 564;  // 7*2*40 + 4
         canvas.height = 390; // 8*2*24 + 6
 
         this._context = canvas.getContext('2d', {alpha: false});
@@ -24,7 +24,7 @@ export class TextDisplay
 
         this._id1 = this._context.createImageData(564, 390);
         this._id2 = this._context.createImageData(564, 390);
-        this._id  = undefined;
+        this._id = undefined;
         this._page1_init = false;
         this._page2_init = false;
 
@@ -79,19 +79,18 @@ export class TextDisplay
         const col = (addr & 0x7f) % 40;  // column: 0-39
         const row = (((addr - col) >> 2) & 0x18) | ((addr >> 7) & 0x07);
         const id = (addr < 0x0800) ? this._id1 : this._id2;
-        
         this.draw_char40(id, row, col, val);
     }
 
     // draw 14x16 char
     draw_char40(id, row, col, char) {
-        if((row > 23) || (col > 79)) return;
+        if((row > 23) || (col > 39)) return;
 
         const ox = (col * 14) + 2;
         const oy = (row * 16) + 4;
         const lo = (ox + oy * 564) * 4;
         const data = id.data;
-        
+
         // 7x8 font
         let csl = char * 8;
         // 64 * 564 = 36096,  8 * 564 = 4512
@@ -172,4 +171,3 @@ export class TextDisplay
         this._page2_init = false;
     }
 }
-
