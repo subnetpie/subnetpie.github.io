@@ -136,7 +136,7 @@ export class TextDisplay80
                         //data[p+2257]  = this._bg;
                         //data[p+2258]  = this._bb;
                     
-                    } /*else {
+                    } else {
                     
                         //data[p+2256]  = this._fr;
                         //data[p+2257]  = this._fg;
@@ -151,7 +151,7 @@ export class TextDisplay80
                         data[p+1] = this._fgl;
                         data[p+2] = this._fb1;
                     
-                    }*/
+                    }
                     cp >>= 1;
                 }
             }
