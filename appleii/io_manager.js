@@ -457,7 +457,6 @@ export class IOManager
         }
     }
 
-
 switch_display_mode() {
         this._display_text.reset();
         //this._display_text_80.reset();
@@ -485,16 +484,15 @@ switch_display_mode() {
                     this._display_hires.set_active_page(is_page2 ? 2 : 1);
                 }
             } else {
-            //TODO: lores graphics
-            //if(this._double_hires) {
-            //console.log("enabling " + (this._mixed_mode ? "mixed " : "") + "double-lores graphics mode, " + (is_page2 ? "page2" : "page1"));
-            //} else {
-            //console.log("enabling " + (this._mixed_mode ? "mixed " : "") + "lores graphics mode, " + (is_page2 ? "page2" : "page1"));
-            //}
+                //TODO: lores graphics
+                if(this._double_hires) {
+                //console.log("enabling " + (this._mixed_mode ? "mixed " : "") + "double-lores graphics mode, " + (is_page2 ? "page2" : "page1"));
+                } else {
+                //console.log("enabling " + (this._mixed_mode ? "mixed " : "") + "lores graphics mode, " + (is_page2 ? "page2" : "page1"));
+                }
             }
         }
     }
-
 
     reset() {
         this._c3_rom = false;
