@@ -114,7 +114,7 @@ export class TextDisplay80
                 cp >>= 1;
             }
         }
-
+console.log(id + " - " + this.id);
         if(id == this._id) this._context.putImageData(this._id, 0, 0, ox, oy, 14, 16);
     }
 
