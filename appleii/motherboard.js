@@ -21,7 +21,7 @@ import {Floppy525} from "https://subnetpie.github.io/appleii/floppy525.js";
 import {AppleAudio} from "https://subnetpie.github.io/appleii/apple_audio.js";
 import {rom_342_0304_cd} from "https://subnetpie.github.io/appleii/rom/342-0304-cd.js";
 import {rom_342_0303_ef} from "https://subnetpie.github.io/appleii/rom/342-0303-ef.js";
-
+import {rom_342_0265_a} from "https://subnetpie.github.io/appleii/rom/342-0265-a.js";
 
 export class Motherboard
 {
