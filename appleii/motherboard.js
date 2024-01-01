@@ -13,7 +13,7 @@ import {W65C02S} from "https://subnetpie.github.io/appleii/w65c02s.js";
 import {Memory} from "https://subnetpie.github.io/appleii/memory.js";
 import {IOManager} from "https://subnetpie.github.io/appleii/io_manager.js";
 import {TextDisplay} from "https://subnetpie.github.io/appleii/display_text.js";
-//import {TextDisplay80} from "https://subnetpie.github.io/appleii/display_text_80.js";
+import {TextDisplay80} from "https://subnetpie.github.io/appleii/display_text_80.js";
 import {HiresDisplay} from "https://subnetpie.github.io/appleii/display_hires.js";
 import {DoubleHiresDisplay} from "https://subnetpie.github.io/appleii/display_double_hires.js";
 import {Keyboard} from "https://subnetpie.github.io/appleii/keyboard.js";
