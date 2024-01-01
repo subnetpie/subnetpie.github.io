@@ -100,7 +100,7 @@ export class TextDisplay80
         const oy = (row * 16) + 4;
         const lo = (ox + oy * 564) * 4;
         const data = id.data;
-
+alert("80");
         /*if (row < 24 && col < 40) {
             let y = row << 3;
             let x = col * 14;
