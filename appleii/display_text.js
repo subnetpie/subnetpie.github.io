@@ -59,7 +59,7 @@ export class TextDisplay
         this.refresh();
     };
 
-    get hscan() {
+    /*get hscan() {
         return this._hscan;
     };
     set hscan(val) {
@@ -68,7 +68,7 @@ export class TextDisplay
         this._fgl = this._hscan ? this._fg>>1 : this._fg;
         this._fbl = this._hscan ? this._fb>>1 : this._fb;
         this.refresh();
-    };
+    };*/
 
     draw_text(addr, val) {
         // rows are 120 columns wide consuming 128 bytes (0-119)+8
