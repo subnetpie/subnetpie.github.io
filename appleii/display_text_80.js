@@ -9,7 +9,7 @@
 
 import {rom_342_0265_a} from "https://subnetpie.github.io/appleii/rom/342-0265-a.js";
 
-export class TextDisplay
+export class TextDisplay80
 {
     constructor(memory, canvas) {
         this._font_rom = rom_342_0265_a;
