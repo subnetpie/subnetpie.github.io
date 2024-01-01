@@ -122,12 +122,9 @@ export class TextDisplay
     refresh() {
         if(this._id == this._id1) {
             this._id = undefined; // suspend rendering
-            for(let a=0x0400; a<0x0800; a++) this.draw_text(a, this._mem.read(a+2256));
+            for(let a=0x0400; a<0x0800; a++) this.draw_text(a, this._mem.read(a));
             this._id = this._id1;
             this._context.putImageData(this._id, 0, 0);
-            //if (this.vm._80colMode) {
-                //this._write(addr >> 8, addr & 0xff, this._buffer[1][idx], 1);
-            //}
         }
         else if(this._id == this._id2) {
             this._id = undefined; // suspend rendering
