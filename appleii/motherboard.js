@@ -31,7 +31,7 @@ export class Motherboard
         this.cpu = new W65C02S(this.memory);
         this.keyboard = new Keyboard();
         this.display_text = new TextDisplay(this.memory, canvas);
-        //this.display_text_80 = new TextDisplay80(this.memory, canvas);
+        this.display_text_80 = new TextDisplay80(this.memory, canvas);
         this.display_hires = new HiresDisplay(this.memory, canvas);
         this.display_double_hires = new DoubleHiresDisplay(this.memory, canvas);
         this.floppy525 = new Floppy525(6, this.memory , floppy_led_cb);
