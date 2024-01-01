@@ -7,10 +7,12 @@
 //  https://www.gnu.org/licenses/gpl.html
 //
 
+import {rom_342_0265_a} from "./rom/342-0265-a.js";
+
 export class TextDisplay
 {
     constructor(memory, canvas) {
-        this._font_rom = motherboard.font_rom;
+        this._font_rom = rom_342_0265_a;
         this._mem = memory;
 
         canvas.width  = 564;  // 7*2*40 + 4
