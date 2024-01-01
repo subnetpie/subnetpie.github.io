@@ -100,7 +100,7 @@ export class TextDisplay80
         const oy = (row * 16) + 4;
         const lo = (ox + oy * 564) * 4;
         const data = id.data;
-alert("80");
+
         /*if (row < 24 && col < 40) {
             let y = row << 3;
             let x = col * 14;
@@ -117,7 +117,7 @@ alert("80");
             }
         }*/
 
-        //if (row < 24 && col < 40) {
+        if (row < 24 && col < 40) {
             // 7x8 font
             let csl = char * 8;
             // 64 * 564 = 36096,  8 * 564 = 4512
@@ -127,7 +127,7 @@ alert("80");
                 for(let x=lo, xmax=lo+112; x<xmax; x+=8) {
                     const p = x + y;
                     if(cp & 0x01) {
-                    
+                    alert(x);
                         data[p+0]  = this._br;
                         data[p+1]  = this._bg;
                         data[p+2]  = this._bb;
@@ -156,7 +156,7 @@ alert("80");
                 }
             }
             if(id == this._id) this._context.putImageData(this._id, 0, 0, ox, oy, 14, 16);
-        //}
+        }
     }
 
     refresh() {
