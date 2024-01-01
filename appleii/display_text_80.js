@@ -96,12 +96,12 @@ export class TextDisplay80
 
     // draw 14x16 char
     draw_char80(id, row, col, char) {
-        const ox = (col * 14) + 2;
+        /*const ox = (col * 14) + 2;
         const oy = (row * 16) + 4;
         const lo = (ox + oy * 564) * 4;
         const data = id.data;
 
-        /*if (row < 24 && col < 40) {
+        if (row < 24 && col < 40) {
             let y = row << 3;
             let x = col * 14;
             let offset=1;
@@ -116,7 +116,7 @@ export class TextDisplay80
                 }
                 offset += 553 * 4;
             }
-        }*/
+        }
 
         if (row < 24 && col < 40) {
             // 7x8 font
@@ -157,7 +157,7 @@ export class TextDisplay80
                 }
             }
             if(id == this._id) this._context.putImageData(this._id, 0, 0, ox, oy, 14, 16);
-        }
+        }*/
     }
 
     refresh() {
@@ -166,9 +166,6 @@ export class TextDisplay80
             for(let a=0x0400; a<0x0800; a++) this.draw_text(a, this._mem.read(a+2256));
             this._id = this._id1;
             this._context.putImageData(this._id, 0, 0);
-            //if (this.vm._80colMode) {
-                //this._write(addr >> 8, addr & 0xff, this._buffer[1][idx], 1);
-            //}
         }
         else if(this._id == this._id2) {
             this._id = undefined; // suspend rendering
