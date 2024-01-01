@@ -70,15 +70,6 @@ export class TextDisplay
         this.refresh();
     };
 
-    /*private _drawHalfPixel(data: Uint8ClampedArray, off: number, color: Color) {
-        const c0 = color[0],
-            c1 = color[1],
-            c2 = color[2];
-        data[off + 0] = c0;
-        data[off + 1] = c1;
-        data[off + 2] = c2;
-    }*/
-
     draw_text(addr, val) {
         // rows are 120 columns wide consuming 128 bytes (0-119)+8
         // every 40 columns rows wrap for a total of three wraps
@@ -89,89 +80,11 @@ export class TextDisplay
         const row = (((addr - col) >> 2) & 0x18) | ((addr >> 7) & 0x07);
         const id = (addr < 0x0800) ? this._id1 : this._id2;
         
-        this.draw_char80(id, row, col, val);
+        this.draw_char40(id, row, col, val);
     }
 
     // draw 14x16 char
     draw_char40(id, row, col, char) {
-        const ox = (col * 14) + 2;
-        const oy = (row * 16) + 4;
-        const lo = (ox + oy * 564) * 4;
-        const data = id.data;
-
-        /*if (row < 24 && col < 40) {
-            let y = row << 3;
-            let x = col * 14;
-            let offset=1;
-            //let offset = (col * 14 + (bank ? 0 : 1) * 7 + row * 560 * 8) * 4;
-            for (let jdx = 0; jdx < 8; jdx++) {
-                let b = this.charset[char * 8 + jdx];
-                for (let idx = 0; idx < 7; idx++) {
-                    const color = b & 0x01 ? back : fore;
-                    this._drawHalfPixel(data, offset, color);
-                    b >>= 1;
-                    offset += 4;
-                }
-                offset += 553 * 4;
-            }
-        }*/
-
-        if (row < 24 && col < 40) {
-            // 7x8 font
-            let csl = char * 8;
-            // 64 * 564 = 36096,  8 * 564 = 4512
-            for(let y=0; y<36096; y+=4512) {
-                let cp = this._font_rom[csl++];
-                // 7 * 8 = 56
-                for(let x=lo, xmax=lo+112; x<xmax; x+=8) {
-                    const p = x + y;
-                    if(cp & 0x01) {
-                    
-                        data[p+0]  = this._br;
-                        data[p+1]  = this._bg;
-                        data[p+2]  = this._bb;
-                    
-                        //data[p+2256]  = this._br;
-                        //data[p+2257]  = this._bg;
-                        //data[p+2258]  = this._bb;
-                    
-                    } else {
-                    
-                        //data[p+2256]  = this._fr;
-                        //data[p+2257]  = this._fg;
-                        //data[p+2258]  = this._fb;
-                    
-                        //var nextOff = off + 564 * 4;
-                        //data[x+nextOff+0] = c0;
-                        //data[x+nextOff+1] = c1;
-                        //data[x+nextOff+2] = c2;
-        
-                        data[p+0] = this._frl;
-                        data[p+1] = this._fgl;
-                        data[p+2] = this._fb1;
-                    
-                    }
-                    cp >>= 1;
-                }
-            }
-            if(id == this._id) this._context.putImageData(this._id, 0, 0, ox, oy, 14, 16);
-        }
-    }
-
-//let offset = (col * 14 + (bank ? 0 : 1) * 7 + row * 560 * 8) * 4;
-//for (let jdx = 0; jdx < 8; jdx++) {
-//  let b = this.charset[val * 8 + jdx];
-//  for (let idx = 0; idx < 7; idx++) {
-//    const color = b & 0x01 ? back : fore;
-//    this._drawHalfPixel(data, offset, color);
-//    b >>= 1;
-//    offset += 4;
-//  }
-//  offset += 553 * 4;
-//}
-    
-    // draw XxX char
-    draw_char80(id, row, col, char) {
         if((row > 23) || (col > 79)) return;
 
         const ox = (col * 14) + 2;
