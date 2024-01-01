@@ -87,12 +87,14 @@ export class TextDisplay80
 
     // draw 14x16 char
     draw_char80(id, row, col, char) {
+        if((row > 23) || (col > 39)) return;
+        
         const ox = (col * 14) + 2;
         const oy = (row * 16) + 4;
         const lo = (ox + oy * 564) * 4;
         const data = id.data;
 
-        if (row < 24 && col < 40) {
+        
             // 7x8 font
             let csl = char * 8;
             // 64 * 564 = 36096,  8 * 564 = 4512
@@ -127,7 +129,7 @@ export class TextDisplay80
             }
             if(id == this._id) this._context.putImageData(this._id, 0, 0, ox, oy, 14, 16);
             alert(id+" - "+this.id);
-        }
+        
     }
 
     refresh() {
