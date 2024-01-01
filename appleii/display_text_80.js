@@ -7,12 +7,12 @@
 //  https://www.gnu.org/licenses/gpl.html
 //
 
-import {rom_342_0265_a80} from "https://subnetpie.github.io/appleii/rom/342-0265-a.js";
+import {rom_342_0265_a} from "https://subnetpie.github.io/appleii/rom/342-0265-a.js";
 
 export class TextDisplay80
 {
     constructor(memory, canvas) {
-        this._font_rom = rom_342_0265_a80;
+        this._font_rom = rom_342_0265_a;
         this._mem = memory;
 
         canvas.width = 564;  // 7*2*40 + 4
