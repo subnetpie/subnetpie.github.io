@@ -27,6 +27,7 @@ export class Motherboard
 {
     constructor(khz, canvas, joyValues, floppy_led_cb) {
         this.memory = new Memory(rom_342_0304_cd, rom_342_0303_ef);
+        this.font_rom = new Memory(rom_342_0265_a);
         this.cpu = new W65C02S(this.memory);
         this.keyboard = new Keyboard();
         this.display_text = new TextDisplay(this.memory, canvas);
