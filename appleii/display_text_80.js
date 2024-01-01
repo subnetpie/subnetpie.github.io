@@ -93,7 +93,7 @@ export class TextDisplay80
     }
 
     // draw 14x16 char
-    draw_char40(id, row, col, char) {
+    draw_char80(id, row, col, char) {
         const ox = (col * 14) + 2;
         const oy = (row * 16) + 4;
         const lo = (ox + oy * 564) * 4;
@@ -171,7 +171,7 @@ export class TextDisplay80
 //}
     
     // draw XxX char
-    draw_char80(id, row, col, char) {
+    draw_char40(id, row, col, char) {
         if((row > 23) || (col > 79)) return;
 
         const ox = (col * 14) + 2;
