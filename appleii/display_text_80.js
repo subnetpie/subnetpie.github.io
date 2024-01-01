@@ -124,7 +124,7 @@ export class TextDisplay80
             for(let y=0; y<36096; y+=4512) {
                 let cp = this._font_rom[csl++];
                 // 7 * 8 = 56
-                for(let x=lo, xmax=lo+112; x<xmax; x+=8) {
+                for(let x=lo, xmax=lo+56; x<xmax; x+=8) {
                     const p = x + y;
                     if(cp & 0x01) {
                     
