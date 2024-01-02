@@ -63,6 +63,7 @@ export class TextDisplay80
         return this._hscan;
     };
     set hscan(val) {
+        alert("hscan");
         this._hscan = (val != 0);
         this._frl = this._hscan ? this._fr>>1 : this._fr;
         this._fgl = this._hscan ? this._fg>>1 : this._fg;
