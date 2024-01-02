@@ -27,6 +27,8 @@ export class TextDisplay80
         this._id = undefined;
         this._page1_init = false;
         this._page2_init = false;
+        
+        this._hscan = true;
 
         this._fore = 0x00ff66; // green
         this._back = 0x111111; // almost black
