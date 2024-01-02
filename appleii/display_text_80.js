@@ -104,9 +104,6 @@ export class TextDisplay80
                     data[p]    = this._fr;
                     data[p+1]  = this._fg;
                     data[p+2]  = this._fb;
-                    //data[p+2256] = data[p+2260] = this._fr;
-                    //data[p+2257] = data[p+2261] = this._fg;
-                    //data[p+2258] = data[p+2262] = this._fb;
                 }
                 cp >>= 1;
             }
