@@ -28,8 +28,6 @@ export class TextDisplay80
         this._page1_init = false;
         this._page2_init = false;
 
-        this._hscan = true;
-
         this._fore = 0x00ff66; // green
         this._back = 0x111111; // almost black
 
@@ -58,18 +56,6 @@ export class TextDisplay80
         this._bb = rgb & 0xff;
         this.refresh();
     };
-
-    /*get hscan() {
-        return this._hscan;
-    };
-    set hscan(val) {
-        alert("hscan");
-        this._hscan = (val != 0);
-        this._frl = this._hscan ? this._fr>>1 : this._fr;
-        this._fgl = this._hscan ? this._fg>>1 : this._fg;
-        this._fbl = this._hscan ? this._fb>>1 : this._fb;
-        this.refresh();
-    };*/
 
     draw_text(addr, val) {
         // rows are 120 columns wide consuming 128 bytes (0-119)+8
