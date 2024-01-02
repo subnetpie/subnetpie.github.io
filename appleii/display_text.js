@@ -41,9 +41,6 @@ export class TextDisplay
         this._fr = (rgb >> 16) & 0xff;
         this._fg = (rgb >> 8) & 0xff;
         this._fb = rgb & 0xff;
-        this._frl = this._hscan ? this._fr>>1 : this._fr;
-        this._fgl = this._hscan ? this._fg>>1 : this._fg;
-        this._fbl = this._hscan ? this._fb>>1 : this._fb;
         this.refresh();
     };
 
