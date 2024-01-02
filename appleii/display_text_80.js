@@ -97,16 +97,16 @@ export class TextDisplay80
             for(let x=lo, xmax=lo+56; x<xmax; x+=8) {
                 const p = x + y;
                 if(cp & 0x01) {
-                    data[p]   = data[p+4] = data[p+2256] = data[p+2260] = this._br;
-                    data[p+1] = data[p+5] = data[p+2257] = data[p+2261] = this._bg;
-                    data[p+2] = data[p+6] = data[p+2258] = data[p+2262] = this._bb;
+                    data[p]   = this._br;
+                    data[p+1] = this._bg;
+                    data[p+2] = this._bb;
                 } else {
-                    data[p]    = data[p+4]  = this._fr;
-                    data[p+1]  = data[p+5]  = this._fg;
-                    data[p+2]  = data[p+6]  = this._fb;
-                    data[p+2256] = data[p+2260] = this._fr;
-                    data[p+2257] = data[p+2261] = this._fg;
-                    data[p+2258] = data[p+2262] = this._fb;
+                    data[p]    = this._fr;
+                    data[p+1]  = this._fg;
+                    data[p+2]  = this._fb;
+                    //data[p+2256] = data[p+2260] = this._fr;
+                    //data[p+2257] = data[p+2261] = this._fg;
+                    //data[p+2258] = data[p+2262] = this._fb;
                 }
                 cp >>= 1;
             }
