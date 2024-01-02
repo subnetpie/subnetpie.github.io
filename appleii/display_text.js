@@ -56,6 +56,17 @@ export class TextDisplay
         this.refresh();
     };
 
+    get hscan() {
+        return this._hscan;
+    };
+    set hscan(val) {
+        this._hscan = (val != 0);
+        this._frl = this._hscan ? this._fr>>1 : this._fr;
+        this._fgl = this._hscan ? this._fg>>1 : this._fg;
+        this._fbl = this._hscan ? this._fb>>1 : this._fb;
+        this.refresh();
+    };
+
     draw_text(addr, val) {
         // rows are 120 columns wide consuming 128 bytes (0-119)+8
         // every 40 columns rows wrap for a total of three wraps
