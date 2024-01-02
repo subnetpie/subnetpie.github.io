@@ -179,12 +179,6 @@ export class Memory
             }
             return;
         }
-        aux_write(addr, val) {
-            this._aux[addr] = val;
-        }
-        main_write(addr, val) {
-            this._main[addr] = val;
-        }
         
         // c000-cfff || d000-ffff (discard writes to rom areas)
         if(((addr & 0xf000) == 0xc000) || !this._bsr_write) return;
@@ -208,6 +202,8 @@ export class Memory
             this._main[addr] = val;
         }
     }
+
+
 
     // memory read callback hook
     //   function(addr)
