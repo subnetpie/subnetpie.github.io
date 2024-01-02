@@ -117,6 +117,13 @@ export class Memory
         // e000-ffff: read ef rom
         return this._rom_ef[addr & 0x1fff];
     }
+    
+    aux_read(addr) {
+        return this._aux[addr];
+    }
+    main_read(addr) {
+        return this._main[addr];
+    }
 
     // little-endian read
     read_word(addr) {
