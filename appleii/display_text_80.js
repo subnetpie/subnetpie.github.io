@@ -41,9 +41,6 @@ export class TextDisplay80
         this._fr = (rgb >> 16) & 0xff;
         this._fg = (rgb >> 8) & 0xff;
         this._fb = rgb & 0xff;
-        this._frl = this._hscan ? this._fr>>1 : this._fr;
-        this._fgl = this._hscan ? this._fg>>1 : this._fg;
-        this._fbl = this._hscan ? this._fb>>1 : this._fb;
         this.refresh();
     };
 
@@ -94,9 +91,9 @@ export class TextDisplay80
                     data[p]    = data[p+4]  = this._fr;
                     data[p+1]  = data[p+5]  = this._fg;
                     data[p+2]  = data[p+6]  = this._fb;
-                    data[p+2256] = data[p+2260] = this._frl;
-                    data[p+2257] = data[p+2261] = this._fgl;
-                    data[p+2258] = data[p+2262] = this._fbl;
+                    data[p+2256] = data[p+2260] = this._fr;
+                    data[p+2257] = data[p+2261] = this._fg;
+                    data[p+2258] = data[p+2262] = this._fb;
                 }
                 cp >>= 1;
             }
