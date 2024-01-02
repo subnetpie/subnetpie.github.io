@@ -117,12 +117,12 @@ export class TextDisplay80
     refresh() {
         if(this._id == this._id1) {
             this._id = undefined; // suspend rendering
-            for(let a=0x0400; a<0x0800; a++) this.draw_text(a, this._mem.read(a));
+            for(let a=0x0400; a<0x0800; a++) this.draw_text(a, this._mem.main_read(a));
             this._id = this._id1;
         }
         else if(this._id == this._id2) {
             this._id = undefined; // suspend rendering
-            for(let a=0x0400; a<0x0800; a++) this.draw_text(a, this._mem.read(a));
+            for(let a=0x0400; a<0x0800; a++) this.draw_text(a, this._mem.aux_read(a));
             this._id = this._id2;
         }
         this._context.putImageData(this._id, 0, 0);
@@ -133,7 +133,7 @@ export class TextDisplay80
             // select page 1
             if(!this._page1_init) {
                 this._id = undefined; // suspend rendering
-                for(let a=0x0400; a<0x0800; a++) this.draw_text(a, this._mem.read(a));
+                for(let a=0x0400; a<0x0800; a++) this.draw_text(a, this._mem.main_read(a));
                 this._page1_init = true;
             }
             this._id = this._id1;
@@ -141,7 +141,7 @@ export class TextDisplay80
             // select page 2
             if(!this._page2_init) {
                 this._id = undefined; // suspend rendering
-                for(let a=0x0400; a<0x0800; a++) this.draw_text(a, this._mem.read(a));
+                for(let a=0x0400; a<0x0800; a++) this.draw_text(a, this._mem.aux_read(a));
                 this._page2_init = true;
             }
             this._id = this._id2;
