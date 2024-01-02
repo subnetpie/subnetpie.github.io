@@ -117,17 +117,31 @@ export class TextDisplay80
     refresh() {
         if(this._id == this._id1) {
             this._id = undefined; // suspend rendering
-            for(let a=0x0400; a<0x0800; a++) this.draw_text(a, this._mem.read(a));
+            for(let a=0x0400; a<0x0800; a++) this.draw_text(a);//, this._mem.read(a));
             this._id = this._id1;
-            this._context.putImageData(this._id, 0, 0);
         }
         else if(this._id == this._id2) {
             this._id = undefined; // suspend rendering
-            for(let a=0x0800; a<0x0c00; a++) this.draw_text(a, this._mem.read(a));
+            for(let a=0x0800; a<0x0c00; a++) this.draw_text(a);//, this._mem.read(a));
             this._id = this._id2;
-            this._context.putImageData(this._id, 0, 0);
         }
+        this._context.putImageData(this._id, 0, 0);
     }
+    
+    /*refresh() {
+      if (this._id == this._id1) {
+        this._id = undefined; // suspend rendering
+        for (let a=0x2000; a<0x6000; a++) this.draw(a);
+  //      for (let b=0x4000; b<0x6000; b++) this.draw(b);
+        this._id = this._id1;
+      } else if (this._id == this._id2) {
+        this._id = undefined; // suspend rendering
+        for (let a=0x2000; a<0x6000; a++) this.draw(a);
+  //      for (let b=0x4000; b<0x6000; b++) this.draw(b);
+        this._id = this._id2;
+      }
+      this._context.putImageData(this._id, 0, 0);
+    }*/
 
     set_active_page(page) {
         if(page != 2) {
