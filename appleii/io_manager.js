@@ -315,7 +315,7 @@ export class IOManager
         }
     }
 
-
+    ////////////////////////////////////////////
     rw_switches(addr) {
         switch(addr)
         {
@@ -429,7 +429,7 @@ export class IOManager
         return 0; // switch processed
     }
 
-
+    ////////////////////////////////////////////
     draw_display(addr, val) {
         if(this._text_mode) {
             if(this._80col_mode) {
@@ -462,6 +462,7 @@ export class IOManager
         }
     }
 
+    ////////////////////////////////////////////
     switch_display_mode() {
         this._display_text.reset();
         this._display_text_80.reset();
