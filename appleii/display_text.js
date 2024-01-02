@@ -91,9 +91,9 @@ export class TextDisplay
                     data[p]    = data[p+4]  = this._fr;
                     data[p+1]  = data[p+5]  = this._fg;
                     data[p+2]  = data[p+6]  = this._fb;
-                    data[p+2256] = data[p+2260] = this._frl;
-                    data[p+2257] = data[p+2261] = this._fgl;
-                    data[p+2258] = data[p+2262] = this._fbl;
+                    data[p+2256] = data[p+2260] = this._fr;
+                    data[p+2257] = data[p+2261] = this._fg;
+                    data[p+2258] = data[p+2262] = this._fb;
                 }
                 cp >>= 1;
             }
