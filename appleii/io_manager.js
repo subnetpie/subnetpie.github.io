@@ -430,18 +430,13 @@ export class IOManager
     }
 
     ////////////////////////////////////////////
-    draw_display(addr, val) {
+draw_display(addr, val) {
         if(this._text_mode) {
-            if(this._80col_mode) {
-                //console.log("enabling text mode 80: " + (is_page2 ? "page2" : "page1"));
-                this._display_text_80.draw_text(addr, val);
-            } else {
-                // 0400-07ff: text page 1
-                // 0800-0bff: text page 2
-                if( ((addr & 0xfc00) == 0x0400) ||
-                    (((addr & 0xfc00) == 0x0800) && this._mem.dms_page2 && !this._mem.dms_80store) ) {
-                    this._display_text.draw_text(addr, val);
-                }
+            // 0400-07ff: text page 1
+            // 0800-0bff: text page 2
+            if( ((addr & 0xfc00) == 0x0400) ||
+                (((addr & 0xfc00) == 0x0800) && this._mem.dms_page2 && !this._mem.dms_80store) ) {
+                this._display_text.draw_text(addr, val);
             }
         } else {
             // 2000-3fff: graphics page 1
@@ -449,12 +444,12 @@ export class IOManager
             if( ((addr & 0xe000) == 0x2000) ||
                 (((addr & 0xe000) == 0x4000) && this._mem.dms_page2 && !this._mem.dms_80store) ) {
                 if(this._mem.dms_hires) {
-                  // hires graphics modes
-                  if(this._double_hires) {
-                    this._display_double_hires.draw(addr);
-                  } else {
-                    this._display_hires.draw(addr,val);
-                  }
+                    // hires graphics modes
+                    if(this._double_hires) {
+                        this._display_double_hires.draw(addr);
+                    } else {
+                        this._display_hires.draw(addr, val);
+                    }
                 } else {
                     // TODO: lores graphics modes
                 }
