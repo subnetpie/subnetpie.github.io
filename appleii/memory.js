@@ -117,18 +117,12 @@ export class Memory
         // e000-ffff: read ef rom
         return this._rom_ef[addr & 0x1fff];
     }
-    
-    aux_read(addr) {
-        return this._aux[addr];
-    }
-    main_read(addr) {
-        return this._main[addr];
-    }
 
     // little-endian read
     read_word(addr) {
         return this.read(addr) | this.read(addr+1)<<8;
     }
+
 
     write(addr, val) {
         addr &= 0xffff;
@@ -179,7 +173,7 @@ export class Memory
             }
             return;
         }
-        
+
         // c000-cfff || d000-ffff (discard writes to rom areas)
         if(((addr & 0xf000) == 0xc000) || !this._bsr_write) return;
 
@@ -202,8 +196,6 @@ export class Memory
             this._main[addr] = val;
         }
     }
-
-
 
     // memory read callback hook
     //   function(addr)
