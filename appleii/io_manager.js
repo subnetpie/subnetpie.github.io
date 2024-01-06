@@ -470,11 +470,12 @@ export class IOManager
 
         const is_page2 = this._mem.dms_page2 && !this._mem.dms_80store;
 
-            if(this._80col_mode) {
-                alert("io1");
-            }
+        if(this._80col_mode) {
+            alert("io1");
+        }
 
         if(this._text_mode) {
+            alert("io2");
             // text mode
             if(this._80col_mode) {
                 alert("io2");
