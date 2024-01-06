@@ -75,7 +75,7 @@ export class TextDisplay80
         // bits 9,8,7 yield the 0-7 relative row number
         const col = (addr & 0x7f) % 40;  // column: 0-39
         const row = (((addr - col) >> 2) & 0x18) | ((addr >> 7) & 0x07);
-        const id = (addr < 0x0800) ? this._id1 : this._id2;
+        const id = (addr) ? this._id1 : this._id2;
         console.log(id, row, col, val);
         //alert(id, row, col, val);
         this.draw_char80(id, row, col, val);
