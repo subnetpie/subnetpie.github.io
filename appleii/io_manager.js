@@ -464,6 +464,7 @@ export class IOManager
     ////////////////////////////////////////////
     switch_display_mode() {
         this._display_text.reset();
+        
         this._display_hires.reset();
         this._display_double_hires.reset();
 
@@ -471,8 +472,12 @@ export class IOManager
 
         if(this._text_mode) {
             // text mode
-            //console.log("enabling text mode: " + (is_page2 ? "page2" : "page1"));
-            this._display_text.set_active_page(is_page2 ? 2 : 1);
+            if(this._text_mode_80) {
+                alert("io");
+            } else {
+                //console.log("enabling text mode: " + (is_page2 ? "page2" : "page1"));
+                this._display_text.set_active_page(is_page2 ? 2 : 1);
+            }
         } else {
             // graphics modes
             // TODO: mixed modes
