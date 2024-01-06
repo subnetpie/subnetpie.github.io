@@ -472,7 +472,7 @@ export class IOManager
 
         if(this._text_mode) {
             // text mode
-            if(this._text_mode_80) {
+            if(this._80col_mode) {
                 alert("io");
             } else {
                 //console.log("enabling text mode: " + (is_page2 ? "page2" : "page1"));
