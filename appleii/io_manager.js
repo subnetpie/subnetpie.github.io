@@ -284,6 +284,7 @@ export class IOManager
                     //console.log("80 col on");
                     if(!this._80col_mode) {
                       this._80col_mode = true;
+                    alert("mem");
                       this.switch_display_mode();
                     }
                     return 0; // write handled
