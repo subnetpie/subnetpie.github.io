@@ -435,6 +435,7 @@ export class IOManager
         if(this._text_mode) {
             // 0400-07ff: text page 1
             // 0800-0bff: text page 2
+   alert("mem1");
             if(!this._mem.dms_80store) {
                 if( ((addr & 0xfc00) == 0x0400) ||
                     (((addr & 0xfc00) == 0x0800) && this._mem.dms_page2 && !this._mem.dms_80store) ) {
