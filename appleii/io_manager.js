@@ -328,6 +328,9 @@ export class IOManager
                 //console.log("text mode off");
                 if(this._text_mode) {
                     this._text_mode = false;
+                    
+                    alert("iotmodeoff");
+                    
                     this.switch_display_mode();
                 }
                 break;
@@ -470,8 +473,6 @@ export class IOManager
         this._display_text_80.reset();
         this._display_hires.reset();
         this._display_double_hires.reset();
-
-alert("io0");
 
         const is_page2 = this._mem.dms_page2 && !this._mem.dms_80store;
 
