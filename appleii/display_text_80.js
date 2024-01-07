@@ -164,6 +164,5 @@ export class TextDisplay80
         this._id = undefined;
         this._page1_init = false;
         this._page2_init = false;
-        alert("hello");
     }
 }
