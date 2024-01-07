@@ -472,6 +472,7 @@ export class IOManager
         if(this._text_mode) {
             // text mode
             if(this._80col_mode) {
+                is_page2 = this._mem.dms_80store;
                 this._display_text_80.set_active_page(is_page2 ? 2 : 1);
             } else {
                 //console.log("enabling text mode: " + (is_page2 ? "page2" : "page1"));
