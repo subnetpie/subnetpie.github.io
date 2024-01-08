@@ -438,11 +438,11 @@ export class IOManager
             if( ((addr & 0xfc00) == 0x0400) ||
                 (((addr & 0xfc00) == 0x0800) && this._mem.dms_page2 && !this._mem.dms_80store) ) {
 
-                if(this._mem.dms_80store) {
-                    this._display_text_80.draw_text(addr);
-                } else {
+                //if(this._mem.dms_80store) {
+                //    this._display_text_80.draw_text(addr);
+                //} else {
                     this._display_text.draw_text(addr, val);
-                }
+                //}
 
             /* if(!this._mem.dms_80store) {
             if( ((addr & 0xfc00) == 0x0400) || 
@@ -477,8 +477,8 @@ export class IOManager
         //this._display_text_80.reset();
         this._display_hires.reset();
         //this._display_double_hires.reset();
-        //const is_page2 = this._mem.dms_page2 && !this._mem.dms_80store;
-        const is_page2 = this._mem.dms_80store;
+        const is_page2 = this._mem.dms_page2 && !this._mem.dms_80store;
+        //const is_page2 = this._mem.dms_80store;
 
         if(this._text_mode) {
             // text mode
