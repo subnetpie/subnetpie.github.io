@@ -437,9 +437,12 @@ export class IOManager
    
             if( ((addr & 0xfc00) == 0x0400) ||
                 (((addr & 0xfc00) == 0x0800) && this._mem.dms_page2 && !this._mem.dms_80store) ) {
-                if(this._mem._dms_80store
-                this._display_text.draw_text(addr, val);
-            }
+
+                if(this._mem._dms_80store) {
+                    this._display_text_80.draw_text(addr);
+                } else {
+                    this._display_text.draw_text(addr, val);
+                }
 
             /* if(!this._mem.dms_80store) {
             if( ((addr & 0xfc00) == 0x0400) || 
@@ -454,16 +457,16 @@ export class IOManager
             // 4000-5fff: graphics page 2
             if( ((addr & 0xe000) == 0x2000) ||
                 (((addr & 0xe000) == 0x4000) && this._mem.dms_page2 && !this._mem.dms_80store) ) {
-                if(this._mem.dms_hires) {
+                //if(this._mem.dms_hires) {
                     // hires graphics modes
                     if(this._double_hires) {
                         this._display_double_hires.draw(addr);
                     } else {
                         this._display_hires.draw(addr, val);
                     }
-                } else {
+                //} else {
                     // TODO: lores graphics modes
-                }
+                //}
             }
         }
     }
