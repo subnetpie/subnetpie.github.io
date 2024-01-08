@@ -433,6 +433,7 @@ export class IOManager
         if(this._text_mode) {
             // 0400-07ff: text page 1
             // 0800-0bff: text page 2
+            // : text page 80
    
             if(!this._mem.dms_80store) {
                 if( ((addr & 0xfc00) == 0x0400) ||
@@ -472,7 +473,6 @@ export class IOManager
         if(this._text_mode) {
             // text mode
             if(this._80col_mode) {
-                is_page2 = this._mem.dms_80store;
                 this._display_text_80.set_active_page(is_page2 ? 2 : 1);
             } else {
                 //console.log("enabling text mode: " + (is_page2 ? "page2" : "page1"));
