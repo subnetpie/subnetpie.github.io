@@ -468,7 +468,8 @@ export class IOManager
         //this._display_text_80.reset();
         this._display_hires.reset();
         //this._display_double_hires.reset();
-        const is_page2 = this._mem.dms_page2 && !this._mem.dms_80store;
+        //const is_page2 = this._mem.dms_page2 && !this._mem.dms_80store;
+        const is_page2 = this._mem.dms_page2;
 
         if(this._text_mode) {
             // text mode
