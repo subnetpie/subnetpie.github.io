@@ -77,7 +77,7 @@ export class TextDisplay80
         const row = (((addr - col) >> 2) & 0x18) | ((addr >> 7) & 0x07);
         const id = (addr) ? this._id1 : this._id2;
         console.log(id, row, col, val);
-        //alert(id, row, col, val);
+        alert(id, row, col, val);
         this.draw_char80(id, row, col, val);
     }
 
