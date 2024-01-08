@@ -450,8 +450,8 @@ export class IOManager
                 this._display_text.draw_text(addr, val);
             }
             } else 
-            if { this._display_text_80.draw_text(addr, val);
-            } */
+            if { this._display_text_80.draw_text(addr, val);*/
+            }
         } else {
             // 2000-3fff: graphics page 1
             // 4000-5fff: graphics page 2
