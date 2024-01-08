@@ -436,8 +436,8 @@ export class IOManager
             // : text page 80
    
             if(!this._mem.dms_80store) {
-                if( (((addr & 0xfc00) == 0x0400) && !this._mem.dms_80store) || 
-                    (((addr & 0xfc00) == 0x0800) && this._mem.dms_page2 && !this._mem.dms_80store) ) {
+                if( ((addr & 0xfc00) == 0x0400) || 
+                    ((addr & 0xfc00) == 0x0800) ) {
                     this._display_text_80.draw_text(addr, val);
                 }
             } else {
