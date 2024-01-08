@@ -435,14 +435,14 @@ export class IOManager
             // 0800-0bff: text page 2
             // : text page 80
    
-            if(!this._mem.dms_80store) {
-                if( ((addr & 0xfc00) == 0x0400) || 
+            //if(!this._mem.dms_80store) {
+                /*if( ((addr & 0xfc00) == 0x0400) || 
                     ((addr & 0xfc00) == 0x0800) ) {
                     this._display_text_80.draw_text(addr, val);
                 }
-            } else {
+            } else { */
                 this._display_text_80.draw_text(addr, val);
-            }
+            //}
         } else {
             // 2000-3fff: graphics page 1
             // 4000-5fff: graphics page 2
