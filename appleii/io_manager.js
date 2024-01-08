@@ -441,7 +441,7 @@ export class IOManager
                 
                     this._display_text.draw_text(addr, val);
                 }
-            } //else 
+          //  } else 
             //if { this._display_text_80.draw_text(addr, val);
             //}
         } else {
