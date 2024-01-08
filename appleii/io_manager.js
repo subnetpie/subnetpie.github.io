@@ -437,6 +437,7 @@ export class IOManager
    
             if( ((addr & 0xfc00) == 0x0400) ||
                 (((addr & 0xfc00) == 0x0800) && this._mem.dms_page2 && !this._mem.dms_80store) ) {
+                if(this._mem.dms_
                 this._display_text.draw_text(addr, val);
             }
 
