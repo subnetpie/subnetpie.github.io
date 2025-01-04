@@ -720,7 +720,6 @@ CPU.prototype = {
       this.irqRequested = false;
     }
 
-//    var opinf = this.opdata[this.nes.mmap.load(this.REG_PC + 1)];
     var opinf = this.opdata[this.loadFromCartridge(this.REG_PC + 1)];
     var cycleCount = opinf >> 24;
     var cycleAdd = 0;
@@ -842,10 +841,8 @@ CPU.prototype = {
             (this.mem[(addr & 0xff00) | (((addr & 0xff) + 1) & 0xff)] << 8); // Read from address given in op
         } else {
           addr =
-          //this.nes.mmap.load(addr) +
-          //(this.nes.mmap.load(
-          this.loadFromCartridge(addr) + 
-          (this.loadFromCartridge(
+            this.loadFromCartridge(addr) + 
+            (this.loadFromCartridge(
               (addr & 0xff00) | (((addr & 0xff) + 1) & 0xff)
             ) <<
               8);
@@ -1839,7 +1836,7 @@ CPU.prototype = {
   },
 
 loadFromCartridge: function(addr) {
-  var value = this.nes.mmap.load (addr);
+  var value = this.nes.mmap.load(addr);
 
   if (this.nes.gameGenie.enabled) {
     value = this.nes.gameGenie.applyCodes(addr, value);
@@ -1852,7 +1849,6 @@ loadFromCartridge: function(addr) {
     if (addr < 0x2000) {
       return this.mem[addr & 0x7ff];
     } else {
-  // return this.nes.mmap.load(addr);
       return this.loadFromCartridge(addr);
     }
   },
@@ -1861,8 +1857,7 @@ loadFromCartridge: function(addr) {
     if (addr < 0x1fff) {
       return this.mem[addr & 0x7ff] | (this.mem[(addr + 1) & 0x7ff] << 8);
     } else {
-  // return this.nes.mmap.load(addr) | (this.nes.mmap.load(addr + 1) << 8);
-      return this.loadFromCartridge(addr) | (this.loadFromCartr
+      return this.loadFromCartridge(addr) | (this.loadFromCartridge(addr + 1) << 8);
     }
   },
 
