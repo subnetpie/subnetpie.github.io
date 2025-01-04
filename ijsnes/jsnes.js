@@ -360,7 +360,7 @@ var CPU = __webpack_require__(5);
 var Controller = __webpack_require__(1);
 var PPU = __webpack_require__(6);
 var PAPU = __webpack_require__(7);
-var GameGenie = __webpack_require__(9);
+var GameGenie = __webpack_require__(10);
 var ROM = __webpack_require__(8);
 
 var NES = function (opts) {
