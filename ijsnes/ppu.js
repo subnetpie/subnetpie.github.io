@@ -1,5 +1,5 @@
-var Tile = require("./tile.js");
-var utils = require("./utils.js");
+var Tile = require("https://subnetpie.github.io/ijsnes/tile.js");
+var utils = require("https://subnetpie.github.io/ijsnes/utils.js");
 
 var PPU = function (nes) {
   this.nes = nes;
