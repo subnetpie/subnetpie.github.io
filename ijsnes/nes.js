@@ -1,8 +1,8 @@
-var CPU = require("./cpu");
-var Controller = require("./controller");
-var PPU = require("./ppu");
-var PAPU = require("./papu");
-var ROM = require("./rom");
+var CPU = require("./cpu.js");
+var Controller = require("./controller.js");
+var PPU = require("./ppu.js");
+var PAPU = require("./papu.js");
+var ROM = require("./rom.js");
 
 var NES = function (opts) {
   this.opts = {
