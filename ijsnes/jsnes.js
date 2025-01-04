@@ -719,7 +719,8 @@ CPU.prototype = {
       this.irqRequested = false;
     }
 
-    var opinf = this.opdata[this.nes.mmap.load(this.REG_PC + 1)];
+//    var opinf = this.opdata[this.nes.mmap.load(this.REG_PC + 1)];
+    var opinf = this.opdata[this.loadFromCartridge(this.REG_PC + 1)];
     var cycleCount = opinf >> 24;
     var cycleAdd = 0;
 
@@ -840,8 +841,10 @@ CPU.prototype = {
             (this.mem[(addr & 0xff00) | (((addr & 0xff) + 1) & 0xff)] << 8); // Read from address given in op
         } else {
           addr =
-            this.nes.mmap.load(addr) +
-            (this.nes.mmap.load(
+          //this.nes.mmap.load(addr) +
+          //(this.nes.mmap.load(
+          this.loadFromCartridge(addr) + 
+          (this.loadFromCartridge(
               (addr & 0xff00) | (((addr & 0xff) + 1) & 0xff)
             ) <<
               8);
