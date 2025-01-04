@@ -1,4 +1,4 @@
 module.exports = {
-  Controller: require("./controller"),
-  NES: require("./nes"),
+  Controller: require("./controller.js"),
+  NES: require("./nes.js"),
 };
