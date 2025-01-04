@@ -1,4 +1,4 @@
-var utils = require("./utils");
+var utils = require("./utils.js");
 
 var CPU = function (nes) {
   this.nes = nes;
