@@ -359,6 +359,7 @@ var CPU = __webpack_require__(5);
 var Controller = __webpack_require__(1);
 var PPU = __webpack_require__(6);
 var PAPU = __webpack_require__(7);
+var GameGenie = __webpack_require__(9);
 var ROM = __webpack_require__(8);
 
 var NES = function (opts) {
@@ -392,6 +393,7 @@ var NES = function (opts) {
   this.cpu = new CPU(this);
   this.ppu = new PPU(this);
   this.papu = new PAPU(this);
+  this. gameGenie = new GameGenie ();
   this.mmap = null; // set in loadROM()
   this.controllers = {
     1: new Controller(),
