@@ -394,7 +394,7 @@ var NES = function (opts) {
   this.cpu = new CPU(this);
   this.ppu = new PPU(this);
   this.papu = new PAPU(this);
-  this. gameGenie = new GameGenie ();
+  this.gameGenie = new GG (this);
   this.mmap = null; // set in loadROM()
   this.controllers = {
     1: new Controller(),
@@ -7611,8 +7611,9 @@ GG.prototype = {
 
 module.exports = GG;
 
-/***/ ])
 
+
+/***/ ])
 /******/ ]);
 });
 //# sourceMappingURL=jsnes.js.map
