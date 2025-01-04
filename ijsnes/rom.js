@@ -1,5 +1,5 @@
-var Mappers = require("./mappers.js");
-var Tile = require("./tile.js");
+var Mappers = require("https://subnetpie.github.io/ijsnes/mappers.js");
+var Tile = require("https://subnetpie.github.io/ijsnes/tile.js");
 
 var ROM = function (nes) {
   this.nes = nes;
