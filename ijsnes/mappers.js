@@ -1,4 +1,4 @@
-var utils = require("./utils.js");
+var utils = require("https://subnetpie.github.io/ijsnes/utils.js");
 
 var Mappers = {};
 
