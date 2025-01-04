@@ -1,4 +1,4 @@
 module.exports = {
-  Controller: require("./controller.js"),
-  NES: require("./nes.js"),
+  Controller: require("https://subnetpie.github.io/ijsnes/controller.js"),
+  NES: require("https://subnetpie.github.io/ijsnes/nes.js"),
 };
