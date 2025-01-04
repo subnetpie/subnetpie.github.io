@@ -7611,7 +7611,7 @@ GG.prototype = {
 
 module.exports = GG;
 
-])
+/***/ ])
 
 /******/ ]);
 });
