@@ -1,8 +1,8 @@
-var CPU = require("./cpu.js");
-var Controller = require("./controller.js");
-var PPU = require("./ppu.js");
-var PAPU = require("./papu.js");
-var ROM = require("./rom.js");
+var CPU = require("https://subnetpie.github.io/ijsnes/cpu.js");
+var Controller = require("https://subnetpie.github.io/ijsnes/controller.js");
+var PPU = require("https://subnetpie.github.io/ijsnes/ppu.js");
+var PAPU = require("https://subnetpie.github.io/ijsnes/papu.js");
+var ROM = require("https://subnetpie.github.io/ijsnes/rom.js");
 
 var NES = function (opts) {
   this.opts = {
