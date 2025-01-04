@@ -1834,11 +1834,22 @@ CPU.prototype = {
     return cycleCount;
   },
 
+loadFromCartridge: function(addr) {
+  var value = this.nes.mmap.load (addr);
+
+  if (this.nes.gameGenie.enabled) {
+    value = this.nes.gameGenie.applyCodes(addr, value);
+  }
+
+  return value;
+},
+
   load: function (addr) {
     if (addr < 0x2000) {
       return this.mem[addr & 0x7ff];
     } else {
-      return this.nes.mmap.load(addr);
+  // return this.nes.mmap.load(addr);
+      return this.loadFromCartridge(addr);
     }
   },
 
@@ -1846,7 +1857,8 @@ CPU.prototype = {
     if (addr < 0x1fff) {
       return this.mem[addr & 0x7ff] | (this.mem[(addr + 1) & 0x7ff] << 8);
     } else {
-      return this.nes.mmap.load(addr) | (this.nes.mmap.load(addr + 1) << 8);
+  // return this.nes.mmap.load(addr) | (this.nes.mmap.load(addr + 1) << 8);
+      return this.loadFromCartridge(addr) | (this.loadFromCartr
     }
   },
 
@@ -1904,14 +1916,16 @@ CPU.prototype = {
       this.push(status);
 
       this.REG_PC_NEW =
-        this.nes.mmap.load(0xfffa) | (this.nes.mmap.load(0xfffb) << 8);
+        //this.nes.mmap.load(0xfffa) | (this.nes.mmap.load(0xfffb) << 8);
+        this. loadFromCartridge(Oxfffa) | (this.loadFromCartridge(Oxfffb) < 8);
       this.REG_PC_NEW--;
     }
   },
 
   doResetInterrupt: function () {
     this.REG_PC_NEW =
-      this.nes.mmap.load(0xfffc) | (this.nes.mmap.load(0xfffd) << 8);
+      //this.nes.mmap.load(0xfffc) | (this.nes.mmap.load(0xfffd) << 8);
+      this. loadFromCartridge(Oxfffc) | (this.loadFromCartridge(Oxfffd) < 8);
     this.REG_PC_NEW--;
   },
 
@@ -1924,7 +1938,8 @@ CPU.prototype = {
     this.F_BRK_NEW = 0;
 
     this.REG_PC_NEW =
-      this.nes.mmap.load(0xfffe) | (this.nes.mmap.load(0xffff) << 8);
+   // this.nes.mmap.load(0xfffe) | (this.nes.mmap.load(0xffff) << 8);
+      this. loadFromCartridge(Oxfffe) | (this.loadFromCartridge(Oxffff) < 8);
     this.REG_PC_NEW--;
   },
 
