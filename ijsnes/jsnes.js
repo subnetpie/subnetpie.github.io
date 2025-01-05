@@ -8,8 +8,7 @@
 	else
 		root["jsnes"] = factory();
 })(typeof self !== 'undefined' ? self : this, function() {
-return 
-/******/ (function(modules) { // webpackBootstrap
+return /******/ (function(modules) { // webpackBootstrap
 /******/ 	// The module cache
 /******/ 	var installedModules = {};
 /******/
@@ -360,7 +359,6 @@ var CPU = __webpack_require__(5);
 var Controller = __webpack_require__(1);
 var PPU = __webpack_require__(6);
 var PAPU = __webpack_require__(7);
-var GameGenie = __webpack_require__(10);
 var ROM = __webpack_require__(8);
 
 var NES = function (opts) {
@@ -394,7 +392,6 @@ var NES = function (opts) {
   this.cpu = new CPU(this);
   this.ppu = new PPU(this);
   this.papu = new PAPU(this);
-  this.gameGenie = new GameGenie();
   this.mmap = null; // set in loadROM()
   this.controllers = {
     1: new Controller(),
@@ -720,7 +717,7 @@ CPU.prototype = {
       this.irqRequested = false;
     }
 
-    var opinf = this.opdata[this.loadFromCartridge(this.REG_PC + 1)];
+    var opinf = this.opdata[this.nes.mmap.load(this.REG_PC + 1)];
     var cycleCount = opinf >> 24;
     var cycleAdd = 0;
 
@@ -841,8 +838,8 @@ CPU.prototype = {
             (this.mem[(addr & 0xff00) | (((addr & 0xff) + 1) & 0xff)] << 8); // Read from address given in op
         } else {
           addr =
-            this.loadFromCartridge(addr) + 
-            (this.loadFromCartridge(
+            this.nes.mmap.load(addr) +
+            (this.nes.mmap.load(
               (addr & 0xff00) | (((addr & 0xff) + 1) & 0xff)
             ) <<
               8);
@@ -1835,21 +1832,11 @@ CPU.prototype = {
     return cycleCount;
   },
 
-loadFromCartridge: function(addr) {
-  var value = this.nes.mmap.load(addr);
-
-  if (this.nes.gameGenie.enabled) {
-    value = this.nes.gameGenie.applyCodes(addr, value);
-  }
-
-  return value;
-},
-
   load: function (addr) {
     if (addr < 0x2000) {
       return this.mem[addr & 0x7ff];
     } else {
-      return this.loadFromCartridge(addr);
+      return this.nes.mmap.load(addr);
     }
   },
 
@@ -1857,7 +1844,7 @@ loadFromCartridge: function(addr) {
     if (addr < 0x1fff) {
       return this.mem[addr & 0x7ff] | (this.mem[(addr + 1) & 0x7ff] << 8);
     } else {
-      return this.loadFromCartridge(addr) | (this.loadFromCartridge(addr + 1) << 8);
+      return this.nes.mmap.load(addr) | (this.nes.mmap.load(addr + 1) << 8);
     }
   },
 
@@ -1915,16 +1902,14 @@ loadFromCartridge: function(addr) {
       this.push(status);
 
       this.REG_PC_NEW =
-        //this.nes.mmap.load(0xfffa) | (this.nes.mmap.load(0xfffb) << 8);
-        this. loadFromCartridge(Oxfffa) | (this.loadFromCartridge(Oxfffb) < 8);
+        this.nes.mmap.load(0xfffa) | (this.nes.mmap.load(0xfffb) << 8);
       this.REG_PC_NEW--;
     }
   },
 
   doResetInterrupt: function () {
     this.REG_PC_NEW =
-      //this.nes.mmap.load(0xfffc) | (this.nes.mmap.load(0xfffd) << 8);
-      this. loadFromCartridge(Oxfffc) | (this.loadFromCartridge(Oxfffd) < 8);
+      this.nes.mmap.load(0xfffc) | (this.nes.mmap.load(0xfffd) << 8);
     this.REG_PC_NEW--;
   },
 
@@ -1937,8 +1922,7 @@ loadFromCartridge: function(addr) {
     this.F_BRK_NEW = 0;
 
     this.REG_PC_NEW =
-   // this.nes.mmap.load(0xfffe) | (this.nes.mmap.load(0xffff) << 8);
-      this. loadFromCartridge(Oxfffe) | (this.loadFromCartridge(Oxffff) < 8);
+      this.nes.mmap.load(0xfffe) | (this.nes.mmap.load(0xffff) << 8);
     this.REG_PC_NEW--;
   },
 
@@ -7484,136 +7468,7 @@ Mappers[180].prototype.loadROM = function () {
 module.exports = Mappers;
 
 
-/***/ }),
-/* 10 */
-/***/ (function(module, exports, __webpack_require__) {
-
-var GG = function() {
-  this.patches = [];
-  this.enabled = true;
-};
-
-var LETTER_VALUES = 'APZLGITYEOXUKSVN';
-
-function toDigit(letter) {
-  return LETTER_VALUES.indexOf(letter);
-}
-
-function toLetter(digit) {
-  return LETTER_VALUES.substr(digit, 1);
-}
-
-function toHex(n, width) {
-  var s = n.toString(16);
-  return '0000'.substring(0, width - s.length) + s;
-}
-
-
-GG.prototype = {
-  setEnabled: function(enabled) {
-    this.enabled = enabled;
-  },
-
-  addCode: function(code) {
-    this.patches.push(this.decode(code));
-  },
-
-  addPatch: function(addr, value, key) {
-    this.patches.push({addr: addr, value: value, key: key});
-  },
-
-  applyCodes: function(addr, value) {
-    if (!this.enabled) return value;
-
-    for (var i = 0; i < this.patches.length; ++i) { // TODO: optimize data structure?
-      if (this.patches[i].addr === (addr & 0x7fff)) {
-        if (this.patches[i].key === undefined || this.patches[i].key === value) {
-          return this.patches[i].value;
-        }
-      }
-    }
-    return value;
-  },
-
-  decode: function(code) {
-    if (code.indexOf(':') !== -1) return this.decodeHex(code);
-
-    var digits = code.toUpperCase().split('').map(toDigit);
-
-    var value = ((digits[0] & 8) << 4) + ((digits[1] & 7) << 4) + (digits[0] & 7);
-    var addr = ((digits[3] & 7) << 12) + ((digits[4] & 8) << 8) + ((digits[5] & 7) << 8) +
-        ((digits[1] & 8) << 4) + ((digits[2] & 7) << 4) + (digits[3] & 8) + (digits[4] & 7);
-    var key;
-
-    if (digits.length === 8) {
-      value += (digits[7] & 8);
-      key = ((digits[6] & 8) << 4) + ((digits[7] & 7) << 4) + (digits[5] & 8) + (digits[6] & 7);
-    } else {
-      value += (digits[5] & 8);
-    }
-
-    var wantskey = !!(digits[2] >> 3);
-
-    return { value: value, addr: addr, wantskey: wantskey, key: key };
-  },
-
-  encodeHex: function(addr, value, key, wantskey) {
-    var s = toHex(addr, 4) + ':' + toHex(value, 2);
-
-    if (key !== undefined || wantskey) {
-      s += '?';
-    }
-
-    if (key !== undefined) {
-      s += toHex(key, 2);
-    }
-
-    return s;
-  },
-
-  decodeHex: function(s) {
-    var match = s.match(/([0-9a-fA-F]+):([0-9a-fA-F]+)(\?[0-9a-fA-F]*)?/);
-    if (!match) return null;
-
-    var addr = parseInt(match[1], 16);
-    var value = parseInt(match[2], 16);
-    var wantskey = match[3] !== undefined;
-    var key = (match[3] !== undefined && match[3].length > 1) ? parseInt(match[3].substring(1), 16) : undefined;
-
-    return { value: value, addr: addr, wantskey: wantskey, key: key };
-  },
-
-  encode: function(addr, value, key, wantskey) {
-    var digits = Array(6);
-
-    digits[0] = (value & 7) + ((value >> 4) & 8);
-    digits[1] = ((value >> 4) & 7) + ((addr >> 4) & 8);
-    digits[2] = ((addr >> 4) & 7);
-    digits[3] = (addr >> 12) + (addr & 8);
-    digits[4] = (addr & 7) + ((addr >> 8) & 8);
-    digits[5] = ((addr >> 8) & 7);
-
-    if (key === undefined) {
-      digits[5] += value & 8;
-      if (wantskey) digits[2] += 8;
-    } else {
-      digits[2] += 8;
-      digits[5] += key & 8;
-      digits[6] = (key & 7) + ((key >> 4) & 8);
-      digits[7] = ((key >> 4) & 7) + (value & 8);
-    }
-
-    var code = digits.map(toLetter).join('');
-
-    return code;
-  },
-};
-
-module.exports = GG;
-
-
-
-/***/ ])
+/***/ })
 /******/ ]);
 });
 //# sourceMappingURL=jsnes.js.map
