@@ -17,7 +17,7 @@ import {TextDisplay80} from "https://subnetpie.github.io/appleii/display_text_80
 import {HiresDisplay} from "https://subnetpie.github.io/appleii/display_hires.js";
 import {DoubleHiresDisplay} from "https://subnetpie.github.io/appleii/display_double_hires.js";
 import {Keyboard} from "https://subnetpie.github.io/appleii/keyboard.js";
-import {Floppy525} from "https://subnetpie.github.io/appleii/floppy525.js";
+import {Floppy525} from "https://subnetpie.github.io/appleii/FloppyWoz525.js";
 import {AppleAudio} from "https://subnetpie.github.io/appleii/apple_audio.js";
 import {rom_342_0304_cd} from "https://subnetpie.github.io/appleii/rom/342-0304-cd.js";
 import {rom_342_0303_ef} from "https://subnetpie.github.io/appleii/rom/342-0303-ef.js";
