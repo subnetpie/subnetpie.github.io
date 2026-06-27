@@ -76,7 +76,8 @@ class DskMedium extends BaseMedium
 
         for(let t=0; t<35; t++) {
             let track = [];
-            for(let s=15; s>=0; s--) {
+            // FIX: iterate sectors 0..15 ascending so sec_int[] maps correctly
+            for(let s=0; s<16; s++) {
                 track = track.concat(sectorEncoder(src, t, s));
             }
             this.track_bytes[t] = new Uint8Array(track);
@@ -115,17 +116,18 @@ class WozTrack
             return this.nibble_cache;
         }
 
+        // FIX: emulate Disk II latch behaviour — shift bits in and emit a nibble
+        // only when the high bit is set. Naive byte-boundary packing produced
+        // garbage because WOZ bitstreams are self-clocking GCR; valid nibbles
+        // always have bit 7 set and can start on any bit boundary.
         const out = [];
         let cur = 0;
-        let nbits = 0;
 
-        for(let i=0; i<this.bitCount; i++) {
+        for(let i = 0; i < this.bitCount; i++) {
             cur = ((cur << 1) | this.getBit(i)) & 0xFF;
-            nbits++;
-            if(nbits === 8) {
+            if(cur & 0x80) {   // high bit set: valid GCR nibble latched
                 out.push(cur);
                 cur = 0;
-                nbits = 0;
             }
         }
 
@@ -146,7 +148,10 @@ class WozMedium extends BaseMedium
     }
 
     read_byte() {
-        const tmapIndex = this.head_pos & 0x9F;
+        // FIX: head_pos is already clamped to 0..139; no masking needed.
+        // The previous mask (& 0x9F) had bit 6 clear, corrupting quarter-track
+        // indices 0x60..0x7F (whole tracks 24..31).
+        const tmapIndex = this.head_pos;
         const trackId = this.tmap[tmapIndex];
         if(trackId === 0xFF) return 0;
 
@@ -231,8 +236,9 @@ class WozMedium extends BaseMedium
                 medium.tracks[i] = new WozTrack(bytes.slice(0, bytesUsed), bitCount);
             }
         } else {
-            // WOZ2 TRKS chunk begins with 160 8-byte descriptors
-            // Each descriptor: starting block (u16), block count (u16), bit count (u32)
+            // WOZ2 TRKS chunk begins with 160 8-byte descriptors.
+            // Each descriptor: starting block (u16), block count (u16), bit count (u32).
+            // startBlock * 512 is a file-absolute byte offset.
             for(let i=0; i<160; i++) {
                 const d = trksOffs + (i * 8);
                 if(d + 8 > trksOffs + trksSize) break;
@@ -493,3 +499,4 @@ export class Floppy525
         this._write_disk = false;
     }
 }
+
