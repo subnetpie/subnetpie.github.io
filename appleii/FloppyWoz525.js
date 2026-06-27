@@ -400,5 +400,6 @@ export class Floppy525 {
         this._disks[1].reset();
         this._active_disk = this._disks[0];
         this._write_disk = false;
+        console.log("woz");
     }
 }
