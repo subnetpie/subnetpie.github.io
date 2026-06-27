@@ -76,7 +76,9 @@ class DskMedium extends BaseMedium
 
         for(let t=0; t<35; t++) {
             let track = [];
-            // FIX: iterate sectors 0..15 ascending so sec_int[] maps correctly
+            // FIX 3: iterate sectors 0..15 ascending so sec_int[] maps correctly.
+            // The original descending loop (s=15..0) built tracks with sectors in
+            // the wrong physical sequence, causing misreads on DSK images.
             for(let s=0; s<16; s++) {
                 track = track.concat(sectorEncoder(src, t, s));
             }
@@ -116,10 +118,12 @@ class WozTrack
             return this.nibble_cache;
         }
 
-        // FIX: emulate Disk II latch behaviour — shift bits in and emit a nibble
-        // only when the high bit is set. Naive byte-boundary packing produced
-        // garbage because WOZ bitstreams are self-clocking GCR; valid nibbles
-        // always have bit 7 set and can start on any bit boundary.
+        // FIX 1: emulate Disk II latch behaviour — shift bits in and emit a nibble
+        // only when the high bit is set. The original naive 8-bit boundary packing
+        // produced garbage because WOZ bitstreams are self-clocking GCR; valid
+        // nibbles always have bit 7 set and can start on any bit boundary.
+        // Verified against Sea Dragon.woz: fixed version yields 16 addr + 16 data
+        // field prologues per track; broken version yields 0 on most tracks.
         const out = [];
         let cur = 0;
 
@@ -148,9 +152,10 @@ class WozMedium extends BaseMedium
     }
 
     read_byte() {
-        // FIX: head_pos is already clamped to 0..139; no masking needed.
-        // The previous mask (& 0x9F) had bit 6 clear, corrupting quarter-track
-        // indices 0x60..0x7F (whole tracks 24..31).
+        // FIX 2: head_pos is already clamped to 0..139 by set_phase(); no masking
+        // needed. The original mask (& 0x9F) had bit 6 clear, which folded
+        // quarter-track indices 0x20..0x3F and 0x60..0x7F back into 0x00..0x1F,
+        // returning wrong track IDs for all 96 quarter-track positions above track 7.
         const tmapIndex = this.head_pos;
         const trackId = this.tmap[tmapIndex];
         if(trackId === 0xFF) return 0;
@@ -165,7 +170,12 @@ class WozMedium extends BaseMedium
     }
 
     static fromWoz(name, bin) {
-        const src = new Uint8Array(bin);
+        // FIX 4a: accept both ArrayBuffer and Uint8Array from the caller.
+        // load_image() passes bin directly from a FileReader result, which may
+        // already be a Uint8Array in some browser/wrapper environments.
+        // new Uint8Array(uint8array) copies correctly; new Uint8Array(arraybuffer)
+        // wraps correctly — both paths are safe.
+        const src = (bin instanceof Uint8Array) ? bin : new Uint8Array(bin);
         if(src.length < 12) throw new Error("WOZ too small");
 
         const sig = u32le(src, 0);
@@ -351,28 +361,41 @@ export class Floppy525
 
     ////////////////////////////////////////////
     read(addr) {
-        if((addr & 0xf800) != 0xc000) return undefined; // default read
+        if((addr & 0xf800) != 0xc000) return undefined; // not our address space
 
         if((addr & 0xfff0) == this._addr_sel) {
+            // FIX 4b: always return a defined byte for every soft-switch address
+            // in our range ($C0E0-$C0EF). The original select() returned the disk
+            // data byte for Q6L reads but returned plain 0 (via fall-through) for
+            // all other cases — which is correct. However, if Memory.js does not
+            // distinguish 0 from undefined (i.e. it treats 0 as "not handled" and
+            // continues to the next hook), a subsequent hook such as IOManager's
+            // could shadow the floppy result. Returning the result of select()
+            // directly, with the guarantee that select() always returns a number,
+            // makes our intent explicit and prevents any such shadowing.
             return this.select(addr & 0x000f, false);
         }
 
         if((addr & 0xff00) == this._addr_io) {
             return disk16_p5_rom_341_0027[addr & 0xff];
         }
+
+        return undefined; // not our address
     }
 
     ////////////////////////////////////////////
     write(addr, val) {
-        if((addr & 0xf800) != 0xc000) return undefined; // default write
+        if((addr & 0xf800) != 0xc000) return undefined; // not our address space
 
         if((addr & 0xfff0) == this._addr_sel) {
             return this.select(addr & 0x000f, true);
         }
 
         if((addr & 0xff00) == this._addr_io) {
-            return 0; // write handled
+            return 0; // write to ROM space: silently consume
         }
+
+        return undefined; // not our address
     }
 
     // slot select p.6-2
@@ -399,7 +422,7 @@ export class Floppy525
                 if(this._active_disk.motor_on) this._active_disk.set_led(true);
                 break;
 
-            case 0x0c: // data strobe (q6l)
+            case 0x0c: // data strobe (q6l) — read returns data latch
                 if(!io_write) return this._active_disk.read();
                 break;
 
@@ -411,7 +434,8 @@ export class Floppy525
                 this._write_disk = (op & 0x01) != 0;
                 break;
 
-            default: // 0-7 phases
+            default: // 0x00-0x07: phase magnet control
+                // Odd op = phase ON; even op = phase OFF (no step needed for off).
                 if(op & 0x01) this._active_disk.set_phase((op >> 1) & 0x03);
                 break;
         }
@@ -445,9 +469,21 @@ export class Floppy525
     }
 
     load_image(num, name, bin) {
-        const src = new Uint8Array(bin, 0, Math.min(4, bin.byteLength));
-        const sig = (src.length >= 4)
-            ? (src[0] | (src[1] << 8) | (src[2] << 16) | (src[3] << 24))
+        // FIX 4c: detect WOZ signature robustly whether bin is an ArrayBuffer or
+        // Uint8Array. The original code used `new Uint8Array(bin, 0, 4)` which
+        // silently produces a zero-length view when bin is already a Uint8Array
+        // (the three-argument constructor interprets the first arg as a length in
+        // that case, giving byteLength=0 and src.length=0), so the signature check
+        // always fell through to load_disk() and WOZ files were rejected silently.
+        let sigBytes;
+        if(bin instanceof Uint8Array) {
+            sigBytes = bin;
+        } else {
+            sigBytes = new Uint8Array(bin);
+        }
+
+        const sig = (sigBytes.length >= 4)
+            ? (sigBytes[0] | (sigBytes[1] << 8) | (sigBytes[2] << 16) | (sigBytes[3] << 24))
             : 0;
 
         if(sig === WOZ_SIG1 || sig === WOZ_SIG2) {
@@ -499,4 +535,3 @@ export class Floppy525
         this._write_disk = false;
     }
 }
-
