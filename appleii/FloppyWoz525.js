@@ -6,10 +6,14 @@
 //  Released under the GNU General Public License
 //  https://www.gnu.org/licenses/gpl.html
 //
-//  DIAGNOSTIC BUILD — console.log instrumentation active.
-//  Open the browser console before loading a WOZ image and pressing Run.
-//  The output will identify exactly which stage fails.
-//  Remove all lines marked //[DIAG] once the root cause is confirmed.
+//  DSK support remains nibble-stream based.
+//  WOZ support added as read-only mount support for 5.25" WOZ1/WOZ2 images,
+//  using a compatibility nibble-stream cache built from WOZ track bitstreams.
+//
+//  refs:
+//    WOZ format overview and chunk model (INFO/TMAP/TRKS)
+//    https://www.loc.gov/preservation/digital/formats/fdd/fdd000642.shtml
+//    https://ciderpress2.com/formatdoc/Woz-notes.html
 //
 
 import {disk16_p5_rom_341_0027} from "https://subnetpie.github.io/appleii/rom/disk16-p5_341-0027.js";
@@ -25,29 +29,23 @@ const write_62 = [
 // ProDOS_2_4_2.dsk 8d2b-8d3b
 const sec_int = [0x00,0x0d,0x0b,0x09,0x07,0x05,0x03,0x01,0x0e,0x0c,0x0a,0x08,0x06,0x04,0x02,0x0f];
 
-const WOZ_SIG1 = 0x315A4F57;
-const WOZ_SIG2 = 0x325A4F57;
-const CHUNK_INFO = 0x4F464E49;
-const CHUNK_TMAP = 0x50414D54;
-const CHUNK_TRKS = 0x534B5254;
+const WOZ_SIG1 = 0x315A4F57; // "WOZ1" little-endian
+const WOZ_SIG2 = 0x325A4F57; // "WOZ2"
+const CHUNK_INFO = 0x4F464E49; // "INFO"
+const CHUNK_TMAP = 0x50414D54; // "TMAP"
+const CHUNK_TRKS = 0x534B5254; // "TRKS"
 
 function u16le(a, o) { return a[o] | (a[o+1] << 8); }
 function u32le(a, o) { return (a[o]) | (a[o+1] << 8) | (a[o+2] << 16) | (a[o+3] << 24); }
 function fourcc(a, o) { return String.fromCharCode(a[o], a[o+1], a[o+2], a[o+3]); }
 
-// [DIAG] lightweight ring-buffer so we can dump the last N select() ops
-// and read_byte() results without flooding the console.
-const _diagLog = [];
-const _diagMax = 2000;
-function _diagPush(s) { if(_diagLog.length >= _diagMax) _diagLog.shift(); _diagLog.push(s); }
-// Call window.__floppyDiag() in the console to see the log at any time.  [DIAG]
-if(typeof window !== 'undefined') {                                        //[DIAG]
-    window.__floppyDiag = () => {                                          //[DIAG]
-        console.log("=== floppy diag dump ===");                          //[DIAG]
-        _diagLog.forEach(s => console.log(s));                            //[DIAG]
-        console.log("=== end diag dump ===");                             //[DIAG]
-    };                                                                     //[DIAG]
-}                                                                          //[DIAG]
+// Detect WOZ signature from an ArrayBuffer or Uint8Array.
+// Returns WOZ_SIG1, WOZ_SIG2, or 0 if not a WOZ image.
+function woz_sig(bin) {
+    const b = (bin instanceof Uint8Array) ? bin : new Uint8Array(bin);
+    if(b.length < 4) return 0;
+    return b[0] | (b[1] << 8) | (b[2] << 16) | (b[3] << 24);
+}
 
 class BaseMedium {
     constructor() { this.head_pos = 0; this.byte_pos = 0; }
@@ -63,13 +61,14 @@ class DskMedium extends BaseMedium {
         this.track_bytes = new Array(35);
         for(let t=0; t<35; t++) {
             let track = [];
+            // Sectors 0..15 ascending so sec_int[] maps correctly to physical sectors.
             for(let s=0; s<16; s++) track = track.concat(sectorEncoder(src, t, s));
             this.track_bytes[t] = new Uint8Array(track);
         }
     }
+
     read_byte() {
-        const trackIndex = this.head_pos >> 2;
-        const track = this.track_bytes[trackIndex];
+        const track = this.track_bytes[this.head_pos >> 2];
         if(!track || !track.length) return 0;
         if(this.byte_pos >= track.length) this.byte_pos = 0;
         return track[this.byte_pos++];
@@ -95,6 +94,10 @@ class WozTrack {
             this.nibble_cache = new Uint8Array(0);
             return this.nibble_cache;
         }
+        // Emulate Disk II latch: shift bits in and emit only when bit 7 goes high.
+        // WOZ bitstreams are self-clocking GCR; valid nibbles always have bit 7 set
+        // and may start on any bit boundary — naive byte-boundary packing produces
+        // garbage and zero prologues.
         const out = [];
         let cur = 0;
         for(let i=0; i<this.bitCount; i++) {
@@ -114,56 +117,26 @@ class WozMedium extends BaseMedium {
         this.tmap = new Uint8Array(160);
         this.tmap.fill(0xFF);
         this.tracks = [];
-        this._readCount = 0;   //[DIAG]
-        this._prologCount = 0; //[DIAG]
-        this._lastThree = [0,0,0]; //[DIAG]
     }
 
     read_byte() {
-        const tmapIndex = this.head_pos;
-        const trackId = this.tmap[tmapIndex];
-        if(trackId === 0xFF) {
-            //[DIAG]
-            if(this._readCount < 20) _diagPush(`WozMedium.read_byte: head_pos=${this.head_pos} tmap=0xFF (no track)`);
-            this._readCount++;
-            return 0;
-        }
+        // head_pos is clamped to 0..139 by set_phase(); use it directly as the
+        // TMAP index. The old mask (& 0x9F) had bit 6 clear and corrupted all
+        // quarter-track indices 0x20..0x3F and 0x60..0x7F (tracks 8–31).
+        const trackId = this.tmap[this.head_pos];
+        if(trackId === 0xFF) return 0;
 
         const track = this.tracks[trackId];
-        if(!track) {
-            if(this._readCount < 20) _diagPush(`WozMedium.read_byte: head_pos=${this.head_pos} trackId=${trackId} track=null`); //[DIAG]
-            this._readCount++;                                                                                                   //[DIAG]
-            return 0;
-        }
+        if(!track) return 0;
 
         const bytes = track.buildNibbleCache();
-        if(!bytes.length) {
-            if(this._readCount < 20) _diagPush(`WozMedium.read_byte: trackId=${trackId} cache empty`); //[DIAG]
-            this._readCount++;                                                                          //[DIAG]
-            return 0;
-        }
+        if(!bytes.length) return 0;
         if(this.byte_pos >= bytes.length) this.byte_pos = 0;
-        const val = bytes[this.byte_pos++];
-
-        //[DIAG] — track first 50 reads and watch for D5 AA 96 / D5 AA AD
-        this._readCount++;
-        if(this._readCount <= 50) {
-            _diagPush(`WozMedium read #${this._readCount}: head=${this.head_pos} tid=${trackId} bpos=${this.byte_pos-1} val=0x${val.toString(16).padStart(2,'0')}`);
-        }
-        this._lastThree = [this._lastThree[1], this._lastThree[2], val]; //[DIAG]
-        if(this._lastThree[0]===0xD5 && this._lastThree[1]===0xAA) {    //[DIAG]
-            if(this._lastThree[2]===0x96 || this._lastThree[2]===0xAD) { //[DIAG]
-                this._prologCount++;                                       //[DIAG]
-                if(this._prologCount <= 5) {                               //[DIAG]
-                    _diagPush(`*** PROLOGUE D5 AA ${this._lastThree[2].toString(16)} found at read #${this._readCount} (head=${this.head_pos} tid=${trackId} bpos=${this.byte_pos-1})`); //[DIAG]
-                }                                                          //[DIAG]
-            }                                                              //[DIAG]
-        }                                                                  //[DIAG]
-
-        return val;
+        return bytes[this.byte_pos++];
     }
 
     static fromWoz(name, bin) {
+        // Accept ArrayBuffer or Uint8Array from the caller.
         const src = (bin instanceof Uint8Array) ? bin : new Uint8Array(bin);
         if(src.length < 12) throw new Error("WOZ too small");
 
@@ -172,14 +145,12 @@ class WozMedium extends BaseMedium {
         const isWoz2 = sig === WOZ_SIG2;
         if(!isWoz1 && !isWoz2) throw new Error("invalid WOZ signature");
 
-        console.log(`[floppy] fromWoz: ${name}, ${isWoz1?'WOZ1':'WOZ2'}, ${src.length} bytes`); //[DIAG]
-
         const medium = new WozMedium(name);
         let infoOffs=-1, infoSize=0, tmapOffs=-1, tmapSize=0, trksOffs=-1, trksSize=0;
 
         let p = 12;
         while(p + 8 <= src.length) {
-            const id = u32le(src, p);
+            const id   = u32le(src, p);
             const size = u32le(src, p+4);
             const dataOffs = p + 8;
             if(dataOffs + size > src.length) break;
@@ -189,34 +160,33 @@ class WozMedium extends BaseMedium {
             p = dataOffs + size;
         }
 
-        if(infoOffs<0 || tmapOffs<0 || trksOffs<0) throw new Error("WOZ missing INFO/TMAP/TRKS");
+        if(infoOffs < 0 || tmapOffs < 0 || trksOffs < 0)
+            throw new Error("WOZ missing INFO/TMAP/TRKS");
 
         medium.info = {
-            version: src[infoOffs+0],
-            disk_type: src[infoOffs+1],
+            version:        src[infoOffs+0],
+            disk_type:      src[infoOffs+1],  // 1=5.25, 2=3.5
             write_protected: src[infoOffs+2] !== 0,
-            synchronized: src[infoOffs+3] !== 0,
-            cleaned: src[infoOffs+4] !== 0
+            synchronized:   src[infoOffs+3] !== 0,
+            cleaned:        src[infoOffs+4] !== 0
         };
 
         if(medium.info.disk_type !== 1) throw new Error("only 5.25 WOZ supported");
-
         if(tmapSize < 160) throw new Error("invalid TMAP size");
-        medium.tmap.set(src.subarray(tmapOffs, tmapOffs+160));
 
-        let trackCount = 0; //[DIAG]
+        medium.tmap.set(src.subarray(tmapOffs, tmapOffs + 160));
 
         if(isWoz1) {
             let q = trksOffs;
             for(let i=0; i<35 && q+6656 <= trksOffs+trksSize; i++, q+=6656) {
                 const bytesUsed = u16le(src, q+6646);
                 const bitCount  = u16le(src, q+6648);
-                if(bytesUsed===0 || bitCount===0) { medium.tracks[i]=null; continue; }
-                const bytes = src.slice(q, q+bytesUsed);
-                medium.tracks[i] = new WozTrack(bytes, bitCount);
-                trackCount++; //[DIAG]
+                if(bytesUsed === 0 || bitCount === 0) { medium.tracks[i]=null; continue; }
+                medium.tracks[i] = new WozTrack(src.slice(q, q+bytesUsed), bitCount);
             }
         } else {
+            // WOZ2: TRKS chunk starts with 160 × 8-byte descriptors.
+            // startBlock * 512 is a file-absolute byte offset.
             for(let i=0; i<160; i++) {
                 const d = trksOffs + (i*8);
                 if(d+8 > trksOffs+trksSize) break;
@@ -227,27 +197,9 @@ class WozMedium extends BaseMedium {
                 const byteOffs = startBlock * 512;
                 const byteLen  = blockCount * 512;
                 if(byteOffs+byteLen > src.length) { medium.tracks[i]=null; continue; }
-                const bytesUsed = (bitCount+7) >> 3;
-                medium.tracks[i] = new WozTrack(src.slice(byteOffs, byteOffs+bytesUsed), bitCount);
-                trackCount++; //[DIAG]
+                medium.tracks[i] = new WozTrack(src.slice(byteOffs, byteOffs + ((bitCount+7)>>3)), bitCount);
             }
         }
-
-        console.log(`[floppy] fromWoz: parsed ${trackCount} tracks, tmap[0]=${medium.tmap[0]}`); //[DIAG]
-
-        // [DIAG] pre-build track 0 cache and report prologue count
-        if(medium.tracks[0]) {                                                  //[DIAG]
-            const c = medium.tracks[0].buildNibbleCache();                      //[DIAG]
-            let ap=0, dp=0;                                                     //[DIAG]
-            for(let i=0;i<c.length-2;i++) {                                    //[DIAG]
-                if(c[i]===0xD5&&c[i+1]===0xAA) {                              //[DIAG]
-                    if(c[i+2]===0x96) ap++;                                    //[DIAG]
-                    else if(c[i+2]===0xAD) dp++;                               //[DIAG]
-                }                                                               //[DIAG]
-            }                                                                   //[DIAG]
-            console.log(`[floppy] track 0 cache: ${c.length} nibbles, ${ap} addr prologues, ${dp} data prologues`); //[DIAG]
-            console.log(`[floppy] track 0 first 8 nibbles: ${Array.from(c.slice(0,8)).map(x=>x.toString(16).padStart(2,'0')).join(' ')}`); //[DIAG]
-        }                                                                       //[DIAG]
 
         return medium;
     }
@@ -294,7 +246,6 @@ class Disk {
             this.medium.set_head_pos(this.head_pos);
             this.medium.reset_rotation();
         }
-        console.log(`[floppy] disk ${this.num} mount: "${name}" head_pos=${this.head_pos}`); //[DIAG]
     }
 
     reset() {
@@ -306,7 +257,6 @@ class Disk {
             this.medium.reset_rotation();
         }
         this.led_cb(this.num, false);
-        console.log(`[floppy] disk ${this.num} reset, medium=${this.medium?this.medium.name:'none'}`); //[DIAG]
     }
 }
 
@@ -315,38 +265,21 @@ export class Floppy525 {
         this._slot = (slot & 0x07);
         this._mem = memory;
         this._led_cb = led_cb;
-        this._addr_sel = 0xc080 | (this._slot << 4);
-        this._addr_io  = 0xc000 | (this._slot << 8);
+        this._addr_sel = 0xc080 | (this._slot << 4);  // e.g. $C0E0 for slot 6
+        this._addr_io  = 0xc000 | (this._slot << 8);  // e.g. $C600 for slot 6
         this._write_disk = false;
-        this._selectLog = 0; //[DIAG]
 
         this._mem.add_read_hook(this.read.bind(this));
         this._mem.add_write_hook(this.write.bind(this));
 
         this._disks = [new Disk(0, led_cb), new Disk(1, led_cb)];
         this._active_disk = this._disks[0];
-
-        console.log(`[floppy] Floppy525 constructed: slot=${slot} addr_sel=0x${this._addr_sel.toString(16)} addr_io=0x${this._addr_io.toString(16)}`); //[DIAG]
     }
 
     read(addr) {
         if((addr & 0xf800) != 0xc000) return undefined;
-
-        if((addr & 0xfff0) == this._addr_sel) {
-            const op = addr & 0x000f;
-            //[DIAG] log first 30 select calls to confirm hook is firing
-            if(this._selectLog < 30) {
-                _diagPush(`select read: addr=0x${addr.toString(16)} op=0x${op.toString(16)}`);
-                this._selectLog++;
-                if(this._selectLog === 30) _diagPush('(select logging capped at 30; call window.__floppyDiag() to see)');
-            }
-            return this.select(op, false);
-        }
-
-        if((addr & 0xff00) == this._addr_io) {
-            return disk16_p5_rom_341_0027[addr & 0xff];
-        }
-
+        if((addr & 0xfff0) == this._addr_sel) return this.select(addr & 0x000f, false);
+        if((addr & 0xff00) == this._addr_io)  return disk16_p5_rom_341_0027[addr & 0xff];
         return undefined;
     }
 
@@ -376,16 +309,16 @@ export class Floppy525 {
                 this._active_disk = this._disks[1];
                 if(this._active_disk.motor_on) this._active_disk.set_led(true);
                 break;
-            case 0x0c:
+            case 0x0c: // Q6L — data strobe: read returns data latch
                 if(!io_write) return this._active_disk.read();
                 break;
-            case 0x0d:
+            case 0x0d: // Q6H — latch
                 break;
-            case 0x0e:
-            case 0x0f:
+            case 0x0e: // Q7L — latch is input
+            case 0x0f: // Q7H — latch is output
                 this._write_disk = (op & 0x01) != 0;
                 break;
-            default:
+            default: // $00-$07 — phase magnet control; odd = ON, even = OFF
                 if(op & 0x01) this._active_disk.set_phase((op >> 1) & 0x03);
                 break;
         }
@@ -393,9 +326,17 @@ export class Floppy525 {
     }
 
     load_disk(num, name, bin) {
-        console.log(`[floppy] load_disk ${num+1}: ${name}, ${bin.byteLength} bytes`); //[DIAG]
+        // FIX: load_disk() is the entry point the UI calls for all disk images
+        // regardless of format. Detect WOZ signature here and redirect so that
+        // WOZ images are never rejected by the DSK size check.
+        const sig = woz_sig(bin);
+        if(sig === WOZ_SIG1 || sig === WOZ_SIG2) {
+            return this.load_woz(num, name, bin);
+        }
+
+        console.log("loading disk " + (num+1) + ": " + name);
         if(bin.byteLength != 143360) {
-            console.log(`[floppy] error: invalid disk image size ${bin.byteLength}`);
+            console.log("error, invalid disk image size: " + bin.byteLength);
             return false;
         }
         const src = new Uint8Array(bin);
@@ -405,27 +346,20 @@ export class Floppy525 {
     }
 
     load_woz(num, name, bin) {
-        console.log(`[floppy] load_woz ${num+1}: ${name}`); //[DIAG]
+        console.log("loading woz disk " + (num+1) + ": " + name);
         try {
             const medium = WozMedium.fromWoz(name, bin);
             this._disks[num].mount_medium(name, medium);
             return true;
         } catch(err) {
-            console.log("[floppy] error loading WOZ:", err.message);
+            console.log("error loading WOZ:", err.message);
             return false;
         }
     }
 
+    // load_image() remains available for callers that already use it.
     load_image(num, name, bin) {
-        // Accept ArrayBuffer or Uint8Array from the caller.
-        const sigBytes = (bin instanceof Uint8Array) ? bin : new Uint8Array(bin);
-
-        const sig = (sigBytes.length >= 4)
-            ? (sigBytes[0] | (sigBytes[1] << 8) | (sigBytes[2] << 16) | (sigBytes[3] << 24))
-            : 0;
-
-        console.log(`[floppy] load_image: "${name}", byteLength=${bin.byteLength ?? bin.length}, sig=0x${(sig>>>0).toString(16)}, isWoz=${sig===WOZ_SIG1||sig===WOZ_SIG2}`); //[DIAG]
-
+        const sig = woz_sig(bin);
         if(sig === WOZ_SIG1 || sig === WOZ_SIG2) return this.load_woz(num, name, bin);
         return this.load_disk(num, name, bin);
     }
@@ -462,7 +396,6 @@ export class Floppy525 {
     }
 
     reset() {
-        console.log("[floppy] Floppy525.reset()"); //[DIAG]
         this._disks[0].reset();
         this._disks[1].reset();
         this._active_disk = this._disks[0];
