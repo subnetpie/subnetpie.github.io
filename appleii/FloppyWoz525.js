@@ -226,7 +226,10 @@ class Disk {
     set_phase(phase_num) {
         const delta = phase_num - this.phase_num_last;
         this.phase_num_last = phase_num;
-        let step = (delta < -2) ? 1 : ((delta > 2) ? -1 : delta);
+        // let step = (delta < -2) ? 1 : ((delta > 2) ? -1 : delta);
+        // in set_phase() — change threshold from 2 to 1
+        let step = (delta < -1) ? 1 : ((delta > 1) ? -1 : delta);
+        
         this.head_pos += step * 2;
         if(this.head_pos < 0) this.head_pos = 0;
         else if(this.head_pos > 139) this.head_pos = 139;
