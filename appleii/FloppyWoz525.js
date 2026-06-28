@@ -8,8 +8,13 @@
 //
 //  DSK support is nibble-stream based.
 //  WOZ 1 and WOZ 2 read-only mount support for 5.25" images.
-//  Nibble cache built from WOZ track bitstreams by emulating the
-//  Disk II GCR latch: shift bits in, emit a nibble whenever bit 7 sets.
+//
+//  WOZ reads are cycle-accurate: the Disk II latch is emulated at the
+//  bit level using the CPU cycle counter supplied by the motherboard.
+//  One bit clocks into the latch every 4 CPU cycles (250 kHz bit rate).
+//  The latch holds its last valid nibble (bit 7 set) until a new one
+//  arrives, exactly as on real hardware.  This ensures the ROM's
+//  self-sync timing loops and copy-protection routines behave correctly.
 //
 //  refs:
 //    https://applesaucefdc.com/woz/reference1/
@@ -30,12 +35,15 @@ const write_62 = [
 // DOS 3.3 physical sector interleave  (ProDOS_2_4_2.dsk 8d2b-8d3b)
 const sec_int = [0x00,0x0d,0x0b,0x09,0x07,0x05,0x03,0x01,0x0e,0x0c,0x0a,0x08,0x06,0x04,0x02,0x0f];
 
-// WOZ chunk / signature constants (all little-endian uint32)
+// WOZ chunk / signature constants (little-endian uint32)
 const WOZ_SIG1   = 0x315A4F57; // "WOZ1"
 const WOZ_SIG2   = 0x325A4F57; // "WOZ2"
 const CHUNK_INFO = 0x4F464E49; // "INFO"
 const CHUNK_TMAP = 0x50414D54; // "TMAP"
 const CHUNK_TRKS = 0x534B5254; // "TRKS"
+
+// Disk II bit rate: one bit every 4 CPU cycles at 1 MHz → 250 kHz
+const CYCLES_PER_BIT = 4;
 
 // ---------------------------------------------------------------------------
 // Little-endian helpers
@@ -44,13 +52,13 @@ function u16le(a, o) { return  a[o] | (a[o+1] << 8); }
 function u32le(a, o) { return (a[o] | (a[o+1] << 8) | (a[o+2] << 16) | (a[o+3] << 24)) >>> 0; }
 
 // ---------------------------------------------------------------------------
-// BaseMedium – shared position state for DSK and WOZ media
+// BaseMedium – shared state for DSK and WOZ media
 // ---------------------------------------------------------------------------
 class BaseMedium
 {
     constructor() {
-        this.head_pos = 0;  // current quarter-track position (0..139)
-        this.byte_pos = 0;  // current read position in the nibble stream
+        this.head_pos = 0;  // quarter-track position (0..139)
+        this.byte_pos = 0;  // nibble-stream read position (DSK only)
     }
 
     set_head_pos(pos) { this.head_pos = pos; }
@@ -60,6 +68,8 @@ class BaseMedium
 
 // ---------------------------------------------------------------------------
 // DskMedium – pre-encoded nibble stream for standard .dsk images
+// Timing is not emulated at the bit level for DSK; the ROM's read loop
+// works correctly with the sequential nibble-stream model.
 // ---------------------------------------------------------------------------
 class DskMedium extends BaseMedium
 {
@@ -70,8 +80,6 @@ class DskMedium extends BaseMedium
 
         for(let t = 0; t < 35; t++) {
             let track = [];
-            // Sectors iterated 0..15 ascending so sec_int[] maps to the correct
-            // physical interleave.
             for(let s = 0; s < 16; s++) {
                 track = track.concat(sectorEncoder(src, t, s));
             }
@@ -80,7 +88,7 @@ class DskMedium extends BaseMedium
     }
 
     read_byte() {
-        const track = this.track_bytes[this.head_pos >> 2]; // quarter-track → whole-track
+        const track = this.track_bytes[this.head_pos >> 2];
         if(!track || !track.length) return 0;
         if(this.byte_pos >= track.length) this.byte_pos = 0;
         return track[this.byte_pos++];
@@ -88,64 +96,39 @@ class DskMedium extends BaseMedium
 }
 
 // ---------------------------------------------------------------------------
-// WozTrack – one track's raw bitstream with a lazy nibble cache
+// WozTrack – raw bitstream for one physical track
 // ---------------------------------------------------------------------------
 class WozTrack
 {
     constructor(bytes, bitCount) {
         this.bytes    = bytes;
         this.bitCount = bitCount;
-        this.nibble_cache = null;
     }
 
-    // Read a single bit from the circular bitstream.
+    // Read one bit from the circular bitstream.
     getBit(bitPos) {
-        if(this.bitCount <= 0) return 0;
         bitPos %= this.bitCount;
         return (this.bytes[bitPos >> 3] & (0x80 >> (bitPos & 7))) ? 1 : 0;
-    }
-
-    // Build (once) a nibble cache by emulating the Disk II GCR latch:
-    // shift bits in one at a time; emit a nibble whenever bit 7 is set.
-    // This correctly handles nibbles that start on any bit boundary.
-    // A second pass of up to 8 bits catches any valid nibble whose bits
-    // are split across the track loop boundary.
-    buildNibbleCache() {
-        if(this.nibble_cache) return this.nibble_cache;
-        if(!this.bytes || !this.bitCount) {
-            this.nibble_cache = new Uint8Array(0);
-            return this.nibble_cache;
-        }
-
-        const out = [];
-        let cur = 0;
-
-        // Main pass — one full revolution of bits.
-        for(let i = 0; i < this.bitCount; i++) {
-            cur = ((cur << 1) | this.getBit(i)) & 0xFF;
-            if(cur & 0x80) {
-                out.push(cur);
-                cur = 0;
-            }
-        }
-
-        // Wrap-around pass — up to 8 extra bits from the start of the stream
-        // to complete any nibble that straddles the loop boundary.
-        for(let i = 0; i < 8; i++) {
-            cur = ((cur << 1) | this.getBit(i)) & 0xFF;
-            if(cur & 0x80) {
-                out.push(cur);
-                break;
-            }
-        }
-
-        this.nibble_cache = new Uint8Array(out);
-        return this.nibble_cache;
     }
 }
 
 // ---------------------------------------------------------------------------
-// WozMedium – TMAP + per-track WozTrack objects parsed from a WOZ image
+// WozMedium – cycle-accurate Disk II latch emulation over a WOZ bitstream
+//
+// The latch model:
+//   _bit_pos   : current position in the track bitstream (advances with time)
+//   _latch     : last nibble (bit 7 set) clocked into the latch
+//   _last_cycle: CPU cycle count at which _bit_pos was last updated
+//
+// On every read_byte(cycles) call:
+//   1. Calculate bits elapsed since last update: floor((cycles-_last_cycle)/4)
+//   2. Shift those bits through the latch shift register.
+//   3. Each time bit 7 goes high, capture the byte into _latch.
+//   4. Return _latch (holds until the next valid nibble clocks in).
+//
+// This reproduces the hardware behaviour: the CPU's tight read loop sees
+// the same latch value multiple times between nibbles, sync gaps repeat
+// for the correct number of cycles, and copy-protection timing is accurate.
 // ---------------------------------------------------------------------------
 class WozMedium extends BaseMedium
 {
@@ -155,12 +138,15 @@ class WozMedium extends BaseMedium
         this.info   = null;
         this.tmap   = new Uint8Array(160).fill(0xFF);
         this.tracks = [];
+
+        // Latch state
+        this._bit_pos    = 0;   // current bit position in the active track
+        this._latch      = 0;   // last valid nibble latched (bit 7 set)
+        this._shift      = 0;   // shift register (accumulates bits between nibbles)
+        this._last_cycle = 0;   // CPU cycle count when _bit_pos was last advanced
     }
 
-    // Override set_head_pos to maintain a proportional stream position when
-    // the head moves to a different track.  The WOZ spec requires that the
-    // bit pointer remain continuous across track changes so that
-    // cross-track-sync copy protection works correctly.
+    // Override: scale _bit_pos proportionally when the head moves to a new track.
     set_head_pos(pos) {
         if(pos === this.head_pos) return;
 
@@ -168,54 +154,82 @@ class WozMedium extends BaseMedium
         const newId = this.tmap[pos];
         this.head_pos = pos;
 
-        if(newId === oldId) return;   // TMAP maps both quarter-tracks to the same data
+        if(newId === oldId) return;
 
         if(oldId !== 0xFF && newId !== 0xFF) {
             const oldTrack = this.tracks[oldId];
             const newTrack = this.tracks[newId];
-            if(oldTrack && newTrack) {
-                const oldCache = oldTrack.buildNibbleCache();
-                const newCache = newTrack.buildNibbleCache();
-                if(oldCache.length && newCache.length) {
-                    // Scale byte_pos proportionally to the new track length.
-                    this.byte_pos = Math.floor(
-                        this.byte_pos * newCache.length / oldCache.length
-                    ) % newCache.length;
-                    return;
-                }
+            if(oldTrack && newTrack && oldTrack.bitCount && newTrack.bitCount) {
+                // Maintain proportional position in bit space.
+                this._bit_pos = Math.floor(
+                    this._bit_pos * newTrack.bitCount / oldTrack.bitCount
+                ) % newTrack.bitCount;
+                this._shift = 0;
+                return;
             }
         }
 
-        // Either the old or new track is empty (0xFF) or has no data — reset.
-        // The spec recommends treating empty tracks as 51200 bits; for a
-        // nibble-stream implementation resetting to 0 is a safe approximation.
-        this.byte_pos = 0;
+        // Empty or missing track — reset position.
+        this._bit_pos = 0;
+        this._shift   = 0;
     }
 
-    read_byte() {
+    // Override reset_rotation to clear all latch state.
+    reset_rotation() {
+        this._bit_pos    = 0;
+        this._latch      = 0;
+        this._shift      = 0;
+        this._last_cycle = 0;
+    }
+
+    // Cycle-accurate latch read.  Called on every Q6L soft-switch access.
+    read_byte(cycles) {
         const trackId = this.tmap[this.head_pos];
-        if(trackId === 0xFF) return 0;  // empty track → no data
+        if(trackId === 0xFF) return 0;
 
         const track = this.tracks[trackId];
-        if(!track) return 0;
+        if(!track || !track.bitCount) return 0;
 
-        const bytes = track.buildNibbleCache();
-        if(!bytes.length) return 0;
+        // How many bits have clocked since the last call?
+        // Use unsigned 32-bit subtraction so the counter survives any wrap.
+        const elapsed      = (cycles - this._last_cycle) >>> 0;
+        const bitsToAdvance = Math.floor(elapsed / CYCLES_PER_BIT);
 
-        this.byte_pos %= bytes.length;  // safe modulo wrap
-        return bytes[this.byte_pos++];
+        if(bitsToAdvance > 0) {
+            // Advance the cycle timestamp by exactly the bits we consume.
+            this._last_cycle = (this._last_cycle + bitsToAdvance * CYCLES_PER_BIT) >>> 0;
+
+            // Clock each bit through the shift register.
+            // When bit 7 of the shift register is set a valid GCR nibble has
+            // been latched — capture it and reset the shift register.
+            let shift = this._shift;
+            let bp    = this._bit_pos;
+            const bc  = track.bitCount;
+
+            for(let i = 0; i < bitsToAdvance; i++) {
+                shift = ((shift << 1) | track.getBit(bp)) & 0xFF;
+                if(++bp >= bc) bp = 0;
+                if(shift & 0x80) {
+                    this._latch = shift;
+                    shift = 0;
+                }
+            }
+
+            this._shift   = shift;
+            this._bit_pos = bp;
+        }
+
+        return this._latch;
     }
 
     // ------------------------------------------------------------------
-    // Static factory — parse a WOZ 1 or WOZ 2 image from an ArrayBuffer
-    // or Uint8Array and return a ready-to-use WozMedium.
+    // Static factory — parse WOZ 1 or WOZ 2 from ArrayBuffer or Uint8Array
     // ------------------------------------------------------------------
     static fromWoz(name, bin) {
-        // Accept either ArrayBuffer (FileReader result) or Uint8Array.
         const src = (bin instanceof Uint8Array) ? bin : new Uint8Array(bin);
         if(src.length < 12) throw new Error("WOZ: file too small");
 
-        const sig   = u32le(src, 0);
+        const sig    = u32le(src, 0);
         const isWoz1 = sig === WOZ_SIG1;
         const isWoz2 = sig === WOZ_SIG2;
         if(!isWoz1 && !isWoz2) throw new Error("WOZ: invalid signature");
@@ -225,7 +239,6 @@ class WozMedium extends BaseMedium
         let tmapOffs = -1, tmapSize = 0;
         let trksOffs = -1, trksSize = 0;
 
-        // Walk the chunk list starting at byte 12 (after the 12-byte file header).
         let p = 12;
         while(p + 8 <= src.length) {
             const id       = u32le(src, p);
@@ -243,39 +256,36 @@ class WozMedium extends BaseMedium
         if(infoOffs < 0 || tmapOffs < 0 || trksOffs < 0)
             throw new Error("WOZ: missing required chunk (INFO/TMAP/TRKS)");
 
-        // --- INFO chunk ---
+        // INFO chunk
         medium.info = {
-            version:        src[infoOffs + 0],
-            disk_type:      src[infoOffs + 1],  // 1 = 5.25", 2 = 3.5"
+            version:         src[infoOffs + 0],
+            disk_type:       src[infoOffs + 1],  // 1 = 5.25", 2 = 3.5"
             write_protected: src[infoOffs + 2] !== 0,
-            synchronized:   src[infoOffs + 3] !== 0,
-            cleaned:        src[infoOffs + 4] !== 0
+            synchronized:    src[infoOffs + 3] !== 0,
+            cleaned:         src[infoOffs + 4] !== 0
         };
         if(medium.info.disk_type !== 1)
             throw new Error("WOZ: only 5.25\" disk images are supported");
 
-        // --- TMAP chunk (160 bytes, identical layout for WOZ1 and WOZ2 5.25") ---
+        // TMAP chunk (160 bytes, same layout for WOZ1 and WOZ2 5.25")
         if(tmapSize < 160) throw new Error("WOZ: TMAP chunk too small");
         medium.tmap.set(src.subarray(tmapOffs, tmapOffs + 160));
 
-        // --- TRKS chunk ---
+        // TRKS chunk
         if(isWoz1) {
-            // WOZ1: each track occupies a fixed 6656-byte slot.
-            // Layout per slot: 6646 bytes of bit data, then bytesUsed (u16), bitCount (u16).
+            // WOZ1: fixed 6656-byte slots.
+            // Per slot: 6646 bytes of bit data | bytesUsed (u16) | bitCount (u16).
             let q = trksOffs;
             for(let i = 0; i < 35 && q + 6656 <= trksOffs + trksSize; i++, q += 6656) {
                 const bytesUsed = u16le(src, q + 6646);
                 const bitCount  = u16le(src, q + 6648);
-                if(bytesUsed === 0 || bitCount === 0) {
-                    medium.tracks[i] = null;
-                    continue;
-                }
+                if(bytesUsed === 0 || bitCount === 0) { medium.tracks[i] = null; continue; }
                 medium.tracks[i] = new WozTrack(src.slice(q, q + bytesUsed), bitCount);
             }
         } else {
-            // WOZ2: TRKS chunk opens with up to 160 × 8-byte TRK descriptors.
-            // Each descriptor: startBlock (u16), blockCount (u16), bitCount (u32).
-            // startBlock * 512 is a file-absolute byte offset.
+            // WOZ2: 160 × 8-byte TRK descriptors at the start of the TRKS chunk.
+            // Descriptor: startBlock (u16) | blockCount (u16) | bitCount (u32).
+            // startBlock * 512 = file-absolute byte offset.
             for(let i = 0; i < 160; i++) {
                 const d = trksOffs + i * 8;
                 if(d + 8 > trksOffs + trksSize) break;
@@ -285,16 +295,12 @@ class WozMedium extends BaseMedium
                 const bitCount   = u32le(src, d + 4);
 
                 if(startBlock === 0 || blockCount === 0 || bitCount === 0) {
-                    medium.tracks[i] = null;
-                    continue;
+                    medium.tracks[i] = null; continue;
                 }
 
                 const byteOffs  = startBlock * 512;
                 const byteLen   = blockCount * 512;
-                if(byteOffs + byteLen > src.length) {
-                    medium.tracks[i] = null;
-                    continue;
-                }
+                if(byteOffs + byteLen > src.length) { medium.tracks[i] = null; continue; }
 
                 const bytesUsed = (bitCount + 7) >> 3;
                 medium.tracks[i] = new WozTrack(src.slice(byteOffs, byteOffs + bytesUsed), bitCount);
@@ -306,7 +312,7 @@ class WozMedium extends BaseMedium
 }
 
 // ---------------------------------------------------------------------------
-// Disk – one physical drive: head position, motor state, mounted medium
+// Disk – one physical drive unit
 // ---------------------------------------------------------------------------
 class Disk
 {
@@ -319,26 +325,21 @@ class Disk
         this.motor_on      = false;
         this.medium        = null;
 
-        // Stepper state
         this.phase_num_last = 0;
         this.head_pos       = 0;  // 0..139 quarter-track positions
     }
 
-    read() {
+    // read_byte receives the current CPU cycle count for WOZ timing.
+    // DskMedium.read_byte() ignores it; WozMedium.read_byte() uses it.
+    read(cycles) {
         if(!this.medium) return 0;
         this.medium.set_head_pos(this.head_pos);
-        return this.medium.read_byte();
+        return this.medium.read_byte(cycles);
     }
 
-    // Advance the stepper motor on each phase-ON event.
-    // set_phase() is called only for phase-ON soft-switch accesses (odd ops);
-    // phase-OFF events (even ops) are ignored by select(), so each call here
-    // represents one half-track step = 2 quarter-track units.
-    //
-    // The phase number is 0..3 (4-phase stepper, wraps).  A delta of +1 or -1
-    // means the adjacent coil was energised — step in that direction.  A delta
-    // of magnitude > 2 means the phase counter wrapped (e.g. 3→0 = +1 forward,
-    // 0→3 = -1 backward); the threshold of 2 correctly identifies these cases.
+    // Stepper motor — called only on phase-ON soft-switch accesses (odd ops).
+    // Each call = one half-track step = 2 quarter-track units.
+    // Phase number is 0..3 (wraps); delta > 2 in magnitude means wrap-around.
     set_phase(phase_num) {
         const delta = phase_num - this.phase_num_last;
         this.phase_num_last = phase_num;
@@ -355,8 +356,8 @@ class Disk
     }
 
     mount_medium(name, medium) {
-        this.name   = name;
-        this.medium = medium;
+        this.name          = name;
+        this.medium        = medium;
         this.write_protect = (medium && medium.info) ? !!medium.info.write_protected : false;
         if(this.medium) {
             this.medium.set_head_pos(this.head_pos);
@@ -365,7 +366,7 @@ class Disk
     }
 
     reset() {
-        this.motor_on      = false;
+        this.motor_on       = false;
         this.phase_num_last = 0;
         this.head_pos       = 0;
         if(this.medium) {
@@ -378,15 +379,19 @@ class Disk
 
 // ---------------------------------------------------------------------------
 // Floppy525 – Disk II controller card emulation (slot 6 by default)
+//
+// get_cycles: a function () => number that returns the current CPU cycle
+// count from the motherboard.  Used to drive cycle-accurate WOZ latch timing.
 // ---------------------------------------------------------------------------
 export class Floppy525
 {
-    constructor(slot, memory, led_cb) {
-        this._slot    = slot & 0x07;
-        this._mem     = memory;
-        this._led_cb  = led_cb;            // cb(driveNum: 0|1, state: bool)
+    constructor(slot, memory, led_cb, get_cycles) {
+        this._slot       = slot & 0x07;
+        this._mem        = memory;
+        this._led_cb     = led_cb;
+        this._get_cycles = get_cycles;  // () => current CPU cycle count
 
-        // Soft-switch address ranges for the selected slot:
+        // Soft-switch address ranges:
         //   $C0x0-$C0xF  drive select / data  (x = 8 + slot)
         //   $Cs00-$CsFF  controller ROM       (s = slot)
         this._addr_sel = 0xc080 | (this._slot << 4);  // e.g. $C0E0 for slot 6
@@ -423,7 +428,7 @@ export class Floppy525
             return this.select(addr & 0x000f, true);
 
         if((addr & 0xff00) === this._addr_io)
-            return 0;  // writes to ROM space are silently consumed
+            return 0;  // writes to ROM space silently consumed
 
         return undefined;
     }
@@ -433,7 +438,7 @@ export class Floppy525
     // -----------------------------------------------------------------------
     select(op, io_write) {
         switch(op) {
-            case 0x08:  // Q0..Q3 off / motor off
+            case 0x08:  // motor off
                 this._disks[0].set_led(false);
                 this._disks[1].set_led(false);
                 break;
@@ -454,21 +459,21 @@ export class Floppy525
                 if(this._active_disk.motor_on) this._active_disk.set_led(true);
                 break;
 
-            case 0x0c:  // Q6L — data strobe; read returns the data latch
-                if(!io_write) return this._active_disk.read();
+            case 0x0c:  // Q6L — data strobe; read returns latch value
+                if(!io_write) return this._active_disk.read(this._get_cycles());
                 break;
 
-            case 0x0d:  // Q6H — latch data (write-mode data byte; ignored for now)
+            case 0x0d:  // Q6H — latch data (write mode; not implemented)
                 break;
 
-            case 0x0e:  // Q7L — latch is input (read mode)
-            case 0x0f:  // Q7H — latch is output (write mode)
+            case 0x0e:  // Q7L — latch input (read mode)
+            case 0x0f:  // Q7H — latch output (write mode)
                 this._write_disk = (op & 0x01) !== 0;
                 break;
 
             default:    // 0x00-0x07 — phase magnet control
-                // Only odd addresses energise a phase; even addresses de-energise
-                // (the head only steps on a rising edge, so we ignore de-energise).
+                // Odd address = phase ON; even = phase OFF (ignored — head only
+                // steps on a rising edge, and set_phase handles direction).
                 if(op & 0x01) this._active_disk.set_phase((op >> 1) & 0x03);
                 break;
         }
@@ -479,7 +484,6 @@ export class Floppy525
     // Disk image loaders
     // -----------------------------------------------------------------------
 
-    // Load a standard 140 KB DSK/PO/DO image.
     load_disk(num, name, bin) {
         console.log(`loading disk ${num + 1}: ${name}`);
         if(bin.byteLength !== 143360) {
@@ -492,7 +496,6 @@ export class Floppy525
         return true;
     }
 
-    // Load a WOZ 1 or WOZ 2 image.
     load_woz(num, name, bin) {
         console.log(`loading woz disk ${num + 1}: ${name}`);
         try {
@@ -505,17 +508,13 @@ export class Floppy525
         }
     }
 
-    // Auto-detect format from the file signature and dispatch accordingly.
+    // Auto-detect format from the file signature.
     load_image(num, name, bin) {
-        // Normalise to Uint8Array so the signature read is always safe,
-        // whether the caller passes an ArrayBuffer or a Uint8Array.
         const sigBytes = (bin instanceof Uint8Array) ? bin : new Uint8Array(bin);
         if(sigBytes.length < 4) return false;
-
         const sig = u32le(sigBytes, 0);
         if(sig === WOZ_SIG1 || sig === WOZ_SIG2)
             return this.load_woz(num, name, bin);
-
         return this.load_disk(num, name, bin);
     }
 
@@ -523,7 +522,6 @@ export class Floppy525
     // 6-and-2 sector encoder for DSK images
     // -----------------------------------------------------------------------
     sector_62encode(src, trk, sec_ni) {
-        // Address field prologue + gap
         let res = [0xff,0x3f,0xcf,0xf3,0xfc, 0xff,0x3f,0xcf,0xf3,0xfc,
                    0xff,0x3f,0xcf,0xf3,0xfc, 0xff,0x3f,0xcf,0xf3,0xfc];
 
@@ -538,16 +536,14 @@ export class Floppy525
         res = res.concat([(csum >> 1) | 0xaa, csum | 0xaa]);
         res = res.concat([0xde, 0xaa, 0xeb]);
 
-        // Inter-field gap
         res = res.concat([0xff,0x3f,0xcf,0xf3,0xfc, 0xff,0x3f,0xcf,0xf3,0xfc]);
 
-        // Data field
         res = res.concat([0xd5, 0xaa, 0xad]);
 
         const data62 = [];
         const offs   = (trk << 12) | (sec_ni << 8);
         for(let i = 255, i2 = 83; i >= 0; i--, i2 = i % 86) {
-            const val   = src[i + offs];
+            const val      = src[i + offs];
             data62[i + 86] = val >> 2;
             data62[i2]     = (data62[i2] << 2) | ((val & 0x01) << 1) | ((val & 0x02) >> 1);
         }
