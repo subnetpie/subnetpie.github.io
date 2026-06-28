@@ -330,18 +330,21 @@ class Disk
         return this.medium.read_byte();
     }
 
-    // Advance the stepper motor by one quarter-track per phase transition.
-    // The Disk II stepper is a 4-phase motor; each energised phase steps
-    // the head by exactly one quarter-track.  The phase number is 0..3 and
-    // wraps, so the wrap-aware threshold is 1 (not 2).
+    // Advance the stepper motor on each phase-ON event.
+    // set_phase() is called only for phase-ON soft-switch accesses (odd ops);
+    // phase-OFF events (even ops) are ignored by select(), so each call here
+    // represents one half-track step = 2 quarter-track units.
+    //
+    // The phase number is 0..3 (4-phase stepper, wraps).  A delta of +1 or -1
+    // means the adjacent coil was energised — step in that direction.  A delta
+    // of magnitude > 2 means the phase counter wrapped (e.g. 3→0 = +1 forward,
+    // 0→3 = -1 backward); the threshold of 2 correctly identifies these cases.
     set_phase(phase_num) {
         const delta = phase_num - this.phase_num_last;
         this.phase_num_last = phase_num;
 
-        // delta in [-3..+3]; values > 1 or < -1 indicate a wrap-around,
-        // meaning the short path actually goes in the opposite direction.
-        const step = (delta < -1) ? 1 : (delta > 1) ? -1 : delta;
-        this.head_pos = Math.max(0, Math.min(139, this.head_pos + step));
+        const step = (delta < -2) ? 1 : (delta > 2) ? -1 : delta;
+        this.head_pos = Math.max(0, Math.min(139, this.head_pos + step * 2));
 
         if(this.medium) this.medium.set_head_pos(this.head_pos);
     }
