@@ -17,7 +17,7 @@ import {TextDisplay80} from "https://subnetpie.github.io/appleii/display_text_80
 import {HiresDisplay} from "https://subnetpie.github.io/appleii/display_hires.js";
 import {DoubleHiresDisplay} from "https://subnetpie.github.io/appleii/display_double_hires.js";
 import {Keyboard} from "https://subnetpie.github.io/appleii/keyboard.js";
-import {Floppy525} from "https://subnetpie.github.io/appleii/floppy525.js";
+import {Floppy525} from "https://subnetpie.github.io/appleii/FloppyWoz525.js";
 import {AppleAudio} from "https://subnetpie.github.io/appleii/apple_audio.js";
 import {rom_342_0304_cd} from "https://subnetpie.github.io/appleii/rom/342-0304-cd.js";
 import {rom_342_0303_ef} from "https://subnetpie.github.io/appleii/rom/342-0303-ef.js";
@@ -32,12 +32,16 @@ export class Motherboard
         this.display_text_80 = new TextDisplay80(this.memory, canvas);
         this.display_hires = new HiresDisplay(this.memory, canvas);
         this.display_double_hires = new DoubleHiresDisplay(this.memory, canvas);
-        this.floppy525 = new Floppy525(6, this.memory , floppy_led_cb);
-        this.audio = new AppleAudio(khz);
         this.cycles = 0;
-        this.io_manager = new IOManager(this.memory, this.keyboard, 
-                                        this.display_text, this.display_text_80, 
-                                        this.display_hires, this.display_double_hires, 
+
+        // Pass a cycle-count getter into Floppy525 so the WOZ latch emulation
+        // can advance the bitstream by the correct number of bits on each read.
+        this.floppy525 = new Floppy525(6, this.memory, floppy_led_cb, () => this.cycles);
+
+        this.audio = new AppleAudio(khz);
+        this.io_manager = new IOManager(this.memory, this.keyboard,
+                                        this.display_text, this.display_text_80,
+                                        this.display_hires, this.display_double_hires,
                                         this.audio_click.bind(this), joyValues);
     }
 
@@ -83,4 +87,3 @@ export class Motherboard
         for(let i=0; i<text.length; i++) this.memory.write(addr+i, text.charCodeAt(i)+0x80);
     }
 }
-
