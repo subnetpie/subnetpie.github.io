@@ -1,0 +1,157 @@
+html,
+body {
+ margin: 0;
+ padding: 0;
+ background: #000;
+ color: #fff;
+ font-family: monospace;
+ overscroll-behavior: none;
+ touch-action: none;
+}
+#gameContainer {
+ position: relative;
+ min-height: 100vh;
+ padding: 12px 12px 180px;
+ display: flex;
+ flex-direction: column;
+ align-items: center;
+ box-sizing: border-box;
+}
+#gameCanvas {
+ display: block;
+ width: min(100vw - 2px, 100%);
+ height: auto;
+ aspect-ratio: 7 / 8;
+ background: #000;
+ image-rendering: pixelated;
+ margin-top: 50px;
+ position: relative;
+ z-index: 1;
+}
+
+/* Shared button behavior */
+button {
+ -webkit-appearance: none;
+ appearance: none;
+ border: 2px solid rgba(200, 50, 200, 0.5);
+ background: rgba(255, 255, 255, 0.1);
+ color: #ff4c00;
+ font-family: monospace;
+ touch-action: none;
+ user-select: none;
+ -webkit-user-select: none;
+ -webkit-touch-callout: none;
+ pointer-events: auto;
+ position: relative;
+ z-index: 20;
+}
+button:active,
+.pad:active {
+ background: rgba(255, 255, 255, 0.22);
+ border-color: rgba(255, 255, 255, 0.55);
+}
+
+/* Coin / start row */
+#buttonPanel {
+ position: fixed;
+ top: max(10px, env(safe-area-inset-top));
+ left: 50%;
+ transform: translateX(-50%);
+ display: flex;
+ gap: 75%;
+ justify-content: center;
+ align-items: center;
+ z-index: 30;
+ pointer-events: auto;
+}
+#buttonPanel button {
+ min-width: 100px;
+ min-height: 40px;
+ padding: 10px 16px;
+ font-size: 14px;
+ border-radius: 8px;
+}
+
+/* Right-side action buttons */
+#actionPanel {
+ position: fixed;
+ right: max(16px, env(safe-area-inset-right));
+ bottom: max(24px, env(safe-area-inset-bottom));
+ display: flex;
+ flex-direction: column;
+ gap: 12px;
+ margin-bottom: 2px;
+ z-index: 30;
+ pointer-events: auto;
+}
+#actionPanel button {
+ min-width: 150px;
+ min-height: 60px;
+ padding: 12px 18px;
+ font-size: 14px;
+ border: 2px solid rgba(200, 50, 200, 0.5);
+ border-radius: 8px;
+}
+
+#dpad {
+ position: fixed;
+ bottom: 0px;
+ left: 10px;
+ touch-action: none;
+ user-select: none;
+ z-index: 20;
+}
+#dpad-ring {
+ position: relative; /* ← add this so canvas positions against it */
+ width: 180px;
+ height: 180px;
+ margin-left: 10px;
+ margin-bottom: 10px;
+ border-radius: 50%;
+ background: rgba(200, 200, 200, 0.15);
+ border: 2px solid rgba(200, 50, 200, 0.5);
+}
+
+#dpad-canvas {
+ position: absolute;
+ top: 0;
+ left: 0;
+ pointer-events: none; /* touches pass through to #dpad-ring */
+ display: block;
+}
+
+#button-pad {
+ position: fixed;
+ bottom: 0px;
+ right: 20px;
+ width: 250px;
+ height: 200px;
+ border-radius: 40px;
+ border: 1px solid rgba(255, 0, 255, 0);
+ touch-action: none;
+ user-select: none;
+ display: flex;
+ align-items: center;
+ justify-content: space-between;
+ pointer-events: auto;
+ z-index: 200;
+}
+
+#btn-fire,
+#btn-bomb {
+ width: 115px;
+ height: 115px;
+ border-radius: 12px;
+ background: rgba(255, 255, 255, 0.15);
+ border: 2px solid rgba(200, 0, 200, 0.4);
+ touch-action: none;
+ user-select: none;
+ -webkit-user-select: none;
+ -webkit-touch-callout: none;
+ pointer-events: auto;
+ display: flex;
+ align-items: center;
+ justify-content: center;
+ cursor: pointer;
+ z-index: 250;
+}

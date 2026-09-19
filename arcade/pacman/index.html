@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+    <meta charset="UTF-8">
+    <title>JSPacman 3.26</title>
+    <link rel="stylesheet" href="./style.css">
+
+  </head>
+    
+  <body>
+  <div id="gameContainer">
+  <canvas id="gameCanvas" width="288" height="224"></canvas>
+  <div id="dpad" aria-hidden="true">
+    <button class="pad pad-up"    data-dir="up"    aria-label="Up"></button>
+    <button class="pad pad-left"  data-dir="left"  aria-label="Left"></button>
+    <button class="pad pad-right" data-dir="right" aria-label="Right"></button>
+    <button class="pad pad-down"  data-dir="down"  aria-label="Down"></button>
+  </div>
+  <div id="buttonPanel">
+    <button onclick="insertCoin1()">Coin</button>
+    <button onclick="start1Player()">Start</button>
+    <button id="toggleBtn" onclick="toggleEmulator()">Diagnostic</button>
+  </div>
+</div>
+    <script src='https://codepen.io/Subnetpie/pen/WbRWLBJ.js'></script><script  src="./script.js"></script>
+
+  </body>
+  
+</html>

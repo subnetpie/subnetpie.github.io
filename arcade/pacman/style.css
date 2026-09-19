@@ -1,0 +1,89 @@
+body {
+  margin: 0;
+  padding: 10px;
+  background: #000;
+  color: #fff;
+  font-family: 'Press Start 2P', cursive;
+}
+
+@font-face {
+  font-family: Pacman;
+  src: url("https://subnetpie.github.io/pacman/Pacmania.otf") format("opentype");
+}
+
+#gameContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+#gameCanvas {
+  background: #000;
+  image-rendering: pixelated;
+  transform: rotate(90deg) scale(2);
+  margin-top: 225px;
+  z-index: -1;
+}
+#buttonPanel {
+  position: fixed;
+  width: 100%;
+  inset: 5px 0 auto 0;
+  display: flex;
+  flex-direction: row;
+  gap: 20px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 0px;
+}
+#buttonPanel button {
+  padding: 0px 10px 3px 10px;
+  font-family: Pacman;
+  color: #FCC92F;
+  font-size: 30px;
+  text-shadow: 2px 2px #DC291E, -2px -2px #98CAD3;
+  -webkit-text-stroke: 0.25px #000;
+  border-radius: 4px;
+  border: 2px solid rgba(255,55,55,1);
+  background: rgba(255,255,255,1);
+  min-width: 110px;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  pointer-events: auto;
+  select: none;
+}
+
+#dpad {
+  position: fixed;
+  width: 100%;
+  inset: auto 50% 14px 0;
+  display: grid;
+  grid-template-areas:
+    ".    up    ."
+    "left .     right"
+    ".    down  .";
+  grid-template-columns: 32px 32px 32px;
+  grid-template-rows: 32px 32px 32px;
+  justify-content: center;
+  gap: 10px;
+  pointer-events: auto;
+  touch-action: none;
+  user-select: none;
+}
+.pad {
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.08);
+  border: 2px solid rgba(255,255,255,0.25);
+  box-shadow: 0 0 0 2px rgba(0,0,0,0.4) inset;
+  touch-action: none;  
+}
+.pad:active {
+  background: rgba(255,255,255,0.18);
+  border-color: rgba(255,255,255,0.5);
+}
+.pad-up    { grid-area: up; }
+.pad-down  { grid-area: down; }
+.pad-left  { grid-area: left; }
+.pad-right { grid-area: right; }

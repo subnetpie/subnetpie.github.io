@@ -1,0 +1,278 @@
+/* ==========================================
+   JSBOSCO v1.0 - Complete Styles
+   ========================================== */
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  position: fixed;
+}
+
+body {
+  background: #000;
+  color: #f08;
+  font-family: "Courier New", Courier, monospace;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+@keyframes statusPulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+#gameContainer {
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  left: 100px;
+}
+
+/* Canvas - Portrait Mode (224x288) */
+#gameCanvas {
+  position: absolute;
+  aspect-ratio: 288 / 224;
+  width: min(100vw, 100vh * (288 / 224));
+  height: calc(min(100dvh, 100vw * 224 / 288) - 55px);
+  background: #000;
+  transform-origin: top left;
+  transform: rotate(0deg) translateX(-50%) translateY(0%);
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  top: 55px;
+  left: 50%;
+}
+/* Touch Control Buttons */
+.touch-button {
+  position: absolute;
+  background: rgba(255, 255, 255, 0.08);
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.9);
+  font-family: "Courier New", Courier, monospace;
+  font-size: 14px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: pointer;
+  transition: all 0.1s ease-out;
+  z-index: 100;
+  backdrop-filter: blur(0.5px);
+  -webkit-backdrop-filter: blur(0.5px);
+  text-shadow: 0 0 3px rgba(0, 0, 0, 0.8);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+}
+
+.touch-button:active,
+.touch-button.pressed {
+  background: rgba(0, 255, 0, 0.35);
+  border-color: rgba(0, 255, 0, 0.6);
+  transform: scale(0.92);
+  box-shadow: inset 0 0 15px rgba(0, 255, 0, 0.4), 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+/* System Buttons */
+.system-button {
+  width: 95px;
+  height: 35px;
+  top: 10px;
+  right: 20px;
+  font-size: 11px;
+  border-radius: 6px;
+}
+
+#btnCoin {
+  top: 10px;
+  right: 105px;
+  background: rgba(255, 255, 0, 0.12);
+  border-color: rgba(255, 255, 0, 0.3);
+}
+
+#btnCoin:active,
+#btnCoin.pressed {
+  background: rgba(255, 255, 0, 0.4);
+  border-color: rgba(255, 255, 0, 0.6);
+}
+
+#btnStart {
+  top: 10px;
+  right: 5px;
+  background: rgba(0, 255, 255, 0.12);
+  border-color: rgba(0, 255, 255, 0.3);
+}
+
+#btnStart:active,
+#btnStart.pressed {
+  background: rgba(0, 255, 255, 0.4);
+  border-color: rgba(0, 255, 255, 0.6);
+}
+
+/* Responsive Adjustments */
+@media (max-width: 480px) {
+  #gameCanvas {
+    max-width: 85vw;
+  }
+
+  .dpad-button {
+    width: 60px;
+    height: 60px;
+    font-size: 24px;
+  }
+
+  #btnLeft {
+    left: 10px;
+    bottom: 50px;
+  }
+
+  #btnRight {
+    left: 80px;
+    bottom: 50px;
+  }
+
+  .fire-button {
+    right: 10px;
+    bottom: 45px;
+  }
+}
+@media (max-height: 600px) {
+  #gameCanvas {
+    max-height: calc(100vh - 150px);
+  }
+  .dpad-button;
+}
+
+/* Landscape Warning */
+@media (orientation: landscape) and (max-height: !500px) {
+  #gameContainer::before {
+    content: "⟲ Please rotate to portrait mode";
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(255, 0, 0, 0.95);
+    color: white;
+    padding: 20px 30px;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: bold;
+    z-index: 9999;
+    text-align: center;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.5);
+    animation: shake 0.5s infinite;
+  }
+
+  @keyframes shake {
+    0%,
+    100% {
+      transform: translate(-50%, -50%) rotate(0deg);
+    }
+    25% {
+      transform: translate(-50%, -50%) rotate(-2deg);
+    }
+    75% {
+      transform: translate(-50%, -50%) rotate(2deg);
+    }
+  }
+}
+#dpad {
+  position: fixed;
+  bottom: 50px;
+  left: 10px;
+  touch-action: none;
+  user-select: none;
+  z-index: 20;
+}
+#dpad-ring {
+  position: relative; /* ← add this so canvas positions against it */
+  width: 250px;
+  height: 250px;
+  margin-left: 0px;
+  margin-bottom: 0px;
+  border-radius: 50%;
+  background: rgba(200, 200, 200, 0.1);
+  border: 2px solid rgba(200, 50, 200, 0.5);
+}
+#dpad-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none; /* touches pass through to #dpad-ring */
+  display: block;
+}
+
+#button-pad {
+  position: fixed;
+  bottom: 0px;
+  right: 0px;
+  width: 200px;
+  height: 250px;
+  border-radius: 0px;
+  border: 1px solid rgba(255, 0, 255, 0);
+  touch-action: none;
+  user-select: none;
+  display: flex;
+  align-items: right;
+  justify-content: space-between;
+  pointer-events: auto;
+  z-index: 200;
+}
+
+#btn-fire {
+  width: 250px;
+  height: 200px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.15);
+  border: 3px solid rgba(200, 0, 200, 0.4);
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 250;
+}
+#btn-fire:active,
+#btn-fire.pressed {
+  background: rgba(255, 0, 0, 0.45);
+  border-color: rgba(255, 0, 0, 0.75);
+  box-shadow: inset 0 0 20px rgba(255, 0, 0, 0.5), 0 0 15px rgba(255, 0, 0, 0.3);
+}
+/* Loading Animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+body {
+  animation: fadeIn 0.3s ease-in;
+}
