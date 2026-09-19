@@ -3626,8 +3626,8 @@ class ScrambleEmu {
  initMemory() {
   this.mem = new Uint8Array(0x10000);
   this.soundRom = new Uint8Array(0x3000);
-  // FIX-3: 2 KB sound RAM, mask 0x07ff  (was 4 KB / 0x03ff → stack aliased data)
-  this.soundRam = new Uint8Array(0x800);
+  // 1 KB sound RAM, mirrored by the board address decoder.
+  this.soundRam = new Uint8Array(0x400);
  }
 
  initMachineState() {
@@ -3956,10 +3956,11 @@ class ScrambleEmu {
 
  // ── Audio ─────────────────────────────────────────────────
  readScrambleTimer() {
-  const timer = [0x00, 0x10, 0x20, 0x30, 0x40, 0x90, 0xa0, 0xb0, 0xa0, 0xd0];
-
-  const cycles = this.soundCpu?.cycles ?? 0;
-  return timer[Math.floor(cycles / 512) % 10];
+  let clocks = ((this.soundCpu?.cycles ?? 0) * 8) % 40960;
+  const high = clocks >= 20480 ? 0x80 : 0;
+  clocks %= 20480;
+  return high | ((clocks >> 8) & 0x40) |
+   ((clocks >> 8) & 0x20) | ((clocks >> 7) & 0x10) | 0x0e;
  }
 
  _initAudio() {
@@ -3973,12 +3974,13 @@ class ScrambleEmu {
   const ctx = new Ctx({ latencyHint: "interactive" });
 
   try {
-   const ay1 = new AY8910(ctx, this.SOUNDCLOCK, () => this.readScrambleTimer());
+   const ay1 = new AY8910(ctx, this.SOUNDCLOCK);
 
-   const ay2 = new AY8910(ctx, this.SOUNDCLOCK, () => this.soundLatch);
+   const ay2 = new AY8910(ctx, this.SOUNDCLOCK,
+    () => this.soundLatch, () => this.readScrambleTimer());
 
-   if (oldAY1) ay1.regs.set(oldAY1);
-   if (oldAY2) ay2.regs.set(oldAY2);
+   if (oldAY1) { ay1.regs.set(oldAY1); ay1.addrLatch = this.ay1.addrLatch; }
+   if (oldAY2) { ay2.regs.set(oldAY2); ay2.addrLatch = this.ay2.addrLatch; }
 
    this.audioCtx = ctx;
    this.ay1 = ay1;
@@ -4270,10 +4272,11 @@ class ScrambleEmu {
   this.audioCtx = null;
 
   // Preserve AY register activity before audio is unlocked.
-  // MAME wiring: AY1 port A = hardware timer; AY2 port A = sound latch.
-  this.ay1 = new AY8910(null, this.SOUNDCLOCK, () => this.readScrambleTimer());
+  // AY at 0x40/0x80: port A = sound latch, port B = hardware timer.
+  this.ay1 = new AY8910(null, this.SOUNDCLOCK);
 
-  this.ay2 = new AY8910(null, this.SOUNDCLOCK, () => this.soundLatch);
+  this.ay2 = new AY8910(null, this.SOUNDCLOCK,
+   () => this.soundLatch, () => this.readScrambleTimer());
 
   this.initIO();
 
@@ -4473,55 +4476,35 @@ class ScrambleEmu {
  }
 
  // ── Sound CPU memory map ──────────────────────────────────
- // FIX-3: mask 0x07ff (2 KB), matching MAME's 0x8000–0x87FF window
+ // 0x8000-0x83ff with address mirror 0x6c00; ROM is 0x0000-0x1fff.
  soundRead(addr) {
   addr &= 0xffff;
-  if (addr <= 0x2fff) return this.soundRom[addr];
-  if (addr >= 0x8000 && addr <= 0x87ff) return this.soundRam[addr & 0x07ff];
+  if (addr <= 0x1fff) return this.soundRom[addr];
+  if ((addr & 0x9000) === 0x8000) return this.soundRam[addr & 0x03ff];
   return 0xff;
  }
 
  soundWrite(addr, data) {
   addr &= 0xffff;
   data &= 0xff;
-  if (addr >= 0x8000 && addr <= 0x87ff) this.soundRam[addr & 0x07ff] = data;
+  if ((addr & 0x9000) === 0x8000) this.soundRam[addr & 0x03ff] = data;
  }
 
  // ── Sound CPU I/O ─────────────────────────────────────────
- // FIX-2: both the address-latch port AND the data port return readData().
- //        On the AY-8910, IN-ACTIVE (BC1=1 BDIR=0) reads the selected register
- //        regardless of which port address the Z80 uses.  Returning addrLatch
- //        for port 0x10/0x40 caused the sound ROM to misread its own register
- //        writes and play nothing.
+ // AY chip selects are decoded by address bits, including combined selects.
  soundPortRead(port) {
-  port &= 0xff;
-
-  if (port === 0x20) return this.ay1?.readData() ?? 0xff;
-  if (port === 0x80) return this.ay2?.readData() ?? 0xff;
-
-  // AY address ports 0x10/0x40 are write-only on standard Scramble.
-  return 0xff;
+  let data = 0xff;
+  if (port & 0x20) data &= this.ay1?.readData() ?? 0xff;
+  if (port & 0x80) data &= this.ay2?.readData() ?? 0xff;
+  return data;
  }
 
  soundPortWrite(port, data) {
-  port &= 0xff;
   data &= 0xff;
-  if (port === 0x10) {
-   this.ay1?.writeAddr(data);
-   return;
-  }
-  if (port === 0x20) {
-   this.ay1?.writeData(data);
-   return;
-  }
-  if (port === 0x40) {
-   this.ay2?.writeAddr(data);
-   return;
-  }
-  if (port === 0x80) {
-   this.ay2?.writeData(data);
-   return;
-  }
+  if (port & 0x10) this.ay1?.writeAddr(data);
+  else if (port & 0x20) this.ay1?.writeData(data);
+  if (port & 0x40) this.ay2?.writeAddr(data);
+  else if (port & 0x80) this.ay2?.writeData(data);
  }
 
  stepCpu(cpu) {
@@ -4760,3 +4743,4 @@ class ScrambleEmu {
   console.error("Emulator boot failed:", err?.message ?? err, err);
  }
 })();
+
