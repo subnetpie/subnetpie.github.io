@@ -4346,28 +4346,25 @@ class ScrambleEmu {
     this.updateSelfTestGate();
     this.lastOpPC = this.cpu.PC;
     if (this.cpu.PC < 0x4000) this.pcHistogram[this.cpu.PC]++;
-    mainElapsed += this.cpu.step();
+    mainElapsed += this.stepCpu(this.cpu);
    }
    mainLeft -= mainElapsed;
 
+   // Queue the sound IRQ before this slice. The embedded Z80 retains it
+   // while interrupts are disabled and clears it on acknowledgment.
+   if (this.soundIrqPending) {
+    this.soundCpu.requestIrq(0xff);
+    this.soundIrqPending = false;
+   }
+
    let soundElapsed = 0;
-   while (soundElapsed < soundBudget) soundElapsed += this.soundCpu.step();
+   while (soundElapsed < soundBudget)
+    soundElapsed += this.stepCpu(this.soundCpu);
    soundLeft -= soundElapsed;
 
    if (slice === 3) {
     if (this.nmiEnable) {
-     this.cpu.nmi();
-     this.cpu.clearNmiLatch?.();
-    }
-    if (this.soundIrqPending) {
-     this.soundCpu.requestIrq(0xff);
-
-     // Approximation for a Z80 core without an explicit IRQ-ack callback:
-     // queue exactly one IM0 vector (0xff = RST 38h), then drop the source latch.
-     //
-     // Later, if your Z80 exposes onIrqAcknowledge/onInterruptAcknowledge,
-     // move this clear into that callback for exact 7474 timing.
-     this.soundIrqPending = false;
+     this.cpu.pulseNmi();
     }
 
     if (this.starsEnable && ++this.starsBlinkCounter >= 20) {
@@ -4527,9 +4524,18 @@ class ScrambleEmu {
   }
  }
 
+ stepCpu(cpu) {
+  const cycles = cpu.step();
+  if (!Number.isFinite(cycles) || cycles <= 0) {
+   this.running = false;
+   throw new Error("Z80.step() must return a positive cycle count");
+  }
+  return cycles;
+ }
+
  runCycles(cpu, budget) {
   let elapsed = 0;
-  while (elapsed < budget) elapsed += cpu.step();
+  while (elapsed < budget) elapsed += this.stepCpu(cpu);
   return elapsed;
  }
 
