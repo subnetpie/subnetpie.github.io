@@ -1,6 +1,8 @@
 //===========================================================
-// Scramble Emulator — MAME-faithful
+// Scramble Emulator
 //===========================================================
+import {Z80} from "https://codepen.io/Subnetpie/pen/WbRWLBJ.js";
+
 // ── PPI 8255 ─────────────────────────────────────────────
 class PPI8255 {
  constructor(
