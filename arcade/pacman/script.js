@@ -1,3 +1,5 @@
+import { Z80 } from "../../cpu/z80.js";
+
 // ===========================================================
 // jspacman — Pac-Man Emulator
 // ===========================================================
@@ -202,12 +204,12 @@ class jspacman {
     this.frameCounter   = 0;
 
     this.cpu             = new Z80();
-    this.cpu.emulator    = this;
+
     this.cpu.memRead     = (addr)        => this.memoryRead(addr);
     this.cpu.memWrite    = (addr, value) => this.memoryWrite(addr, value);
     this.cpu.ioRead      = (port)        => this.ioRead(port);
     this.cpu.ioWrite     = (port, value) => this.ioWrite(port, value);
-    this.cpu.fetchOpcode = (addr) => this.memoryRead(addr);
+
     this.cpu.vectorLatch = 0x00;
 
     this.memory      = new Uint8Array(0x10000).fill(0x00);
@@ -501,7 +503,7 @@ class jspacman {
   runCpuFrame() {
     let cyclesLeft = this.cyclesPerFrame;
     while (cyclesLeft > 0) cyclesLeft -= this.cpu.step();
-    if (this.interruptEnable) this.cpu.irqPending = true;
+    if (this.interruptEnable) this.cpu.requestIrq(this.cpu.vectorLatch);
   }
 
   // ── Frame Loop ───────────────────────────────────────────────
@@ -705,3 +707,6 @@ function start2Player() {
   emu.inputs.start2 = true;
   setTimeout(() => { emu.inputs.start2 = false; }, 100);
 }
+
+// HTML controls remain callable after switching the game to an ES module.
+Object.assign(window, { insertCoin1, start1Player, start2Player, toggleEmulator });

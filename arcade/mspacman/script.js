@@ -1,3 +1,5 @@
+import { Z80 } from "../../cpu/z80.js";
+
 //=====================================================================
 // - MS. PAC-MAN EMULATOR -
 //=====================================================================
@@ -494,7 +496,7 @@ class jsMsPacMan {
 
   // CPU
   this.cpu = new Z80();
-  this.cpu.emulator = this;
+
 
   this.cpu.memRead = this.memoryRead.bind(this);
   this.cpu.memWrite = this.memoryWrite.bind(this);
@@ -770,7 +772,7 @@ class jsMsPacMan {
     switch (off) {
      case 0: // interrupt enable (IRQ mask)
       this.interruptEnable = val;
-      if (!val) this.cpu.irqPending = false; // clear pending IRQ immediately
+      if (!val) this.cpu.clearIrq(); // clear pending IRQ immediately
       break;
      case 1: // sound enable
       this.soundEnable = val;
@@ -1136,7 +1138,7 @@ class jsMsPacMan {
     cycles -= c;
    }
    this.frameCounter++;
-   if (this.interruptEnable) this.cpu.irqPending = true;
+   if (this.interruptEnable) this.cpu.requestIrq(this.cpu.vectorLatch);
    this.accumulator -= this.targetInterval;
   }
 
@@ -1398,3 +1400,6 @@ function start2Player() {
   emu.inputs.start2 = false;
  }, 100);
 }
+
+// HTML controls remain callable after switching the game to an ES module.
+Object.assign(window, { insertCoin1, start1Player, start2Player });
