@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+    <meta charset="UTF-8">
+    <title>JSGalaga</title>
+    <link rel="stylesheet" href="./style.css">
+
+  </head>
+    
+  <body>
+  <div id="gameContainer" aria-label="Galaga game">
+  <canvas id="gameCanvas" width="288" height="224" aria-label="Galaga game display"></canvas>
+
+  <!--
+    Discrete controls are intentionally excluded from window-wide swipe
+    ownership. SwipeController checks data-no-swipe through composedPath().
+  -->
+  <div class="touch-controls" aria-label="Game controls">
+    <div class="dpad-controls" data-no-swipe>
+      <button id="btnLeft" class="touch-button dpad-button" type="button" data-no-swipe aria-label="Move Left">
+        <span aria-hidden="true">◀</span>
+      </button>
+
+      <button id="btnRight" class="touch-button dpad-button" type="button" data-no-swipe aria-label="Move Right">
+        <span aria-hidden="true">▶</span>
+      </button>
+    </div>
+
+    <button id="btnFire" class="touch-button fire-button" type="button" data-no-swipe aria-label="Fire">
+      FIRE
+    </button>
+
+    <div class="system-controls" data-no-swipe>
+      <button id="btnCoin" class="touch-button system-button" type="button" data-no-swipe aria-label="Insert Coin">
+        COIN
+      </button>
+
+      <button id="btnStart" class="touch-button system-button" type="button" data-no-swipe aria-label="Start Game">
+        START
+      </button>
+    </div>
+  </div>
+</div>
+    <script  src="./script.js"></script>
+
+  </body>
+  
+</html>
