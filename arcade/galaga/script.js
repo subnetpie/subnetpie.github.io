@@ -3022,8 +3022,20 @@ Cause: ${GalagaApp.formatError(error.cause)}`;
     // touchstart is more reliable than waiting for touchend/pointerup on iOS.
     document.addEventListener("click", unlockAudio);
     document.addEventListener("touchstart", unlockAudio, { passive: true });
+    document.addEventListener("pointerdown", unlockAudio, { passive: true });
     document.addEventListener("keydown", unlockAudio);
-    document.addEventListener("mousedown", () => void this.emulator.audio.resume());
+    document.addEventListener("mousedown", unlockAudio);
+
+    // Expose enough state to diagnose iOS audio without coupling the machine
+    // devices to WebAudio.
+    window.galagaAudioStatus = () => ({
+      ready: this.emulator.audio.ready,
+      contextState: this.emulator.audio.context?.state ?? "not-created",
+      contextSampleRate: this.emulator.audio.context?.sampleRate ?? 0,
+      machineSampleRate: this.emulator.soundChip.sampleRate,
+      enabled: this.emulator.audio.enabled,
+      frame: this.emulator.frameCounter
+    });
 
     return true;
   }
@@ -3103,7 +3115,10 @@ Cause: ${GalagaApp.formatError(error.cause)}`;
       return;
     }
 
-    this.emulator.audio.resume();
+    // start() may run automatically after page load, before Safari grants
+    // audio activation. If a context already exists, resume it here; otherwise
+    // the user-gesture handlers installed by init() will create it.
+    void this.emulator.audio.resume();
 
     this.emulator.running = true;
     this.lastFrameTime = performance.now();
