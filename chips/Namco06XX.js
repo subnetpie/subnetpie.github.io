@@ -1,4 +1,5 @@
-function _defineProperty(obj, key, value) { Object.defineProperty(obj, key, {value, enumerable:true, configurable:true, writable:true}); return obj; }\nclass Namco06XX {
+function _defineProperty(obj, key, value) { Object.defineProperty(obj, key, {value, enumerable:true, configurable:true, writable:true}); return obj; }
+class Namco06XX {
   /*
    * Default only.
    *
@@ -625,4 +626,5 @@ function _defineProperty(obj, key, value) { Object.defineProperty(obj, key, {val
   }}_defineProperty(Namco06XX, "DEFAULT_Z80_CYCLES_PER_DEVICE_CLOCK", 64);_defineProperty(Namco06XX, "DEFAULT_MASTER_TICKS_PER_Z80_CYCLE", 6);
 
 
-\nexport { Namco06XX };\n
+
+export { Namco06XX };
