@@ -1,0 +1,35 @@
+{
+  "retrieved": "2026-09-19",
+  "files": [
+    {
+      "file": "pole-position.js",
+      "url": "https://emulators.org/emulator/pole-position/src/pole-position.js",
+      "sha256": "5f7685c31c59e207fe3480cb6eeb2a0033ef874e0a3bf31d2c91e0cbbbd7c78f",
+      "bytes": 105971
+    },
+    {
+      "file": "Z80.js",
+      "url": "https://emulators.org/emulator/pole-position/src/Z80.js",
+      "sha256": "78609811c202d717c94d2f2aaf6f540d2d5c4d0485f723dedc42bf384625637b",
+      "bytes": 86933
+    },
+    {
+      "file": "polepos-voices.js",
+      "url": "https://emulators.org/emulator/pole-position/src/polepos-voices.js",
+      "sha256": "3614db7bc0776e491e8d3bcfb1fd477edc11f73d2700e06ae177cbcce56cf7ae",
+      "bytes": 11657
+    },
+    {
+      "file": "pole-position-debug.js",
+      "url": "https://emulators.org/emulator/pole-position/src/pole-position-debug.js",
+      "sha256": "206aa0885755e49e451941eb6458cd9845ccc22d23aaa24d5f2a65e41e3413ee",
+      "bytes": 4070
+    },
+    {
+      "file": "namco-wsg.js",
+      "url": "https://emulators.org/debugger/src/chips/namco-wsg.js",
+      "sha256": "83b890bef01e46b1ddc097bf3f450ef6fc6d292635ddb197f7183e5a94e12fa4",
+      "bytes": 11562
+    }
+  ]
+}
