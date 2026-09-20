@@ -1,4 +1,6 @@
-import { MB8844 } from "./MB88xx.js";\nfunction _defineProperty(obj, key, value) { Object.defineProperty(obj, key, {value, enumerable:true, configurable:true, writable:true}); return obj; }\nclass Namco54XX {
+import { MB8844 } from "./MB88xx.js";
+function _defineProperty(obj, key, value) { Object.defineProperty(obj, key, {value, enumerable:true, configurable:true, writable:true}); return obj; }
+class Namco54XX {
 
 
 
@@ -246,4 +248,5 @@ import { MB8844 } from "./MB88xx.js";\nfunction _defineProperty(obj, key, value)
   resetCounter() {}}_defineProperty(Namco54XX, "CLOCK", 1536000);_defineProperty(Namco54XX, "MASTER_TICKS_PER_DEVICE_TICK", 12);_defineProperty(Namco54XX, "MB88XX_CYCLE_DIVIDER", 6);_defineProperty(Namco54XX, "MASTER_TICKS_PER_MCU_CYCLE", 72);_defineProperty(Namco54XX, "MASTER_TICKS_PER_HOST_CYCLE", 6);_defineProperty(Namco54XX, "MCU_ROM_SIZE", 0x0400);_defineProperty(Namco54XX, "CHANNEL_COUNT", 3);
 
 
-\nexport { Namco54XX };\n
+
+export { Namco54XX };
