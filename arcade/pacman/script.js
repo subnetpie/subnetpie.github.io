@@ -386,7 +386,8 @@ class jspacman {
 
   stop() {
     this.running = false;
-    this.wsg?.destroy();
+    this.audio.setEnabled(false);
+    this.audio.clear();
     updateButtonStates();
   }
 }
