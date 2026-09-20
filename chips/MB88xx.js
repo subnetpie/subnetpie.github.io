@@ -1,4 +1,5 @@
-function _defineProperty(obj, key, value) { Object.defineProperty(obj, key, {value, enumerable:true, configurable:true, writable:true}); return obj; }\nclass MB88xx {
+function _defineProperty(obj, key, value) { Object.defineProperty(obj, key, {value, enumerable:true, configurable:true, writable:true}); return obj; }
+class MB88xx {
 
 
 
@@ -749,4 +750,5 @@ class MB8844 extends MB88xx {
   }}
 
 
-\nexport { MB88xx, MB8841, MB8842, MB8843, MB8844 };\n
+
+export { MB88xx, MB8841, MB8842, MB8843, MB8844 };
