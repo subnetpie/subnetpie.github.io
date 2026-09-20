@@ -3055,21 +3055,6 @@ Cause: ${GalagaApp.formatError(error.cause)}`;
       }
     }, { passive: true });
 
-    // Temporary deployment marker: visible without Safari developer tools.
-    // Remove after confirming the device is executing the current master build.
-    const statusBar = document.getElementById("statusBar");
-    if (statusBar) {
-      statusBar.textContent = "BUILD: GALAGA-AUDIO-20260920-A";
-    } else {
-      const marker = document.createElement("div");
-      marker.id = "galagaBuildMarker";
-      marker.textContent = "BUILD: GALAGA-AUDIO-20260920-A";
-      marker.style.cssText =
-        "position:fixed;top:0;left:0;right:0;z-index:2147483647;" +
-        "padding:6px;background:#111;color:#0f0;font:12px monospace;text-align:center";
-      document.body.appendChild(marker);
-    }
-
     return true;
   }
 
