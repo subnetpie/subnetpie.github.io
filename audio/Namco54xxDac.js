@@ -15,7 +15,9 @@ export class Namco54xxDac {
     ]),
     mixerRF: 3300,
     mixerCAmp: 1e-7,
-    gain: 40800
+    gain: 40800,
+    routeGain: 0.90,
+    pcmScale: 1 / 32768
   });
 
   constructor({ sampleRate = 192000, masterClock = Namco54xxDac.MASTER_CLOCK, routing = Namco54xxDac.GALAGA } = {}) {
@@ -91,7 +93,7 @@ export class Namco54xxDac {
       // DISCRETE_MIXER cAmp=0.1uF uses a 100k assumed output impedance.
       this.mixerCapAmp += (mixed - this.mixerCapAmp) * this.mixerAmpExponent;
       mixed -= this.mixerCapAmp;
-      out[i] = mixed * this.routing.gain;
+      out[i] = mixed * this.routing.gain * this.routing.routeGain * this.routing.pcmScale;
     }
     let cut = 0;
     while (cut < this.events.length && this.events[cut].tick <= endTick) cut++;
@@ -127,7 +129,7 @@ export class Namco54xxDac {
     const rTotal = 1 / (1 / spec.r1 + (spec.r3 ? 1 / spec.r3 : 0));
     const x = v * rTotal;
     let y = -c.a1 * s.y1 - c.a2 * s.y2 + c.b0 * x + c.b1 * s.x1 + c.b2 * s.x2 + Namco54xxDac.VREF;
-    if (y > 4.5) y = 4.5; // MAME non-Norton op-amp positive rail offset
+    if (y > 3.5) y = 3.5; // MAME OP_AMP_VP_RAIL_OFFSET = 1.5V from the 5V rail
     if (y < 0) y = 0;
     s.x2 = s.x1; s.x1 = x; s.y2 = s.y1; s.y1 = y - Namco54xxDac.VREF;
     return y;
