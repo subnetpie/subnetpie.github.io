@@ -187,7 +187,7 @@ class AY8910 {
 
   if (!audioCtx) return;
   this.output = this.masterGain = audioCtx.createGain();
-  this.masterGain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+  this.masterGain.gain.setValueAtTime(0.16, audioCtx.currentTime);
   // Remove the PSG's DC component before sending PCM to the speakers.
   this._dcFilter = audioCtx.createBiquadFilter();
   this._dcFilter.type = "highpass";
@@ -300,7 +300,7 @@ class AY8910 {
    const noiseGate = (mixer & (8 << ch)) || this._noiseBit;
    const volume = this.regs[8 + ch];
    const level = volume & 16 ? envelope : volume & 15;
-   if (toneGate && noiseGate) sample += AY8910.VOLUME_TABLE[level] / 3;
+   if (toneGate && noiseGate) sample += AY8910.VOLUME_TABLE[level];
   }
   return sample;
  }
@@ -1016,7 +1016,7 @@ class ScrambleEmu {
   const ctx = this.audioCtx;
   if (!ctx) return;
 
-  const value = this.soundMuted ? 0 : 0.15;
+  const value = this.soundMuted ? 0 : 0.16;
   const now = ctx.currentTime;
 
   for (const ay of [this.ay1, this.ay2]) {
@@ -1551,31 +1551,42 @@ class ScrambleEmu {
  soundRead(addr) {
   addr &= 0xffff;
   if (addr <= 0x1fff) return this.soundRom[addr];
-  if ((addr & 0x9000) === 0x8000) return this.soundRam[addr & 0x03ff];
+  if (addr >= 0x8000 && addr <= 0x8fff) return this.soundRam[addr & 0x03ff];
   return 0xff;
  }
 
  soundWrite(addr, data) {
   addr &= 0xffff;
   data &= 0xff;
-  if ((addr & 0x9000) === 0x8000) this.soundRam[addr & 0x03ff] = data;
+  if (addr >= 0x8000 && addr <= 0x8fff) this.soundRam[addr & 0x03ff] = data;
  }
 
  // ── Sound CPU I/O ─────────────────────────────────────────
  // AY chip selects are decoded by address bits, including combined selects.
  soundPortRead(port) {
-  let data = 0xff;
-  if (port & 0x20) data &= this.ay1?.readData() ?? 0xff;
-  if (port & 0x80) data &= this.ay2?.readData() ?? 0xff;
-  return data;
+  port &= 0xff;
+  if (port === 0x20) return this.ay1?.readData() ?? 0xff;
+  if (port === 0x80) return this.ay2?.readData() ?? 0xff;
+  return 0xff;
  }
 
  soundPortWrite(port, data) {
+  port &= 0xff;
   data &= 0xff;
-  if (port & 0x10) this.ay1?.writeAddr(data);
-  else if (port & 0x20) this.ay1?.writeData(data);
-  if (port & 0x40) this.ay2?.writeAddr(data);
-  else if (port & 0x80) this.ay2?.writeData(data);
+  switch (port) {
+   case 0x10:
+    this.ay1?.writeAddr(data);
+    break;
+   case 0x20:
+    this.ay1?.writeData(data);
+    break;
+   case 0x40:
+    this.ay2?.writeAddr(data);
+    break;
+   case 0x80:
+    this.ay2?.writeData(data);
+    break;
+  }
  }
 
  stepCpu(cpu) {
