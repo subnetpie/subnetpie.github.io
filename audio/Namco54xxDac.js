@@ -29,7 +29,9 @@ export class Namco54xxDac {
     this.events = [];
     this.totalWrites = 0;
     this.channelWrites = new Uint32Array(Namco54xxDac.CHANNEL_COUNT);
+    this.nonzeroWrites = new Uint32Array(Namco54xxDac.CHANNEL_COUNT);
     this.lastPeak = 0;
+    this.peakHold = 0;
     this.filters = Array.from({ length: Namco54xxDac.CHANNEL_COUNT }, () => ({ x1: 0, x2: 0, y1: 0, y2: 0 }));
     this.coefficients = new Array(Namco54xxDac.CHANNEL_COUNT);
     for (const spec of routing.channels) this.coefficients[spec.channel] = this._makeOpAmpBandPass(spec);
@@ -60,6 +62,7 @@ export class Namco54xxDac {
     this.channelData[ch] = next;
     this.totalWrites++;
     this.channelWrites[ch]++;
+    if (next) this.nonzeroWrites[ch]++;
     this.events.push({ tick: Math.max(0, Math.floor(Number(masterTick) || 0)), channel: ch, value: next });
     return true;
   }
@@ -107,6 +110,7 @@ export class Namco54xxDac {
     let peak = 0;
     for (let i = 0; i < out.length; i++) peak = Math.max(peak, Math.abs(out[i]));
     this.lastPeak = peak;
+    this.peakHold = Math.max(this.peakHold, peak);
     return out;
   }
 
