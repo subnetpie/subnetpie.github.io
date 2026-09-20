@@ -14,7 +14,7 @@ for(const name of ['galaga','bosco','scramble','pacman','mspacman']){
  if(name==='scramble')s=s.split('// ── Boot')[0];
  const klass=name==='galaga'?'GalagaEmulator':name==='bosco'?'BoscoEmulator':name==='scramble'?'ScrambleEmu':name==='mspacman'?'jsMsPacMan':'jspacman';
  s+='\nglobalThis.Emu='+klass+';';if(['galaga','bosco'].includes(name))s+='globalThis.Config=EmulatorConfig;';
- const mod=new vm.SourceTextModule(s,{context});await mod.link(()=>core);await mod.evaluate();
+ const mod=new vm.SourceTextModule(s,{context});await mod.link(specifier=>{ if(specifier.endsWith('/cpu/z80.js'))return core; if(specifier.endsWith('/chips/namco.js'))return new vm.SourceTextModule(fs.readFileSync(root+'/chips/namco.js','utf8'),{context}); throw new Error('Unexpected import '+specifier); });await mod.evaluate();
  let emu;
  if(['galaga','bosco'].includes(name)){
   emu=new context.Emu(new context.Config());const loaded=await emu.loadRoms();assert(!loaded.criticalMissing,JSON.stringify(loaded));emu.reset();

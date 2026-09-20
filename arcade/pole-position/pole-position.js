@@ -1,3 +1,9 @@
+import { Z80 } from "../../cpu/z80.js";
+import { Namco06XX, Namco51XX, Namco52XX, Namco54XX } from "../../chips/namco.js";
+import { BoardScheduler, Namco53XX } from "./devices.js";
+/* Adapted for subnetpie: shared Z80/Namco devices, validated ROM injection,
+ * timing/video corrections. See ALIGNMENT.md for scope and limitations.
+ */
 /* pole-position.js — Namco/Atari Pole Position (1982) arcade board for
  * emulators.org, running the AUTHENTIC ROM set.
  *
@@ -64,24 +70,6 @@
 (function (global) {
   'use strict';
 
-  // ---- ROM blob (base64 MAME regions) ---------------------------------------
-  var R = global.PP_ROMS;
-  function b64(s) {
-    var bin = (typeof atob === 'function') ? atob(s) : Buffer.from(s, 'base64').toString('binary');
-    var out = new Uint8Array(bin.length), i;
-    for (i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i) & 0xff;
-    return out;
-  }
-  var ROM = R ? {
-    maincpu: b64(R.maincpu), sub1: b64(R.sub1), sub2: b64(R.sub2),
-    chars: b64(R.chars), tiles: b64(R.tiles), sprites: b64(R.sprites), big: b64(R.bigsprites),
-    road: b64(R.road), scalelut: b64(R.scalelut), proms: b64(R.proms),
-    wavprom: b64(R.wavprom), engine: b64(R.engine), voice: b64(R.voice),
-    // Namco custom-MCU program ROMs (Fujitsu MB8843/MB8844, 1 KB each) — run for
-    // real: 51xx (coin/protection), 53xx (steering), 52xx (voice), 54xx (noise).
-    mcu51: b64(R.mcu51), mcu53: b64(R.mcu53), mcu52: b64(R.mcu52), mcu54: b64(R.mcu54)
-  } : null;
-
   // ---- geometry (MAME set_raw: 256 wide, visible rows 16..239 => 256x224) ----
   var BMPW = 256, BMPH = 256, VIS_Y0 = 16, VIS_H = 224;
 
@@ -91,7 +79,7 @@
 
   // Palette: 128 indirect colours from the three RGB PROMs (resistor ladder),
   // then the pen-indirect lookup tables for alpha / background / sprite / road.
-  function buildVideo() {
+  function buildVideo(ROM) {
     var proms = ROM.proms;
     var idx = new Uint32Array(128);           // 128 indirect RGB colours
     function comp(v) { var b0 = v & 1, b1 = (v >> 1) & 1, b2 = (v >> 2) & 1, b3 = (v >> 3) & 1; return 0x0e * b0 + 0x1f * b1 + 0x43 * b2 + 0x8f * b3; }
@@ -147,7 +135,7 @@
           var p0bit = 0 + xo, p1bit = 4 + xo, yb = y * 8;
           var b0 = (d[base + ((p0bit + yb) >> 3)] >> (7 - ((p0bit + yb) & 7))) & 1;
           var b1 = (d[base + ((p1bit + yb) >> 3)] >> (7 - ((p1bit + yb) & 7))) & 1;
-          t[y * 8 + x] = b0 | (b1 << 1);
+          t[y * 8 + x] = (b0 << 1) | b1;
         }
       }
       out[ch] = t;
@@ -169,7 +157,7 @@
           function bit(planeBase) { var bo = planeBase + bx + yb; return (d[base + (bo >> 3)] >> (7 - (bo & 7))) & 1; }
           function bitH(planeBase) { var bo = planeBase + bx + yb; return (d[half + base + (bo >> 3)] >> (7 - (bo & 7))) & 1; }
           var p0 = bit(0), p1 = bit(4), p2 = bitH(0), p3 = bitH(4);
-          px[y * 16 + x] = p0 | (p1 << 1) | (p2 << 2) | (p3 << 3);
+          px[y * 16 + x] = (p0 << 3) | (p1 << 2) | (p2 << 1) | p3;
         }
       }
       out[sp] = px;
@@ -194,7 +182,7 @@
           var p1 = (d[base + (b1o >> 3)] >> (7 - (b1o & 7))) & 1;
           var p2 = (d[half + base + (b0o >> 3)] >> (7 - (b0o & 7))) & 1;
           var p3 = (d[half + base + (b1o >> 3)] >> (7 - (b1o & 7))) & 1;
-          px[y * 32 + x] = p0 | (p1 << 1) | (p2 << 2) | (p3 << 3);
+          px[y * 32 + x] = (p0 << 3) | (p1 << 2) | (p2 << 1) | p3;
         }
       }
       out[sp] = px;
@@ -805,236 +793,15 @@
   // =====================================================================
   var MB_INT_SERIAL = 0x01, MB_INT_TIMER = 0x02, MB_INT_EXTERNAL = 0x04;
   var MB_SERIAL_PRESCALE = 6, MB_TIMER_PRESCALE = 32, MB_SERIAL_DISABLE = 1000;
-  function makeMB88(prog, io) {
-    var PROG_MASK = 0x3ff;                     // MB8843: 10-bit program space
-    var DATA_MASK = 0x3f;                      // MB8843: 6-bit data space (64 nibbles)
-    var data = new Uint8Array(64);
-    var c = {
-      PC: 0, PA: 0, SP: new Uint16Array(4), SI: 0,
-      A: 0, X: 0, Y: 0,
-      st: 1, zf: 0, cf: 0, vf: 0, sf: 0, iff: 0,
-      pio: 0, TH: 0, TL: 0, TP: 0, ctr: 0,
-      SB: 0, SBcount: 0, oOutput: 0,
-      pendingIrq: 0, inIrq: false,
-      serialEnabled: false, serialAcc: 0,
-      insns: 0, id: 0, onUnimpl: null
-    };
-    function READOP(a) { return prog[a & PROG_MASK] & 0xff; }
-    function RDMEM(a) { return data[a & DATA_MASK] & 0x0f; }
-    function WRMEM(a, v) { data[a & DATA_MASK] = v & 0x0f; }
-    function GETPC() { return (((c.PA << 6) + c.PC) & PROG_MASK); }
-    function GETEA() { return ((c.X << 4) + c.Y) & DATA_MASK; }
-    function INCPC() { c.PC++; if (c.PC >= 0x40) { c.PC = 0; c.PA = (c.PA + 1) & 0x1f; } }
-    function TEST_ST() { return c.st & 1; }
-    function TEST_CF() { return c.cf & 1; }
-    function UPDATE_ST_C(v) { c.st = (v & 0x10) ? 0 : 1; }
-    function UPDATE_ST_Z(v) { c.st = (v === 0) ? 0 : 1; }
-    function UPDATE_CF(v) { c.cf = ((v & 0x10) === 0) ? 0 : 1; }
-    function UPDATE_ZF(v) { c.zf = (v !== 0) ? 0 : 1; }
-
-    // ---- write O through the 8-bit PLA (default mask option: no PLA data) ----
-    function writePla(index) {
-      var shift = (index & 0x10) ? 4 : 0, mask = 0xf << shift;
-      c.oOutput = (c.oOutput & ~mask) | ((index << shift) & mask);
-      c.oOutput &= 0xff;
-      if (io.writeO) io.writeO(c.oOutput);
-    }
-
-    // ---- serial shift (called by the host clock at the serial prescale rate) ----
-    function serialTick() {
-      c.SBcount++;
-      if (c.SBcount >= MB_SERIAL_DISABLE) { c.serialEnabled = false; }
-      if (!c.sf) {
-        var si = io.readSI ? (io.readSI() ? 1 : 0) : 1;
-        c.SB = (c.SB >> 1) | (si ? 8 : 0);
-        if (c.SBcount >= 4) { c.sf = 1; c.pendingIrq |= MB_INT_SERIAL; }
-      }
-    }
-
-    function pioEnable(newpio) {
-      if ((c.pio ^ newpio) & 0x30) {
-        if ((newpio & 0x30) === 0) c.serialEnabled = false;
-        else if ((newpio & 0x30) === 0x20) { c.serialEnabled = true; c.serialAcc = 0; }
-        else c.serialEnabled = false;           // unsupported mode: leave disabled
-      }
-      c.pio = newpio & 0xff;
-    }
-
-    function incrementTimer() {
-      c.TL = (c.TL + 1) & 0x0f;
-      if (c.TL === 0) { c.TH = (c.TH + 1) & 0x0f; if (c.TH === 0) { c.vf = 1; c.pendingIrq |= MB_INT_TIMER; } }
-    }
-
-    // ---- external + timer clock inputs (edge-triggered, per execute_set_input) ----
-    c.setIrqLine = function (state) {
-      state = state ? 1 : 0;
-      if (!c.iff && state && (c.pio & MB_INT_EXTERNAL)) c.pendingIrq |= MB_INT_EXTERNAL;
-      c.iff = state;
-    };
-    c.setTcLine = function (state) {
-      state = state ? 1 : 0;
-      if (c.ctr && !state && (c.pio & 0x40)) incrementTimer();
-      c.ctr = state;
-    };
-
-    function burnCycles(cycles) {
-      // internal clock enable -> feed the timer prescaler
-      if (c.pio & 0x80) {
-        c.TP += cycles;
-        while (c.TP >= MB_TIMER_PRESCALE) { c.TP -= MB_TIMER_PRESCALE; incrementTimer(); }
-      }
-      // serial prescaler (host-clocked shifter)
-      if (c.serialEnabled) {
-        c.serialAcc += cycles;
-        while (c.serialAcc >= MB_SERIAL_PRESCALE) { c.serialAcc -= MB_SERIAL_PRESCALE; serialTick(); }
-      }
-      // dispatch a pending, enabled interrupt
-      if (!c.inIrq && (c.pendingIrq & c.pio)) {
-        c.inIrq = true;
-        var intpc = GETPC();
-        var packed = (intpc | (TEST_CF() << 15) | (c.zf << 14) | (c.st << 13)) & 0xffff;
-        c.SP[c.SI] = packed;
-        c.SI = (c.SI + 1) & 3;
-        if (c.pendingIrq & c.pio & MB_INT_EXTERNAL) c.PC = 0x02;
-        else if (c.pendingIrq & c.pio & MB_INT_TIMER) c.PC = 0x04;
-        else if (c.pendingIrq & c.pio & MB_INT_SERIAL) c.PC = 0x06;
-        c.PA = 0x00; c.st = 1; c.pendingIrq = 0;
-      }
-    }
-
-    // Execute one instruction; returns the machine-cycle count (1 or 2, +irq work).
-    c.step = function () {
-      c.insns++;
-      var opcode = READOP(GETPC());
-      INCPC();
-      var oc = 1, arg;
-      switch (opcode) {
-        case 0x00: c.st = 1; break;                                   // nop
-        case 0x01: writePla((TEST_CF() << 4) | c.A); c.st = 1; break; // outO
-        case 0x02: if (io.writeP) io.writeP(c.A); c.st = 1; break;    // outP
-        case 0x03: if (io.writeR[c.Y & 3]) io.writeR[c.Y & 3](c.A); c.st = 1; break; // outR
-        case 0x04: c.Y = c.A; c.st = 1; break;                        // tay
-        case 0x05: c.TH = c.A; c.st = 1; break;                       // tath
-        case 0x06: c.TL = c.A; c.st = 1; break;                       // tatl
-        case 0x07: c.SB = c.A; c.st = 1; break;                       // tas
-        case 0x08: c.Y++; UPDATE_ST_C(c.Y); c.Y &= 0x0f; UPDATE_ZF(c.Y); break; // icy
-        case 0x09: arg = RDMEM(GETEA()) + 1; UPDATE_ST_C(arg); arg &= 0x0f; UPDATE_ZF(arg); WRMEM(GETEA(), arg); break; // icm
-        case 0x0a: WRMEM(GETEA(), c.A); c.Y++; UPDATE_ST_C(c.Y); c.Y &= 0x0f; UPDATE_ZF(c.Y); break; // stic
-        case 0x0b: arg = RDMEM(GETEA()); WRMEM(GETEA(), c.A); c.A = arg; UPDATE_ZF(c.A); c.st = 1; break; // x
-        case 0x0c: c.A = (c.A << 1) | TEST_CF(); UPDATE_ST_C(c.A); c.cf = c.st ^ 1; c.A &= 0x0f; UPDATE_ZF(c.A); break; // rol
-        case 0x0d: c.A = RDMEM(GETEA()); UPDATE_ZF(c.A); c.st = 1; break; // l
-        case 0x0e: arg = RDMEM(GETEA()) + c.A + TEST_CF(); UPDATE_ST_C(arg); c.cf = c.st ^ 1; c.A = arg & 0x0f; UPDATE_ZF(c.A); break; // adc
-        case 0x0f: c.A &= RDMEM(GETEA()); UPDATE_ZF(c.A); c.st = c.zf ^ 1; break; // and
-        case 0x10: if (TEST_CF() || c.A > 9) c.A += 6; UPDATE_ST_C(c.A); c.cf = c.st ^ 1; c.A &= 0x0f; break; // daa
-        case 0x11: if (TEST_CF() || c.A > 9) c.A += 10; UPDATE_ST_C(c.A); c.cf = c.st ^ 1; c.A &= 0x0f; break; // das
-        case 0x12: c.A = (io.readK ? io.readK() : 0) & 0x0f; UPDATE_ZF(c.A); c.st = 1; break; // inK
-        case 0x13: c.A = (io.readR[c.Y & 3] ? io.readR[c.Y & 3]() : 0) & 0x0f; UPDATE_ZF(c.A); c.st = 1; break; // inR
-        case 0x14: c.A = c.Y; UPDATE_ZF(c.A); c.st = 1; break;        // tya
-        case 0x15: c.A = c.TH; UPDATE_ZF(c.A); c.st = 1; break;       // ttha
-        case 0x16: c.A = c.TL; UPDATE_ZF(c.A); c.st = 1; break;       // ttla
-        case 0x17: c.A = c.SB; UPDATE_ZF(c.A); c.st = 1; break;       // tsa
-        case 0x18: c.Y--; UPDATE_ST_C(c.Y); c.Y &= 0x0f; break;       // dcy
-        case 0x19: arg = RDMEM(GETEA()) - 1; UPDATE_ST_C(arg); arg &= 0x0f; UPDATE_ZF(arg); WRMEM(GETEA(), arg); break; // dcm
-        case 0x1a: WRMEM(GETEA(), c.A); c.Y--; UPDATE_ST_C(c.Y); c.Y &= 0x0f; UPDATE_ZF(c.Y); break; // stdc
-        case 0x1b: arg = c.X; c.X = c.A; c.A = arg; UPDATE_ZF(c.A); c.st = 1; break; // xx
-        case 0x1c: c.A |= TEST_CF() << 4; UPDATE_ST_C(c.A << 4); c.cf = c.st ^ 1; c.A >>= 1; c.A &= 0x0f; UPDATE_ZF(c.A); break; // ror
-        case 0x1d: WRMEM(GETEA(), c.A); c.st = 1; break;             // st
-        case 0x1e: arg = (RDMEM(GETEA()) - c.A - TEST_CF()) & 0xff; UPDATE_ST_C(arg); c.cf = c.st ^ 1; c.A = arg & 0x0f; UPDATE_ZF(c.A); break; // sbc
-        case 0x1f: c.A |= RDMEM(GETEA()); UPDATE_ZF(c.A); c.st = c.zf ^ 1; break; // or
-        case 0x20: arg = (io.readR[c.Y >> 2] ? io.readR[c.Y >> 2]() : 0) & 0x0f; if (io.writeR[c.Y >> 2]) io.writeR[c.Y >> 2](arg | (1 << (c.Y & 3))); c.st = 1; break; // setR
-        case 0x21: c.cf = 1; c.st = 1; break;                        // setc
-        case 0x22: arg = (io.readR[c.Y >> 2] ? io.readR[c.Y >> 2]() : 0) & 0x0f; if (io.writeR[c.Y >> 2]) io.writeR[c.Y >> 2](arg & ~(1 << (c.Y & 3))); c.st = 1; break; // rstR
-        case 0x23: c.cf = 0; c.st = 1; break;                        // rstc
-        case 0x24: arg = (io.readR[c.Y >> 2] ? io.readR[c.Y >> 2]() : 0) & 0x0f; c.st = (arg & (1 << (c.Y & 3))) ? 0 : 1; break; // tstr
-        case 0x25: c.st = c.iff ^ 1; break;                          // tsti
-        case 0x26: c.st = c.vf ^ 1; c.vf = 0; break;                 // tstv
-        case 0x27: c.st = c.sf ^ 1; if (c.sf) { if (c.SBcount >= MB_SERIAL_DISABLE && (c.pio & 0x30) === 0x20) c.serialEnabled = true; c.SBcount = 0; } c.sf = 0; break; // tsts
-        case 0x28: c.st = c.cf ^ 1; break;                           // tstc
-        case 0x29: c.st = c.zf ^ 1; break;                           // tstz
-        case 0x2a: WRMEM(GETEA(), c.SB); UPDATE_ZF(c.SB); c.st = 1; break; // sts
-        case 0x2b: c.SB = RDMEM(GETEA()); UPDATE_ZF(c.SB); c.st = 1; break; // ls
-        case 0x2c: c.SI = (c.SI - 1) & 3; c.PC = c.SP[c.SI] & 0x3f; c.PA = (c.SP[c.SI] >> 6) & 0x1f; c.st = 1; break; // rts
-        case 0x2d: c.A = ((~c.A) + 1) & 0x0f; UPDATE_ST_Z(c.A); break; // neg
-        case 0x2e: arg = (RDMEM(GETEA()) - c.A) & 0xff; UPDATE_CF(arg); arg &= 0x0f; UPDATE_ST_Z(arg); c.zf = c.st ^ 1; break; // c
-        case 0x2f: c.A ^= RDMEM(GETEA()); UPDATE_ST_Z(c.A); c.zf = c.st ^ 1; break; // eor
-        case 0x30: case 0x31: case 0x32: case 0x33: arg = RDMEM(GETEA()); WRMEM(GETEA(), arg | (1 << (opcode & 3))); c.st = 1; break; // sbit
-        case 0x34: case 0x35: case 0x36: case 0x37: arg = RDMEM(GETEA()); WRMEM(GETEA(), arg & ~(1 << (opcode & 3))); c.st = 1; break; // rbit
-        case 0x38: case 0x39: case 0x3a: case 0x3b: arg = RDMEM(GETEA()); c.st = (arg & (1 << (opcode & 3))) ? 0 : 1; break; // tbit
-        case 0x3c: c.inIrq = false; c.SI = (c.SI - 1) & 3; c.PC = c.SP[c.SI] & 0x3f; c.PA = (c.SP[c.SI] >> 6) & 0x1f; c.st = (c.SP[c.SI] >> 13) & 1; c.zf = (c.SP[c.SI] >> 14) & 1; c.cf = (c.SP[c.SI] >> 15) & 1; break; // rti
-        case 0x3d: c.PA = READOP(GETPC()) & 0x1f; c.PC = c.A * 4; oc++; c.st = 1; break; // jpa imm
-        case 0x3e: pioEnable(c.pio | READOP(GETPC())); INCPC(); oc++; c.st = 1; break; // en imm
-        case 0x3f: pioEnable(c.pio & ~READOP(GETPC())); INCPC(); oc++; c.st = 1; break; // dis imm
-        case 0x40: case 0x41: case 0x42: case 0x43: arg = ((io.readR[0] ? io.readR[0]() : 0) & 0x0f) | (1 << (opcode & 3)); if (io.writeR[0]) io.writeR[0](arg); c.st = 1; break; // setD
-        case 0x44: case 0x45: case 0x46: case 0x47: arg = ((io.readR[0] ? io.readR[0]() : 0) & 0x0f) & ~(1 << (opcode & 3)); if (io.writeR[0]) io.writeR[0](arg); c.st = 1; break; // rstD
-        case 0x48: case 0x49: case 0x4a: case 0x4b: arg = (io.readR[2] ? io.readR[2]() : 0) & 0x0f; c.st = (arg & (1 << (opcode & 3))) ? 0 : 1; break; // tstD
-        case 0x4c: case 0x4d: case 0x4e: case 0x4f: c.st = (c.A & (1 << (opcode & 3))) ? 0 : 1; break; // tba
-        case 0x50: case 0x51: case 0x52: case 0x53: arg = RDMEM(opcode & 3); WRMEM(opcode & 3, c.A); c.A = arg; UPDATE_ZF(c.A); c.st = 1; break; // xd
-        case 0x54: case 0x55: case 0x56: case 0x57: arg = RDMEM((opcode & 3) + 4); WRMEM((opcode & 3) + 4, c.Y); c.Y = arg; UPDATE_ZF(c.Y); c.st = 1; break; // xyd
-        case 0x58: case 0x59: case 0x5a: case 0x5b:
-        case 0x5c: case 0x5d: case 0x5e: case 0x5f: c.X = opcode & 7; UPDATE_ZF(c.X); c.st = 1; break; // lxi (X)
-        case 0x60: case 0x61: case 0x62: case 0x63:
-        case 0x64: case 0x65: case 0x66: case 0x67: // call imm
-          arg = READOP(GETPC()); INCPC(); oc++;
-          if (TEST_ST()) { c.SP[c.SI] = GETPC(); c.SI = (c.SI + 1) & 3; c.PC = arg & 0x3f; c.PA = ((opcode & 7) << 2) | (arg >> 6); }
-          c.st = 1; break;
-        case 0x68: case 0x69: case 0x6a: case 0x6b:
-        case 0x6c: case 0x6d: case 0x6e: case 0x6f: // jpl imm
-          arg = READOP(GETPC()); INCPC(); oc++;
-          if (TEST_ST()) { c.PC = arg & 0x3f; c.PA = ((opcode & 7) << 2) | (arg >> 6); }
-          c.st = 1; break;
-        case 0x70: case 0x71: case 0x72: case 0x73:
-        case 0x74: case 0x75: case 0x76: case 0x77:
-        case 0x78: case 0x79: case 0x7a: case 0x7b:
-        case 0x7c: case 0x7d: case 0x7e: case 0x7f: // ai
-          arg = (opcode & 0x0f) + c.A; UPDATE_ST_C(arg); c.cf = c.st ^ 1; c.A = arg & 0x0f; UPDATE_ZF(c.A); break;
-        case 0x80: case 0x81: case 0x82: case 0x83:
-        case 0x84: case 0x85: case 0x86: case 0x87:
-        case 0x88: case 0x89: case 0x8a: case 0x8b:
-        case 0x8c: case 0x8d: case 0x8e: case 0x8f: c.Y = opcode & 0x0f; UPDATE_ZF(c.Y); c.st = 1; break; // lyi
-        case 0x90: case 0x91: case 0x92: case 0x93:
-        case 0x94: case 0x95: case 0x96: case 0x97:
-        case 0x98: case 0x99: case 0x9a: case 0x9b:
-        case 0x9c: case 0x9d: case 0x9e: case 0x9f: c.A = opcode & 0x0f; UPDATE_ZF(c.A); c.st = 1; break; // li
-        case 0xa0: case 0xa1: case 0xa2: case 0xa3:
-        case 0xa4: case 0xa5: case 0xa6: case 0xa7:
-        case 0xa8: case 0xa9: case 0xaa: case 0xab:
-        case 0xac: case 0xad: case 0xae: case 0xaf: // cyi
-          arg = ((opcode & 0x0f) - c.Y) & 0xff; UPDATE_CF(arg); arg &= 0x0f; UPDATE_ST_Z(arg); c.zf = c.st ^ 1; break;
-        case 0xb0: case 0xb1: case 0xb2: case 0xb3:
-        case 0xb4: case 0xb5: case 0xb6: case 0xb7:
-        case 0xb8: case 0xb9: case 0xba: case 0xbb:
-        case 0xbc: case 0xbd: case 0xbe: case 0xbf: // ci
-          arg = ((opcode & 0x0f) - c.A) & 0xff; UPDATE_CF(arg); arg &= 0x0f; UPDATE_ST_Z(arg); c.zf = c.st ^ 1; break;
-        default: if (TEST_ST()) c.PC = opcode & 0x3f; c.st = 1; break; // jmp (0xc0-0xff)
-      }
-      burnCycles(oc);
-      return oc;
-    };
-
-    c.reset = function () {
-      c.PC = 0; c.PA = 0; c.SP[0] = c.SP[1] = c.SP[2] = c.SP[3] = 0; c.SI = 0;
-      c.A = 0; c.X = 0; c.Y = 0;
-      c.st = 1; c.zf = 0; c.cf = 0; c.vf = 0; c.sf = 0; c.iff = 0;
-      c.pio = 0; c.TH = 0; c.TL = 0; c.TP = 0; c.ctr = 0;
-      c.SB = 0; c.SBcount = 0; c.oOutput = 0;
-      c.pendingIrq = 0; c.inIrq = false; c.serialEnabled = false; c.serialAcc = 0;
-      c.insns = 0;
-      for (var i = 0; i < 64; i++) data[i] = 0;
-    };
-    c.data = data;
-    return c;
-  }
-
-  // =====================================================================
-  //  BOARD
-  // =====================================================================
-  function create(canvas) {
+  function create(canvas, regions) {
+    if (!regions) throw new Error("Validated ROM regions are required");
+    const ROM = {...regions, big: regions.bigsprites, wavprom: regions.namco, voice: regions["52xx"]};
     if (canvas) { canvas.width = 256; canvas.height = 224; }
     var ctx = canvas ? canvas.getContext('2d') : null;
     var image = ctx ? ctx.createImageData(256, 224) : null;
     var buf32 = image ? new Uint32Array(image.data.buffer) : new Uint32Array(256 * 224);
 
-    var V = buildVideo();
+    var V = buildVideo(ROM);
     var gChars = decodeChars(ROM.chars, 256);
     var gTiles = decodeChars(ROM.tiles, 256);
     var gSmall = decodeSmallSprites(ROM.sprites);
@@ -1093,13 +860,13 @@
           a &= 0xffff;
           if (a >= 0x6000 && a < 0x8000) {   // NVI enable (mirrored 0x6000-0x7fff) — NOT shared
             subIrqMask = v & 1;
-            if (!subIrqMask) { sub1.clearNVI(); sub2.clearNVI(); }
+            if (!subIrqMask) { (cpuId === 1 ? sub1 : sub2).clearNVI(); }
             return;
           }
-          if ((a & 0xf800) === 0xc000) {     // 0xc000-c001 mirror: background hscroll
+          if ((a & 0xc700) === 0xc000) {     // 0xc000-c001 mirror: background hscroll
             scroll = ((a & 1) ? ((scroll & 0xff00) | v) : ((scroll & 0x00ff) | (v << 8))) & 0xffff; return;
           }
-          if ((a & 0xf800) === 0xc100 || (a >= 0xc100 && a < 0xc102)) { // road vscroll
+          if ((a & 0xc700) === 0xc100) { // road vscroll
             roadVScroll = ((a & 1) ? ((roadVScroll & 0xff00) | v) : ((roadVScroll & 0x00ff) | (v << 8))) & 0xffff; return;
           }
           if (a >= 0xc000) return;           // other c000-page write-only latches: n.c.
@@ -1165,160 +932,36 @@
     //  Both hang off the 06xx serial bus below.  Wiring is a direct port of
     //  namco51.cpp / namco53.cpp: K, R0-R3, O (8-bit answer latch), P.
     // ===================================================================
-    var n51 = { portO: 0, rw: 0, cpu: null, reset: 1 };
-    var n53 = { portO: 0, cpu: null, reset: 1 };
-    n51.cpu = makeMB88(ROM.mcu51, {
-      readK: function () { return ((n51.rw << 3) | (n51.portO & 0x07)) & 0x0f; },
-      writeO: function (o8) { n51.portO = o8 & 0xff; },
-      writeP: function (v) { /* coin counters / lockout (bookkeeping only) */ },
-      readR: [
-        function () { return DSWB & 0x0f; },
-        function () { return (DSWB >> 4) & 0x0f; },
-        function () { return in0() & 0x0f; },
-        function () { return (in0() >> 4) & 0x0f; }
-      ],
-      writeR: [null, null, null, null],
-      readSI: function () { return 1; }, writeSO: null
+    const scheduler = new BoardScheduler();
+    const n51 = new Namco51XX();
+    const n53 = new Namco53XX();
+    const n52 = new Namco52XX(ROM.voice, {
+      readSI: () => 1,
+      onDacWrite: v => ev52.push(audioClk, v)
     });
-    n51.cpu.id = 0x51;
-    n53.cpu = makeMB88(ROM.mcu53, {
-      readK: function () { return 0; },        // MOD hardwired to 0 -> mode 0
-      writeO: function (o8) { n53.portO = o8 & 0xff; },
-      writeP: function (v) { /* P outputs (chip selects for input muxing) */ },
-      readR: [
-        function () { return steeringChangedR() & 0x0f; },
-        function () { return steeringDeltaR() & 0x0f; },
-        function () { return DSWA & 0x0f; },
-        function () { return (DSWA >> 4) & 0x0f; }
-      ],
-      writeR: [null, null, null, null],
-      readSI: function () { return 1; }, writeSO: null
-    });
-    n53.cpu.id = 0x53;
-    self.n51 = n51; self.n53 = n53;             // exposed for the debugger / bring-up
-
-    // ---- Namco 52xx voice player (Fujitsu MB8843, port of namco52.cpp) --------
-    // A sample player: K = 4-bit command (sample # to play, 0 = none); it walks a
-    // 16-bit address into the voice sample ROM (O = A8..A15, R2 = A0..A3, R3 =
-    // A4..A7), reads the byte back on R0 (low nibble) / R1 (high nibble), and
-    // streams a 4-bit PCM value out of its P port to a DAC.  SI is tied to +5V in
-    // Pole Position (full 16-bit ROM addressing).  /TC is grounded (the MCU paces
-    // itself off its internal timer).  Selected on the 06xx as custom #2 (0x04).
-    var n52 = { cmd: 0, reset: 1, addr: 0, cpu: null };
-    function voiceRom(a) { a &= 0xffff; return a < 0x8000 ? (ROM.voice[a] & 0xff) : 0xff; }
-    n52.cpu = makeMB88(ROM.mcu52, {
-      readK: function () { return n52.cmd & 0x0f; },
-      writeO: function (o8) { n52.addr = (n52.addr & 0x00ff) | ((o8 & 0xff) << 8); },
-      writeP: function (v) { ev52.push(audioClk); ev52.push(v & 0x0f); },
-      readR: [
-        function () { return voiceRom(n52.addr) & 0x0f; },        // R0 = ROM D0-D3
-        function () { return (voiceRom(n52.addr) >> 4) & 0x0f; }, // R1 = ROM D4-D7
-        null, null
-      ],
-      writeR: [
-        null, null,
-        function (v) { n52.addr = (n52.addr & 0xfff0) | (v & 0x0f); },        // R2 = A0-A3
-        function (v) { n52.addr = (n52.addr & 0xff0f) | ((v & 0x0f) << 4); }  // R3 = A4-A7
-      ],
-      readSI: function () { return 1; }, writeSO: null
-    });
-    n52.cpu.id = 0x52;
-
-    // ---- Namco 54xx noise generator (Fujitsu MB8844, port of namco54.cpp) -----
-    // A noise/engine-support generator: K = high nibble of the command, R0 = low
-    // nibble; it emits three 4-bit noise channels — O0-O3 = OUT0, O4-O7 = OUT1,
-    // R1 = OUT2 — each into a DAC + op-amp band-pass on the board.  Selected on
-    // the 06xx as custom #3 (0x08).
-    var n54 = { cmd: 0, reset: 1, o0: 0, o1: 0, o2: 0, cpu: null };
-    function pushEv54() { ev54.push(audioClk); ev54.push(n54.o0); ev54.push(n54.o1); ev54.push(n54.o2); }
-    n54.cpu = makeMB88(ROM.mcu54, {
-      readK: function () { return (n54.cmd >> 4) & 0x0f; },
-      writeO: function (o8) { n54.o0 = o8 & 0x0f; n54.o1 = (o8 >> 4) & 0x0f; pushEv54(); },
-      writeP: null,
-      readR: [
-        function () { return n54.cmd & 0x0f; },   // R0 = command low nibble
-        null, null, null
-      ],
-      writeR: [
-        null,
-        function (v) { n54.o2 = v & 0x0f; pushEv54(); },   // R1 = OUT2
-        null, null
-      ],
-      readSI: function () { return 1; }, writeSO: null
-    });
-    n54.cpu.id = 0x54;
-    self.n52 = n52; self.n54 = n54;
-    self.ev52 = ev52; self.ev54 = ev54;         // DAC event logs, read by the host
-
-    // ===================================================================
-    //  Namco 06xx bus (port of namco06.cpp).  It selects up to four customs
-    //  (low nibble of control), R/!W is bit4, the top three bits are a clock
-    //  divider.  While the divider is running the chip pulses /NMI to the Z80
-    //  (driving one read/write per byte) and pulses each selected custom's
-    //  /IRQ (chip-select) so the MCU services that byte.  The read data port
-    //  ANDs together every selected custom's O-latch.
-    // ===================================================================
-    var o6 = {
-      control: 0, timerState: false, readStretch: false,
-      halfPeriod: 0, acc: 0, running: false
-    };
-    function o6_selMask() { return o6.control & 0x0f; }
-    function o6_dataR() {                        // Z80 read @ 0x9000
-      if (!(o6.control & 0x10)) return 0;        // read requested in write mode
-      var r = 0xff;
-      if (o6.control & 0x01) r &= n51.portO;     // 51xx answer
-      if (o6.control & 0x02) r &= n53.portO;     // 53xx answer
-      return r & 0xff;
+    // Pole Position has linear voice addressing; Bosco's address decoder differs.
+    n52.readVoiceRom = a => a < ROM.voice.length ? ROM.voice[a] : 0xff;
+    const n54 = new Namco54XX({onChannelData: () => {
+      ev54.push(audioClk, ...n54.lastOutput);
+    }});
+    const customs = [n51, n53, n52, n54];
+    for (const [i, chip] of customs.entries()) {
+      chip.loadROM(ROM[['mcu51','mcu53','mcu52','mcu54'][i]]);
+      chip.cpu = chip.mcu;
+      chip.setScheduler?.(scheduler);
+      chip.setResetLine(0);
     }
-    function o6_dataW(v) {                        // Z80 write @ 0x9000
-      if (o6.control & 0x10) return;             // write requested in read mode
-      v &= 0xff;
-      if (o6.control & 0x01) n51.portO = v;      // command byte -> 51xx O/K latch
-      // 52xx (0x04) / 54xx (0x08) are sound customs: latch the command; the MCU
-      // reads it on K when the 06xx pulses its /IRQ (chip-select) below.
-      if (o6.control & 0x04) n52.cmd = v;
-      if (o6.control & 0x08) n54.cmd = v;
-    }
-    function o6_ctrlW(v) {                        // Z80 write @ 0x9100
-      o6.control = v & 0xff;
-      if ((o6.control & 0xe0) === 0) {           // divider stopped -> quiesce the bus
-        o6.running = false; o6.timerState = false;
-        n51.cpu.setIrqLine(0); n53.cpu.setIrqLine(0);
-        n52.cpu.setIrqLine(0); n54.cpu.setIrqLine(0);
-      } else {
-        var numShifts = (o6.control & 0xe0) >> 5;
-        o6.halfPeriod = 32 * (1 << numShifts);   // main-CPU cycles per timer half
-        o6.acc = 0; o6.running = true;
-        o6.readStretch = (o6.control & 0x10) ? true : false;  // suppress 1st read NMI
-      }
-    }
-    // Advance the 06xx timer by `dt` master-CPU cycles, firing NMI / chip-select
-    // edges.  Called from the frame scheduler.  A "true" timer edge = one byte:
-    // it drives R/!W, pulses each selected MCU's /IRQ, and (unless stretched)
-    // pulses the Z80 /NMI so it reads or writes that byte.
-    function o6_service(dt) {
-      if (!o6.running) return;
-      o6.acc += dt;
-      while (o6.acc >= o6.halfPeriod) {
-        o6.acc -= o6.halfPeriod;
-        o6.timerState = !o6.timerState;
-        var sel = o6_selMask();
-        if (o6.timerState) {
-          n51.rw = (o6.control & 0x01) ? ((o6.control >> 4) & 1) : n51.rw;
-          if (o6.control & 0x01) n51.cpu.setIrqLine(1);
-          if (o6.control & 0x02) n53.cpu.setIrqLine(1);
-          if (o6.control & 0x04) n52.cpu.setIrqLine(1);
-          if (o6.control & 0x08) n54.cpu.setIrqLine(1);
-          if (!o6.readStretch && z80) z80.interrupt(true, 0);   // /NMI to master
-          o6.readStretch = false;
-        } else {
-          if (o6.control & 0x01) n51.cpu.setIrqLine(0);
-          if (o6.control & 0x02) n53.cpu.setIrqLine(0);
-          if (o6.control & 0x04) n52.cpu.setIrqLine(0);
-          if (o6.control & 0x08) n54.cpu.setIrqLine(0);
-        }
-      }
-    }
+    n51.mcu.readR = [() => DSWB & 15, () => DSWB >> 4, () => in0() & 15, () => in0() >> 4];
+    n53.mcu.readR = [steeringChangedR, steeringDeltaR, () => DSWA & 15, () => DSWA >> 4];
+    const o6 = new Namco06XX({masterTicksPerZ80Cycle: 8, z80CyclesPerDeviceClock: 64,
+      onHostNmi: () => z80?.setNmiLine(true), onHostNmiClear: () => z80?.setNmiLine(false)});
+    o6.setScheduler(scheduler);
+    customs.forEach((chip, i) => o6.attachDevice(i, chip));
+    self.n51 = n51; self.n53 = n53; self.n52 = n52; self.n54 = n54; self.bus = o6;
+    self.ev52 = ev52; self.ev54 = ev54;
+    const o6_dataR = () => o6.dataRead(0);
+    const o6_dataW = v => o6.dataWrite(0, v);
+    const o6_ctrlW = v => o6.controlWrite(v);
 
     // ---- Z80 master/sound CPU + LS259 output latch (0xa000-0xa007) ----
     var latch = new Uint8Array(8);      // q0..q7
@@ -1336,8 +979,7 @@
       var pedal = adcSel ? ((buttons & MASK.accel) ? 0x90 : 0) : ((buttons & MASK.brake) ? 0x90 : 0);
       return pedal & 0xff;
     }
-    var Z80ctor = global.Z80;
-    var z80 = Z80ctor ? new Z80ctor({
+    const bus = {
       mem_read: function (a) {
         a &= 0xffff;
         if (a < 0x3000) return ROM.maincpu[a];
@@ -1363,12 +1005,8 @@
         if (a >= 0xa000 && a < 0xa100) {   // LS259 latch, write_d0
           var bit = a & 7, on = v & 1;
           latch[bit] = on;
-          if (bit === 1) {                                // Namco MCU reset (active low)
-            var newReset = on ? 0 : 1;
-            // released -> boot all four customs (LS259 q1 gates 51/52/53/54xx)
-            if (n51.reset === 1 && newReset === 0) { n51.cpu.reset(); n53.cpu.reset(); n52.cpu.reset(); n54.cpu.reset(); }
-            n51.reset = newReset; n53.reset = newReset; n52.reset = newReset; n54.reset = newReset;
-          }
+          if (bit === 0 && !on) z80.clearIrq();
+          if (bit === 1) customs.forEach(chip => chip.setResetLine(on));
           if (bit === 2 && !on) { engineLsb = 0; engineMsb = 0; }  // CLSON low -> clear engine (clson_w)
           if (bit === 3) adcSel = on;
           if (bit === 4) { var r1 = on ? 0 : 1; if (sub1Reset === 1 && r1 === 0) resetSub(sub1, ROM.sub1); sub1Reset = r1; }
@@ -1383,7 +1021,8 @@
       },
       io_read: function (p) { return (p & 0xff) === 0 ? adcRead() : 0xff; },
       io_write: function () {}
-    }) : null;
+    };
+    var z80 = new Z80(bus.mem_read, bus.mem_write, bus.io_read, bus.io_write);
     self.z80 = z80;
     var engineLsb = 0, engineMsb = 0;
     self.onEngine = null;
@@ -1473,8 +1112,8 @@
             if (xx < 0x100) {
               var srcCol = ((offs >> 1) ^ offsxor) & (dim - 1);
               var pen = data[srow + srcCol] & 0x0f;
-              if (pen !== 0) {
-                var idxPen = V.penSpr0[((color & 0x3f) << 4) + pen];
+              {
+                var idxPen = (color & 0x40 ? V.penSpr1 : V.penSpr0)[((color & 0x3f) << 4) + pen];
                 if (idxPen !== 0x1f) bmp[yy * BMPW + xx] = V.rgbaOf(idxPen);
               }
             }
@@ -1498,7 +1137,7 @@
         var sizey = (siz0 & 0x3f00) >> 8;
         var code = siz0 & 0x7f;
         var flipx = (siz0 >> 7) & 1;
-        var color = siz1 & 0x3f;
+        var color = (siz1 & 0x3f) | (sy >= 128 ? 0x40 : 0);
         var big = (siz0 >> 15) & 1;
         zoomSprite(bmp, big, code, color, flipx, sx, sy, sizex, sizey);
       }
@@ -1513,7 +1152,6 @@
           var word = view16[ti & 0x7ff];
           var code = (word & 0xff) | ((word & 0x4000) >> 6);
           var color = (word & 0x3f00) >> 8;
-          if (word === 0) continue;               // empty view RAM -> sky (transparent)
           var tile = gTiles[code & 0xff];
           if (!tile) continue;
           var px0 = ((col * 8) - scroll) & 0x1ff, py0 = row * 8;
@@ -1521,7 +1159,7 @@
             var yy = py0 + y; if (yy >= 128) continue;
             for (x = 0; x < 8; x++) {
               var xx = (px0 + x) & 0x1ff; if (xx >= 256) continue;
-              var p = tile[y * 8 + x]; if (!p) continue;
+              var p = tile[y * 8 + x];
               bmp[yy * BMPW + xx] = V.rgbaOf(V.penBg[((color & 0x3f) << 2) + p] & 0x7f);
             }
           }
@@ -1547,8 +1185,7 @@
             var yy = py0 + y;
             for (x = 0; x < 8; x++) {
               var p = tile[y * 8 + x];
-              if (p === 0) continue;               // transparent background of the glyph
-              var pen = V.penAlpha0[((color & 0x3f) << 2) + p];
+              var pen = (color & 0x40 ? V.penAlpha1 : V.penAlpha0)[((color & 0x3f) << 2) + p];
               if (pen === 0x2f) continue;          // PROM-transparent pen
               bmp[(yy) * BMPW + (px0 + x)] = V.rgbaOf(pen & 0x7f);
             }
@@ -1586,10 +1223,8 @@
     //  their own program.  There is no director.
     // =====================================================================
     // MASTER_CLOCK 24.576 MHz.  Z80 and both Z8002 run at MASTER/8 = 3.072 MHz.
-    // 60.606 Hz field over 264 lines => ~51264 cycles/CPU/frame, ~194/line.
+    // 60.606 Hz field over 264 lines => 50688 cycles/CPU/frame, 192/line.
     var LINES = 264;                 // total scanlines (visible 224 + blanking)
-    var Z80_PER_LINE = 194;          // Z80 T-cycles per scanline
-    var SUB_PER_LINE = 194;          // Z8002 cycles per scanline (both game CPUs)
 
     self.reset = function () {
       var i;
@@ -1597,22 +1232,18 @@
       for (i = 0; i < road16.length; i++) road16[i] = 0;
       for (i = 0; i < alpha16.length; i++) alpha16[i] = 0;
       for (i = 0; i < view16.length; i++) view16[i] = 0;
-      for (i = 0; i < nvram.length; i++) nvram[i] = 0;
+      for (i = 0; i < nvram.length; i++) nvram[i] = 0xff;
       for (i = 0; i < sndRegs.length; i++) sndRegs[i] = 0;
       for (i = 0; i < 8; i++) latch[i] = 0;
       scroll = 0; roadVScroll = 0; chacl = 1; self.frameCount = 0; vpos = 0;
       subIrqMask = 0; sub1Reset = 1; sub2Reset = 1;
       // 06xx bus + Namco MCUs: held in reset until the master sets LS259 q1.
-      o6.control = 0; o6.running = false; o6.timerState = false; o6.readStretch = false; o6.acc = 0;
-      n51.portO = 0; n51.rw = 0; n51.reset = 1; n53.portO = 0; n53.reset = 1;
-      n51.cpu.reset(); n53.cpu.reset();
-      // sound customs + their DAC event logs
-      n52.cmd = 0; n52.reset = 1; n52.addr = 0; n52.cpu.reset();
-      n54.cmd = 0; n54.reset = 1; n54.o0 = 0; n54.o1 = 0; n54.o2 = 0; n54.cpu.reset();
+      scheduler.reset(); o6.powerOnReset(); clocks.fill(0); frameBase = 0;
+      for (const chip of customs) { chip.mcu.reset(); chip.setResetLine(0); }
       ev52.length = 0; ev54.length = 0; audioClk = 0;
       autoStartMask = 1; steerLast = 0; steerAccum = 0; steerDelta = 0; steerPos = 0;
       engineLsb = 0; engineMsb = 0; self.unimpl = {};
-      if (z80) z80.reset();
+      if (z80) { z80.reset(); z80.clearIrq(); z80.clearNmi(); }
       // Z8002 reset: FCW from word $0002, PC from word $0004 of each sub ROM.
       var fcw1 = ((ROM.sub1[2] << 8) | ROM.sub1[3]) & 0xffff;
       var pc1 = ((ROM.sub1[4] << 8) | ROM.sub1[5]) & 0xffff;
@@ -1641,58 +1272,62 @@
     // a point in time the others have not reached — the two subs stay phase-locked
     // exactly as on hardware and their shared-RAM barriers stay ordered.  Scanline
     // interrupts and the 06xx bus timer are serviced at their exact cycle times.
-    var CYC_PER_LINE = 194, MCU_DIV = 12;
+    var CYC_PER_LINE = 192, MCU_DIV = 12;
 
     self.frameCycles = LINES * CYC_PER_LINE;     // CPU-cycle span of one field (for audio timestamps)
 
+    const clocks = new Float64Array(7);
+    let frameBase = 0;
     self.runFrame = function () {
       var total = LINES * CYC_PER_LINE;
       advanceSteer();                            // one wheel step per field
       ev52.length = 0; ev54.length = 0;          // fresh DAC event logs this field
-      var tz = 0, t1 = 0, t2 = 0, t51 = 0, t53 = 0, t52 = 0, t54 = 0;   // absolute CPU-cycle clocks
-      var lineDone = -1, o6last = 0;
+      var [tz, t1, t2, t51, t53, t52, t54] = clocks;   // absolute CPU-cycle clocks
+      var lineDone = -1;
       function hw(now) {                          // fire time-based hardware <= now
         while (lineDone + 1 < LINES && (lineDone + 1) * CYC_PER_LINE <= now) {
           var ln = ++lineDone; vpos = ln;
           // Z80 IRQ0 at 64V and 192V (when LS259 q0 / IRQON is set)
-          if ((ln === 64 || ln === 192) && latch[0] && z80) z80.interrupt(false, 0xff);
+          if ((ln === 64 || ln === 192) && latch[0] && z80) z80.setIrqLine(true, 0xff);
           // VBLANK: both Z8002 take the non-vectored interrupt at line 240
           if (ln === 240 && subIrqMask) { sub1.raiseNVI(); sub2.raiseNVI(); }
           // 51xx timer clock is the screen VBLANK (falling edge at vblank start).
-          if (ln === 0) n51.cpu.setTcLine(1);
-          else if (ln === 240) n51.cpu.setTcLine(0);
+          if (ln === 16) n51.vblank(false);
+          else if (ln === 240) n51.vblank(true);
         }
-        if (now > o6last) { o6_service(now - o6last); o6last = now; }  // 06xx /NMI + MCU /IRQ
+        scheduler.advanceTo((frameBase + now) * 8);  // 06xx /NMI + MCU /IRQ
       }
       for (;;) {
         // frontier = smallest clock among enabled (out-of-reset) devices
         var m = tz;
         if (!sub1Reset && t1 < m) m = t1;
         if (!sub2Reset && t2 < m) m = t2;
-        if (!n51.reset && t51 < m) m = t51;
-        if (!n53.reset && t53 < m) m = t53;
-        if (!n52.reset && t52 < m) m = t52;
-        if (!n54.reset && t54 < m) m = t54;
+        if (!n51.isReset() && t51 < m) m = t51;
+        if (!n53.isReset() && t53 < m) m = t53;
+        if (!n52.isReset() && t52 < m) m = t52;
+        if (!n54.isReset() && t54 < m) m = t54;
         if (m >= total) break;
         hw(m);
         // devices held in reset track the frontier so they resume in phase the
         // instant the Z80 releases them (no accumulated head-start / lag).
         if (sub1Reset) t1 = m;
         if (sub2Reset) t2 = m;
-        if (n51.reset) t51 = m;
-        if (n53.reset) t53 = m;
-        if (n52.reset) t52 = m;
-        if (n54.reset) t54 = m;
+        if (n51.isReset()) t51 = m;
+        if (n53.isReset()) t53 = m;
+        if (n52.isReset()) t52 = m;
+        if (n54.isReset()) t54 = m;
         // advance exactly the furthest-behind device by one instruction
-        if (tz <= m) { tz += z80 ? z80.run_instruction() : 4; }
+        if (tz <= m) { tz += z80 ? z80.step() : 4; }
         else if (!sub1Reset && t1 <= m) { t1 += sub1.step(); }
         else if (!sub2Reset && t2 <= m) { t2 += sub2.step(); }
-        else if (!n51.reset && t51 <= m) { t51 += n51.cpu.step() * MCU_DIV; }
-        else if (!n53.reset && t53 <= m) { t53 += n53.cpu.step() * MCU_DIV; }
-        else if (!n52.reset && t52 <= m) { audioClk = t52; t52 += n52.cpu.step() * MCU_DIV; }
-        else if (!n54.reset && t54 <= m) { audioClk = t54; t54 += n54.cpu.step() * MCU_DIV; }
+        else if (!n51.isReset() && t51 <= m) { t51 += n51.cpu.step() * MCU_DIV; }
+        else if (!n53.isReset() && t53 <= m) { t53 += n53.cpu.step() * MCU_DIV; }
+        else if (!n52.isReset() && t52 <= m) { audioClk = t52; t52 += n52.cpu.step() * MCU_DIV; }
+        else if (!n54.isReset() && t54 <= m) { audioClk = t54; t54 += n54.cpu.step() * MCU_DIV; }
       }
       hw(total);
+      clocks.set([tz, t1, t2, t51, t53, t52, t54].map(t => Math.max(0, t - total)));
+      frameBase += total;
       self.frameCount++;
     };
 
@@ -1701,6 +1336,8 @@
   }
 
   var api = { create: create, W: 256, H: 224 };
-  if (typeof window !== 'undefined') window.PolePosition = api;
+  global.PolePosition = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof window !== 'undefined' ? window : globalThis);
+
+export const PolePosition = globalThis.PolePosition;

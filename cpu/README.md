@@ -1,7 +1,7 @@
 # Shared Z80
 
-All five active Z80 games import `Z80` from `/cpu/z80.js`:
-Galaga, Bosconian, Scramble, Pac-Man, and Ms. Pac-Man.
+All six active Z80 games import `Z80` from `/cpu/z80.js`:
+Galaga, Bosconian, Scramble, Pac-Man, Ms. Pac-Man, and Pole Position.
 The old archived `arcade/galaga/Old/cpu.js` is not an active game dependency.
 Apple II and NES use different CPU architectures and are unchanged.
 

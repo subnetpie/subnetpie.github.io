@@ -31,5 +31,6 @@
       "sha256": "83b890bef01e46b1ddc097bf3f450ef6fc6d292635ddb197f7183e5a94e12fa4",
       "bytes": 11562
     }
-  ]
+  ],
+  "localAdaptation": "pole-position.js is adapted; hashes below describe the original imports. See ALIGNMENT.md."
 }
