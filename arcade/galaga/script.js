@@ -2279,7 +2279,7 @@ class GalagaEmulator {
     this.soundChip.renderMono(wsg);
     this.namco54xxDac.render(dac54, startTick, endTick);
     for (let i = 0; i < count; i++) wsg[i] += dac54[i];
-    this.audio.push(wsg);
+    this.audio.push(wsg, this.soundChip.sampleRate);
   }
 
   getStatusInfo() {
