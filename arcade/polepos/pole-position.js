@@ -3,7 +3,8 @@ import { Namco06XX } from "../../chips/Namco06XX.js";
 import { Namco51XX } from "../../chips/Namco51XX.js";
 import { Namco52XX } from "../../chips/Namco52XX.js";
 import { Namco54XX } from "../../chips/Namco54XX.js";
-import { BoardScheduler, Namco53XX } from "./devices.js";
+import { Namco53XX } from "../../chips/Namco53XX.js";
+import { BoardScheduler } from "./devices.js";
 /* Adapted for subnetpie: shared Z80/Namco devices, validated ROM injection,
  * timing/video corrections. See ALIGNMENT.md for scope and limitations.
  */
