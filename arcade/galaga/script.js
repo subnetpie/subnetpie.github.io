@@ -2,6 +2,9 @@ import { Z80 } from "../../cpu/z80.js";
 import { Namco06XX } from "../../chips/Namco06XX.js";
 import { Namco51XX } from "../../chips/Namco51XX.js";
 import { Namco54XX } from "../../chips/Namco54XX.js";
+import { NamcoWSG } from "../../chips/NamcoWSG.js";
+import { Namco54xxDac } from "../../audio/Namco54xxDac.js";
+import { EmulatorAudioWorklet } from "../../audio/EmulatorAudioWorklet.js";
 import { MB88xx, MB8843, MB8844 } from "../../chips/MB88xx.js";
 
 class EmulatorConfig {
@@ -1573,647 +1576,6 @@ class Namco05XX {
 
 
 
-class Namco54xxDac {
-  static MASTER_CLOCK = 18_432_000;
-  static CHANNEL_COUNT = 3;
-
-  static SCHEDULE_AHEAD = 0.05;
-  static MAX_SCHEDULE_AHEAD = 0.3;
-
-  constructor() {
-    this.audioCtx = null;
-    this.destination = null;
-
-    this.source = new Array(3).fill(null);
-    this.bandPass = new Array(3).fill(null);
-    this.channelGain = new Array(3).fill(null);
-
-    this.mixer = null;
-    this.outputGain = null;
-
-    this.channelData = new Uint8Array(3);
-
-    this.masterTickBase = null;
-    this.lastMasterTick = null;
-    this.audioTimeBase = 0;
-  }
-
-  attach(audioCtx, destination) {
-    if (this.audioCtx === audioCtx && this.mixer) {
-      return;
-    }
-
-    this.detach();
-
-    this.audioCtx = audioCtx;
-    this.destination = destination;
-
-    const now = audioCtx.currentTime;
-
-    this.mixer = audioCtx.createGain();
-
-    this.outputGain = audioCtx.createGain();
-
-    this.mixer.gain.setValueAtTime(1, now);
-
-    this.outputGain.gain.setValueAtTime(0.16, now);
-
-    this.mixer.connect(this.outputGain);
-
-    this.outputGain.connect(destination);
-
-    /*
-     * MAME 0.289 galaga_a.cpp:
-     *
-     * OUT2 -> channel 1
-     * OUT1 -> channel 2
-     * OUT0 -> channel 3
-     *
-     * Filter values derived from:
-     *
-     *   galaga_chanl1_filt
-     *   galaga_chanl2_filt
-     *   galaga_chanl3_filt
-     *
-     * and MAME 0.289
-     * DISC_OP_AMP_FILTER_IS_BAND_PASS_1M.
-     *
-     * Mixer weighting includes the
-     * 33k / 33k / 10k final Galaga mixer.
-     */
-    const config = [
-      {
-        channel: 2,
-        frequency: 2520.9816921671772,
-        q: 1.7423774640682894,
-        gain: 0.1505
-      },
-      {
-        channel: 1,
-        frequency: 450.43388318211043,
-        q: 2.1226196674992623,
-        gain: 0.2234
-      },
-      {
-        channel: 0,
-        frequency: 167.41656583794713,
-        q: 2.4719868706309156,
-        gain: 1.0
-      }
-    ];
-
-    for (const spec of config) {
-      const source = audioCtx.createConstantSource();
-
-      const filter = audioCtx.createBiquadFilter();
-
-      const gain = audioCtx.createGain();
-
-      filter.type = "bandpass";
-
-      filter.frequency.setValueAtTime(spec.frequency, now);
-
-      filter.Q.setValueAtTime(spec.q, now);
-
-      gain.gain.setValueAtTime(spec.gain, now);
-
-      source.offset.setValueAtTime(
-        this.nibbleToVoltage(this.channelData[spec.channel]),
-        now
-      );
-
-      source.connect(filter);
-      filter.connect(gain);
-      gain.connect(this.mixer);
-
-      source.start(now);
-
-      this.source[spec.channel] = source;
-
-      this.bandPass[spec.channel] = filter;
-
-      this.channelGain[spec.channel] = gain;
-    }
-  }
-
-  detach() {
-    for (let ch = 0; ch < 3; ch++) {
-      try {
-        this.source[ch]?.stop();
-      } catch (_) {}
-
-      this.source[ch]?.disconnect();
-      this.bandPass[ch]?.disconnect();
-      this.channelGain[ch]?.disconnect();
-
-      this.source[ch] = null;
-      this.bandPass[ch] = null;
-      this.channelGain[ch] = null;
-    }
-
-    this.mixer?.disconnect();
-    this.outputGain?.disconnect();
-
-    this.mixer = null;
-    this.outputGain = null;
-    this.audioCtx = null;
-    this.destination = null;
-
-    this.masterTickBase = null;
-    this.lastMasterTick = null;
-    this.audioTimeBase = 0;
-  }
-
-  reset() {
-    this.channelData.fill(0);
-
-    this.masterTickBase = null;
-    this.lastMasterTick = null;
-    this.audioTimeBase = 0;
-
-    const now = this.audioCtx?.currentTime ?? 0;
-
-    for (let ch = 0; ch < 3; ch++) {
-      const param = this.source[ch]?.offset;
-
-      param?.cancelScheduledValues(now);
-
-      param?.setValueAtTime(this.nibbleToVoltage(0), now);
-    }
-  }
-
-  /*
-   * MAME DISCRETE_DAC_R1:
-   *
-   * 4V source
-   *
-   * bit 0 = 47k
-   * bit 1 = 22k
-   * bit 2 = 10k
-   * bit 3 = 4.7k
-   */
-  nibbleToVoltage(nibble) {
-    const value = nibble & 0x0f;
-
-    const resistors = [47000, 22000, 10000, 4700];
-
-    let totalConductance = 0;
-
-    for (const r of resistors) {
-      totalConductance += 1 / r;
-    }
-
-    let enabledConductance = 0;
-
-    for (let bit = 0; bit < 4; bit++) {
-      if (value & (1 << bit)) {
-        enabledConductance += 1 / resistors[bit];
-      }
-    }
-
-    return (4 * enabledConductance) / totalConductance;
-  }
-
-  masterTickToAudioTime(masterTick) {
-    const ctx = this.audioCtx;
-
-    if (!ctx) return 0;
-
-    const tick = Math.max(0, Math.floor(Number(masterTick) || 0));
-
-    const now = ctx.currentTime;
-
-    let target =
-      this.masterTickBase === null
-        ? NaN
-        : this.audioTimeBase +
-          (tick - this.masterTickBase) / Namco54xxDac.MASTER_CLOCK;
-
-    /*
-     * Rebase after an underrun, reset,
-     * suspended AudioContext or large
-     * emulation/audio clock discontinuity.
-     */
-    if (
-      !Number.isFinite(target) ||
-      (this.lastMasterTick !== null && tick < this.lastMasterTick) ||
-      target < now + 0.002 ||
-      target > now + Namco54xxDac.MAX_SCHEDULE_AHEAD
-    ) {
-      this.masterTickBase = tick;
-
-      this.audioTimeBase = now + Namco54xxDac.SCHEDULE_AHEAD;
-
-      target = this.audioTimeBase;
-
-      for (let ch = 0; ch < 3; ch++) {
-        const param = this.source[ch]?.offset;
-
-        param?.cancelScheduledValues(now);
-
-        param?.setValueAtTime(this.nibbleToVoltage(this.channelData[ch]), now);
-      }
-    }
-
-    this.lastMasterTick = tick;
-
-    return target;
-  }
-
-  writeChannel(channel, value, masterTick = 0, force = false) {
-    const ch = channel | 0;
-
-    if (ch < 0 || ch >= 3) {
-      return false;
-    }
-
-    const next = value & 0x0f;
-
-    if (!force && this.channelData[ch] === next) {
-      return false;
-    }
-
-    const source = this.source[ch];
-
-    const ctx = this.audioCtx;
-
-    if (!source || !ctx || ctx.state !== "running") {
-      this.channelData[ch] = next;
-
-      if (ctx?.state !== "running") {
-        this.masterTickBase = null;
-        this.lastMasterTick = null;
-      }
-
-      return true;
-    }
-
-    const when = this.masterTickToAudioTime(masterTick);
-
-    this.channelData[ch] = next;
-
-    /*
-     * Critical:
-     *
-     * Do not cancel later ROM-generated
-     * transitions.
-     *
-     * The real 54XX waveform is the
-     * complete sequence of O/R1 writes
-     * generated by 54xx.bin.
-     */
-    source.offset.setValueAtTime(this.nibbleToVoltage(next), when);
-
-    return true;
-  }
-
-  synchronizeState(masterTick = 0) {
-    for (let ch = 0; ch < 3; ch++) {
-      this.writeChannel(ch, this.channelData[ch], masterTick, true);
-    }
-  }
-
-  getTraceState() {
-    return {
-      attached: !!this.mixer,
-
-      contextState: this.audioCtx?.state ?? null,
-
-      channel0: this.channelData[0] & 15,
-
-      channel1: this.channelData[1] & 15,
-
-      channel2: this.channelData[2] & 15,
-
-      masterTickBase: this.masterTickBase,
-
-      audioTimeBase: this.audioTimeBase
-    };
-  }
-}
-class NamcoWSG {
-  static #WORKLET_SRC = `
-class NamcoWSGProcessor extends AudioWorkletProcessor {
-  constructor({ processorOptions: { waveData } }) {
-    super();
-    this.wave = new Uint8Array(waveData);
-    this.accum = new Float64Array(3);
-    this.voices = [
-      { freq: 0, wave: 0, vol: 0 },
-      { freq: 0, wave: 0, vol: 0 },
-      { freq: 0, wave: 0, vol: 0 },
-    ];
-    this.enabled = false;
-    this.step = 96000 / sampleRate;
-    this.port.onmessage = ({ data }) => {
-      if (data.type === "voices") this.voices = data.v;
-      if (data.type === "enabled") this.enabled = data.v;
-    };
-  }
-
-  process(inputs, outputs) {
-    void inputs;
-    const ch = outputs[0][0];
-    if (!ch) return true;
-    if (!this.enabled) {
-      ch.fill(0);
-      return true;
-    }
-
-    const { wave, accum, voices, step } = this;
-    const WRAP = 0x100000;
-
-    for (let i = 0; i < ch.length; i++) {
-      let s = 0;
-      for (let v = 0; v < 3; v++) {
-        const { freq, wave: w, vol } = voices[v];
-        if (!vol || !freq) continue;
-        accum[v] = (accum[v] + freq * step) % WRAP;
-        const pos = ((accum[v] | 0) >> 15) & 0x1f;
-        s += (wave[w * 32 + pos] - 8) * vol;
-      }
-      ch[i] = s / 315;
-    }
-    return true;
-  }
-}
-registerProcessor("namco-wsg", NamcoWSGProcessor);
-`;
-
-  constructor(config) {
-    this.config = config;
-
-    this.prom = new Uint8Array(256);
-    this.regs = new Uint8Array(32);
-    this.channels = [
-      { freq: 0, wave: 0, vol: 0 },
-      { freq: 0, wave: 0, vol: 0 },
-      { freq: 0, wave: 0, vol: 0 }
-    ];
-
-    this.audioCtx = null;
-    this.gainNode = null;
-    this.wsgNode = null;
-    this.port = null;
-    this.fxChain = null;
-
-    this.state = "idle"; // 'idle' | 'pending' | 'ready'
-    this.enabled = false;
-
-    this.gestureEvents = null;
-    this.onGesture = null;
-
-    this.onAudioReady = null;
-  }
-
-  write(offset, data) {
-    this.regs[offset & 0x1f] = data & 0x0f;
-    this.decodeAndSend();
-  }
-
-  flushRegisters() {
-    this.decodeAndSend();
-  }
-
-  notifyPromLoaded() {
-    this.decodeAndSend();
-  }
-
-  async setEnabled(en) {
-    this.enabled = en;
-    if (this.state === "idle") {
-      await this.createAudioGraph();
-    } else if (this.state === "ready") {
-      await this.resumeIfNeeded();
-    }
-    this.port?.postMessage({ type: "enabled", v: en });
-  }
-
-  initAudio() {
-    const gestureEvents = ["touchend", "pointerup", "mousedown", "keydown"];
-
-    const onGesture = (e) => {
-      if (!e.isTrusted) return;
-      this.unlockFromGesture();
-    };
-
-    for (const ev of gestureEvents) {
-      window.addEventListener(ev, onGesture, { capture: true, passive: true });
-    }
-
-    this.gestureEvents = gestureEvents;
-    this.onGesture = onGesture;
-
-    const reattempt = () => {
-      if (this.enabled) this.resumeIfNeeded();
-    };
-
-    document.addEventListener("visibilitychange", () => {
-      if (document.visibilityState === "visible") reattempt();
-    });
-    window.addEventListener("focus", reattempt);
-    window.addEventListener("pageshow", reattempt);
-  }
-
-  unlockFromGesture() {
-    if (this.state === "idle") {
-      this.createAudioGraph();
-    } else if (this.state === "ready") {
-      this.resumeIfNeeded();
-    }
-
-    if (this.audioCtx) this.playSilentUnlockBuffer(this.audioCtx);
-  }
-
-  playSilentUnlockBuffer(ctx) {
-    try {
-      const buf = ctx.createBuffer(1, 1, ctx.sampleRate || 22050);
-      const src = ctx.createBufferSource();
-      src.buffer = buf;
-      src.connect(ctx.destination);
-      src.start(0);
-    } catch (_) {}
-  }
-
-  async resumeIfNeeded() {
-    const ctx = this.audioCtx;
-    if (!ctx) return;
-    if (ctx.state === "running") return;
-
-    for (let attempt = 0; attempt < 3; attempt++) {
-      try {
-        await ctx.resume();
-      } catch (_) {}
-      if (ctx.state === "running") return;
-      await new Promise((r) => setTimeout(r, 60));
-    }
-  }
-
-  unregisterGestureListeners() {
-    if (!this.onGesture || !this.gestureEvents) return;
-    for (const ev of this.gestureEvents) {
-      window.removeEventListener(ev, this.onGesture, { capture: true });
-    }
-    this.onGesture = null;
-    this.gestureEvents = null;
-  }
-
-  reset() {
-    this.regs.fill(0);
-
-    for (const ch of this.channels) {
-      ch.freq = 0;
-      ch.wave = 0;
-      ch.vol = 0;
-    }
-
-    // MAME starts the Namco WSG enabled. A machine reset clears the
-    // registers, which silences the voices naturally because volume=0;
-    // it must not permanently disable the WSG audio device itself.
-    this.enabled = this.config.audio.enabled !== false;
-
-    if (this.port) {
-      this.port.postMessage({
-        type: "voices",
-        v: this.channels
-      });
-
-      this.port.postMessage({
-        type: "enabled",
-        v: this.enabled
-      });
-    }
-  }
-  reset_old() {
-    this.regs.fill(0);
-    for (const ch of this.channels) {
-      ch.freq = 0;
-      ch.wave = 0;
-      ch.vol = 0;
-    }
-    if (this.port) {
-      this.port.postMessage({ type: "voices", v: this.channels });
-      this.port.postMessage({ type: "enabled", v: false });
-    }
-    this.enabled = false;
-  }
-
-  async createAudioGraph() {
-    if (this.state !== "idle") return;
-    this.state = "pending";
-
-    const AC = window.AudioContext || window.webkitAudioContext;
-    if (!AC) {
-      this.state = "idle";
-      return;
-    }
-
-    try {
-      this.audioCtx = new AC();
-
-      this.audioCtx.addEventListener("statechange", () => {
-        if (this.enabled && this.audioCtx?.state !== "running") {
-          this.resumeIfNeeded();
-        }
-      });
-
-      await this.resumeIfNeeded();
-      this.playSilentUnlockBuffer(this.audioCtx);
-
-      this.gainNode = this.audioCtx.createGain();
-      this.gainNode.gain.value = this.config.audio.masterVolume;
-      this.gainNode.connect(this.audioCtx.destination);
-
-      const blob = new Blob([NamcoWSG.#WORKLET_SRC], {
-        type: "application/javascript"
-      });
-      const blobUrl = URL.createObjectURL(blob);
-      await this.audioCtx.audioWorklet.addModule(blobUrl);
-      URL.revokeObjectURL(blobUrl);
-
-      const waveData = Array.from(this.prom).map((b) => b & 0x0f);
-      this.wsgNode = new AudioWorkletNode(this.audioCtx, "namco-wsg", {
-        numberOfInputs: 0,
-        numberOfOutputs: 1,
-        outputChannelCount: [1],
-        processorOptions: { waveData }
-      });
-
-      this.attachFxChain();
-      this.port = this.wsgNode.port;
-      this.state = "ready";
-
-      this.decodeAndSend();
-      this.port.postMessage({ type: "enabled", v: this.enabled });
-
-      this.onAudioReady?.(this.audioCtx, this.gainNode);
-    } catch (err) {
-      console.warn("[WSG] Audio init failed:", err);
-      this.teardownAudioGraph();
-    }
-  }
-
-  attachFxChain() {
-    const { audioCtx: ctx, wsgNode: node, gainNode: gain } = this;
-    if (!ctx || !node || !gain) return;
-
-    const hp = ctx.createBiquadFilter();
-    hp.type = "highpass";
-    hp.frequency.value = 80;
-    hp.Q.value = 0.5;
-
-    const lp = ctx.createBiquadFilter();
-    lp.type = "lowpass";
-    lp.frequency.value = 5500;
-    lp.Q.value = 0.6;
-
-    node.connect(hp);
-    hp.connect(lp);
-    lp.connect(gain);
-    this.fxChain = { hp, lp };
-  }
-
-  teardownAudioGraph() {
-    this.state = "idle";
-    this.port = null;
-    this.wsgNode = null;
-    this.fxChain = null;
-    this.gainNode = null;
-
-    try {
-      this.audioCtx?.close();
-    } catch (_) {}
-
-    this.audioCtx = null;
-  }
-
-  decodeAndSend() {
-    const r = this.regs;
-
-    this.channels[0].freq =
-      r[0x10] |
-      (r[0x11] << 4) |
-      (r[0x12] << 8) |
-      (r[0x13] << 12) |
-      (r[0x14] << 16);
-    this.channels[0].wave = r[0x05] & 0x07;
-    this.channels[0].vol = r[0x15] & 0x0f;
-
-    this.channels[1].freq =
-      (r[0x16] << 4) | (r[0x17] << 8) | (r[0x18] << 12) | (r[0x19] << 16);
-    this.channels[1].wave = r[0x0a] & 0x07;
-    this.channels[1].vol = r[0x1a] & 0x0f;
-
-    this.channels[2].freq =
-      (r[0x1b] << 4) | (r[0x1c] << 8) | (r[0x1d] << 12) | (r[0x1e] << 16);
-    this.channels[2].wave = r[0x0f] & 0x07;
-    this.channels[2].vol = r[0x1f] & 0x0f;
-
-    if (this.state === "ready" && this.port) {
-      this.port.postMessage({ type: "voices", v: this.channels });
-    }
-  }
-}
 class NamcoLS259Latch {
   constructor(name = "ls259") {
     this.name = name;
@@ -2370,18 +1732,10 @@ class GalagaEmulator {
     );
     this.starfield = new Namco05XX();
 
-    this.soundChip = new NamcoWSG(this.config);
-    if (!(this.soundChip.prom instanceof Uint8Array)) {
-      throw new Error("[Galaga] NamcoWSG must expose a writable waveform PROM");
-    }
-    if (this.soundChip.prom.length !== this.waveProm.length) {
-      throw new Error(
-        `[Galaga] NamcoWSG PROM size mismatch: expected ${this.waveProm.length}, ` +
-          `got ${this.soundChip.prom.length}`
-      );
-    }
-    this.soundChip.prom = this.waveProm;
-    this.namco54xxDac = new Namco54xxDac();
+    this.soundChip = new NamcoWSG({ waveformProm: this.waveProm });
+    this.audio = new EmulatorAudioWorklet({ gain: this.config.audio.masterVolume });
+    this.audioSampleFraction = 0;
+    this.namco54xxDac = new Namco54xxDac({ sampleRate: this.soundChip.sampleRate });
     this.namco54xx = new Namco54XX({
       /*
        * Each MB8844 O/R1 output change carries the current emulated
@@ -2399,20 +1753,7 @@ class GalagaEmulator {
         this.namco54xxDac.reset();
       }
     });
-    this.soundChip.onAudioReady = (audioCtx, gainNode) => {
-      if (!audioCtx || !gainNode || audioCtx.state === "closed") {
-        return;
-      }
 
-      this.namco54xxDac.attach(audioCtx, gainNode);
-
-      /*
-       * syncOutputs() obtains the current TimingSequencer tick through
-       * Namco54XX.getMasterTick(), so these writes are timestamped on
-       * the same master-clock timeline as normal firmware output.
-       */
-      this.namco54xx.syncOutputs();
-    };
 
     this.timing = new TimingSequencer(this);
     this.namco54xx.setScheduler(this.timing);
@@ -2845,7 +2186,10 @@ class GalagaEmulator {
   }
 
   step() {
+    const audioStartTick = this.timing.now;
     this.timing.runFrame();
+    const audioEndTick = this.timing.now;
+    this.renderAudioFrame(audioStartTick, audioEndTick);
     this.frameCounter++;
     this.watchdogTimer++;
     if (this.watchdogTimer >= 8) {
@@ -2879,6 +2223,9 @@ class GalagaEmulator {
     this._in1 = 0xff;
 
     this.timing.reset();
+    this.audioSampleFraction = 0;
+    this.audio.clear();
+    this.namco54xxDac.reset();
 
     this.vram.fill(0);
     this.ram1.fill(0);
@@ -2917,6 +2264,22 @@ class GalagaEmulator {
 
     this.miscLatch.clear();
     this.videoLatch.reset();
+  }
+
+  renderAudioFrame(startTick, endTick) {
+    if (!this.audio.ready || endTick <= startTick) return;
+    this.audioSampleFraction +=
+      (endTick - startTick) * this.soundChip.sampleRate / TimingSequencer.MASTER_CLOCK;
+    const count = Math.floor(this.audioSampleFraction);
+    this.audioSampleFraction -= count;
+    if (!count) return;
+
+    const wsg = new Float32Array(count);
+    const dac54 = new Float32Array(count);
+    this.soundChip.renderMono(wsg);
+    this.namco54xxDac.render(dac54, startTick, endTick);
+    for (let i = 0; i < count; i++) wsg[i] += dac54[i];
+    this.audio.push(wsg);
   }
 
   getStatusInfo() {
@@ -3426,7 +2789,6 @@ class GalagaEmulator {
     this.starfield.render(ctx);
     this.renderSprites(ctx);
     this.renderTiles(ctx);
-    this.soundChip.flushRegisters();
   }
 
   initPaletteFromProm() {
@@ -3525,10 +2887,6 @@ class GalagaEmulator {
           }
 
           target.set(data, offset);
-
-          if (file.soundPromRole === "waveform") {
-            this.soundChip?.notifyPromLoaded?.();
-          }
 
           progressCallback?.(index + 1, romFiles.length, file.name);
 
@@ -3651,10 +3009,17 @@ Cause: ${GalagaApp.formatError(error.cause)}`;
     this.swipeController?.dispose?.();
     this.swipeController = new SwipeController(this.input, window);
 
-    /*
-     * The emulator constructor owns onAudioReady. Do not overwrite it here.
-     */
-    this.emulator.soundChip.initAudio();
+    const unlockAudio = () => {
+      this.emulator.audio.unlock()
+        .then(() => {
+          this.emulator.audio.setEnabled(this.config.audio.enabled !== false);
+          this.emulator.namco54xx.syncOutputs();
+        })
+        .catch((error) => console.warn("[Galaga audio] unlock failed:", error));
+    };
+    for (const eventName of ["touchend", "pointerup", "mousedown", "keydown"]) {
+      window.addEventListener(eventName, unlockAudio, { capture: true, passive: true });
+    }
 
     return true;
   }
@@ -3734,7 +3099,7 @@ Cause: ${GalagaApp.formatError(error.cause)}`;
       return;
     }
 
-    this.emulator.soundChip.resumeIfNeeded?.();
+    this.emulator.audio.resume();
 
     this.emulator.running = true;
     this.lastFrameTime = performance.now();
