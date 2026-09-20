@@ -1,16 +1,21 @@
-// Shared machine-side Namco 54XX DAC renderer.
-// Browser APIs are deliberately excluded. MAME 0.289 discrete audio is the reference.
+// Shared machine-side Namco 54XX DAC/discrete renderer.
+// Browser APIs are deliberately excluded. MAME 0.289 galaga_a.cpp and
+// discrete filter/mixer implementations are the authoritative reference.
 export class Namco54xxDac {
   static MASTER_CLOCK = 18_432_000;
   static CHANNEL_COUNT = 3;
-
+  static VREF = 5 * (2200 / (3300 + 2200));
+  static DAC_RESISTORS = Object.freeze([47000, 22000, 10000, 4700]);
+  static DAC_R = 1 / Namco54xxDac.DAC_RESISTORS.reduce((g, r) => g + 1 / r, 0);
   static GALAGA = Object.freeze({
-    outputGain: 0.16,
     channels: Object.freeze([
-      Object.freeze({ channel: 2, frequency: 2520.9816921671772, q: 1.7423774640682894, gain: 0.1505 }),
-      Object.freeze({ channel: 1, frequency: 450.43388318211043, q: 2.1226196674992623, gain: 0.2234 }),
-      Object.freeze({ channel: 0, frequency: 167.41656583794713, q: 2.4719868706309156, gain: 1.0 })
-    ])
+      Object.freeze({ channel: 2, r1: Namco54xxDac.DAC_R + 100000, r3: 22000, rF: 220000, c1: 1e-9, c2: 1e-9, mixR: 33000 }),
+      Object.freeze({ channel: 1, r1: Namco54xxDac.DAC_R + 47000,  r3: 10000, rF: 150000, c1: 1e-8, c2: 1e-8, mixR: 33000 }),
+      Object.freeze({ channel: 0, r1: Namco54xxDac.DAC_R + 150000, r3: 22000, rF: 470000, c1: 1e-8, c2: 1e-8, mixR: 10000 })
+    ]),
+    mixerRF: 3300,
+    mixerCAmp: 1e-7,
+    gain: 40800
   });
 
   constructor({ sampleRate = 192000, masterClock = Namco54xxDac.MASTER_CLOCK, routing = Namco54xxDac.GALAGA } = {}) {
@@ -22,7 +27,9 @@ export class Namco54xxDac {
     this.events = [];
     this.filters = Array.from({ length: Namco54xxDac.CHANNEL_COUNT }, () => ({ x1: 0, x2: 0, y1: 0, y2: 0 }));
     this.coefficients = new Array(Namco54xxDac.CHANNEL_COUNT);
-    for (const spec of routing.channels) this.coefficients[spec.channel] = this._bandPass(spec.frequency, spec.q);
+    for (const spec of routing.channels) this.coefficients[spec.channel] = this._makeOpAmpBandPass(spec);
+    this.mixerCapAmp = 0;
+    this.mixerAmpExponent = 1 - Math.exp(-1 / (100000 * routing.mixerCAmp * sampleRate));
   }
 
   reset() {
@@ -30,17 +37,14 @@ export class Namco54xxDac {
     this.renderState.fill(0);
     this.events.length = 0;
     for (const f of this.filters) f.x1 = f.x2 = f.y1 = f.y2 = 0;
+    this.mixerCapAmp = 0;
   }
 
   nibbleToVoltage(nibble) {
-    const resistors = [47000, 22000, 10000, 4700];
-    let total = 0, enabled = 0;
-    for (let bit = 0; bit < 4; bit++) {
-      const g = 1 / resistors[bit];
-      total += g;
-      if (nibble & (1 << bit)) enabled += g;
-    }
-    return 4 * enabled / total;
+    let current = 0;
+    for (let bit = 0; bit < 4; bit++)
+      if (nibble & (1 << bit)) current += 4 / Namco54xxDac.DAC_RESISTORS[bit];
+    return current * Namco54xxDac.DAC_R;
   }
 
   writeChannel(channel, value, masterTick = 0, force = false) {
@@ -73,14 +77,22 @@ export class Namco54xxDac {
       while (eventIndex < this.events.length && this.events[eventIndex].tick <= tick) {
         const e = this.events[eventIndex++]; state[e.channel] = e.value;
       }
-      let mixed = 0;
+
+      // MAME galaga_discrete: three 54XX resistor DACs -> three clipped
+      // 1M op-amp band-pass stages -> 33k/33k/10k inverting mixer.
+      let current = 0;
       for (const spec of this.routing.channels) {
-        const ch = spec.channel;
-        mixed += this._filter(ch, this.nibbleToVoltage(state[ch])) * spec.gain;
+        const voltage = this.nibbleToVoltage(state[spec.channel]);
+        const filtered = this._filter(spec.channel, voltage);
+        current += (Namco54xxDac.VREF - filtered) / spec.mixR;
       }
-      out[i] = mixed * this.routing.outputGain;
+      let mixed = current * this.routing.mixerRF;
+
+      // DISCRETE_MIXER cAmp=0.1uF uses a 100k assumed output impedance.
+      this.mixerCapAmp += (mixed - this.mixerCapAmp) * this.mixerAmpExponent;
+      mixed -= this.mixerCapAmp;
+      out[i] = mixed * this.routing.gain;
     }
-    // Events at/before endTick are no longer needed; preserve later transitions.
     let cut = 0;
     while (cut < this.events.length && this.events[cut].tick <= endTick) cut++;
     if (cut) this.events.splice(0, cut);
@@ -88,21 +100,36 @@ export class Namco54xxDac {
     return out;
   }
 
-  _bandPass(frequency, q) {
-    const w0 = 2 * Math.PI * frequency / this.sampleRate;
-    const alpha = Math.sin(w0) / (2 * q);
-    const a0 = 1 + alpha;
+  _makeOpAmpBandPass(spec) {
+    const rTotal = 1 / (1 / spec.r1 + (spec.r3 ? 1 / spec.r3 : 0));
+    const fc = 1 / (2 * Math.PI * Math.sqrt(rTotal * spec.rF * spec.c1 * spec.c2));
+    const damp = (spec.c1 + spec.c2) / Math.sqrt((spec.rF / rTotal) * spec.c1 * spec.c2);
+    const gain = -(spec.rF / rTotal) * spec.c2 / (spec.c1 + spec.c2);
+    const twoOverT = 2 * this.sampleRate;
+    const wc = this.sampleRate * 2 * Math.tan(Math.PI * fc / this.sampleRate);
+    const wc2 = wc * wc;
+    const t2 = twoOverT * twoOverT;
+    const den = t2 + damp * wc * twoOverT + wc2;
+    const b0 = damp * wc * twoOverT / den * gain;
     return {
-      b0: alpha / a0, b1: 0, b2: -alpha / a0,
-      a1: (-2 * Math.cos(w0)) / a0, a2: (1 - alpha) / a0
+      a1: 2 * (-t2 + wc2) / den,
+      a2: (t2 - damp * wc * twoOverT + wc2) / den,
+      b0, b1: 0, b2: -b0
     };
   }
 
-  _filter(channel, x) {
+  _filter(channel, input) {
     const c = this.coefficients[channel], s = this.filters[channel];
-    if (!c) return x;
-    const y = c.b0 * x + c.b1 * s.x1 + c.b2 * s.x2 - c.a1 * s.y1 - c.a2 * s.y2;
-    s.x2 = s.x1; s.x1 = x; s.y2 = s.y1; s.y1 = y;
+    if (!c) return input;
+    // MAME first Millmans the input around VREF, then applies the filter.
+    const v = (input - Namco54xxDac.VREF) / this.routing.channels.find(x => x.channel === channel).r1;
+    const spec = this.routing.channels.find(x => x.channel === channel);
+    const rTotal = 1 / (1 / spec.r1 + (spec.r3 ? 1 / spec.r3 : 0));
+    const x = v * rTotal;
+    let y = -c.a1 * s.y1 - c.a2 * s.y2 + c.b0 * x + c.b1 * s.x1 + c.b2 * s.x2 + Namco54xxDac.VREF;
+    if (y > 4.5) y = 4.5; // MAME non-Norton op-amp positive rail offset
+    if (y < 0) y = 0;
+    s.x2 = s.x1; s.x1 = x; s.y2 = s.y1; s.y1 = y - Namco54xxDac.VREF;
     return y;
   }
 }
