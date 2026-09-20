@@ -1317,7 +1317,16 @@ import { BoardScheduler, Namco53XX } from "./devices.js";
         if (n52.isReset()) t52 = m;
         if (n54.isReset()) t54 = m;
         // advance exactly the furthest-behind device by one instruction
-        if (tz <= m) { tz += z80 ? z80.step() : 4; }
+        if (tz <= m) {
+          // 06XX control/data writes use MAME scheduler().synchronize().
+          // Treat the Z80 instruction as the atomic host timeslice: writes
+          // become visible to the custom chips at the instruction's ending
+          // master-clock boundary, never at its beginning.
+          scheduler.beginHostInstruction();
+          const used = z80 ? z80.step() : 4;
+          tz += used;
+          scheduler.endHostInstruction((frameBase + tz) * 8);
+        }
         else if (!sub1Reset && t1 <= m) { t1 += sub1.step(); }
         else if (!sub2Reset && t2 <= m) { t2 += sub2.step(); }
         else if (!n51.isReset() && t51 <= m) { t51 += n51.cpu.step() * MCU_DIV; }
