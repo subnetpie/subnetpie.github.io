@@ -18,6 +18,7 @@ export class Namco54xxDac {
     this.masterClock = masterClock;
     this.routing = routing;
     this.channelData = new Uint8Array(Namco54xxDac.CHANNEL_COUNT);
+    this.renderState = new Uint8Array(Namco54xxDac.CHANNEL_COUNT);
     this.events = [];
     this.filters = Array.from({ length: Namco54xxDac.CHANNEL_COUNT }, () => ({ x1: 0, x2: 0, y1: 0, y2: 0 }));
     this.coefficients = new Array(Namco54xxDac.CHANNEL_COUNT);
@@ -26,6 +27,7 @@ export class Namco54xxDac {
 
   reset() {
     this.channelData.fill(0);
+    this.renderState.fill(0);
     this.events.length = 0;
     for (const f of this.filters) f.x1 = f.x2 = f.y1 = f.y2 = 0;
   }
@@ -61,9 +63,7 @@ export class Namco54xxDac {
     if (!out.length || endTick <= startTick) return out;
     this.events.sort((a, b) => a.tick - b.tick);
     let eventIndex = 0;
-    const state = new Uint8Array(this.channelData);
-    // Reconstruct state at the start of this block from retained events.
-    state.fill(0);
+    const state = this.renderState;
     while (eventIndex < this.events.length && this.events[eventIndex].tick <= startTick) {
       const e = this.events[eventIndex++]; state[e.channel] = e.value;
     }
@@ -84,6 +84,7 @@ export class Namco54xxDac {
     let cut = 0;
     while (cut < this.events.length && this.events[cut].tick <= endTick) cut++;
     if (cut) this.events.splice(0, cut);
+    this.renderState.set(state);
     return out;
   }
 
