@@ -5,10 +5,40 @@ import { PolePositionWSG } from './polepos-wsg.js';
 import './polepos-voices.js';
 
 export class EmulatorConfig {
+  static MASTER_CLOCK = 24_576_000;
+  static CPU_CLOCK = 3_072_000;
+  static CYCLES_PER_FRAME = 50_688;
+  static TARGET_FPS = EmulatorConfig.CPU_CLOCK / EmulatorConfig.CYCLES_PER_FRAME;
+
   constructor() {
-    this.roms=ROM_CONFIG;
-    this.display={width:256,height:224};
-    this.performance={cpuClock:3072000,cyclesPerFrame:50688,targetFPS:3072000/50688};
+    this.display = {
+      orientation: "landscape",
+      width: 256,
+      height: 224,
+      scale: 2,
+      pixelated: true
+    };
+    this.performance = {
+      cpuClock: EmulatorConfig.CPU_CLOCK,
+      cyclesPerFrame: EmulatorConfig.CYCLES_PER_FRAME,
+      targetFPS: EmulatorConfig.TARGET_FPS,
+      interleaveQuantum: 64,
+      maxCatchupFrames: 6
+    };
+    this.audio = {
+      enabled: true,
+      masterVolume: 0.45,
+      bufferAheadSeconds: 0.15,
+      startupLeadSeconds: 0.02
+    };
+    this.input = {
+      preventScroll: true
+    };
+    this.debug = {
+      showOverlay: false,
+      logLevel: "info"
+    };
+    this.roms = ROM_CONFIG;
   }
 }
 class AudioManager {
@@ -28,7 +58,7 @@ class AudioManager {
   stop(){for(const source of this.sources){source.stop();source.disconnect();}this.sources.clear();this.next=0;}
   frame(core){
     if(!this.context || !this.wsg)return;
-    this.fraction+=this.context.sampleRate*core.frameCycles/3072000;
+    this.fraction+=this.context.sampleRate*core.frameCycles/EmulatorConfig.CPU_CLOCK;
     const count=Math.floor(this.fraction);this.fraction-=count;
     const samples=new Float32Array(count);
     this.wsg.render(samples,Boolean(core.engineLatch().clson));
@@ -108,7 +138,7 @@ class PolePositionApp {
   frame(now){
     if(this.running&&this.core){
       this.accumulator+=Math.min(now-this.previous,100);const interval=1000/this.config.performance.targetFPS;
-      let frames=0;while(this.accumulator>=interval&&frames++<6){this.core.runFrame();this.audio.frame(this.core);this.accumulator-=interval;}
+      let frames=0;while(this.accumulator>=interval&&frames++<this.config.performance.maxCatchupFrames){this.core.runFrame();this.audio.frame(this.core);this.accumulator-=interval;}
       this.core.render();
     }
     this.previous=now;requestAnimationFrame(t=>this.frame(t));
