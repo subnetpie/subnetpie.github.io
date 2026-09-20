@@ -2278,7 +2278,7 @@ class GalagaEmulator {
     const dac54 = new Float32Array(count);
     this.soundChip.renderMono(wsg);
     this.namco54xxDac.render(dac54, startTick, endTick);
-    for (let i = 0; i < count; i++) wsg[i] += dac54[i];
+    // MAME Galaga routes the Namco WSG at 0.25 and the 54XX discrete\n    // network at 0.90. Namco54xxDac already applies its discrete route gain.\n    for (let i = 0; i < count; i++) wsg[i] = wsg[i] * 0.25 + dac54[i];
     this.audio.push(wsg, this.soundChip.sampleRate);
   }
 
