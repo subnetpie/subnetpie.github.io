@@ -7,3 +7,5 @@ Scans retrieved from Arcade Database on 2026-09-19. Original promotional artwork
 - scramble.webp: https://adb.arcadeitalia.net/media/mame.current/flyers/scramble.png
 - galaga.webp: https://adb.arcadeitalia.net/media/mame.current/flyers/galaga.png
 - bosco.webp: https://adb.arcadeitalia.net/media/mame.current/flyers/bosco.png
+
+- polepos.webp (retrieved 2026-09-20): https://adb.arcadeitalia.net/media/mame.current/flyers/polepos.png
