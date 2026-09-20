@@ -1,220 +1,18 @@
 import { Z80 } from "../../cpu/z80.js";
+import { NamcoWSG } from "../../chips/NamcoWSG.js";
+import { EmulatorAudioWorklet } from "../../audio/EmulatorAudioWorklet.js";
 
 //=====================================================================
 // - MS. PAC-MAN EMULATOR -
 //=====================================================================
 // ── Audio ───────────────────────────────────────────────────────────
-class NamcoWSG {
- // ── 1. Worklet source ─────────────────────────────────────────────────
- static #WORKLET_SRC = `
-class NamcoWSGProcessor extends AudioWorkletProcessor {
-  constructor({ processorOptions: { waveData } }) {
-    super();
-    this.wave    = new Uint8Array(waveData);
-    this.accum   = new Float64Array(3);
-    this.voices  = [
-      { freq: 0, wave: 0, vol: 0 },
-      { freq: 0, wave: 0, vol: 0 },
-      { freq: 0, wave: 0, vol: 0 },
-    ];
-    this.enabled = false;
-    this.step    = 96000 / sampleRate;
-    this.port.onmessage = ({ data }) => {
-      if (data.type === 'voices')  this.voices  = data.v;
-      if (data.type === 'enabled') this.enabled = data.v;
-    };
-  }
-
-  process(_inputs, outputs) {
-    const ch = outputs[0][0];
-    if (!ch) return true;
-    if (!this.enabled) { ch.fill(0); return true; }
-
-    const { wave, accum, voices, step } = this;
-    const WRAP = 0x100000;
-
-    for (let i = 0; i < ch.length; i++) {
-      let s = 0;
-      for (let v = 0; v < 3; v++) {
-        const { freq, wave: w, vol } = voices[v];
-        if (!vol || !freq) continue;
-        accum[v] = (accum[v] + freq * step) % WRAP;
-        const pos = (accum[v] | 0) >> 15 & 0x1f;
-        s += (wave[w * 32 + pos] - 8) * vol;
-      }
-      ch[i] = s / 315;
-    }
-    return true;
-  }
-}
-registerProcessor('namco-wsg', NamcoWSGProcessor);
-`;
-
- // ── 2. Constructor ─────────────────────────────────────────────────────────
- constructor(waveformProm) {
-  this.waveData = new Uint8Array(256);
-  for (let i = 0; i < 256; i++) this.waveData[i] = waveformProm[i] & 0x0f;
-
-  this.regs = new Uint8Array(32);
-  this.voices = [
-   { freq: 0, wave: 0, vol: 0 },
-   { freq: 0, wave: 0, vol: 0 },
-   { freq: 0, wave: 0, vol: 0 }
-  ];
-  this.enabled = false;
-  this._ready = false;
-  this.audioCtx = null;
-  this.gainNode = null;
-  this.worklet = null;
-  this.fxChain = null;
- }
-
- // ── 3. Register writes ─────────────────────────────────────────────────────
- writeReg(offset, nibble) {
-  this.regs[offset & 0x1f] = nibble & 0x0f;
-  this._refreshVoices();
-  this.worklet?.port.postMessage({ type: "voices", v: this.voices });
- }
-
- _refreshVoices() {
-  const r = this.regs;
-  this.voices[0].freq =
-   r[0x10] |
-   (r[0x11] << 4) |
-   (r[0x12] << 8) |
-   (r[0x13] << 12) |
-   (r[0x14] << 16);
-  this.voices[0].wave = r[0x05] & 0x07;
-  this.voices[0].vol = r[0x15] & 0x0f;
-
-  this.voices[1].freq =
-   (r[0x16] << 4) | (r[0x17] << 8) | (r[0x18] << 12) | (r[0x19] << 16);
-  this.voices[1].wave = r[0x0a] & 0x07;
-  this.voices[1].vol = r[0x1a] & 0x0f;
-
-  this.voices[2].freq =
-   (r[0x1b] << 4) | (r[0x1c] << 8) | (r[0x1d] << 12) | (r[0x1e] << 16);
-  this.voices[2].wave = r[0x0f] & 0x07;
-  this.voices[2].vol = r[0x1f] & 0x0f;
- }
-
- // ── 4. Lifecycle ───────────────────────────────────────────────────────────
- init() {
-  this.voices.forEach((v) => {
-   v.freq = 0;
-   v.wave = 0;
-   v.vol = 0;
-  });
-  this._ready = false;
- }
-
- // ── 5. Pac-Man analog output-stage model ───────────────────────────────────
- _attachFxChain() {
-  const { audioCtx: ctx, worklet, gainNode } = this;
-  if (!ctx || !worklet) return;
-
-  const hp = ctx.createBiquadFilter();
-  hp.type = "highpass";
-  hp.frequency.value = 80;
-  hp.Q.value = 0.5;
-
-  const lp = ctx.createBiquadFilter();
-  lp.type = "lowpass";
-  lp.frequency.value = 5500;
-  lp.Q.value = 0.6;
-
-  worklet.disconnect();
-  worklet.connect(hp);
-  hp.connect(lp);
-  lp.connect(gainNode);
-
-  this.fxChain = { hp, lp };
- }
-
- // ── 6. Audio init ──────────────────────────────────────────────────────────
- async _initAudio() {
-  if (this._ready) return;
-  try {
-   this.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-   this.gainNode = this.audioCtx.createGain();
-   this.gainNode.gain.value = 0.85;
-   this.gainNode.connect(this.audioCtx.destination);
-
-   const blob = new Blob([NamcoWSG.#WORKLET_SRC], {
-    type: "application/javascript"
-   });
-   const url = URL.createObjectURL(blob);
-   await this.audioCtx.audioWorklet.addModule(url);
-   URL.revokeObjectURL(url);
-
-   this.worklet = new AudioWorkletNode(this.audioCtx, "namco-wsg", {
-    numberOfInputs: 0,
-    numberOfOutputs: 1,
-    outputChannelCount: [1],
-    processorOptions: { waveData: Array.from(this.waveData) }
-   });
-   this.worklet.connect(this.gainNode);
-   this._ready = true;
-  } catch (e) {
-   console.warn("[WSG] Audio init failed:", e);
-  }
- }
-
- // _initAudio() is always called regardless of en, so the AudioContext is
- // created on the first call (which must be inside a user gesture).
- async setEnabled(en) {
-  this.enabled = en;
-  if (!this._ready) await this._initAudio();
-  if (en) {
-   if (!this.fxChain && this._ready) this._attachFxChain();
-   if (this.audioCtx?.state === "suspended") await this.audioCtx.resume();
-  }
-  this.worklet?.port.postMessage({ type: "enabled", v: en });
- }
-
- // ── 7. Teardown ────────────────────────────────────────────────────────────
- destroy() {
-  this.enabled = false;
-  this.worklet?.port.postMessage({ type: "enabled", v: false });
-  this.worklet?.disconnect();
-  this.gainNode?.disconnect();
-  this.audioCtx?.close();
-  this.audioCtx = null;
-  this.worklet = null;
-  this.fxChain = null;
-  this._ready = false;
- }
-
- // Silence and zero voice state without closing the AudioContext.
- // Used by _coldBoot so the AudioContext survives across ROM reloads.
- reset() {
-  this.voices.forEach((v) => {
-   v.freq = 0;
-   v.wave = 0;
-   v.vol = 0;
-  });
-  this.regs.fill(0);
-  if (this.worklet) {
-   // Silence the worklet immediately
-   this.worklet.port.postMessage({ type: "voices", v: this.voices });
-   this.worklet.port.postMessage({ type: "enabled", v: false });
-  }
-  this.enabled = false;
- }
-}
 async function ensureAudio() {
  const emu = window.pacmanEmulator;
- if (!emu?.wsg || emu.wsg._ready) return;
- try {
-  await emu.wsg.setEnabled(emu.soundEnable); // init + replay pending state in one call
- } catch (e) {
-  console.warn("[EMU] ensureAudio failed:", e);
- }
+ if (!emu?.audio) return;
+ try { await emu.audio.unlock(); emu.audio.setEnabled(emu.soundEnable); }
+ catch (e) { console.warn("[EMU] ensureAudio failed:", e); }
 }
-function resumeAudio() {
- const wsg = window.pacmanEmulator?.wsg;
- if (wsg?.audioCtx?.state === "suspended") wsg.audioCtx.resume();
-}
+function resumeAudio() { window.pacmanEmulator?.audio?.resume(); }
 
 // ── Browser Helpers ──────────────────────────────────────────────────
 document.addEventListener("DOMContentLoaded", () => {
@@ -449,6 +247,8 @@ class ProtectDecode {
 // ── Main ─────────────────────────────────────────────────────────────
 class jsMsPacMan {
  constructor() {
+  this.audio = new EmulatorAudioWorklet();
+  this.audioFrameSamples = 0;
   this.canvas = document.getElementById("gameCanvas");
   this.ctx = this.canvas.getContext("2d");
 
@@ -776,7 +576,8 @@ class jsMsPacMan {
       break;
      case 1: // sound enable
       this.soundEnable = val;
-      this.wsg?.setEnabled(val); // fire-and-forget async is fine here
+      this.wsg?.soundEnable(val);
+      this.audio.setEnabled(val); // fire-and-forget async is fine here
       break;
      case 2:
       break; // latch pin 8K — no PCB connection, ignore
@@ -794,7 +595,7 @@ class jsMsPacMan {
    // 0x5040–0x505F: Namco WSG sound registers (reg index = off - 0x40, range 0x00–0x1F)
    // MAME: map(0x5040,0x505f).mirror(0xaf00).w(m_namco_sound, FUNC(namco_device::pacman_sound_w))
    if (off >= 0x40 && off <= 0x5f) {
-    this.wsg?.writeReg(off - 0x40, data & 0x0f);
+    this.wsg?.write(off - 0x40, data & 0x0f);
     return;
    }
 
@@ -842,7 +643,8 @@ class jsMsPacMan {
      break;
     case 0x01:
      this.soundEnable = !!(data & 1);
-     if (this.wsg?.ready) this.wsg.setEnabled(this.soundEnable);
+     this.wsg?.soundEnable(this.soundEnable);
+    this.audio.setEnabled(this.soundEnable);
      break;
     case 0x02:
      /* Aux CPU (ignored in single CPU decode) */ break;
@@ -866,7 +668,7 @@ class jsMsPacMan {
   if (offset >= 0x40 && offset <= 0x5f) {
    const reg = offset - 0x40;
    this.ioRegisters[offset] = data;
-   this.wsg?.writeReg(reg, data & 0x0f);
+   this.wsg?.write(reg, data & 0x0f);
    return;
   }
 
@@ -1116,6 +918,17 @@ class jsMsPacMan {
   );
  }
 
+ renderAudioFrame() {
+  if (!this.wsg || !this.audio.ready) return;
+  this.audioFrameSamples += this.wsg.sampleRate / (1000 / this.targetInterval);
+  const count = Math.floor(this.audioFrameSamples);
+  this.audioFrameSamples -= count;
+  if (!count) return;
+  const pcm = new Float32Array(count);
+  this.wsg.renderMono(pcm);
+  this.audio.push(pcm);
+ }
+
  // Track the RAF handle so stop() can cancel it cleanly
  _rafHandle = null;
 
@@ -1138,6 +951,7 @@ class jsMsPacMan {
     cycles -= c;
    }
    this.frameCounter++;
+   this.renderAudioFrame();
    if (this.interruptEnable) this.cpu.requestIrq(this.cpu.vectorLatch);
    this.accumulator -= this.targetInterval;
   }
@@ -1155,15 +969,12 @@ class jsMsPacMan {
   this.chars = this.buildChars(this.charRom);
   this.sprites = this.buildSprites(this.spriteRom);
 
-  // Keep the AudioContext alive across reboots.
-  // destroy() + new NamcoWSG() would close the AudioContext; recreating it
-  // after an await-chain fails on iOS Safari (no user gesture).
-  if (this.wsg?.ready) {
-   this.wsg.reset(); // silence voices, keep AudioContext open
-  } else {
-   this.wsg?.destroy(); // first boot or unrecoverable — full init
-   this.wsg = new NamcoWSG(this.waveformProm);
-  }
+  // Reset machine audio without touching the browser AudioContext.
+  if (this.wsg) this.wsg.reset();
+  else this.wsg = new NamcoWSG({ waveformProm: this.waveformProm });
+  this.audio.clear();
+  this.audio.setEnabled(false);
+  this.audioFrameSamples = 0;
 
   this.decodeEnabled = false;
   this.soundEnable = false; // game will re-enable via 0x5001 latch write
