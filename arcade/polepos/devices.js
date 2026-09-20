@@ -1,4 +1,4 @@
-import { MB8843 } from '../../chips/namco.js';
+import { MB8843 } from '../../chips/MB88xx.js';
 
 // Small event queue in the board's 24.576 MHz master-clock domain.
 export class BoardScheduler {
