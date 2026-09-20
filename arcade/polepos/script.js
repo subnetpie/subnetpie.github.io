@@ -1,7 +1,7 @@
 import { PolePosition } from './pole-position.js';
 import { ROMLoader } from './rom-loader.js';
 import { ROM_CONFIG } from './rom-manifest.js';
-import { PolePositionWSG } from './polepos-wsg.js';
+import { PolePositionWSG } from '../../chips/NamcoWSG.js';
 import './polepos-voices.js';
 
 export class EmulatorConfig {
