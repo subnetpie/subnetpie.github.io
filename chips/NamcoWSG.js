@@ -1,10 +1,23 @@
-// Namco WSG shared sound device.
-// Behavior follows MAME 0.289 src/devices/sound/namco.cpp.
-// Supports the PROM-based 3-voice mono WSG and Pole Position 8-voice/4-output WSG.
+// Namco waveform sound generator hardware model.
+// MAME 0.289 namco.cpp/namco.h is the behavioral reference.
+// This module deliberately contains no Web Audio or browser lifecycle code.
 
 class NamcoWSGVoice {
-  constructor() { this.volume=new Uint8Array(4); this.reset(); }
-  reset(){ this.frequency=0; this.waveformSelect=0; this.counter=0; this.volume.fill(0); }
+  constructor() {
+    this.volume = new Int32Array(4);
+    this.reset();
+  }
+  reset() {
+    this.frequency = 0;
+    this.counter = 0;
+    this.volume.fill(0);
+    this.waveformSelect = 0;
+    this.noiseSw = 0;
+    this.noiseState = 0;
+    this.noiseSeed = 1;
+    this.noiseCounter = 0;
+    this.noiseHold = 0;
+  }
 }
 
 export class NamcoWSG {
@@ -12,104 +25,174 @@ export class NamcoWSG {
   static VARIANT_POLEPOS = "polepos";
   static INTERNAL_RATE = 192000;
 
-  constructor({variant=NamcoWSG.VARIANT_3_VOICE, clock, sampleRate=48000, waveformProm}={}) {
+  constructor({ variant = NamcoWSG.VARIANT_3_VOICE, clock, waveformProm } = {}) {
     if (!(waveformProm instanceof Uint8Array) || waveformProm.length < 0x100)
       throw new TypeError("NamcoWSG requires a 0x100-byte waveform PROM");
-    this.variant=variant;
-    this.voiceCount=variant===NamcoWSG.VARIANT_POLEPOS?8:3;
-    this.outputCount=variant===NamcoWSG.VARIANT_POLEPOS?4:1;
-    this.clock=clock ?? (variant===NamcoWSG.VARIANT_POLEPOS?24000:96000);
-    this.sampleRate=sampleRate;
-    this.prom=waveformProm;
-    this.regs=new Uint8Array(variant===NamcoWSG.VARIANT_POLEPOS?0x40:0x20);
-    this.voices=Array.from({length:this.voiceCount},()=>new NamcoWSGVoice());
-    this.soundEnabled=true;
-    this._configureClock();
+
+    this.variant = variant;
+    this.voiceCount = variant === NamcoWSG.VARIANT_POLEPOS ? 8 : 3;
+    this.outputCount = variant === NamcoWSG.VARIANT_POLEPOS ? 4 : 1;
+    this.clock = clock ?? (variant === NamcoWSG.VARIANT_POLEPOS ? 24000 : 96000);
+    this.prom = waveformProm;
+    this.regs = new Uint8Array(variant === NamcoWSG.VARIANT_POLEPOS ? 0x40 : 0x20);
+    this.voices = Array.from({ length: this.voiceCount }, () => new NamcoWSGVoice());
+    this.soundEnabled = true;
+    this.configureClock();
   }
 
-  _configureClock(){
-    let c=this.clock, multiple=0;
-    while(c<NamcoWSG.INTERNAL_RATE){c*=2;multiple++;}
-    this.namcoClock=c;
-    this.fracBits=multiple+15;
+  configureClock() {
+    let clock = this.clock;
+    let multiple = 0;
+    while (clock < NamcoWSG.INTERNAL_RATE) {
+      clock *= 2;
+      multiple++;
+    }
+    this.namcoClock = clock;
+    this.fracBits = multiple + 15;
+    this.sampleRate = clock; // MAME stream rate
   }
 
-  reset(){ this.regs.fill(0); for(const v of this.voices)v.reset(); this.soundEnabled=true; }
-  soundEnable(state){ this.soundEnabled=!!state; }
-  read(offset){ return this.regs[offset&(this.regs.length-1)]; }
-
-  write(offset,data){
-    return this.variant===NamcoWSG.VARIANT_POLEPOS?
-      this.poleposSoundWrite(offset,data):this.pacmanSoundWrite(offset,data);
+  reset() {
+    this.regs.fill(0);
+    for (const voice of this.voices) voice.reset();
+    // MAME starts enabled; reset does not turn this into browser mute state.
+    this.soundEnabled = true;
   }
 
-  pacmanSoundWrite(offset,data){
-    offset&=0x1f; data&=0x0f;
-    if(this.regs[offset]===data)return;
-    this.regs[offset]=data;
-    let ch=offset<0x10?Math.trunc((offset-5)/5):(offset===0x10?0:Math.trunc((offset-0x11)/5));
-    if(ch<0||ch>=3)return;
-    const v=this.voices[ch], key=offset-ch*5;
-    if(key===0x05)v.waveformSelect=data&7;
-    else if(key>=0x10&&key<=0x14){
-      v.frequency=(ch===0?this.regs[0x10]:0)+(this.regs[ch*5+0x11]<<4)+(this.regs[ch*5+0x12]<<8)+(this.regs[ch*5+0x13]<<12)+(this.regs[ch*5+0x14]<<16);
-    } else if(key===0x15)v.volume[0]=data;
+  soundEnable(state) { this.soundEnabled = !!state; }
+  read(offset) { return this.regs[offset & (this.regs.length - 1)]; }
+
+  write(offset, data) {
+    if (this.variant === NamcoWSG.VARIANT_POLEPOS)
+      this.poleposSoundWrite(offset, data);
+    else
+      this.pacmanSoundWrite(offset, data);
   }
 
-  poleposSoundWrite(offset,data){
-    offset&=0x3f; data&=0xff;
-    if(this.regs[offset]===data)return;
-    this.regs[offset]=data;
-    const ch=(offset&0x1f)>>2, v=this.voices[ch];
-    switch(offset&0x23){
-      case 0x00: case 0x01:
-        v.frequency=this.regs[ch*4]|(this.regs[ch*4+1]<<8); break;
-      case 0x23:
-        v.waveformSelect=data&7;
-        // fall through
-      case 0x02: case 0x03:
-        v.volume[0]=this.regs[ch*4+3]>>4;
-        v.volume[1]=this.regs[ch*4+3]&15;
-        v.volume[2]=this.regs[ch*4+0x23]>>4;
-        v.volume[3]=this.regs[ch*4+2]>>4;
-        if(this.regs[ch*4+0x23]&8)v.volume.fill(0);
+  pacmanSoundWrite(offset, data) {
+    offset &= 0x1f;
+    data &= 0x0f;
+    if (this.regs[offset] === data) return;
+    this.regs[offset] = data;
+
+    let ch;
+    if (offset < 0x10) ch = Math.trunc((offset - 5) / 5);
+    else if (offset === 0x10) ch = 0;
+    else ch = Math.trunc((offset - 0x11) / 5);
+    if (ch < 0 || ch >= 3) return;
+
+    const voice = this.voices[ch];
+    switch (offset - ch * 5) {
+      case 0x05:
+        voice.waveformSelect = data & 7;
+        break;
+      case 0x10:
+      case 0x11:
+      case 0x12:
+      case 0x13:
+      case 0x14:
+        voice.frequency = ch === 0 ? this.regs[0x10] : 0;
+        voice.frequency += this.regs[ch * 5 + 0x11] << 4;
+        voice.frequency += this.regs[ch * 5 + 0x12] << 8;
+        voice.frequency += this.regs[ch * 5 + 0x13] << 12;
+        voice.frequency += this.regs[ch * 5 + 0x14] << 16;
+        voice.frequency >>>= 0;
+        break;
+      case 0x15:
+        voice.volume[0] = data;
         break;
     }
   }
 
-  _wave(pos){ return (this.prom[pos&0xff]&15)-8; }
+  poleposSoundWrite(offset, data) {
+    offset &= 0x3f;
+    data &= 0xff;
+    if (this.regs[offset] === data) return;
+    this.regs[offset] = data;
 
-  renderMono(out,enabled=this.soundEnabled){
-    out.fill(0); if(!enabled)return out;
-    const scale=Math.pow(2,this.fracBits), ratio=this.namcoClock/this.sampleRate;
-    for(const v of this.voices){
-      const vol=v.volume[0]; if(!vol)continue;
-      for(let i=0;i<out.length;i++){
-        out[i]+=this._wave((v.waveformSelect<<5)+((v.counter>>>this.fracBits)&31))*vol/128;
-        v.counter=(v.counter+v.frequency*ratio)%(scale*32);
+    const ch = (offset & 0x1f) >> 2;
+    const voice = this.voices[ch];
+    switch (offset & 0x23) {
+      case 0x00:
+      case 0x01:
+        voice.frequency = (this.regs[ch * 4] | (this.regs[ch * 4 + 1] << 8)) >>> 0;
+        break;
+      case 0x23:
+        voice.waveformSelect = data & 7;
+        // fall through
+      case 0x02:
+      case 0x03:
+        voice.volume[0] = this.regs[ch * 4 + 3] >> 4;
+        voice.volume[1] = this.regs[ch * 4 + 3] & 0x0f;
+        voice.volume[2] = this.regs[ch * 4 + 0x23] >> 4;
+        voice.volume[3] = this.regs[ch * 4 + 2] >> 4;
+        if (this.regs[ch * 4 + 0x23] & 8) voice.volume.fill(0);
+        break;
+    }
+  }
+
+  waveform(position) {
+    // NAMCO_WSG and POLEPOS_WSG use unpacked waveform data: low nibble only.
+    return (this.prom[position & 0xff] & 0x0f) - 8;
+  }
+
+  renderMono(out) {
+    out.fill(0);
+    if (!this.soundEnabled) return out;
+    const mixRes = 128 * this.voiceCount;
+    for (const voice of this.voices) {
+      const volume = voice.volume[0];
+      if (!volume) continue;
+      for (let i = 0; i < out.length; i++) {
+        const pos = (voice.counter >>> this.fracBits) & 0x1f;
+        out[i] += this.waveform((voice.waveformSelect << 5) + pos) * volume / mixRes;
+        voice.counter = (voice.counter + voice.frequency) >>> 0;
       }
     }
     return out;
   }
 
-  render(out,enabled=this.soundEnabled){
-    if(this.variant!==NamcoWSG.VARIANT_POLEPOS)return this.renderMono(out,enabled);
-    out.fill(0); if(!enabled)return out;
-    const scale=Math.pow(2,this.fracBits), ratio=this.namcoClock/this.sampleRate;
-    for(const v of this.voices){
-      const vol=(v.volume[0]+v.volume[1]+v.volume[2]+v.volume[3])/4;
-      if(!vol)continue;
-      for(let i=0;i<out.length;i++){
-        out[i]+=this._wave((v.waveformSelect<<5)+((v.counter>>>this.fracBits)&31))*vol/128;
-        v.counter=(v.counter+v.frequency*ratio)%(scale*32);
-      }
+  renderOutputs(outputs) {
+    if (this.variant !== NamcoWSG.VARIANT_POLEPOS) {
+      const mono = Array.isArray(outputs) ? outputs[0] : outputs;
+      return this.renderMono(mono);
     }
-    return out;
+    if (!Array.isArray(outputs) || outputs.length < 4)
+      throw new TypeError("Pole Position WSG requires four output buffers");
+    const count = outputs[0].length;
+    for (let o = 0; o < 4; o++) outputs[o].fill(0);
+    if (!this.soundEnabled) return outputs;
+    const mixRes = 128 * this.voiceCount;
+    for (const voice of this.voices) {
+      let counter = voice.counter >>> 0;
+      for (let o = 0; o < 4; o++) {
+        const volume = voice.volume[o];
+        if (!volume) continue;
+        let c = counter;
+        const out = outputs[o];
+        for (let i = 0; i < count; i++) {
+          const pos = (c >>> this.fracBits) & 0x1f;
+          out[i] += this.waveform((voice.waveformSelect << 5) + pos) * volume / mixRes;
+          c = (c + voice.frequency) >>> 0;
+        }
+        counter = c;
+      }
+      voice.counter = counter;
+    }
+    return outputs;
+  }
+
+  render(out) {
+    if (this.variant === NamcoWSG.VARIANT_POLEPOS)
+      throw new Error("Pole Position WSG has four hardware outputs; use renderOutputs()");
+    return this.renderMono(out);
   }
 }
 
 export class PolePositionWSG extends NamcoWSG {
-  constructor(sampleRate,waveformProm,clock=24000){
-    super({variant:NamcoWSG.VARIANT_POLEPOS,clock,sampleRate,waveformProm});
+  constructor(sampleRate, waveformProm, clock = 24000) {
+    // sampleRate is retained in the compatibility signature only.
+    void sampleRate;
+    super({ variant: NamcoWSG.VARIANT_POLEPOS, clock, waveformProm });
   }
 }
