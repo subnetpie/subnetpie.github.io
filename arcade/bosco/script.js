@@ -1,4 +1,4 @@
-import { Namco06XX, MB88xx, MB8841, MB8842, MB8843, MB8844, Namco51XX, Namco52XX, Namco54XX } from "../../chips/namco.js";
+import { Namco06XX } from "../../chips/Namco06XX.js";\nimport { MB88xx, MB8841, MB8842, MB8843, MB8844 } from "../../chips/MB88xx.js";\nimport { Namco51XX } from "../../chips/Namco51XX.js";\nimport { Namco52XX } from "../../chips/Namco52XX.js";\nimport { Namco54XX } from "../../chips/Namco54XX.js";
 import { Z80 } from "../../cpu/z80.js";
 
 function _defineProperty(obj, key, value) {if (key in obj) {Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true });} else {obj[key] = value;}return obj;}class EmulatorConfig {
