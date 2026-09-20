@@ -3055,6 +3055,21 @@ Cause: ${GalagaApp.formatError(error.cause)}`;
       }
     }, { passive: true });
 
+    const audioDiag = document.createElement("div");
+    audioDiag.id = "galaga54Diag";
+    audioDiag.style.cssText =
+      "position:fixed;top:0;left:0;right:0;z-index:2147483647;" +
+      "padding:5px;background:#111;color:#0f0;font:11px monospace;text-align:center";
+    document.body.appendChild(audioDiag);
+    setInterval(() => {
+      const d = this.emulator.namco54xxDac;
+      audioDiag.textContent =
+        "54XX writes=" + d.totalWrites +
+        " ch=" + Array.from(d.channelWrites).join("/") +
+        " data=" + Array.from(d.channelData).join("/") +
+        " peak=" + d.lastPeak.toFixed(4);
+    }, 250);
+
     return true;
   }
 
