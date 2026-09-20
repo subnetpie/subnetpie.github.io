@@ -1,4 +1,7 @@
-import { Z80 } from "../../cpu/z80.js";\nimport { Namco06XX } from "../../chips/Namco06XX.js";\nimport { Namco51XX } from "../../chips/Namco51XX.js";\nimport { Namco54XX } from "../../chips/Namco54XX.js";
+import { Z80 } from "../../cpu/z80.js";
+import { Namco06XX } from "../../chips/Namco06XX.js";
+import { Namco51XX } from "../../chips/Namco51XX.js";
+import { Namco54XX } from "../../chips/Namco54XX.js";
 
 class EmulatorConfig {
   static MASTER_CLOCK = 18_432_000;
@@ -4356,7 +4359,8 @@ class GalagaApp {
       let text = `${error.name}: ${error.message || "(no message)"}`;
 
       if (error.cause) {
-        text += `\nCause: ${GalagaApp.formatError(error.cause)}`;
+        text += `
+Cause: ${GalagaApp.formatError(error.cause)}`;
       }
 
       return text;
@@ -4549,7 +4553,8 @@ class GalagaApp {
 
     console.groupEnd();
 
-    const displayText = `FATAL ERROR — frame ${frame}\n${message}`;
+    const displayText = `FATAL ERROR — frame ${frame}
+${message}`;
 
     const statusBar = document.getElementById("statusBar");
 
