@@ -3066,8 +3066,10 @@ Cause: ${GalagaApp.formatError(error.cause)}`;
       audioDiag.textContent =
         "54XX writes=" + d.totalWrites +
         " ch=" + Array.from(d.channelWrites).join("/") +
+        " nz=" + Array.from(d.nonzeroWrites).join("/") +
         " data=" + Array.from(d.channelData).join("/") +
-        " peak=" + d.lastPeak.toFixed(4);
+        " peak=" + d.lastPeak.toFixed(4) +
+        " hold=" + d.peakHold.toFixed(4);
     }, 250);
 
     return true;
