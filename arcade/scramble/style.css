@@ -28,11 +28,10 @@ body {
   background: #000;
   image-rendering: pixelated;
   image-rendering: crisp-edges;
-  transform: translate(-50%, -50%) rotate(90deg);
+  transform: translate(-50%, -50%) rotate(0deg);
   transform-origin: center;
   touch-action: none;
 }
-
 /* Shared button behavior */
 button {
  -webkit-appearance: none;
