@@ -144,4 +144,6 @@ class PolePositionEmulator {
     this.previous=now;requestAnimationFrame(t=>this.frame(t));
   }
 }
-export class PolePositionApp extends PolePositionEmulator {}\n\nnew PolePositionApp();
+export class PolePositionApp extends PolePositionEmulator {}
+
+new PolePositionApp();
