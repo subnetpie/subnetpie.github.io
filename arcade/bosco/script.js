@@ -1,4 +1,8 @@
-import { Namco06XX } from "../../chips/Namco06XX.js";\nimport { MB88xx, MB8841, MB8842, MB8843, MB8844 } from "../../chips/MB88xx.js";\nimport { Namco51XX } from "../../chips/Namco51XX.js";\nimport { Namco52XX } from "../../chips/Namco52XX.js";\nimport { Namco54XX } from "../../chips/Namco54XX.js";
+import { Namco06XX } from "../../chips/Namco06XX.js";
+import { MB88xx, MB8841, MB8842, MB8843, MB8844 } from "../../chips/MB88xx.js";
+import { Namco51XX } from "../../chips/Namco51XX.js";
+import { Namco52XX } from "../../chips/Namco52XX.js";
+import { Namco54XX } from "../../chips/Namco54XX.js";
 import { Z80 } from "../../cpu/z80.js";
 
 function _defineProperty(obj, key, value) {if (key in obj) {Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true });} else {obj[key] = value;}return obj;}class EmulatorConfig {
@@ -4809,7 +4813,8 @@ class BoscoApp {
       let text = `${error.name}: ${error.message || "(no message)"}`;
 
       if (error.cause) {
-        text += `\nCause: ${BoscoApp.formatError(error.cause)}`;
+        text += `
+Cause: ${BoscoApp.formatError(error.cause)}`;
       }
 
       return text;
@@ -4949,7 +4954,8 @@ class BoscoApp {
 
     const frame = (_this$emulator$frameC = (_this$emulator = this.emulator) === null || _this$emulator === void 0 ? void 0 : _this$emulator.frameCounter) !== null && _this$emulator$frameC !== void 0 ? _this$emulator$frameC : 0;
 
-    const displayText = `FATAL ERROR — frame ${frame}\n${message}`;
+    const displayText = `FATAL ERROR — frame ${frame}
+${message}`;
 
     console.error("[JSBosco] FATAL:", {
       frame,
