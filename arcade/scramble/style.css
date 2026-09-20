@@ -22,8 +22,9 @@ body {
   top: 50%;
   left: 50%;
   display: block;
-  width: min(100vh, calc(100vw * 288 / 224));
-  height: min(100vw, calc(100vh * 224 / 288));
+  width: min(100vw - 2px, 100%);
+  height: auto;
+  aspect-ratio: 7 / 8;
   margin: 0;
   background: #000;
   image-rendering: pixelated;
