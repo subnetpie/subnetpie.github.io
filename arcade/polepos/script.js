@@ -41,7 +41,7 @@ export class EmulatorConfig {
     this.roms = ROM_CONFIG;
   }
 }
-class AudioManager {
+class PolePositionAudio {
   constructor(){this.context=null;this.next=0;this.muted=false;this.sources=new Set();}
   async unlock(){
     if(!this.context){this.context=new AudioContext();this.gain=this.context.createGain();this.gain.gain.value=this.muted?0:0.45;this.gain.connect(this.context.destination);}
@@ -78,9 +78,9 @@ class AudioManager {
     source.start(this.next);this.next+=count/this.context.sampleRate;
   }
 }
-class PolePositionApp {
+class PolePositionEmulator {
   constructor(){
-    this.config=new EmulatorConfig();this.loader=new ROMLoader(this.config.roms);this.audio=new AudioManager();
+    this.config=new EmulatorConfig();this.loader=new ROMLoader(this.config.roms);this.audio=new PolePositionAudio();
     this.canvas=document.querySelector('#gameCanvas');this.status=document.querySelector('#status');
     this.panel=document.querySelector('#loadingPanel');this.play=document.querySelector('#play');
     this.running=false;this.core=null;this.sources=new Map();this.gear=false;this.previous=0;this.accumulator=0;
@@ -144,4 +144,4 @@ class PolePositionApp {
     this.previous=now;requestAnimationFrame(t=>this.frame(t));
   }
 }
-new PolePositionApp();
+export class PolePositionApp extends PolePositionEmulator {}\n\nnew PolePositionApp();
