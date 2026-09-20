@@ -3017,9 +3017,13 @@ Cause: ${GalagaApp.formatError(error.cause)}`;
         })
         .catch((error) => console.warn("[Galaga audio] unlock failed:", error));
     };
-    for (const eventName of ["touchend", "pointerup", "mousedown", "keydown"]) {
-      window.addEventListener(eventName, unlockAudio, { capture: true, passive: true });
-    }
+    // Match the proven Pac-Man/Ms. Pac-Man iOS path: create/resume the
+    // AudioContext on the earliest user-activation event. In particular,
+    // touchstart is more reliable than waiting for touchend/pointerup on iOS.
+    document.addEventListener("click", unlockAudio);
+    document.addEventListener("touchstart", unlockAudio, { passive: true });
+    document.addEventListener("keydown", unlockAudio);
+    document.addEventListener("mousedown", () => void this.emulator.audio.resume());
 
     return true;
   }
