@@ -63,9 +63,31 @@ export class EmulatorAudioWorklet {
     this.node?.port.postMessage({ type: "enabled", value: this.enabled });
   }
 
-  push(samples) {
+  push(samples, sourceSampleRate = null) {
     if (!this.ready || !(samples instanceof Float32Array) || !samples.length) return;
-    const copy = samples.slice();
+
+    const sourceRate = Number(sourceSampleRate) || this.context?.sampleRate || 0;
+    const outputRate = this.context?.sampleRate || sourceRate;
+    let copy;
+
+    if (sourceRate > 0 && outputRate > 0 && sourceRate !== outputRate) {
+      // Browser boundary only: convert deterministic machine-rate PCM to the
+      // AudioContext rate. Hardware devices continue to run at their MAME rate.
+      const outputLength = Math.max(1, Math.round(samples.length * outputRate / sourceRate));
+      copy = new Float32Array(outputLength);
+      const step = sourceRate / outputRate;
+      for (let i = 0; i < outputLength; i++) {
+        const position = i * step;
+        const index = Math.floor(position);
+        const fraction = position - index;
+        const a = samples[Math.min(index, samples.length - 1)];
+        const b = samples[Math.min(index + 1, samples.length - 1)];
+        copy[i] = a + (b - a) * fraction;
+      }
+    } else {
+      copy = samples.slice();
+    }
+
     this.node.port.postMessage({ type: "pcm", samples: copy.buffer }, [copy.buffer]);
   }
 
