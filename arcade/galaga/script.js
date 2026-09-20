@@ -3028,7 +3028,7 @@ Cause: ${GalagaApp.formatError(error.cause)}`;
 
     // Expose enough state to diagnose iOS audio without coupling the machine
     // devices to WebAudio.
-    window.galagaAudioStatus = () => ({
+    const audioStatus = () => ({
       ready: this.emulator.audio.ready,
       contextState: this.emulator.audio.context?.state ?? "not-created",
       contextSampleRate: this.emulator.audio.context?.sampleRate ?? 0,
@@ -3036,6 +3036,24 @@ Cause: ${GalagaApp.formatError(error.cause)}`;
       enabled: this.emulator.audio.enabled,
       frame: this.emulator.frameCounter
     });
+    window.galagaAudioStatus = audioStatus;
+
+    // iPhone/Safari has no convenient on-device console. A four-finger tap
+    // displays the same diagnostics in the existing status bar.
+    document.addEventListener("touchstart", (event) => {
+      if (event.touches.length !== 4) return;
+      const status = audioStatus();
+      const statusBar = document.getElementById("statusBar");
+      if (statusBar) {
+        statusBar.textContent =
+          "AUDIO " + (status.ready ? "READY" : "NOT READY") +
+          " | ctx=" + status.contextState +
+          " " + status.contextSampleRate + "Hz" +
+          " | machine=" + status.machineSampleRate + "Hz" +
+          " | enabled=" + status.enabled +
+          " | frame=" + status.frame;
+      }
+    }, { passive: true });
 
     return true;
   }
