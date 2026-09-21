@@ -1768,6 +1768,10 @@ class GalagaEmulator {
           this.namco54xx.clearTrace?.();
           this.namco54xx.recordTrace?.("cmd", { value: command });
           if (this.audioBoundaryTrace) this.audioBoundaryTrace.dacHold = 0;
+          // Keep the strongest 54XX-containing PCM block after CMD 20.
+          // This is machine-side data immediately before audio.push(), so it
+          // distinguishes discrete/mix errors from browser transport errors.
+          this.explosionPcmCapture = null;
         }
       },
 
@@ -2275,6 +2279,7 @@ class GalagaEmulator {
 
     this.timing.reset();
     this.audioSampleFraction = 0;
+    this.explosionPcmCapture = null;
     this.audio.clear();
     this.namco54xxDac.reset();
 
@@ -2330,16 +2335,51 @@ class GalagaEmulator {
     this.soundChip.renderMono(wsg);
     this.namco54xxDac.render(dac54, startTick, endTick);
     let wsgPeak = 0, dacPeak = 0, mixPeak = 0;
+    let wsgPeakIndex = -1, dacPeakIndex = -1, mixPeakIndex = -1;
+    let dacFirstIndex = -1, dacLastIndex = -1;
     for (let i = 0; i < count; i++) {
-      wsgPeak = Math.max(wsgPeak, Math.abs(wsg[i]));
-      dacPeak = Math.max(dacPeak, Math.abs(dac54[i]));
+      const wsgAbs = Math.abs(wsg[i]);
+      const dacAbs = Math.abs(dac54[i]);
+      if (wsgAbs > wsgPeak) { wsgPeak = wsgAbs; wsgPeakIndex = i; }
+      if (dacAbs > dacPeak) { dacPeak = dacAbs; dacPeakIndex = i; }
+      if (dacAbs > 1e-7) {
+        if (dacFirstIndex < 0) dacFirstIndex = i;
+        dacLastIndex = i;
+      }
       wsg[i] = wsg[i] * 0.25 + dac54[i];
-      mixPeak = Math.max(mixPeak, Math.abs(wsg[i]));
+      const mixAbs = Math.abs(wsg[i]);
+      if (mixAbs > mixPeak) { mixPeak = mixAbs; mixPeakIndex = i; }
     }
     this.audioBoundaryTrace = {
       wsgPeak, dacPeak, mixPeak,
       dacHold: Math.max(this.audioBoundaryTrace?.dacHold || 0, dacPeak)
     };
+
+    // Capture exactly the strongest frame sent to the browser during the
+    // deterministic self-test explosion. Preserve the separate WSG/54XX
+    // streams as well as the final mixed Float32 block.
+    if (
+      this.explosionBreak?.armed &&
+      dacPeak > (this.explosionPcmCapture?.dacPeak ?? -1)
+    ) {
+      this.explosionPcmCapture = {
+        startTick,
+        endTick,
+        count,
+        sampleRate: this.soundChip.sampleRate,
+        wsgPeak,
+        wsgPeakIndex,
+        dacPeak,
+        dacPeakIndex,
+        dacFirstIndex,
+        dacLastIndex,
+        mixPeak,
+        mixPeakIndex,
+        dac54: Array.from(dac54),
+        mixed: Array.from(wsg)
+      };
+    }
+
     this.audio.push(wsg, this.soundChip.sampleRate);
   }
 
@@ -3146,11 +3186,27 @@ Cause: ${GalagaApp.formatError(error.cause)}`;
             "/" + this.emulator.audioBoundaryTrace.mixPeak.toFixed(3) +
             " h54=" + this.emulator.audioBoundaryTrace.dacHold.toFixed(3)
           : "") +
+        (this.emulator.explosionPcmCapture
+          ? "\\nCAP ticks=" + this.emulator.explosionPcmCapture.startTick +
+            ".." + this.emulator.explosionPcmCapture.endTick +
+            " n=" + this.emulator.explosionPcmCapture.count +
+            " 54=" + this.emulator.explosionPcmCapture.dacPeak.toFixed(4) +
+            "@" + this.emulator.explosionPcmCapture.dacPeakIndex +
+            " mix=" + this.emulator.explosionPcmCapture.mixPeak.toFixed(4) +
+            "@" + this.emulator.explosionPcmCapture.mixPeakIndex +
+            " active=" + this.emulator.explosionPcmCapture.dacFirstIndex +
+            ".." + this.emulator.explosionPcmCapture.dacLastIndex
+          : "") +
         "\\nTap this panel to copy trace\\n" + lines.join("\\n");
     };
     audioDiag.addEventListener("click", async () => {
+      const capture = this.emulator.explosionPcmCapture;
+      const pcmDump = capture
+        ? "\n\nEXPLOSION PCM BLOCK (exact pre-audio.push data)\n" +
+          JSON.stringify(capture)
+        : "";
       const text = traceText() + "\n\nFULL 54XX TRACE\n" +
-        (this.emulator.namco54xx?.dumpTrace?.() ?? "");
+        (this.emulator.namco54xx?.dumpTrace?.() ?? "") + pcmDump;
       try {
         await navigator.clipboard.writeText(text);
         audioDiag.dataset.copied = "1";
