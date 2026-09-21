@@ -89,7 +89,11 @@ class MB88xx {
     this.PC++;
     if (this.PC >= 0x40) {
       this.PC = 0;
-      this.PA = this.PA + 1 & this.pageMask;
+      // MAME keeps PA as the MB88xx's 5-bit page register even on parts
+      // with a narrower external program address bus (e.g. MB8844). The
+      // program space masks the address; PA itself must not be truncated to
+      // programWidth-6 bits because calls/returns preserve PA bit 4.
+      this.PA = (this.PA + 1) & 0xff;
     }
   }
 
@@ -447,7 +451,7 @@ class MB88xx {
       case 0x2c:
         this.SI = this.SI - 1 & 3;
         this.PC = this.SP[this.SI] & 0x3f;
-        this.PA = this.SP[this.SI] >> 6 & this.pageMask;
+        this.PA = this.SP[this.SI] >> 6 & 0x1f;
         this.st = 1;
         break;
       case 0x2d:
@@ -493,13 +497,13 @@ class MB88xx {
         this.inIrq = false;
         this.SI = this.SI - 1 & 3;
         this.PC = this.SP[this.SI] & 0x3f;
-        this.PA = this.SP[this.SI] >> 6 & this.pageMask;
+        this.PA = this.SP[this.SI] >> 6 & 0x1f;
         this.st = this.SP[this.SI] >> 13 & 1;
         this.zf = this.SP[this.SI] >> 14 & 1;
         this.cf = this.SP[this.SI] >> 15 & 1;
         break;
       case 0x3d:
-        this.PA = this.readOp(this.getPC()) & this.pageMask;
+        this.PA = this.readOp(this.getPC()) & 0x1f;
         this.PC = this.A * 4;
         oc++;
         this.st = 1;
