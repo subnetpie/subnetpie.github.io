@@ -2278,15 +2278,7 @@ class GalagaEmulator {
     const dac54 = new Float32Array(count);
     this.soundChip.renderMono(wsg);
     this.namco54xxDac.render(dac54, startTick, endTick);
-    // MAME Galaga routes the Namco WSG at 0.25 and the 54XX discrete\n    // network at 0.90. Namco54xxDac already applies its discrete route gain.\n    let mixedPeak = 0;
-    let dacPeak = 0;
-    for (let i = 0; i < count; i++) {
-      dacPeak = Math.max(dacPeak, Math.abs(dac54[i]));
-      wsg[i] = wsg[i] * 0.25 + dac54[i];
-      mixedPeak = Math.max(mixedPeak, Math.abs(wsg[i]));
-    }
-    this.audioDiagDacPeak = Math.max(this.audioDiagDacPeak || 0, dacPeak);
-    this.audioDiagMixedPeak = Math.max(this.audioDiagMixedPeak || 0, mixedPeak);
+    // MAME Galaga routes the Namco WSG at 0.25 and the 54XX discrete\n    // network at 0.90. Namco54xxDac already applies its discrete route gain.\n    for (let i = 0; i < count; i++) wsg[i] = wsg[i] * 0.25 + dac54[i];
     this.audio.push(wsg, this.soundChip.sampleRate);
   }
 
@@ -3088,10 +3080,7 @@ Cause: ${GalagaApp.formatError(error.cause)}`;
         " nz=" + Array.from(d.nonzeroWrites).join("/") +
         " data=" + Array.from(d.channelData).join("/") +
         " peak=" + d.lastPeak.toFixed(4) +
-        " hold=" + d.peakHold.toFixed(4) +
-        " mix=" + (this.emulator.audioDiagMixedPeak || 0).toFixed(4) +
-        " push=" + (this.emulator.audio.maxInputPeak || 0).toFixed(4) +
-        "/" + (this.emulator.audio.maxOutputPeak || 0).toFixed(4);
+        " hold=" + d.peakHold.toFixed(4);
     }, 250);
 
     return true;
