@@ -3052,21 +3052,44 @@ Cause: ${GalagaApp.formatError(error.cause)}`;
       }
     }, { passive: true });
 
-    const audioDiag = document.createElement("div");
+    const audioDiag = document.createElement("button");
     audioDiag.id = "galaga54Diag";
+    audioDiag.type = "button";
+    audioDiag.title = "Tap to copy the recent 54XX command/DAC trace";
     audioDiag.style.cssText =
       "position:fixed;top:0;left:0;right:0;z-index:2147483647;" +
-      "padding:5px;background:#111;color:#0f0;font:11px monospace;text-align:center";
+      "padding:5px;border:0;background:#111;color:#0f0;font:11px monospace;" +
+      "text-align:center;white-space:pre-wrap;max-height:26vh;overflow:auto";
     document.body.appendChild(audioDiag);
-    setInterval(() => {
+    const traceText = () => {
       const d = this.emulator.namco54xxDac;
-      audioDiag.textContent =
-        "54XX writes=" + d.totalWrites +
+      const chip = this.emulator.namco54xx;
+      const lines = chip?.dumpTrace?.().split("\\n").slice(-18) ?? [];
+      return "54XX writes=" + d.totalWrites +
         " ch=" + Array.from(d.channelWrites).join("/") +
         " nz=" + Array.from(d.nonzeroWrites).join("/") +
         " data=" + Array.from(d.channelData).join("/") +
         " peak=" + d.lastPeak.toFixed(4) +
-        " hold=" + d.peakHold.toFixed(4);
+        " hold=" + d.peakHold.toFixed(4) +
+        "\\nTap this panel to copy trace\\n" + lines.join("\\n");
+    };
+    audioDiag.addEventListener("click", async () => {
+      const text = this.emulator.namco54xx?.dumpTrace?.() ?? "";
+      try {
+        await navigator.clipboard.writeText(text);
+        audioDiag.dataset.copied = "1";
+      } catch {
+        // iOS may deny Clipboard API outside a secure/allowed context.
+        // A prompt provides a selectable fallback without requiring Web Inspector.
+        window.prompt("Copy 54XX trace:", text);
+      }
+    });
+    setInterval(() => {
+      audioDiag.textContent = traceText();
+      if (audioDiag.dataset.copied === "1") {
+        audioDiag.textContent = "COPIED 54XX TRACE\\n" + audioDiag.textContent;
+        delete audioDiag.dataset.copied;
+      }
     }, 250);
 
     return true;
