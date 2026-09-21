@@ -328,19 +328,24 @@ class jspacman {
   // ── CPU Execution ────────────────────────────────────────────
   runCpuFrame() {
     let cyclesLeft = this.cyclesPerFrame;
-    while (cyclesLeft > 0) cyclesLeft -= this.cpu.step();
+    let elapsed = 0;
+    this.wsg?.beginTimedInterval(3072000);
+    while (cyclesLeft > 0) {
+      // Memory-mapped WSG writes performed by this instruction see its
+      // machine-time position, matching MAME's stream-update ordering.
+      this.wsg?.setMachineTime(elapsed);
+      const cycles = this.cpu.step();
+      cyclesLeft -= cycles;
+      elapsed += cycles;
+    }
+    this.wsg?.endTimedInterval(this.cyclesPerFrame);
     if (this.interruptEnable) this.cpu.requestIrq(this.cpu.vectorLatch);
   }
 
   renderAudioFrame() {
-    if (!this.wsg || !this.audio.ready) return;
-    this.audioFrameSamples += this.wsg.sampleRate / 60.606;
-    const count = Math.floor(this.audioFrameSamples);
-    this.audioFrameSamples -= count;
-    if (!count) return;
-    const pcm = new Float32Array(count);
-    this.wsg.renderMono(pcm);
-    this.audio.push(pcm, this.wsg.sampleRate);
+    if (!this.wsg) return;
+    const pcm = this.wsg.drainTimedMono();
+    if (this.audio.ready && pcm.length) this.audio.push(pcm, this.wsg.sampleRate);
   }
 
   // ── Frame Loop ───────────────────────────────────────────────
