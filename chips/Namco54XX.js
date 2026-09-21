@@ -28,7 +28,13 @@ class Namco54XX {
     // host commands and MB8844 O/R1 DAC writes with master-tick timestamps.
     this.traceLog = [];
     this.traceLimit = 512;
+    this.mcuTraceRemaining = 0;
     this.installMcuCallbacks();
+    this.mcu.onInstruction = state => {
+      if (this.mcuTraceRemaining <= 0) return;
+      this.recordTrace("mcu", state);
+      this.mcuTraceRemaining--;
+    };
     this.applyResetLineToMcu();
   }
 
@@ -102,6 +108,10 @@ class Namco54XX {
     this.synchronize(() => {
       this.latchedCmd = value;
       this.recordTrace("cmd", { value });
+      // Capture the firmware path after effect commands without permanently
+      // tracing the hot instruction loop.
+      if (value === 0x10 || value === 0x20)
+        this.mcuTraceRemaining = 96;
       if (this.traceCommands) {
         console.log("[54XX CMD]", this.getMasterTick(), value);
       }
@@ -239,7 +249,9 @@ class Namco54XX {
     return this.traceLog.map(entry =>
       entry.type === "cmd"
         ? `${entry.tick} CMD ${entry.value.toString(16).padStart(2, "0")}`
-        : `${entry.tick} OUT ch${entry.channel}=${entry.value.toString(16)}${entry.force ? " force" : ""}`
+        : entry.type === "mcu"
+          ? `${entry.tick} MCU pc=${entry.pc.toString(16).padStart(3, "0")} op=${entry.opcode.toString(16).padStart(2, "0")} A=${entry.A.toString(16)} X=${entry.X.toString(16)} Y=${entry.Y.toString(16)} st=${entry.st} zf=${entry.zf} cf=${entry.cf} pio=${entry.pio.toString(16)}`
+          : `${entry.tick} OUT ch${entry.channel}=${entry.value.toString(16)}${entry.force ? " force" : ""}`
     ).join("\n");
   }
 
