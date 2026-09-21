@@ -17,13 +17,31 @@ class EmulatorPcmSinkProcessor extends AudioWorkletProcessor {
         this.queue.push(block);
         this.queuedSamples += block.length;
 
-        // Drop oldest PCM when the producer catches up after a frame/browser
-        // stall. Preserve only the newest low-latency audio.
+        // If the producer catches up after a browser/RAF stall, reduce
+        // latency without blindly deleting the oldest waiting machine frame.
+        // A 54XX effect can live almost entirely inside one such frame (Galaga
+        // CMD 20 is a concrete example), so queue.splice(1,1) could erase a
+        // real hardware transient before WebAudio ever rendered it.
+        //
+        // Prefer discarding the quietest COMPLETE waiting block. Never touch
+        // queue[0], which may already be partially rendered. This keeps the
+        // bounded-latency policy while preserving short high-energy effects.
         while (this.queuedSamples > this.maxQueuedSamples && this.queue.length > 2) {
-          // Never discard the block currently being rendered. Dropping it
-          // mid-wave creates an audible step. Remove only complete waiting
-          // blocks and let the current block finish continuously.
-          const stale = this.queue.splice(1, 1)[0];
+          let dropIndex = 1;
+          let dropPeak = Infinity;
+          for (let q = 1; q < this.queue.length - 1; q++) {
+            const candidate = this.queue[q];
+            let peak = 0;
+            for (let i = 0; i < candidate.length; i++) {
+              const a = Math.abs(candidate[i]);
+              if (a > peak) peak = a;
+            }
+            if (peak < dropPeak) {
+              dropPeak = peak;
+              dropIndex = q;
+            }
+          }
+          const stale = this.queue.splice(dropIndex, 1)[0];
           this.queuedSamples -= stale.length;
         }
       }
