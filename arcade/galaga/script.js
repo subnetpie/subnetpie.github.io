@@ -3057,7 +3057,7 @@ Cause: ${GalagaApp.formatError(error.cause)}`;
     audioDiag.type = "button";
     audioDiag.title = "Tap to copy the recent 54XX command/DAC trace";
     audioDiag.style.cssText =
-      "position:fixed;top:0;right:0;z-index:2147483647;" +
+      "position:fixed;top:0;left:0;z-index:2147483647;" +
       "width:44vw;max-width:320px;max-height:18vh;padding:4px;border:0;" +
       "background:#111;color:#0f0;font:10px monospace;text-align:left;" +
       "white-space:pre-wrap;overflow:auto;opacity:.88";
