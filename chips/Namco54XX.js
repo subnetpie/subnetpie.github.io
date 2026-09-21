@@ -208,8 +208,14 @@ class Namco54XX {
     if (!Number.isInteger(channel) || channel < 0 || channel >= 3) return false;
     const next = value & 0x0f;
     const tick = this.getMasterTick();
+    const changed = this.lastOutput[channel] !== next;
     this.lastOutput[channel] = next;
-    this.recordTrace("out", { channel, value: next, force: !!force });
+    // Idle 54XX firmware repeatedly writes the same zero values. Recording
+    // every identical write evicts the command that caused the interesting
+    // output on a phone-sized rolling trace. Keep state changes (and forced
+    // synchronizations) while the DAC callback still receives every write.
+    if (changed || force)
+      this.recordTrace("out", { channel, value: next, force: !!force });
     (_this$onChannelData = this.onChannelData) === null || _this$onChannelData === void 0 ? void 0 : _this$onChannelData.call(this, channel, next, tick, !!force);
     if (this.traceOutputs) {
       console.log("[54XX OUT]", tick, channel, next, force ? 1 : 0);
