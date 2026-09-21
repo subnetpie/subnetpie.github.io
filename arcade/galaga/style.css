@@ -108,7 +108,7 @@ a,
  */
 #gameCanvas {
   position: absolute;
-  top: 50%;
+  top: 40%;
   left: 50%;
   display: block;
   width: min(100vh, calc(100vw * 288 / 224));
