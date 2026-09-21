@@ -6,11 +6,28 @@ const WORKLET_SOURCE = `
 class EmulatorPcmSinkProcessor extends AudioWorkletProcessor {
   constructor() {
     super();
-    this.queue = []; this.offset = 0; this.enabled = true;
+    this.queue = []; this.offset = 0; this.queuedSamples = 0; this.enabled = true;
+    // Keep browser latency bounded. AudioWorklet render quanta are 128 samples;
+    // two quanta gives the sink a small cushion without allowing stale game
+    // audio to accumulate behind the video.
+    this.maxQueuedSamples = 256;
     this.port.onmessage = ({data}) => {
-      if (data.type === "pcm") this.queue.push(new Float32Array(data.samples));
+      if (data.type === "pcm") {
+        const block = new Float32Array(data.samples);
+        this.queue.push(block);
+        this.queuedSamples += block.length;
+
+        // Drop oldest PCM when the producer catches up after a frame/browser
+        // stall. Preserve only the newest low-latency audio.
+        while (this.queuedSamples > this.maxQueuedSamples && this.queue.length > 1) {
+          const oldest = this.queue.shift();
+          const remaining = oldest.length - this.offset;
+          this.queuedSamples -= remaining;
+          this.offset = 0;
+        }
+      }
       else if (data.type === "enabled") this.enabled = !!data.value;
-      else if (data.type === "clear") { this.queue.length = 0; this.offset = 0; }
+      else if (data.type === "clear") { this.queue.length = 0; this.offset = 0; this.queuedSamples = 0; }
     };
   }
   process(_inputs, outputs) {
@@ -21,7 +38,7 @@ class EmulatorPcmSinkProcessor extends AudioWorkletProcessor {
       const src = this.queue[0];
       const n = Math.min(out.length - dst, src.length - this.offset);
       out.set(src.subarray(this.offset, this.offset + n), dst);
-      dst += n; this.offset += n;
+      dst += n; this.offset += n; this.queuedSamples -= n;
       if (this.offset === src.length) { this.queue.shift(); this.offset = 0; }
     }
     return true;
