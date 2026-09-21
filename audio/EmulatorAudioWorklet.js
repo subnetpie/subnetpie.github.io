@@ -7,10 +7,12 @@ class EmulatorPcmSinkProcessor extends AudioWorkletProcessor {
   constructor() {
     super();
     this.queue = []; this.offset = 0; this.queuedSamples = 0; this.enabled = true;
-    // Keep browser latency bounded. AudioWorklet render quanta are 128 samples;
-    // two quanta gives the sink a small cushion without allowing stale game
-    // audio to accumulate behind the video.
-    this.maxQueuedSamples = 256;
+    // Keep browser latency bounded, but allow at least one complete
+    // frame-sized producer block. 256 samples was smaller than a normal
+    // ~16.5 ms emulator audio block (about 728 samples at 44.1 kHz), causing
+    // the worklet to discard partially-played blocks every frame and creating
+    // audible discontinuities/distortion.
+    this.maxQueuedSamples = 1024;
     this.port.onmessage = ({data}) => {
       if (data.type === "pcm") {
         const block = new Float32Array(data.samples);
