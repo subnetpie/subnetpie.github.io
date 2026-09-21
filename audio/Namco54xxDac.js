@@ -138,6 +138,9 @@ export class Namco54xxDac {
     // MAME first Millmans the input around VREF, then applies the filter.
     const v = (input - Namco54xxDac.VREF) / this.routing.channels.find(x => x.channel === channel).r1;
     const spec = this.routing.channels.find(x => x.channel === channel);
+    // MAME's non-Norton op-amp filter Millmans INP1 through r1 and
+    // INP2 through r2. r3 is tied to the reference node: it contributes
+    // to m_rTotal, but not an (input-VREF)/r3 current term.
     const rTotal = 1 / (1 / spec.r1 + (spec.r3 ? 1 / spec.r3 : 0));
     const x = v * rTotal;
     let y = -c.a1 * s.y1 - c.a2 * s.y2 + c.b0 * x + c.b1 * s.x1 + c.b2 * s.x2 + Namco54xxDac.VREF;
