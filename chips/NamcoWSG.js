@@ -37,6 +37,13 @@ export class NamcoWSG {
     this.regs = new Uint8Array(variant === NamcoWSG.VARIANT_POLEPOS ? 0x40 : 0x20);
     this.voices = Array.from({ length: this.voiceCount }, () => new NamcoWSGVoice());
     this.soundEnabled = true;
+    // MAME stream-update bridge: drivers may bracket a machine-time interval
+    // and update the current CPU/master time before executing each instruction.
+    // A register write then renders the old state through that instant first.
+    this.timedClock = 0;
+    this.timedPosition = 0;
+    this.timedSampleFraction = 0;
+    this.timedChunks = [];
     this.configureClock();
   }
 
@@ -60,9 +67,53 @@ export class NamcoWSG {
   }
 
   soundEnable(state) { this.soundEnabled = !!state; }
+
+  beginTimedInterval(machineClock) {
+    this.timedClock = Number(machineClock) || 0;
+    this.timedPosition = 0;
+    this.timedSampleFraction = 0;
+    this.timedChunks.length = 0;
+  }
+
+  setMachineTime(machineCycles) {
+    if (!this.timedClock) return;
+    const target = Math.max(this.timedPosition, Number(machineCycles) || 0);
+    this._streamUpdate(target);
+  }
+
+  endTimedInterval(machineCycles) {
+    if (this.timedClock) this._streamUpdate(Number(machineCycles) || 0);
+  }
+
+  _streamUpdate(targetCycles) {
+    if (!this.timedClock || targetCycles <= this.timedPosition) return;
+    const delta = targetCycles - this.timedPosition;
+    this.timedPosition = targetCycles;
+    this.timedSampleFraction += delta * this.sampleRate / this.timedClock;
+    const count = Math.floor(this.timedSampleFraction);
+    this.timedSampleFraction -= count;
+    if (!count) return;
+    const pcm = new Float32Array(count);
+    this.renderMono(pcm);
+    this.timedChunks.push(pcm);
+  }
+
+  drainTimedMono() {
+    let count = 0;
+    for (const chunk of this.timedChunks) count += chunk.length;
+    const out = new Float32Array(count);
+    let offset = 0;
+    for (const chunk of this.timedChunks) { out.set(chunk, offset); offset += chunk.length; }
+    this.timedChunks.length = 0;
+    return out;
+  }
+
   read(offset) { return this.regs[offset & (this.regs.length - 1)]; }
 
   write(offset, data) {
+    // Equivalent to MAME's m_stream->update() before changing a WSG register.
+    // setMachineTime() supplies the current machine time from the driver.
+    if (this.timedClock) this._streamUpdate(this.timedPosition);
     if (this.variant === NamcoWSG.VARIANT_POLEPOS)
       this.poleposSoundWrite(offset, data);
     else
