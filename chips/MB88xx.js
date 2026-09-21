@@ -218,6 +218,13 @@ class MB88xx {
     this.incPC();
 
     this.executedPC = executedPC;
+    this.onInstruction?.({
+      pc: executedPC,
+      opcode,
+      A: this.A, X: this.X, Y: this.Y,
+      st: this.st, zf: this.zf, cf: this.cf,
+      pio: this.pio
+    });
 
     let oc = 1;
     let arg;
