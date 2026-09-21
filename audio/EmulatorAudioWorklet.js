@@ -7,21 +7,10 @@ class EmulatorPcmSinkProcessor extends AudioWorkletProcessor {
   constructor() {
     super();
     this.queue = []; this.offset = 0; this.enabled = true;
-    this.queuedSamples = 0; this.maxQueuedSamples = Math.round(sampleRate * 0.10);
     this.port.onmessage = ({data}) => {
-      if (data.type === "pcm") {
-        const block = new Float32Array(data.samples);
-        // Keep browser latency bounded. Machine time remains authoritative;
-        // stale browser PCM is preferable to drop rather than play late.
-        while (this.queue.length && this.queuedSamples + block.length > this.maxQueuedSamples) {
-          const stale = this.queue.shift();
-          this.queuedSamples -= stale.length - this.offset;
-          this.offset = 0;
-        }
-        this.queue.push(block); this.queuedSamples += block.length;
-      }
+      if (data.type === "pcm") this.queue.push(new Float32Array(data.samples));
       else if (data.type === "enabled") this.enabled = !!data.value;
-      else if (data.type === "clear") { this.queue.length = 0; this.offset = 0; this.queuedSamples = 0; }
+      else if (data.type === "clear") { this.queue.length = 0; this.offset = 0; }
     };
   }
   process(_inputs, outputs) {
@@ -32,7 +21,7 @@ class EmulatorPcmSinkProcessor extends AudioWorkletProcessor {
       const src = this.queue[0];
       const n = Math.min(out.length - dst, src.length - this.offset);
       out.set(src.subarray(this.offset, this.offset + n), dst);
-      dst += n; this.offset += n; this.queuedSamples -= n;
+      dst += n; this.offset += n;
       if (this.offset === src.length) { this.queue.shift(); this.offset = 0; }
     }
     return true;
