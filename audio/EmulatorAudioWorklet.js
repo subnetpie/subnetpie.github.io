@@ -45,6 +45,7 @@ export class EmulatorAudioWorklet {
   constructor({ gain = 0.85 } = {}) {
     this.gain = gain; this.context = null; this.node = null;
     this.gainNode = null; this.ready = false; this.enabled = true;
+    this.maxInputPeak = 0; this.maxOutputPeak = 0;
   }
 
   beginUnlock() {
@@ -91,6 +92,8 @@ export class EmulatorAudioWorklet {
     const sourceRate = Number(sourceSampleRate) || this.context?.sampleRate || 0;
     const outputRate = this.context?.sampleRate || sourceRate;
     let copy;
+    for (let i = 0; i < samples.length; i++)
+      this.maxInputPeak = Math.max(this.maxInputPeak, Math.abs(samples[i]));
 
     if (sourceRate > 0 && outputRate > 0 && sourceRate !== outputRate) {
       // Browser boundary only: convert deterministic machine-rate PCM to the
@@ -110,6 +113,8 @@ export class EmulatorAudioWorklet {
       copy = samples.slice();
     }
 
+    for (let i = 0; i < copy.length; i++)
+      this.maxOutputPeak = Math.max(this.maxOutputPeak, Math.abs(copy[i]));
     this.node.port.postMessage({ type: "pcm", samples: copy.buffer }, [copy.buffer]);
   }
 
