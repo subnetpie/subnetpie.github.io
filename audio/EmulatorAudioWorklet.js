@@ -34,6 +34,9 @@ export class EmulatorAudioWorklet {
   constructor({ gain = 0.85 } = {}) {
     this.gain = gain; this.context = null; this.node = null;
     this.gainNode = null; this.ready = false; this.enabled = true;
+    this.resamplePhase = 0;
+    this.resampleTail = 0;
+    this.resampleRate = 0;
   }
 
   async unlock() {
@@ -63,13 +66,48 @@ export class EmulatorAudioWorklet {
     this.node?.port.postMessage({ type: "enabled", value: this.enabled });
   }
 
-  push(samples) {
+  push(samples, sourceSampleRate = null) {
     if (!this.ready || !(samples instanceof Float32Array) || !samples.length) return;
-    const copy = samples.slice();
-    this.node.port.postMessage({ type: "pcm", samples: copy.buffer }, [copy.buffer]);
+
+    const sourceRate = Number(sourceSampleRate) || this.context.sampleRate;
+    const outputRate = this.context.sampleRate;
+    let copy;
+
+    if (sourceRate === outputRate) {
+      copy = samples.slice();
+    } else {
+      // Stateful browser-boundary resampling. Keep fractional source position
+      // and the previous sample across machine PCM blocks so frame boundaries
+      // cannot introduce discontinuities/clicks.
+      if (this.resampleRate !== sourceRate) {
+        this.resampleRate = sourceRate;
+        this.resamplePhase = 0;
+        this.resampleTail = samples[0];
+      }
+      const step = sourceRate / outputRate;
+      const out = [];
+      let pos = this.resamplePhase;
+      while (pos < samples.length) {
+        const i = Math.floor(pos);
+        const f = pos - i;
+        const a = i >= 0 ? samples[i] : this.resampleTail;
+        const b = i + 1 < samples.length ? samples[i + 1] : samples[samples.length - 1];
+        out.push(a + (b - a) * f);
+        pos += step;
+      }
+      this.resamplePhase = pos - samples.length;
+      this.resampleTail = samples[samples.length - 1];
+      copy = Float32Array.from(out);
+    }
+
+    if (copy.length)
+      this.node.port.postMessage({ type: "pcm", samples: copy.buffer }, [copy.buffer]);
   }
 
-  clear() { this.node?.port.postMessage({ type: "clear" }); }
+  clear() {
+    this.resamplePhase = 0; this.resampleRate = 0;
+    this.node?.port.postMessage({ type: "clear" });
+  }
   async resume() { if (this.context?.state === "suspended") await this.context.resume(); }
   async suspend() { if (this.context?.state === "running") await this.context.suspend(); }
   async destroy() {
