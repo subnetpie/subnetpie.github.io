@@ -3009,33 +3009,30 @@ Cause: ${GalagaApp.formatError(error.cause)}`;
     this.swipeController?.dispose?.();
     this.swipeController = new SwipeController(this.input, window);
 
-    let audioUnlockStarted = false;
+    let audioUnlockPending = false;
     const unlockAudio = () => {
-      // iOS emits touchstart, pointerdown and often a synthetic click for one
-      // physical tap. Audio activation must therefore be strictly one-shot;
-      // repeated resume() calls from the same/next control tap can stall Safari.
-      if (audioUnlockStarted) return;
-      audioUnlockStarted = true;
-      try { this.emulator.audio.beginUnlock(); }
-      catch (error) {
-        audioUnlockStarted = false;
-        console.warn("[Galaga audio] begin unlock failed:", error);
+      if (this.emulator.audio.ready) {
+        this.emulator.audio.resume();
         return;
       }
+      if (audioUnlockPending) return;
+      audioUnlockPending = true;
+      // Use the same proven interaction model as Pac-Man/Ms. Pac-Man: the
+      // gesture starts unlock, while the shared sink owns AudioContext details.
       this.emulator.audio.unlock()
         .then(() => {
           this.emulator.audio.setEnabled(this.config.audio.enabled !== false);
           this.emulator.namco54xx.syncOutputs();
         })
-        .catch((error) => {
-          audioUnlockStarted = false;
-          console.warn("[Galaga audio] unlock failed:", error);
-        });
+        .catch((error) => console.warn("[Galaga audio] unlock failed:", error))
+        .finally(() => { audioUnlockPending = false; });
     };
-    // touchstart is the primary iOS activation path. Pointer/click/mousedown
-    // listeners are intentionally omitted to avoid duplicate activation for a tap.
-    document.addEventListener("touchstart", unlockAudio, { passive: true, once: true });
-    document.addEventListener("keydown", unlockAudio, { once: true });
+    const resumeAudio = () => {
+      if (this.emulator.audio.ready) this.emulator.audio.resume();
+    };
+    document.addEventListener("click", unlockAudio);
+    document.addEventListener("touchstart", unlockAudio, { passive: true });
+    document.addEventListener("mousedown", resumeAudio);
 
     // Expose enough state to diagnose iOS audio without coupling the machine
     // devices to WebAudio.
