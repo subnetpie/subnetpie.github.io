@@ -3009,13 +3009,24 @@ Cause: ${GalagaApp.formatError(error.cause)}`;
     this.swipeController?.dispose?.();
     this.swipeController = new SwipeController(this.input, window);
 
+    let audioUnlockPending = false;
     const unlockAudio = () => {
+      if (this.emulator.audio.ready || audioUnlockPending) {
+        this.emulator.audio.beginUnlock?.();
+        return;
+      }
+      audioUnlockPending = true;
+      // The synchronous call is intentional: iOS Safari requires resume()
+      // while this event still owns user activation.
+      try { this.emulator.audio.beginUnlock(); }
+      catch (error) { audioUnlockPending = false; console.warn("[Galaga audio] begin unlock failed:", error); return; }
       this.emulator.audio.unlock()
         .then(() => {
           this.emulator.audio.setEnabled(this.config.audio.enabled !== false);
           this.emulator.namco54xx.syncOutputs();
         })
-        .catch((error) => console.warn("[Galaga audio] unlock failed:", error));
+        .catch((error) => console.warn("[Galaga audio] unlock failed:", error))
+        .finally(() => { audioUnlockPending = false; });
     };
     // Match the proven Pac-Man/Ms. Pac-Man iOS path: create/resume the
     // AudioContext on the earliest user-activation event. In particular,
