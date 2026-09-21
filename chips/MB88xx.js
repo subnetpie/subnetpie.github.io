@@ -163,6 +163,7 @@ class MB88xx {
 
   burnCycles(cycles) {
     const C = this.constructor;
+    let consumed = cycles;
 
     if (this.pio & 0x80) {
       this.TP += cycles;
@@ -200,8 +201,9 @@ class MB88xx {
       this.st = 1;
       this.pendingIrq = 0;
 
-      this.burnCycles(3);
+      consumed += this.burnCycles(3);
     }
+    return consumed;
   }
 
   step() {
@@ -725,8 +727,10 @@ class MB88xx {
         break;}
 
 
-    this.burnCycles(oc);
-    return oc;
+    // MAME's burn_cycles(3) on interrupt entry consumes scheduler time in
+    // addition to the instruction. Return the full amount so Namco custom
+    // device schedulers do not run the MB88xx too fast around IRQs.
+    return this.burnCycles(oc);
   }}_defineProperty(MB88xx, "INT_CAUSE_SERIAL", 0x01);_defineProperty(MB88xx, "INT_CAUSE_TIMER", 0x02);_defineProperty(MB88xx, "INT_CAUSE_EXTERNAL", 0x04);_defineProperty(MB88xx, "TIMER_PRESCALE", 32);
 
 class MB8841 extends MB88xx {
