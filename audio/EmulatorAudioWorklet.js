@@ -47,14 +47,25 @@ export class EmulatorAudioWorklet {
     this.gainNode = null; this.ready = false; this.enabled = true;
   }
 
-  async unlock() {
-    // Create AudioContext before yielding: callers can invoke unlock()
-    // directly from an iOS/Safari user gesture.
+  beginUnlock() {
+    // Synchronous phase: create/resume while Safari still considers the
+    // touch/pointer handler an active user gesture. Do not await before this.
     if (!this.context) {
       const AudioContextClass = window.AudioContext || window.webkitAudioContext;
       if (!AudioContextClass) throw new Error("Web Audio is unavailable");
       this.context = new AudioContextClass();
       this.gainNode = this.context.createGain();
+    }
+    const resumePromise = this.context.state === "suspended"
+      ? this.context.resume()
+      : Promise.resolve();
+    return resumePromise;
+  }
+
+  async unlock() {
+    await this.beginUnlock();
+    if (!this.node) {
+      this.gainNode = this.gainNode || this.context.createGain();
       this.gainNode.gain.value = this.gain;
       this.gainNode.connect(this.context.destination);
       const url = "data:application/javascript;charset=utf-8," + encodeURIComponent(WORKLET_SOURCE);
