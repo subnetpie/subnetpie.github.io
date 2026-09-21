@@ -3009,28 +3009,19 @@ Cause: ${GalagaApp.formatError(error.cause)}`;
     this.swipeController?.dispose?.();
     this.swipeController = new SwipeController(this.input, window);
 
-    let audioUnlockPending = false;
     const unlockAudio = () => {
-      if (this.emulator.audio.ready || audioUnlockPending) return;
-      audioUnlockPending = true;
-      // iOS Safari requires AudioContext creation/resume to begin synchronously
-      // inside the touch gesture. Worklet creation may finish asynchronously.
-      try { this.emulator.audio.beginUnlock(); }
-      catch (error) {
-        audioUnlockPending = false;
-        console.warn("[Galaga audio] begin unlock failed:", error);
-        return;
-      }
       this.emulator.audio.unlock()
         .then(() => {
           this.emulator.audio.setEnabled(this.config.audio.enabled !== false);
           this.emulator.namco54xx.syncOutputs();
         })
-        .catch((error) => console.warn("[Galaga audio] unlock failed:", error))
-        .finally(() => { audioUnlockPending = false; });
+        .catch((error) => console.warn("[Galaga audio] unlock failed:", error));
     };
-    document.addEventListener("touchstart", unlockAudio, { passive: true });
+    const resumeAudio = () => this.emulator.audio.resume();
+    // Same browser interaction path used by the working Pac-Man frontend.
     document.addEventListener("click", unlockAudio);
+    document.addEventListener("touchstart", unlockAudio, { passive: true });
+    document.addEventListener("mousedown", resumeAudio);
 
     // Expose enough state to diagnose iOS audio without coupling the machine
     // devices to WebAudio.
