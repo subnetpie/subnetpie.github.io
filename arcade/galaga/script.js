@@ -1747,6 +1747,31 @@ class GalagaEmulator {
       },
 
       /*
+       * Diagnostic one-shot: Galaga's 0x20 54XX effect is the explosion path
+       * under investigation. Let roughly 60 ms of machine time run after the
+       * synchronized command boundary, then freeze after that frame's PCM has
+       * been rendered so the copied dump contains the complete signal path.
+       */
+      onCommand: (command, masterTick) => {
+        if (
+          command === 0x20 &&
+          !this.explosionBreak?.armed &&
+          !this.explosionBreak?.reached
+        ) {
+          this.explosionBreak = {
+            armed: true,
+            reached: false,
+            command,
+            commandTick: masterTick,
+            stopTick: masterTick + Math.round(TimingSequencer.MASTER_CLOCK * 0.06)
+          };
+          this.namco54xx.clearTrace?.();
+          this.namco54xx.recordTrace?.("cmd", { value: command });
+          if (this.audioBoundaryTrace) this.audioBoundaryTrace.dacHold = 0;
+        }
+      },
+
+      /*
        * Reset the analog/DAC state when the 54XX is reset.
        */
       onReset: () => {
@@ -1841,6 +1866,13 @@ class GalagaEmulator {
     this.watchdogTimer = 0;
     this.watchdogEverKicked = false;
     this.soundNmiCount = 0;
+    this.explosionBreak = {
+      armed: false,
+      reached: false,
+      command: 0,
+      commandTick: 0,
+      stopTick: 0
+    };
 
     this.subCpu.setReset?.(true);
     this.sub2Cpu.setReset?.(true);
@@ -2190,6 +2222,18 @@ class GalagaEmulator {
     this.timing.runFrame();
     const audioEndTick = this.timing.now;
     this.renderAudioFrame(audioStartTick, audioEndTick);
+
+    if (
+      this.explosionBreak?.armed &&
+      !this.explosionBreak.reached &&
+      audioEndTick >= this.explosionBreak.stopTick
+    ) {
+      this.explosionBreak.armed = false;
+      this.explosionBreak.reached = true;
+      this.explosionBreak.reachedTick = audioEndTick;
+      this.running = false;
+    }
+
     this.frameCounter++;
     this.watchdogTimer++;
     if (this.watchdogTimer >= 8) {
@@ -2204,6 +2248,13 @@ class GalagaEmulator {
     this.watchdogTimer = 0;
     this.watchdogEverKicked = false;
     this.soundNmiCount = 0;
+    this.explosionBreak = {
+      armed: false,
+      reached: false,
+      command: 0,
+      commandTick: 0,
+      stopTick: 0
+    };
 
     this.mainIrqEnabled = false;
     this.subIrqArmed = false;
@@ -3076,7 +3127,14 @@ Cause: ${GalagaApp.formatError(error.cause)}`;
       const d = this.emulator.namco54xxDac;
       const chip = this.emulator.namco54xx;
       const lines = chip?.dumpTrace?.().split("\\n").slice(-18) ?? [];
-      return "54XX writes=" + d.totalWrites +
+      const brk = this.emulator.explosionBreak;
+      return (brk?.reached
+        ? "STOPPED @ EXPLOSION tick=" + brk.reachedTick +
+          " cmdTick=" + brk.commandTick + "\n"
+        : brk?.armed
+          ? "EXPLOSION CAPTURE ARMED stop=" + brk.stopTick + "\n"
+          : "") +
+        "54XX writes=" + d.totalWrites +
         " ch=" + Array.from(d.channelWrites).join("/") +
         " nz=" + Array.from(d.nonzeroWrites).join("/") +
         " data=" + Array.from(d.channelData).join("/") +
@@ -3091,7 +3149,8 @@ Cause: ${GalagaApp.formatError(error.cause)}`;
         "\\nTap this panel to copy trace\\n" + lines.join("\\n");
     };
     audioDiag.addEventListener("click", async () => {
-      const text = this.emulator.namco54xx?.dumpTrace?.() ?? "";
+      const text = traceText() + "\n\nFULL 54XX TRACE\n" +
+        (this.emulator.namco54xx?.dumpTrace?.() ?? "");
       try {
         await navigator.clipboard.writeText(text);
         audioDiag.dataset.copied = "1";
