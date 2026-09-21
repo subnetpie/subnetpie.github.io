@@ -926,7 +926,7 @@ class jsMsPacMan {
   if (!count) return;
   const pcm = new Float32Array(count);
   this.wsg.renderMono(pcm);
-  this.audio.push(pcm);
+  this.audio.push(pcm, this.wsg.sampleRate);
  }
 
  // Track the RAF handle so stop() can cancel it cleanly
