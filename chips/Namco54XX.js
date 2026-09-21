@@ -22,6 +22,8 @@ class Namco54XX {
     this.onChannelData =
     typeof opts.onChannelData === "function" ? opts.onChannelData : null;
     this.onReset = typeof opts.onReset === "function" ? opts.onReset : null;
+    this.onCommand =
+    typeof opts.onCommand === "function" ? opts.onCommand : null;
     this.traceCommands = false;
     this.traceOutputs = false;
     // Small rolling machine-side trace. This records the real 54XX boundary:
@@ -108,6 +110,7 @@ class Namco54XX {
     this.synchronize(() => {
       this.latchedCmd = value;
       this.recordTrace("cmd", { value });
+      this.onCommand?.(value, this.getMasterTick());
       // Capture the firmware path after effect commands without permanently
       // tracing the hot instruction loop.
       if (value === 0x10 || value === 0x20)
