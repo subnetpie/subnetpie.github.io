@@ -7,12 +7,10 @@ class EmulatorPcmSinkProcessor extends AudioWorkletProcessor {
   constructor() {
     super();
     this.queue = []; this.offset = 0; this.queuedSamples = 0; this.enabled = true;
-    // Keep browser latency bounded, but allow at least one complete
-    // frame-sized producer block. 256 samples was smaller than a normal
-    // ~16.5 ms emulator audio block (about 728 samples at 44.1 kHz), causing
-    // the worklet to discard partially-played blocks every frame and creating
-    // audible discontinuities/distortion.
-    this.maxQueuedSamples = 1024;
+    // Keep enough PCM to absorb normal RAF/worklet scheduling jitter. Latency
+    // correction is performed only at block boundaries so we never splice a
+    // waveform in the middle of a producer block.
+    this.maxQueuedSamples = 2048;
     this.port.onmessage = ({data}) => {
       if (data.type === "pcm") {
         const block = new Float32Array(data.samples);
@@ -21,11 +19,12 @@ class EmulatorPcmSinkProcessor extends AudioWorkletProcessor {
 
         // Drop oldest PCM when the producer catches up after a frame/browser
         // stall. Preserve only the newest low-latency audio.
-        while (this.queuedSamples > this.maxQueuedSamples && this.queue.length > 1) {
-          const oldest = this.queue.shift();
-          const remaining = oldest.length - this.offset;
-          this.queuedSamples -= remaining;
-          this.offset = 0;
+        while (this.queuedSamples > this.maxQueuedSamples && this.queue.length > 2) {
+          // Never discard the block currently being rendered. Dropping it
+          // mid-wave creates an audible step. Remove only complete waiting
+          // blocks and let the current block finish continuously.
+          const stale = this.queue.splice(1, 1)[0];
+          this.queuedSamples -= stale.length;
         }
       }
       else if (data.type === "enabled") this.enabled = !!data.value;
