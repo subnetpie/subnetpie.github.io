@@ -24,6 +24,10 @@ class Namco54XX {
     this.onReset = typeof opts.onReset === "function" ? opts.onReset : null;
     this.traceCommands = false;
     this.traceOutputs = false;
+    // Small rolling machine-side trace. This records the real 54XX boundary:
+    // host commands and MB8844 O/R1 DAC writes with master-tick timestamps.
+    this.traceLog = [];
+    this.traceLimit = 512;
     this.installMcuCallbacks();
     this.applyResetLineToMcu();
   }
@@ -97,6 +101,7 @@ class Namco54XX {
     const value = data & 0xff;
     this.synchronize(() => {
       this.latchedCmd = value;
+      this.recordTrace("cmd", { value });
       if (this.traceCommands) {
         console.log("[54XX CMD]", this.getMasterTick(), value);
       }
@@ -204,11 +209,32 @@ class Namco54XX {
     const next = value & 0x0f;
     const tick = this.getMasterTick();
     this.lastOutput[channel] = next;
+    this.recordTrace("out", { channel, value: next, force: !!force });
     (_this$onChannelData = this.onChannelData) === null || _this$onChannelData === void 0 ? void 0 : _this$onChannelData.call(this, channel, next, tick, !!force);
     if (this.traceOutputs) {
       console.log("[54XX OUT]", tick, channel, next, force ? 1 : 0);
     }
     return true;
+  }
+
+  recordTrace(type, fields = {}) {
+    const entry = { tick: this.getMasterTick(), type, ...fields };
+    this.traceLog.push(entry);
+    if (this.traceLog.length > this.traceLimit)
+      this.traceLog.splice(0, this.traceLog.length - this.traceLimit);
+    return entry;
+  }
+
+  clearTrace() { this.traceLog.length = 0; }
+
+  getTraceLog() { return this.traceLog.map(entry => ({ ...entry })); }
+
+  dumpTrace() {
+    return this.traceLog.map(entry =>
+      entry.type === "cmd"
+        ? `${entry.tick} CMD ${entry.value.toString(16).padStart(2, "0")}`
+        : `${entry.tick} OUT ch${entry.channel}=${entry.value.toString(16)}${entry.force ? " force" : ""}`
+    ).join("\n");
   }
 
   syncOutputs() {
