@@ -1,5 +1,5 @@
-import {
-  Z80 } from "../../cpu/z80.js";
+import { Z80 } from "../../cpu/z80.js";
+import { AY8910 } from "../../chips/AY8910.js";
 
 const MC=3072000,SC=14318181/8,FPS=60,W=224,H=256;
 
@@ -23,6 +23,12 @@ class TP{
     this.irq=false;
     this.mainCycleRemainder=0;
     this.soundCycleRemainder=0;
+    this.audioCtx=null;
+    this.audioUnlocked=false;
+    this.soundMuted=false;
+    this.ay1=new AY8910(null,SC,()=>this.latch,()=>this.readSoundTimer());
+    this.ay2=new AY8910(null,SC);
+    this.bindAudioUnlock();
     this.bind()}
   async f(n){
     let r=await fetch("./roms/"+n);
@@ -116,15 +122,59 @@ class TP{
       if(b===2){
         if(!this.irqLine&&v)this.irq=true;
         this.irqLine=v}
+      if(b===3){
+        this.soundMuted=!!v;
+        if(this.audioCtx){
+          const gain=this.soundMuted?0:0.16;
+          for(const ay of [this.ay1,this.ay2])ay.masterGain?.gain.setTargetAtTime(gain,this.audioCtx.currentTime,0.002);
+        }
+      }
       if(b===4)this.video=v}}
+  readSoundTimer(){
+    const table=[0x00,0x10,0x20,0x30,0x40,0x90,0xa0,0xb0,0xa0,0xd0];
+    return table[Math.floor((this.ac?.cycles||0)/512)%10];
+  }
   ar(a){
     a&=65535;
-    if(a<12288)return this.sm[a];
-    if(a>=12288&&a<16384)return this.sr[a&1023];
+    if(a<0x3000)return this.sm[a];
+    if(a>=0x3000&&a<0x4000)return this.sr[a&0x3ff];
+    if(a>=0x4000&&a<0x5000)return this.ay1.readData();
+    if(a>=0x6000&&a<0x7000)return this.ay2.readData();
     return 255}
   aw(a,d){
     a&=65535;
-    if(a>=12288&&a<16384)this.sr[a&1023]=d}
+    d&=255;
+    if(a>=0x3000&&a<0x4000){this.sr[a&0x3ff]=d;return}
+    if(a>=0x4000&&a<0x5000){this.ay1.writeData(d);return}
+    if(a>=0x5000&&a<0x6000){this.ay1.writeAddr(d);return}
+    if(a>=0x6000&&a<0x7000){this.ay2.writeData(d);return}
+    if(a>=0x7000&&a<0x8000){this.ay2.writeAddr(d);return}
+    // 0x8000-0xffff selects the six board RC filters in MAME. The shared
+    // AY core remains board-neutral; filter routing is the next board layer.
+  }
+  bindAudioUnlock(){
+    const unlock=async()=>{
+      if(this.audioCtx?.state==="running")return;
+      const Ctx=window.AudioContext||window.webkitAudioContext;
+      if(!Ctx)return;
+      if(!this.audioCtx){
+        const old1=this.ay1,old2=this.ay2;
+        this.audioCtx=new Ctx({latencyHint:"interactive"});
+        this.ay1=new AY8910(this.audioCtx,SC,()=>this.latch,()=>this.readSoundTimer());
+        this.ay2=new AY8910(this.audioCtx,SC);
+        this.ay1.regs.set(old1.regs);this.ay1.addrLatch=old1.addrLatch;
+        this.ay2.regs.set(old2.regs);this.ay2.addrLatch=old2.addrLatch;
+      }
+      await this.audioCtx.resume();
+      if(this.audioCtx.state==="running"){
+        this.audioUnlocked=true;
+        this.ay1.startAudio();
+        this.ay2.startAudio();
+      }
+    };
+    document.addEventListener("pointerdown",unlock,{capture:true,passive:true});
+    document.addEventListener("touchstart",unlock,{capture:true,passive:true});
+  }
   run(){
     let last=0,loop=t=>{
       if(t-last>15.6){
@@ -148,13 +198,18 @@ class TP{
           this.ac.requestIrq(255);
           this.irq=false;
         }
-        this.soundCycleRemainder-=this.ac.step();
+        const cycles=this.ac.step();
+        this.soundCycleRemainder-=cycles;
+        this.ay1.tick(cycles);
+        this.ay2.tick(cycles);
       }
       // The ROM polls C000 and repositions the cloud sprites mid-frame.
       // Preserve each raster line before later writes reuse those sprites.
       this.drawScanline(line);
       if(line===240&&this.nmi)this.c.pulseNmi();
     }
+    this.ay1.flushAudio();
+    this.ay2.flushAudio();
     this.cx.putImageData(this.im,0,0);
   }
   px(x,y,c){
