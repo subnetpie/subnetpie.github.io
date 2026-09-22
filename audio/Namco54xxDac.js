@@ -17,7 +17,10 @@ export class Namco54xxDac {
     mixerCAmp: 1e-7,
     gain: 40800,
     routeGain: 0.90,
-    pcmScale: 1 / 8192
+    // MAME 0.289 dso_output::step() writes the discrete node to the
+    // sound stream as val * (1.0 / 32768.0). Keep this conversion at the
+    // machine-side discrete output boundary before the board route gain.
+    pcmScale: 1 / 32768
   });
 
   constructor({ sampleRate = 192000, masterClock = Namco54xxDac.MASTER_CLOCK, routing = Namco54xxDac.GALAGA } = {}) {
