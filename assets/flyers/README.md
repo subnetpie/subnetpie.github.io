@@ -1,11 +1,17 @@
 # Arcade flyer thumbnails
 
-Scans retrieved from Arcade Database on 2026-09-19. Original promotional artwork remains the property of its respective owners. WebP thumbnails preserve the full scan aspect ratio.
+The arcade tile artwork is sourced from **The Arcade Flyer Archive (TAFA)**, the International Arcade Museum's archive of coin-operated amusement sales flyers.
 
-- pacman.webp: https://adb.arcadeitalia.net/media/mame.current/flyers/pacman.png
-- mspacman.webp: https://adb.arcadeitalia.net/media/mame.current/flyers/mspacman.png
-- scramble.webp: https://adb.arcadeitalia.net/media/mame.current/flyers/scramble.png
-- galaga.webp: https://adb.arcadeitalia.net/media/mame.current/flyers/galaga.png
-- bosco.webp: https://adb.arcadeitalia.net/media/mame.current/flyers/bosco.png
+Source archive: https://flyers.arcade-museum.com/
 
-- polepos.webp (retrieved 2026-09-20): https://adb.arcadeitalia.net/media/mame.current/flyers/polepos.png
+The local WebP files are presentation copies used by the site. Original promotional artwork remains the property of its respective owners.
+
+- pacman.webp — Pac-Man
+- mspacman.webp — Ms. Pac-Man
+- scramble.webp — Scramble
+- galaga.webp — Galaga
+- bosco.webp — Bosconian
+- polepos.webp — Pole Position
+- Time Pilot — North American Centuri flyer catalogued by TAFA; the current tile uses the Centuri-hosted scan pending a local WebP copy.
+
+Time Pilot TAFA catalog entry: https://flyers.arcade-museum.com/videogames/show/2602
