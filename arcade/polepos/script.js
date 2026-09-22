@@ -60,10 +60,15 @@ class PolePositionAudio {
     if(!this.context || !this.wsg)return;
     this.fraction+=this.context.sampleRate*core.frameCycles/EmulatorConfig.CPU_CLOCK;
     const count=Math.floor(this.fraction);this.fraction-=count;
-    const samples=new Float32Array(count);
-    this.wsg.render(samples,Boolean(core.engineLatch().clson));
+    const outputs=Array.from({length:4},()=>new Float32Array(count));
+    this.wsg.renderOutputs(outputs);
     const stereo=new Int16Array(count*2);
-    for(let i=0;i<count;i++)stereo[i*2]=stereo[i*2+1]=Math.max(-32768,Math.min(32767,samples[i]*32768));
+    for(let i=0;i<count;i++){
+      // MAME Pole Position exposes four WSG hardware outputs. The browser
+      // sink is mono here, so sum the four board outputs before discrete mix.
+      const sample=outputs[0][i]+outputs[1][i]+outputs[2][i]+outputs[3][i];
+      stereo[i*2]=stereo[i*2+1]=Math.max(-32768,Math.min(32767,sample*32768));
+    }
     this.voices.mixInto(stereo,count,core);
     if(this.context.state!=='running')return;
     const now=this.context.currentTime;
