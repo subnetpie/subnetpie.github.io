@@ -48,25 +48,30 @@ class PolePositionAudio {
     await this.context.resume();
   }
   configure(regions,core){
-    const sr=this.context.sampleRate;this.fraction=0;
-    this.wsg=new PolePositionWSG(sr,regions.namco);
+    const sr=this.context.sampleRate;this.fraction=0;this.wsgFraction=0;
+    // MAME 0.289: POLEPOS_WSG clock is MASTER_CLOCK / 512 = 48 kHz.
+    this.wsg=new PolePositionWSG(sr,regions.namco,EmulatorConfig.MASTER_CLOCK/512);
     this.voices=new globalThis.PolePositionVoices(sr,regions.engine);
     core.onSound=(offset,value)=>this.wsg.write(offset,value);
     core.soundRegs().forEach((v,i)=>this.wsg.write(i,v));
   }
-  reset(){this.stop();this.wsg?.reset();this.voices?.reset();this.fraction=0;}
+  reset(){this.stop();this.wsg?.reset();this.voices?.reset();this.fraction=0;this.wsgFraction=0;}
   stop(){for(const source of this.sources){source.stop();source.disconnect();}this.sources.clear();this.next=0;}
   frame(core){
     if(!this.context || !this.wsg)return;
     this.fraction+=this.context.sampleRate*core.frameCycles/EmulatorConfig.CPU_CLOCK;
     const count=Math.floor(this.fraction);this.fraction-=count;
-    const outputs=Array.from({length:4},()=>new Float32Array(count));
+    // MAME renders the Pole Position WSG at its internal 192 kHz stream
+    // rate, then the mixer resamples it to the host rate. Rendering only
+    // 'count' host-rate samples here makes the music run at the wrong pitch.
+    this.wsgFraction+=this.wsg.sampleRate*core.frameCycles/EmulatorConfig.CPU_CLOCK;
+    const wsgCount=Math.floor(this.wsgFraction);this.wsgFraction-=wsgCount;
+    const outputs=Array.from({length:4},()=>new Float32Array(wsgCount));
     this.wsg.renderOutputs(outputs);
     const stereo=new Int16Array(count*2);
     for(let i=0;i<count;i++){
-      // MAME Pole Position exposes four WSG hardware outputs. The browser
-      // sink is mono here, so sum the four board outputs before discrete mix.
-      const sample=outputs[0][i]+outputs[1][i]+outputs[2][i]+outputs[3][i];
+      const wi=Math.min(wsgCount-1,Math.floor(i*wsgCount/count));
+      const sample=wsgCount?(outputs[0][wi]+outputs[1][wi]+outputs[2][wi]+outputs[3][wi]):0;
       stereo[i*2]=stereo[i*2+1]=Math.max(-32768,Math.min(32767,sample*32768));
     }
     this.voices.mixInto(stereo,count,core);
