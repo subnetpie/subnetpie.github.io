@@ -88,13 +88,44 @@ class PolePositionAudio {
     source.start(this.next);this.next+=count/this.context.sampleRate;
   }
 }
+class PolePositionSwipeController {
+  constructor(app, element = window) {
+    this.app=app;this.element=element;this.start=null;this.direction=null;
+    this.onStart=e=>this.begin(e);this.onMove=e=>this.move(e);this.onEnd=e=>this.end(e);
+    element.addEventListener('touchstart',this.onStart,{passive:false});
+    element.addEventListener('touchmove',this.onMove,{passive:false});
+    document.addEventListener('touchend',this.onEnd,{passive:false});
+    document.addEventListener('touchcancel',this.onEnd,{passive:false});
+  }
+  excluded(event){return (event.composedPath?.()??[event.target]).some(node=>node?.matches?.('button,input,select,textarea,a,[data-input]'));}
+  tracked(touches){if(!touches||!this.start)return null;for(const t of touches)if(t.identifier===this.start.id)return t;return null;}
+  begin(event){
+    if(this.start||this.excluded(event))return;
+    const t=event.changedTouches?.[0];if(!t)return;event.preventDefault();
+    this.start={id:t.identifier,x:t.clientX,y:t.clientY};
+  }
+  move(event){
+    if(!this.start)return;const t=this.tracked(event.changedTouches);if(!t)return;
+    event.preventDefault();const dx=t.clientX-this.start.x,dy=t.clientY-this.start.y;
+    const next=Math.abs(dx)>=10&&Math.abs(dx)>=Math.abs(dy)/1.35?(dx<0?'left':'right'):null;
+    this.set(next);
+  }
+  end(event){if(!this.start||!this.tracked(event.changedTouches))return;event.preventDefault();this.release();}
+  set(next){
+    if(next===this.direction)return;
+    if(this.direction)this.app.input(this.direction,'swipe',false);
+    this.direction=next;
+    if(next)this.app.input(next,'swipe',true);
+  }
+  release(){this.set(null);this.start=null;}
+}
 class PolePositionEmulator {
   constructor(){
     this.config=new EmulatorConfig();this.loader=new ROMLoader(this.config.roms);this.audio=new PolePositionAudio();
     this.canvas=document.querySelector('#gameCanvas');this.status=document.querySelector('#status');
     this.panel=document.querySelector('#loadingPanel');this.play=document.querySelector('#play');
     this.running=false;this.core=null;this.sources=new Map();this.gear=false;this.previous=0;this.accumulator=0;
-    this.bindControls();this.load();requestAnimationFrame(t=>this.frame(t));
+    this.bindControls();this.swipeController=new PolePositionSwipeController(this,window);this.load();requestAnimationFrame(t=>this.frame(t));
   }
   async load(files){
     this.running=false;this.audio.stop();this.panel.hidden=false;this.play.hidden=true;
@@ -121,7 +152,7 @@ class PolePositionEmulator {
     if(down)active.add(source);else active.delete(source);
     this.core?.setInput(this.core.MASK[name],active.size>0);
   }
-  releaseInputs(){for(const [name]of this.sources)this.core?.setInput(this.core.MASK[name],false);this.sources.clear();document.querySelectorAll('.held').forEach(el=>el.classList.remove('held'));}
+  releaseInputs(){this.swipeController?.release();for(const [name]of this.sources)this.core?.setInput(this.core.MASK[name],false);this.sources.clear();document.querySelectorAll('.held').forEach(el=>el.classList.remove('held'));}
   setGear(high){this.gear=high;this.core?.setInput(this.core.MASK.gear,high);const el=document.querySelector('#btnGear');el.setAttribute('aria-pressed',String(high));el.textContent=high?'HIGH GEAR · G':'LOW GEAR · G';}
   pause(){this.running=false;this.audio.stop();this.releaseInputs();document.querySelector('#btnPause').textContent='Resume';}
   bindControls(){
