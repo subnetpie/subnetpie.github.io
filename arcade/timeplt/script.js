@@ -216,9 +216,9 @@ class TP{
     for(let cat=0;cat<2;cat++){
       if(cat)this.sprites(line);
       for(let j=row;j<row+32;j++){
-        let a=this.m[40960+j];
+        let a=this.videoSnapshot[j];
         if(((a>>4)&1)!==cat)continue;
-        this.tile((this.m[41984+j]+8*(a&32))&511,a&31,
+        this.tile((this.videoSnapshot[0x400+j]+8*(a&32))&511,a&31,
           (j&31)*8,(j>>5)*8,!!(a&64),!!(a&128),line);
       }
     }
