@@ -30,7 +30,7 @@ class EmulatorConfig {
       sampleRate: 48_000
     };
     this.input = {
-      touchDeadzone: 10,
+      touchDeadzone: 2,
       doubleTapTimeout: 300,
       preventScroll: true,
 
