@@ -3205,7 +3205,12 @@ Cause: ${GalagaApp.formatError(error.cause)}`;
         ? "\n\nEXPLOSION PCM BLOCK (exact pre-audio.push data)\n" +
           JSON.stringify(capture)
         : "";
-      const text = traceText() + "\n\nFULL 54XX TRACE\n" +
+      const commandHistory =
+        this.emulator.namco54xx?.dumpCommandHistory?.() ?? "";
+      const text = traceText() +
+        "\n\n54XX COMMAND HISTORY (preserved before CMD 20)\n" +
+        commandHistory +
+        "\n\nFULL 54XX TRACE\n" +
         (this.emulator.namco54xx?.dumpTrace?.() ?? "") + pcmDump;
       try {
         await navigator.clipboard.writeText(text);
