@@ -39,7 +39,7 @@ function _defineProperty(obj, key, value) {if (key in obj) {Object.definePropert
       showCPUState: true };
 
     this.roms = {
-      baseUrl: "https://subnetpie.github.io/arcade/bosco/",
+      baseUrl: "https://subnetpie.github.io/arcade/bosco/roms/",
       files: [
       {
         name: "bos5_1.3p",

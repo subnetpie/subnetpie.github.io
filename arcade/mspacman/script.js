@@ -365,7 +365,7 @@ class jsMsPacMan {
 
  // ── ROM Loading ──────────────────────────────────────────────
  async loadROMS() {
-  const base = "https://subnetpie.github.io/arcade/mspacman/";
+  const base = "https://subnetpie.github.io/arcade/mspacman/roms/";
   const files = {
    "pacman.6e": { target: "rom", offset: 0x0000 },
    "pacman.6f": { target: "rom", offset: 0x1000 },

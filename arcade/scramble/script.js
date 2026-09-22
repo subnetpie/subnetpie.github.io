@@ -679,7 +679,7 @@ class ScrambleEmu {
    gfx: ["5f", "5h"],
    prom: "c01s.6e"
   };
-  this.romBaseUrl = "https://subnetpie.github.io/arcade/scramble/";
+  this.romBaseUrl = "https://subnetpie.github.io/arcade/scramble/roms/";
  }
 
  initCanvas(canvasId) {

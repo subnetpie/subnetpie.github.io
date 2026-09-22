@@ -72,7 +72,7 @@ class jspacman {
     return new Uint8Array(await res.arrayBuffer());
   }
   async loadROMS(useDiag = false) {
-    const base = "https://subnetpie.github.io/arcade/pacman/";
+    const base = "https://subnetpie.github.io/arcade/pacman/roms/";
 
     if (!useDiag) {
       const [r6e, r6f, r6h, r6j] = await Promise.all([
