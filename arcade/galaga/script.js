@@ -1735,7 +1735,11 @@ class GalagaEmulator {
     this.soundChip = new NamcoWSG({ waveformProm: this.waveProm });
     this.audio = new EmulatorAudioWorklet({ gain: this.config.audio.masterVolume });
     this.audioSampleFraction = 0;
-    this.namco54xxDac = new Namco54xxDac({ sampleRate: this.soundChip.sampleRate });
+    // MAME 0.289 discrete_device::device_start(): an unclocked DISCRETE
+    // device runs at machine().sample_rate(). Galaga constructs galaga_discrete
+    // without a device clock, so its 54XX analog filters are a 48 kHz stream,
+    // not the Namco WSG's 192 kHz internal stream.
+    this.namco54xxDac = new Namco54xxDac({ sampleRate: this.config.audio.sampleRate });
     this.namco54xx = new Namco54XX({
       /*
        * Each MB8844 O/R1 output change carries the current emulated
@@ -2279,6 +2283,7 @@ class GalagaEmulator {
 
     this.timing.reset();
     this.audioSampleFraction = 0;
+    this.dac54SampleFraction = 0;
     this.explosionPcmCapture = null;
     this.audio.clear();
     this.namco54xxDac.reset();
@@ -2331,9 +2336,30 @@ class GalagaEmulator {
     if (!count) return;
 
     const wsg = new Float32Array(count);
-    const dac54 = new Float32Array(count);
     this.soundChip.renderMono(wsg);
-    this.namco54xxDac.render(dac54, startTick, endTick);
+
+    // The discrete network has its own MAME stream rate. Render exactly that
+    // many filter steps for this master-clock interval, then sample the held
+    // discrete stream onto the 192 kHz WSG mix grid. The 54XX DAC inputs are
+    // piecewise-constant between discrete stream updates.
+    const dacExact =
+      (endTick - startTick) * this.namco54xxDac.sampleRate /
+      TimingSequencer.MASTER_CLOCK;
+    this.dac54SampleFraction = (this.dac54SampleFraction || 0) + dacExact;
+    const dacCount = Math.floor(this.dac54SampleFraction);
+    this.dac54SampleFraction -= dacCount;
+    const dacNative = new Float32Array(dacCount);
+    this.namco54xxDac.render(dacNative, startTick, endTick);
+    const dac54 = new Float32Array(count);
+    if (dacCount) {
+      for (let i = 0; i < count; i++) {
+        const sourceIndex = Math.min(
+          dacCount - 1,
+          Math.floor(i * dacCount / count)
+        );
+        dac54[i] = dacNative[sourceIndex];
+      }
+    }
     let wsgPeak = 0, dacPeak = 0, mixPeak = 0;
     let wsgPeakIndex = -1, dacPeakIndex = -1, mixPeakIndex = -1;
     let dacFirstIndex = -1, dacLastIndex = -1;
