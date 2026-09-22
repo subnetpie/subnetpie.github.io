@@ -1,7 +1,8 @@
+import { Z80 } from "../../cpu/z80.js";
+
 //===========================================================
-// Scramble Emulator — MAME-faithful
+// Scramble Emulator
 //===========================================================
-// ── PPI 8255 ─────────────────────────────────────────────
 class PPI8255 {
  constructor(
   portARead,
@@ -170,137 +171,46 @@ class AY8910 {
   this.portBWrite = portBWrite;
 
   this.ctx = audioCtx;
-  this.channels = [];
   this.masterGain = null;
   this._started = false;
-
   this._envPhase = 0;
   this._envClock = 0;
-  this._envTrigger = false;
-
   this._noiseClock = 0;
-  this._noiseBit = 1;
   this._noiseShift = 1;
-
-  /*
-   * Noise duty cycle over the most recently processed tick() window,
-   * expressed as a 0-1 fraction of "on" LFSR steps. Replaces sampling a
-   * single stale bit once per emulated frame, which effectively froze
-   * the noise channel's on/off state for the entire ~16.7 ms audio
-   * buffer and made noise-driven effects (explosions, enemy fire)
-   * sound like intermittent clicking instead of static.
-   */
-  this._noiseDuty = 0;
+  this._noiseBit = 1;
+  this._toneClock = new Float64Array(3);
+  this._toneBit = new Uint8Array(3).fill(1);
+  this._sampleClock = 0;
+  this._samples = [];
+  this._sources = new Set();
+  this._nextAudioTime = 0;
 
   if (!audioCtx) return;
-
-  /*
-   * Expose the actual output node for diagnostics or an external mixer.
-   * The earlier ay1OutputFound diagnostic missed this because it only
-   * looked for "output", "node", "gain", etc.
-   */
-  this.output = audioCtx.createGain();
-  this.masterGain = this.output;
-
-  /*
-   * Per-chip gain. Each AY internally sums up to three square oscillators.
-   * 0.15 is conservative; tune only after correct playback is confirmed.
-   */
-  this.masterGain.gain.setValueAtTime(0.15, audioCtx.currentTime);
-  this.masterGain.connect(audioCtx.destination);
-
-  this.channels = Array.from({ length: 3 }, (_, index) => {
-   const osc = audioCtx.createOscillator();
-   const gain = audioCtx.createGain();
-
-   osc.type = "square";
-   osc.frequency.setValueAtTime(440, audioCtx.currentTime);
-   gain.gain.setValueAtTime(0, audioCtx.currentTime);
-
-   osc.connect(gain);
-   gain.connect(this.masterGain);
-
-   return {
-    index,
-    osc,
-    gain,
-    started: false
-   };
-  });
+  this.output = this.masterGain = audioCtx.createGain();
+  this.masterGain.gain.setValueAtTime(0.16, audioCtx.currentTime);
+  // Remove the PSG's DC component before sending PCM to the speakers.
+  this._dcFilter = audioCtx.createBiquadFilter();
+  this._dcFilter.type = "highpass";
+  this._dcFilter.frequency.setValueAtTime(20, audioCtx.currentTime);
+  this.masterGain.connect(this._dcFilter);
+  this._dcFilter.connect(audioCtx.destination);
  }
 
- /*
-  * Call only after AudioContext.resume() has resolved and ctx.state is
-  * "running". This is the iOS Safari-critical change.
-  */
  startAudio() {
   if (!this.ctx || this._started || this.ctx.state !== "running") return;
-
-  const now = this.ctx.currentTime;
-
-  for (const channel of this.channels) {
-   if (!channel || channel.started) continue;
-
-   try {
-    channel.osc.start(now);
-    channel.started = true;
-   } catch (e) {
-    console.warn("[AY8910] oscillator start failed", {
-     channel: channel.index,
-     name: e?.name,
-     message: e?.message
-    });
-   }
-  }
-
   this._started = true;
-
-  /*
-   * Apply current AY register state immediately after source activation.
-   * This is important because game sound commands may have arrived while
-   * iOS audio was still locked.
-   */
-  this._update();
-
-  console.log("[AY8910] started", {
-   state: this.ctx.state,
-   channels: this.channels.length,
-   currentTime: this.ctx.currentTime
-  });
+  this._samples.length = 0;
+  this._nextAudioTime = this.ctx.currentTime + 0.03;
  }
 
  stopAudio() {
-  if (!this.ctx) return;
-
-  const now = this.ctx.currentTime;
-
-  for (const channel of this.channels) {
-   if (!channel) continue;
-
-   try {
-    channel.gain.gain.cancelScheduledValues(now);
-    channel.gain.gain.setValueAtTime(0, now);
-   } catch {}
-
-   if (channel.started) {
-    try {
-     channel.osc.stop(now);
-    } catch {}
-
-    channel.started = false;
-   }
-
-   try {
-    channel.osc.disconnect();
-    channel.gain.disconnect();
-   } catch {}
-  }
-
-  try {
-   this.masterGain?.disconnect();
-  } catch {}
-
   this._started = false;
+  this._samples.length = 0;
+  for (const source of this._sources) {
+   try { source.stop(); } catch {}
+   source.disconnect();
+  }
+  this._sources.clear();
  }
 
  writeAddr(val) {
@@ -314,7 +224,7 @@ class AY8910 {
   if (r === 0x0d) {
    this._envPhase = 0;
    this._envClock = 0;
-   this._envTrigger = true;
+
   }
 
   if (r === 0x0e && this.portAWrite) {
@@ -325,7 +235,6 @@ class AY8910 {
    this.portBWrite(val & 0xff);
   }
 
-  this._update();
  }
 
  readData() {
@@ -340,118 +249,91 @@ class AY8910 {
   return this.regs[this.addrLatch];
  }
 
+ // Advance from actual sound-CPU instruction cycles, preserving register
+ // changes within each frame instead of sampling only the final register state.
  tick(cycles) {
-  if (!this.ctx) return;
-
-  this._advanceEnvelope(cycles);
-  this._advanceNoise(cycles);
-  this._update();
- }
-
- _advanceEnvelope(cycles) {
-  const period = ((this.regs[0x0c] << 8) | this.regs[0x0b]) * 16 || 16;
-
-  this._envClock += cycles;
-
-  const steps = Math.floor(this._envClock / period);
-
-  if (steps > 0) {
-   this._envClock %= period;
-   this._envPhase = Math.min(31, this._envPhase + steps);
+  if (!this.ctx || !this._started || this.ctx.state !== "running") return;
+  const clocksPerSample = this.clock / this.ctx.sampleRate;
+  this._sampleClock += cycles;
+  while (this._sampleClock >= clocksPerSample) {
+   this._sampleClock -= clocksPerSample;
+   // Two sub-samples reduce aliasing when tone/noise changes within a sample.
+   const half = clocksPerSample / 2;
+   const sample = (this._renderSample(half) + this._renderSample(half)) / 2;
+   this._samples.push(sample);
   }
  }
 
- /*
-  * Steps the 17-bit noise LFSR forward by the number of noise-period
-  * steps that occurred during `cycles`, and records the fraction of
-  * those steps that produced a "1" bit as `_noiseDuty`. Using the duty
-  * cycle instead of only the final bit lets a single audio-rate gain
-  * update approximate the noise generator's average energy over the
-  * whole tick() window, rather than freezing on whatever bit happened
-  * to be current at the last step.
-  */
- _advanceNoise(cycles) {
-  const nperiod = (this.regs[0x06] & 0x1f) * 16 || 16;
-
-  this._noiseClock += cycles;
-
-  let steps = Math.floor(this._noiseClock / nperiod);
-  this._noiseClock %= nperiod;
-
-  const totalSteps = steps;
-  let onSteps = 0;
-
-  while (steps-- > 0) {
-   const bit0 = this._noiseShift & 1;
-
-   this._noiseShift =
-    (this._noiseShift >> 1) | ((bit0 ^ ((this._noiseShift >> 3) & 1)) << 16);
-
-   this._noiseBit = bit0;
-   if (bit0) onSteps++;
+ _renderSample(clocks) {
+  const noisePeriod = Math.max(1, this.regs[6] & 0x1f) * 16;
+  this._noiseClock += clocks;
+  while (this._noiseClock >= noisePeriod) {
+   this._noiseClock -= noisePeriod;
+   // AY 17-bit LFSR, feedback from bits 0 and 3, shared by all channels.
+   this._noiseShift = (this._noiseShift >>> 1) |
+    (((this._noiseShift ^ (this._noiseShift >>> 3)) & 1) << 16);
+   this._noiseBit = this._noiseShift & 1;
   }
 
-  this._noiseDuty = totalSteps > 0 ? onSteps / totalSteps : this._noiseBit;
- }
-
- _update() {
-  if (!this.ctx || !this.channels.length) return;
-
-  const now = this.ctx.currentTime;
-
+  const envPeriod = Math.max(1, (this.regs[12] << 8) | this.regs[11]) * 16;
+  this._envClock += clocks;
+  const envSteps = Math.floor(this._envClock / envPeriod);
+  this._envClock %= envPeriod;
+  const shape = this.regs[13] & 15;
+  if (shape >= 8 && !(shape & 1)) {
+   this._envPhase = (this._envPhase + envSteps) % 32;
+  } else {
+   this._envPhase = Math.min(31, this._envPhase + envSteps);
+  }
+  const envelope = AY8910.ENVELOPE_SHAPES[shape][this._envPhase];
+  const mixer = this.regs[7];
+  let sample = 0;
   for (let ch = 0; ch < 3; ch++) {
-   const fine = this.regs[ch * 2];
-   const coarse = this.regs[ch * 2 + 1] & 0x0f;
-   const period = (coarse << 8) | fine;
-
-   const volReg = this.regs[0x08 + ch];
-   const envMode = (volReg & 0x10) !== 0;
-
-   const toneOff = ((this.regs[0x07] >> ch) & 1) !== 0;
-   const noiseOff = ((this.regs[0x07] >> (ch + 3)) & 1) !== 0;
-
-   const channel = this.channels[ch];
-   if (!channel) continue;
-
-   const envShape = AY8910.ENVELOPE_SHAPES[this.regs[0x0d] & 0x0f];
-   const envLevel = envShape[this._envPhase] ?? 0;
-
-   const rawVol = envMode ? envLevel : volReg & 0x0f;
-   const toneActive = !toneOff && period > 0;
-
-   /*
-    * Blend tone and noise contribution as a 0-1 factor instead of a
-    * hard on/off gate. When only noise is enabled, `combinedFactor`
-    * reflects the LFSR's duty cycle for this tick, which at least
-    * approximates the perceived loudness of static rather than
-    * silently dropping the whole channel because the last sampled
-    * bit happened to be 0.
-    */
-   const noiseFactor = noiseOff ? 0 : this._noiseDuty;
-   const toneFactor = toneActive ? 1 : 0;
-   const combinedFactor = Math.max(toneFactor, noiseFactor);
-
-   if (combinedFactor <= 0 || rawVol === 0) {
-    channel.gain.gain.setTargetAtTime(0, now, 0.004);
-    continue;
-   }
-
-   if (toneActive) {
-    const freq = this.clock / (16 * period);
-
-    channel.osc.frequency.setTargetAtTime(
-     Math.max(20, Math.min(freq, 20000)),
-     now,
-     0.004
-    );
-   }
-
-   channel.gain.gain.setTargetAtTime(
-    AY8910.VOLUME_TABLE[rawVol] * 0.33 * combinedFactor,
-    now,
-    0.004
-   );
+   const period = Math.max(1, ((this.regs[ch * 2 + 1] & 15) << 8) |
+    this.regs[ch * 2]) * 8;
+   this._toneClock[ch] += clocks;
+   const edges = Math.floor(this._toneClock[ch] / period);
+   this._toneClock[ch] %= period;
+   this._toneBit[ch] ^= edges & 1;
+   // Disabling a generator forces its gate high. The two gates are ANDed.
+   const toneGate = (mixer & (1 << ch)) || this._toneBit[ch];
+   const noiseGate = (mixer & (8 << ch)) || this._noiseBit;
+   const volume = this.regs[8 + ch];
+   const level = volume & 16 ? envelope : volume & 15;
+   if (toneGate && noiseGate) sample += AY8910.VOLUME_TABLE[level];
   }
+  return sample;
+ }
+
+ flushAudio() {
+  if (!this.ctx || !this._started || this.ctx.state !== "running") {
+   this._samples.length = 0;
+   return;
+  }
+  if (!this._samples.length) return;
+  const buffer = this.ctx.createBuffer(1, this._samples.length, this.ctx.sampleRate);
+  buffer.getChannelData(0).set(this._samples);
+  this._samples.length = 0;
+  const now = this.ctx.currentTime;
+  if (this._nextAudioTime < now || this._nextAudioTime > now + 0.15) {
+   // Recover after a background pause without overlapping stale buffers.
+   for (const pending of this._sources) {
+    try { pending.stop(); } catch {}
+    pending.disconnect();
+   }
+   this._sources.clear();
+   this._nextAudioTime = now + 0.03;
+  }
+  const source = this.ctx.createBufferSource();
+  source.buffer = buffer;
+  source.connect(this.masterGain);
+  this._sources.add(source);
+  source.onended = () => {
+   this._sources.delete(source);
+   source.disconnect();
+  };
+  source.start(this._nextAudioTime);
+  this._nextAudioTime += buffer.duration;
  }
 }
 
@@ -815,8 +697,8 @@ class ScrambleEmu {
  initMemory() {
   this.mem = new Uint8Array(0x10000);
   this.soundRom = new Uint8Array(0x3000);
-  // FIX-3: 2 KB sound RAM, mask 0x07ff  (was 4 KB / 0x03ff → stack aliased data)
-  this.soundRam = new Uint8Array(0x800);
+  // 1 KB sound RAM, mirrored by the board address decoder.
+  this.soundRam = new Uint8Array(0x400);
  }
 
  initMachineState() {
@@ -1134,7 +1016,7 @@ class ScrambleEmu {
   const ctx = this.audioCtx;
   if (!ctx) return;
 
-  const value = this.soundMuted ? 0 : 0.15;
+  const value = this.soundMuted ? 0 : 0.16;
   const now = ctx.currentTime;
 
   for (const ay of [this.ay1, this.ay2]) {
@@ -1145,10 +1027,11 @@ class ScrambleEmu {
 
  // ── Audio ─────────────────────────────────────────────────
  readScrambleTimer() {
-  const timer = [0x00, 0x10, 0x20, 0x30, 0x40, 0x90, 0xa0, 0xb0, 0xa0, 0xd0];
-
-  const cycles = this.soundCpu?.cycles ?? 0;
-  return timer[Math.floor(cycles / 512) % 10];
+  let clocks = ((this.soundCpu?.cycles ?? 0) * 8) % 40960;
+  const high = clocks >= 20480 ? 0x80 : 0;
+  clocks %= 20480;
+  return high | ((clocks >> 8) & 0x40) |
+   ((clocks >> 8) & 0x20) | ((clocks >> 7) & 0x10) | 0x0e;
  }
 
  _initAudio() {
@@ -1162,18 +1045,19 @@ class ScrambleEmu {
   const ctx = new Ctx({ latencyHint: "interactive" });
 
   try {
-   const ay1 = new AY8910(ctx, this.SOUNDCLOCK, () => this.readScrambleTimer());
+   const ay1 = new AY8910(ctx, this.SOUNDCLOCK);
 
-   const ay2 = new AY8910(ctx, this.SOUNDCLOCK, () => this.soundLatch);
+   const ay2 = new AY8910(ctx, this.SOUNDCLOCK,
+    () => this.soundLatch, () => this.readScrambleTimer());
 
-   if (oldAY1) ay1.regs.set(oldAY1);
-   if (oldAY2) ay2.regs.set(oldAY2);
+   if (oldAY1) { ay1.regs.set(oldAY1); ay1.addrLatch = this.ay1.addrLatch; }
+   if (oldAY2) { ay2.regs.set(oldAY2); ay2.addrLatch = this.ay2.addrLatch; }
 
    this.audioCtx = ctx;
    this.ay1 = ay1;
    this.ay2 = ay2;
 
-   // Do not start oscillators here. On iOS Safari, start them only after
+   // Do not start audio here. On iOS Safari, start it only after
    // ctx.resume() has resolved in unlockAudioFromGesture().
    this.ay1.tick(0);
    this.ay2.tick(0);
@@ -1234,7 +1118,7 @@ class ScrambleEmu {
       this.ay1?.startAudio?.();
       this.ay2?.startAudio?.();
 
-      // Apply current registers to newly started oscillators.
+      // PCM generation starts with the next sound-CPU instruction.
       this.ay1?.tick(0);
       this.ay2?.tick(0);
 
@@ -1459,10 +1343,11 @@ class ScrambleEmu {
   this.audioCtx = null;
 
   // Preserve AY register activity before audio is unlocked.
-  // MAME wiring: AY1 port A = hardware timer; AY2 port A = sound latch.
-  this.ay1 = new AY8910(null, this.SOUNDCLOCK, () => this.readScrambleTimer());
+  // AY at 0x40/0x80: port A = sound latch, port B = hardware timer.
+  this.ay1 = new AY8910(null, this.SOUNDCLOCK);
 
-  this.ay2 = new AY8910(null, this.SOUNDCLOCK, () => this.soundLatch);
+  this.ay2 = new AY8910(null, this.SOUNDCLOCK,
+   () => this.soundLatch, () => this.readScrambleTimer());
 
   this.initIO();
 
@@ -1535,36 +1420,33 @@ class ScrambleEmu {
     this.updateSelfTestGate();
     this.lastOpPC = this.cpu.PC;
     if (this.cpu.PC < 0x4000) this.pcHistogram[this.cpu.PC]++;
-    mainElapsed += this.cpu.step();
+    mainElapsed += this.stepCpu(this.cpu);
    }
    mainLeft -= mainElapsed;
 
+   // Queue the sound IRQ before this slice. The embedded Z80 retains it
+   // while interrupts are disabled and clears it on acknowledgment.
+   if (this.soundIrqPending) {
+    this.soundCpu.requestIrq(0xff);
+    this.soundIrqPending = false;
+   }
+
    let soundElapsed = 0;
-   while (soundElapsed < soundBudget) soundElapsed += this.soundCpu.step();
+   while (soundElapsed < soundBudget)
+    soundElapsed += this.stepCpu(this.soundCpu);
    soundLeft -= soundElapsed;
 
    if (slice === 3) {
     if (this.nmiEnable) {
-     this.cpu.nmi();
-     this.cpu.clearNmiLatch?.();
-    }
-    if (this.soundIrqPending) {
-     this.soundCpu.requestIrq(0xff);
-
-     // Approximation for a Z80 core without an explicit IRQ-ack callback:
-     // queue exactly one IM0 vector (0xff = RST 38h), then drop the source latch.
-     //
-     // Later, if your Z80 exposes onIrqAcknowledge/onInterruptAcknowledge,
-     // move this clear into that callback for exact 7474 timing.
-     this.soundIrqPending = false;
+     this.cpu.pulseNmi();
     }
 
     if (this.starsEnable && ++this.starsBlinkCounter >= 20) {
      this.starsBlinkCounter = 0;
      this.starsBlinkState = (this.starsBlinkState + 1) & 3;
     }
-    this.ay1?.tick(this.soundCyclesPerFrame);
-    this.ay2?.tick(this.soundCyclesPerFrame);
+    this.ay1?.flushAudio();
+    this.ay2?.flushAudio();
    }
   }
 
@@ -1665,60 +1547,64 @@ class ScrambleEmu {
  }
 
  // ── Sound CPU memory map ──────────────────────────────────
- // FIX-3: mask 0x07ff (2 KB), matching MAME's 0x8000–0x87FF window
+ // 0x8000-0x83ff with address mirror 0x6c00; ROM is 0x0000-0x1fff.
  soundRead(addr) {
   addr &= 0xffff;
-  if (addr <= 0x2fff) return this.soundRom[addr];
-  if (addr >= 0x8000 && addr <= 0x87ff) return this.soundRam[addr & 0x07ff];
+  if (addr <= 0x1fff) return this.soundRom[addr];
+  if (addr >= 0x8000 && addr <= 0x8fff) return this.soundRam[addr & 0x03ff];
   return 0xff;
  }
 
  soundWrite(addr, data) {
   addr &= 0xffff;
   data &= 0xff;
-  if (addr >= 0x8000 && addr <= 0x87ff) this.soundRam[addr & 0x07ff] = data;
+  if (addr >= 0x8000 && addr <= 0x8fff) this.soundRam[addr & 0x03ff] = data;
  }
 
  // ── Sound CPU I/O ─────────────────────────────────────────
- // FIX-2: both the address-latch port AND the data port return readData().
- //        On the AY-8910, IN-ACTIVE (BC1=1 BDIR=0) reads the selected register
- //        regardless of which port address the Z80 uses.  Returning addrLatch
- //        for port 0x10/0x40 caused the sound ROM to misread its own register
- //        writes and play nothing.
+ // AY chip selects are decoded by address bits, including combined selects.
  soundPortRead(port) {
   port &= 0xff;
-
   if (port === 0x20) return this.ay1?.readData() ?? 0xff;
   if (port === 0x80) return this.ay2?.readData() ?? 0xff;
-
-  // AY address ports 0x10/0x40 are write-only on standard Scramble.
   return 0xff;
  }
 
  soundPortWrite(port, data) {
   port &= 0xff;
   data &= 0xff;
-  if (port === 0x10) {
-   this.ay1?.writeAddr(data);
-   return;
+  switch (port) {
+   case 0x10:
+    this.ay1?.writeAddr(data);
+    break;
+   case 0x20:
+    this.ay1?.writeData(data);
+    break;
+   case 0x40:
+    this.ay2?.writeAddr(data);
+    break;
+   case 0x80:
+    this.ay2?.writeData(data);
+    break;
   }
-  if (port === 0x20) {
-   this.ay1?.writeData(data);
-   return;
+ }
+
+ stepCpu(cpu) {
+  const cycles = cpu.step();
+  if (!Number.isFinite(cycles) || cycles <= 0) {
+   this.running = false;
+   throw new Error("Z80.step() must return a positive cycle count");
   }
-  if (port === 0x40) {
-   this.ay2?.writeAddr(data);
-   return;
+  if (cpu === this.soundCpu) {
+   this.ay1?.tick(cycles);
+   this.ay2?.tick(cycles);
   }
-  if (port === 0x80) {
-   this.ay2?.writeData(data);
-   return;
-  }
+  return cycles;
  }
 
  runCycles(cpu, budget) {
   let elapsed = 0;
-  while (elapsed < budget) elapsed += cpu.step();
+  while (elapsed < budget) elapsed += this.stepCpu(cpu);
   return elapsed;
  }
 
@@ -1943,3 +1829,6 @@ class ScrambleEmu {
   console.error("Emulator boot failed:", err?.message ?? err, err);
  }
 })();
+
+
+

@@ -1,193 +1,18 @@
+import { Z80 } from "../../cpu/z80.js";
+import { NamcoWSG } from "../../chips/NamcoWSG.js";
+import { EmulatorAudioWorklet } from "../../audio/EmulatorAudioWorklet.js";
+
 // ===========================================================
 // jspacman — Pac-Man Emulator
 // ===========================================================
 // Audio
-class NamcoWSG {
- // ── 1. Worklet source ──────────────────────────────────────────────────────
-static #WORKLET_SRC = `
-class NamcoWSGProcessor extends AudioWorkletProcessor {
-  constructor({ processorOptions: { waveData } }) {
-    super();
-    this.wave    = new Uint8Array(waveData);
-    this.accum   = new Float64Array(3);
-    this.voices  = [
-      { freq: 0, wave: 0, vol: 0 },
-      { freq: 0, wave: 0, vol: 0 },
-      { freq: 0, wave: 0, vol: 0 },
-    ];
-    this.enabled = false;
-    this.step    = 96000 / sampleRate;
-    this.port.onmessage = ({ data }) => {
-      if (data.type === 'voices')  this.voices  = data.v;
-      if (data.type === 'enabled') this.enabled = data.v;
-    };
-  }
-
-  process(_inputs, outputs) {
-    const ch = outputs[0][0];
-    if (!ch) return true;
-    if (!this.enabled) { ch.fill(0); return true; }
-
-    const { wave, accum, voices, step } = this;
-    const WRAP = 0x100000;
-
-    for (let i = 0; i < ch.length; i++) {
-      let s = 0;
-      for (let v = 0; v < 3; v++) {
-        const { freq, wave: w, vol } = voices[v];
-        if (!vol || !freq) continue;
-        accum[v] = (accum[v] + freq * step) % WRAP;
-        const pos = (accum[v] | 0) >> 15 & 0x1f;
-        s += (wave[w * 32 + pos] - 8) * vol;
-      }
-      ch[i] = s / 315;
-    }
-    return true;
-  }
-}
-registerProcessor('namco-wsg', NamcoWSGProcessor);
-`;
-
-  // ── 2. Constructor ─────────────────────────────────────────────────────────
-  constructor(waveformProm) {
-    this.waveData = new Uint8Array(256);
-    for (let i = 0; i < 256; i++) this.waveData[i] = waveformProm[i] & 0x0f;
-
-    this.regs   = new Uint8Array(32);
-    this.voices = [
-      { freq: 0, wave: 0, vol: 0 },
-      { freq: 0, wave: 0, vol: 0 },
-      { freq: 0, wave: 0, vol: 0 },
-    ];
-    this.enabled  = false;
-    this._ready   = false;
-    this.audioCtx = null;
-    this.gainNode = null;
-    this.worklet  = null;
-    this.fxChain  = null;
-  }
-
-  // ── 3. Register writes ─────────────────────────────────────────────────────
-  writeReg(offset, nibble) {
-    this.regs[offset & 0x1f] = nibble & 0x0f;
-    this._refreshVoices();
-    this.worklet?.port.postMessage({ type: 'voices', v: this.voices });
-  }
-
-  _refreshVoices() {
-    const r = this.regs;
-    this.voices[0].freq =
-      r[0x10] | (r[0x11] << 4) | (r[0x12] << 8) | (r[0x13] << 12) | (r[0x14] << 16);
-    this.voices[0].wave = r[0x05] & 0x07;
-    this.voices[0].vol  = r[0x15] & 0x0f;
-
-    this.voices[1].freq =
-      (r[0x16] << 4) | (r[0x17] << 8) | (r[0x18] << 12) | (r[0x19] << 16);
-    this.voices[1].wave = r[0x0a] & 0x07;
-    this.voices[1].vol  = r[0x1a] & 0x0f;
-
-    this.voices[2].freq =
-      (r[0x1b] << 4) | (r[0x1c] << 8) | (r[0x1d] << 12) | (r[0x1e] << 16);
-    this.voices[2].wave = r[0x0f] & 0x07;
-    this.voices[2].vol  = r[0x1f] & 0x0f;
-  }
-
-  // ── 4. Lifecycle ───────────────────────────────────────────────────────────
-  init() {
-    this.voices.forEach(v => { v.freq = 0; v.wave = 0; v.vol = 0; });
-    this._ready = false;
-  }
-
-  // ── 5. Pac-Man analog output-stage model ───────────────────────────────────
-  _attachFxChain() {
-    const { audioCtx: ctx, worklet, gainNode } = this;
-    if (!ctx || !worklet) return;
-
-    const hp = ctx.createBiquadFilter();
-    hp.type            = 'highpass';
-    hp.frequency.value = 80;
-    hp.Q.value         = 0.5;
-
-    const lp = ctx.createBiquadFilter();
-    lp.type            = 'lowpass';
-    lp.frequency.value = 5500;
-    lp.Q.value         = 0.6;
-
-    worklet.disconnect();
-    worklet.connect(hp);
-    hp.connect(lp);
-    lp.connect(gainNode);
-
-    this.fxChain = { hp, lp };
-  }
-
-  // ── 6. Audio init ──────────────────────────────────────────────────────────
-  async _initAudio() {
-  if (this._ready) return;
-  try {
-    this.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    this.gainNode = this.audioCtx.createGain();
-    this.gainNode.gain.value = 0.85;
-    this.gainNode.connect(this.audioCtx.destination);
-
-    // Inline workaround: use a data: URL instead of a blob: URL
-    const src = encodeURIComponent(NamcoWSG.#WORKLET_SRC);
-    const moduleUrl = `data:application/javascript;charset=utf-8,${src}`;
-
-    await this.audioCtx.audioWorklet.addModule(moduleUrl);
-
-    this.worklet = new AudioWorkletNode(this.audioCtx, 'namco-wsg', {
-      numberOfInputs:     0,
-      numberOfOutputs:    1,
-      outputChannelCount: [1],
-      processorOptions:   { waveData: Array.from(this.waveData) },
-    });
-    this.worklet.connect(this.gainNode);
-    this._ready = true;
-  } catch (e) {
-    console.warn('[WSG] Audio init failed:', e);
-  }
-}
-
-  // _initAudio() is always called regardless of en, so the AudioContext is
-  // created on the first call (which must be inside a user gesture).
-  async setEnabled(en) {
-    this.enabled = en;
-    if (!this._ready) await this._initAudio();
-    if (en) {
-      if (!this.fxChain && this._ready) this._attachFxChain();
-      if (this.audioCtx?.state === 'suspended') await this.audioCtx.resume();
-    }
-    this.worklet?.port.postMessage({ type: 'enabled', v: en });
-  }
-
-  // ── 7. Teardown ────────────────────────────────────────────────────────────
-  destroy() {
-    this.enabled = false;
-    this.worklet?.port.postMessage({ type: 'enabled', v: false });
-    this.worklet?.disconnect();
-    this.gainNode?.disconnect();
-    this.audioCtx?.close();
-    this.audioCtx = null;
-    this.worklet  = null;
-    this.fxChain  = null;
-    this._ready   = false;
-  }
-}
-// iOS Safari Sound Support
 async function ensureAudio() {
   const emu = window.pacmanEmulator;
-  if (!emu?.wsg || emu.wsg._ready) return;
-  try {
-    await emu.wsg.setEnabled(emu.soundEnable); // init + replay pending state in one call
-  } catch (e) {
-    console.warn('[EMU] ensureAudio failed:', e);
-  }
+  if (!emu?.audio) return;
+  try { await emu.audio.unlock(); emu.audio.setEnabled(emu.soundEnable); }
+  catch (e) { console.warn("[EMU] ensureAudio failed:", e); }
 }
-function resumeAudio() {
-  const wsg = window.pacmanEmulator?.wsg;
-  if (wsg?.audioCtx?.state === 'suspended') wsg.audioCtx.resume();
-}
+function resumeAudio() { window.pacmanEmulator?.audio?.resume(); }
 
 // Main
 class jspacman {
@@ -202,12 +27,12 @@ class jspacman {
     this.frameCounter   = 0;
 
     this.cpu             = new Z80();
-    this.cpu.emulator    = this;
+
     this.cpu.memRead     = (addr)        => this.memoryRead(addr);
     this.cpu.memWrite    = (addr, value) => this.memoryWrite(addr, value);
     this.cpu.ioRead      = (port)        => this.ioRead(port);
     this.cpu.ioWrite     = (port, value) => this.ioWrite(port, value);
-    this.cpu.fetchOpcode = (addr) => this.memoryRead(addr);
+
     this.cpu.vectorLatch = 0x00;
 
     this.memory      = new Uint8Array(0x10000).fill(0x00);
@@ -220,6 +45,8 @@ class jspacman {
     this.colorTable   = new Uint8Array(256);
     this.waveformProm = new Uint8Array(512);
     this.wsg          = null;
+    this.audio        = new EmulatorAudioWorklet();
+    this.audioFrameSamples = 0;
     this.soundEnable  = false;
 
     this.palette = [];
@@ -357,7 +184,8 @@ class jspacman {
           // Only call setEnabled if audio is already warmed up (user has interacted).
           // If not ready yet, the pending enable state is stored in this.soundEnable
           // and replayed by ensureAudio() on first interaction.
-          if (this.wsg?._ready) this.wsg.setEnabled(bit0).catch(() => {});
+          this.wsg?.soundEnable(bit0);
+          this.audio.setEnabled(bit0);
           break;
         case 0x02: this.flipScreen = bit0; break;
         // 0x03–0x07: lamps, coin lockout, coin counter — not emulated
@@ -366,7 +194,7 @@ class jspacman {
     }
 
     if (addr >= 0x5040 && addr <= 0x505f) {
-      this.wsg?.writeReg(addr - 0x5040, data);
+      this.wsg?.write(addr - 0x5040, data);
       return;
     }
 
@@ -500,8 +328,24 @@ class jspacman {
   // ── CPU Execution ────────────────────────────────────────────
   runCpuFrame() {
     let cyclesLeft = this.cyclesPerFrame;
-    while (cyclesLeft > 0) cyclesLeft -= this.cpu.step();
-    if (this.interruptEnable) this.cpu.irqPending = true;
+    let elapsed = 0;
+    this.wsg?.beginTimedInterval(3072000);
+    while (cyclesLeft > 0) {
+      // Memory-mapped WSG writes performed by this instruction see its
+      // machine-time position, matching MAME's stream-update ordering.
+      this.wsg?.setMachineTime(elapsed);
+      const cycles = this.cpu.step();
+      cyclesLeft -= cycles;
+      elapsed += cycles;
+    }
+    this.wsg?.endTimedInterval(this.cyclesPerFrame);
+    if (this.interruptEnable) this.cpu.requestIrq(this.cpu.vectorLatch);
+  }
+
+  renderAudioFrame() {
+    if (!this.wsg) return;
+    const pcm = this.wsg.drainTimedMono();
+    if (this.audio.ready && pcm.length) this.audio.push(pcm, this.wsg.sampleRate);
   }
 
   // ── Frame Loop ───────────────────────────────────────────────
@@ -516,6 +360,7 @@ class jspacman {
       this.runCpuFrame();
       this.accumulator -= this.targetInterval;
       this.frameCounter++;
+      this.renderAudioFrame();
     }
     this.renderFrame();
     requestAnimationFrame(() => this.frameLoop());
@@ -533,8 +378,7 @@ class jspacman {
     // Tear down any previous instance to prevent AudioContext leaks on reset.
     // Do NOT init audio here — AudioContext creation requires a user gesture.
     // ensureAudio() handles deferred init on first interaction.
-    this.wsg?.destroy();
-    this.wsg = new NamcoWSG(this.waveformProm);
+    this.wsg = new NamcoWSG({ waveformProm: this.waveformProm });
 
     this.cpu.reset();
     this.running       = true;
@@ -547,7 +391,8 @@ class jspacman {
 
   stop() {
     this.running = false;
-    this.wsg?.destroy();
+    this.audio.setEnabled(false);
+    this.audio.clear();
     updateButtonStates();
   }
 }
@@ -705,3 +550,6 @@ function start2Player() {
   emu.inputs.start2 = true;
   setTimeout(() => { emu.inputs.start2 = false; }, 100);
 }
+
+// HTML controls remain callable after switching the game to an ES module.
+Object.assign(window, { insertCoin1, start1Player, start2Player, toggleEmulator });

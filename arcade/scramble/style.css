@@ -18,17 +18,21 @@ body {
  box-sizing: border-box;
 }
 #gameCanvas {
- display: block;
- width: min(100vw - 2px, 100%);
- height: auto;
- aspect-ratio: 7 / 8;
- background: #000;
- image-rendering: pixelated;
- margin-top: 50px;
- position: relative;
- z-index: 1;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: block;
+  width: min(100vw - 2px, 100%);
+  height: auto;
+  aspect-ratio: 7 / 8;
+  margin: 0;
+  background: #000;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  transform: translate(-50%, -50%) rotate(0deg);
+  transform-origin: center;
+  touch-action: none;
 }
-
 /* Shared button behavior */
 button {
  -webkit-appearance: none;
