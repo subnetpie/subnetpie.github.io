@@ -215,20 +215,24 @@ export class NamcoWSG {
     if (!this.soundEnabled) return outputs;
     const mixRes = 128 * this.voiceCount;
     for (const voice of this.voices) {
-      let counter = voice.counter >>> 0;
+      // MAME polepos_wsg_device renders every non-zero speaker output from the
+      // same starting voice.counter. Only after all four outputs are generated
+      // is the counter advanced once to the common end position.
+      const startCounter = voice.counter >>> 0;
+      let endCounter = startCounter;
       for (let o = 0; o < 4; o++) {
         const volume = voice.volume[o];
         if (!volume) continue;
-        let c = counter;
+        let c = startCounter;
         const out = outputs[o];
         for (let i = 0; i < count; i++) {
           const pos = (c >>> this.fracBits) & 0x1f;
           out[i] += this.waveform((voice.waveformSelect << 5) + pos) * volume / mixRes;
           c = (c + voice.frequency) >>> 0;
         }
-        counter = c;
+        endCounter = c;
       }
-      voice.counter = counter;
+      voice.counter = endCounter;
     }
     return outputs;
   }
