@@ -2029,6 +2029,71 @@ class Namco05XX {
 
 
 
+class NamcoLS259Latch {constructor(name = "ls259") {this.name = name;this.state = 0x00;this.callbacks = new Array(8).fill(null);}setCallback(bit, fn) {this.callbacks[bit & 0x07] = fn;return this;}getBit(bit) {return this.state >>> (bit & 0x07) & 0x01;}write(addr, data) {var _window$JSBosco;const address = addr & 0xffff;const bit = address & 0x07;const next = data & 0x01;const trace = false;const e = (_window$JSBosco = window.JSBosco) === null || _window$JSBosco === void 0 ? void 0 : _window$JSBosco.emulator;if (trace) {var _e$timing$schedulerTi, _e$timing, _e$_activeCpuName, _this$getBit, _this$getBit2;console.log("[CPU BOARD LS259 WRITE]", { tick: (_e$timing$schedulerTi = e === null || e === void 0 ? void 0 : (_e$timing = e.timing) === null || _e$timing === void 0 ? void 0 : _e$timing.schedulerTick) !== null && _e$timing$schedulerTi !== void 0 ? _e$timing$schedulerTi : null, cpu: (_e$_activeCpuName = e === null || e === void 0 ? void 0 : e._activeCpuName) !== null && _e$_activeCpuName !== void 0 ? _e$_activeCpuName : null, addr: "0x" + address.toString(16), bit, data: "0x" + (data & 0xff).toString(16), d0: next, qBefore: (_this$getBit = (_this$getBit2 = this.getBit) === null || _this$getBit2 === void 0 ? void 0 : _this$getBit2.call(this, bit)) !== null && _this$getBit !== void 0 ? _this$getBit : null });}
+
+    this.setBit(bit, next);
+
+    if (trace) {var _e$timing$schedulerTi2, _e$timing2, _this$getBit3, _this$getBit4, _this$getBit5, _this$getBit6, _e$sub2NmiMask, _e$cpu3NmiEnabled, _ref, _e$cpuBoardResetAsser, _ref2, _e$sub2Cpu$inReset, _e$sub2Cpu, _e$sub2Cpu2, _e$sub2Cpu2$isReset, _ref3, _ref4, _e$sub2Cpu$getPC, _e$sub2Cpu3, _e$sub2Cpu3$getPC, _e$sub2Cpu4, _e$sub2Cpu5;
+      console.log("[CPU BOARD LS259 RESULT]", {
+        tick: (_e$timing$schedulerTi2 = e === null || e === void 0 ? void 0 : (_e$timing2 = e.timing) === null || _e$timing2 === void 0 ? void 0 : _e$timing2.schedulerTick) !== null && _e$timing$schedulerTi2 !== void 0 ? _e$timing$schedulerTi2 : null,
+
+        q2: (_this$getBit3 = (_this$getBit4 = this.getBit) === null || _this$getBit4 === void 0 ? void 0 : _this$getBit4.call(this, 2)) !== null && _this$getBit3 !== void 0 ? _this$getBit3 : null,
+
+        q3: (_this$getBit5 = (_this$getBit6 = this.getBit) === null || _this$getBit6 === void 0 ? void 0 : _this$getBit6.call(this, 3)) !== null && _this$getBit5 !== void 0 ? _this$getBit5 : null,
+
+        sub2NmiMask: (_e$sub2NmiMask =
+        e === null || e === void 0 ? void 0 : e.sub2NmiMask) !== null && _e$sub2NmiMask !== void 0 ? _e$sub2NmiMask :
+        (e === null || e === void 0 ? void 0 : e.cpu3NmiEnabled) == null ? null : !e.cpu3NmiEnabled,
+
+        soundNmiEnabled: (_e$cpu3NmiEnabled = e === null || e === void 0 ? void 0 : e.cpu3NmiEnabled) !== null && _e$cpu3NmiEnabled !== void 0 ? _e$cpu3NmiEnabled : null,
+
+        cpuBoardResetAsserted: (_ref = (_e$cpuBoardResetAsser =
+        e === null || e === void 0 ? void 0 : e.cpuBoardResetAsserted) !== null && _e$cpuBoardResetAsser !== void 0 ? _e$cpuBoardResetAsser : e === null || e === void 0 ? void 0 : e.subsystemsReset) !== null && _ref !== void 0 ? _ref : null,
+
+        soundCpuInReset: (_ref2 = (_e$sub2Cpu$inReset = e === null || e === void 0 ? void 0 : (_e$sub2Cpu = e.sub2Cpu) === null || _e$sub2Cpu === void 0 ? void 0 : _e$sub2Cpu.inReset) !== null && _e$sub2Cpu$inReset !== void 0 ? _e$sub2Cpu$inReset : e === null || e === void 0 ? void 0 : (_e$sub2Cpu2 = e.sub2Cpu) === null || _e$sub2Cpu2 === void 0 ? void 0 : (_e$sub2Cpu2$isReset = _e$sub2Cpu2.isReset) === null || _e$sub2Cpu2$isReset === void 0 ? void 0 : _e$sub2Cpu2$isReset.call(_e$sub2Cpu2)) !== null && _ref2 !== void 0 ? _ref2 : null,
+
+        soundPc: (_ref3 = (_ref4 = (_e$sub2Cpu$getPC =
+        e === null || e === void 0 ? void 0 : (_e$sub2Cpu3 = e.sub2Cpu) === null || _e$sub2Cpu3 === void 0 ? void 0 : (_e$sub2Cpu3$getPC = _e$sub2Cpu3.getPC) === null || _e$sub2Cpu3$getPC === void 0 ? void 0 : _e$sub2Cpu3$getPC.call(_e$sub2Cpu3)) !== null && _e$sub2Cpu$getPC !== void 0 ? _e$sub2Cpu$getPC : e === null || e === void 0 ? void 0 : (_e$sub2Cpu4 = e.sub2Cpu) === null || _e$sub2Cpu4 === void 0 ? void 0 : _e$sub2Cpu4.PC) !== null && _ref4 !== void 0 ? _ref4 : e === null || e === void 0 ? void 0 : (_e$sub2Cpu5 = e.sub2Cpu) === null || _e$sub2Cpu5 === void 0 ? void 0 : _e$sub2Cpu5.pc) !== null && _ref3 !== void 0 ? _ref3 : null });
+
+    }
+
+    return true;
+  }
+
+  setBit(bit, value, force = false) {var _this$callbacks$index, _this$callbacks;
+    const index = bit & 0x07;
+    const next = value & 0x01;
+    const previous = this.getBit(index);
+
+    if (!force && previous === next) {
+      return false;
+    }
+
+    this.state = this.state & ~(1 << index) | next << index;
+
+    (_this$callbacks$index = (_this$callbacks = this.callbacks)[index]) === null || _this$callbacks$index === void 0 ? void 0 : _this$callbacks$index.call(_this$callbacks, next, this.state, index);
+
+    return true;
+  }
+
+  clear(forceCallbacks = false) {
+    const previousState = this.state;
+
+    if (previousState === 0x00 && !forceCallbacks) {
+      return;
+    }
+
+    this.state = 0x00;
+
+    for (let bit = 0; bit < 8; bit++) {
+      const previous = previousState >>> bit & 0x01;
+
+      if (forceCallbacks || previous !== 0) {var _this$callbacks$bit, _this$callbacks2;
+        (_this$callbacks$bit = (_this$callbacks2 = this.callbacks)[bit]) === null || _this$callbacks$bit === void 0 ? void 0 : _this$callbacks$bit.call(_this$callbacks2, 0, this.state, bit);
+      }
+    }
+  }}
+
 class NamcoVideoLatch extends NamcoLS259Latch {
   constructor(onScreenFlip = null, onChipReset = null) {
     super("video_latch");
