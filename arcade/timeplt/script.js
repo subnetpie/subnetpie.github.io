@@ -21,6 +21,8 @@ class TP{
     this.latch=0;
     this.irqLine=0;
     this.irq=false;
+    this.mainCycleRemainder=0;
+    this.soundCycleRemainder=0;
     this.bind()}
   async f(n){
     let r=await fetch("./roms/"+n);
@@ -132,35 +134,28 @@ class TP{
     requestAnimationFrame(loop)}
   frame(){
     const mainPerLine=MC/FPS/256;
-
     const soundPerLine=SC/FPS/256;
+    this.im.data.fill(0);
 
-    for(let line=0;
-    line<256;
-    line++){
+    for(let line=0;line<256;line++){
       this.scan=line;
-
-      let n=0;
-
-      while(n<mainPerLine)n+=this.c.step();
-
-      n=0;
-
-      while(n<soundPerLine){
+      // Carry instruction overshoot forward so scanline polling stays in sync.
+      this.mainCycleRemainder+=mainPerLine;
+      while(this.mainCycleRemainder>0)this.mainCycleRemainder-=this.c.step();
+      this.soundCycleRemainder+=soundPerLine;
+      while(this.soundCycleRemainder>0){
         if(this.irq){
           this.ac.requestIrq(255);
-
           this.irq=false;
-
         }
-        n+=this.ac.step();
-
+        this.soundCycleRemainder-=this.ac.step();
       }
+      // The ROM polls C000 and repositions the cloud sprites mid-frame.
+      // Preserve each raster line before later writes reuse those sprites.
+      this.drawScanline(line);
       if(line===240&&this.nmi)this.c.pulseNmi();
-
     }
-    this.draw();
-
+    this.cx.putImageData(this.im,0,0);
   }
   px(x,y,c){
     if(y<16||y>=240)return;
@@ -184,11 +179,6 @@ class TP{
     const charIncrement = sprite ? 512 : 128;
     const bitBase = code * charIncrement + xOffset + yOffset;
 
-    // MAME gfx_layout plane order is { 4, 0 }. Plane 0 is the low
-    // significance pen bit, so it comes from bitBase + 4; plane 1 comes
-    // from bitBase + 0. Reversing these does not merely swap colors:
-    // Time Pilot's character lookup PROM maps some swapped pens to black,
-    // which made the cloud layer appear absent over part of the screen.
     const plane0Bit = bitBase + 4;
     const bit0 =
       (rom[plane0Bit >> 3] >> (7 - (plane0Bit & 7))) & 1;
@@ -197,39 +187,48 @@ class TP{
 
     return bit0 | (bit1 << 1);
   }
-  tile(code,col,X,Y,fx,fy){
-    for(let y=0;
-    y<8;
+  tile(code,col,X,Y,fx,fy,line=null){
+    const first=line===null?0:line-Y,last=line===null?8:first+1;
+    for(let y=first;
+    y<last;
     y++)for(let x=0;
     x<8;
     x++){
       let p=this.gp(this.t,code,fx?7-x:x,fy?7-y:y);
       this.px(X+x,Y+y,col*4+p)}}
-  sprites(){
+  sprites(line=null){
     for(let o=62;
     o>=16;
     o-=2){
       let X=this.m[45056+o],Y=241-this.m[46080+o+1],code=this.m[45056+o+1],a=this.m[46080+o],col=a&63,fx=!(a&64),fy=!!(a&128);
-      for(let y=0;
-      y<16;
+      const first=line===null?0:line-Y,last=line===null?16:first+1;
+      if(first<0||first>=16)continue;
+      for(let y=first;
+      y<last;
       y++)for(let x=0;
       x<16;
       x++){
         let p=this.gp(this.s,code,fx?15-x:x,fy?15-y:y,true);
         if(p)this.px(X+x,Y+y,128+col*4+p)}}}
-  draw(){
-    this.im.data.fill(0);
-    if(this.video)for(let cat=0;
-    cat<2;
-    cat++){
-      if(cat)this.sprites();
-      for(let j=0;
-      j<1024;
-      j++){
+  drawScanline(line){
+    if(!this.video||line<16||line>=240)return;
+    const row=(line>>3)*32;
+    for(let cat=0;cat<2;cat++){
+      if(cat)this.sprites(line);
+      for(let j=row;j<row+32;j++){
         let a=this.m[40960+j];
         if(((a>>4)&1)!==cat)continue;
-        this.tile((this.m[41984+j]+8*(a&32))&511,a&31,(j&31)*8,(j>>5)*8,!!(a&64),!!(a&128))}}
-    this.cx.putImageData(this.im,0,0)}
+        this.tile((this.m[41984+j]+8*(a&32))&511,a&31,
+          (j&31)*8,(j>>5)*8,!!(a&64),!!(a&128),line);
+      }
+    }
+  }
+  draw(){
+    // Static redraw for debugging; frame() renders against live raster state.
+    this.im.data.fill(0);
+    for(let line=16;line<240;line++)this.drawScanline(line);
+    this.cx.putImageData(this.im,0,0);
+  }
   bind(){
     let set=(n,v)=>this.i[n]=v,pulse=n=>{
       set(n,1);
