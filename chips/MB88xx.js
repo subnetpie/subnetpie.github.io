@@ -26,6 +26,15 @@ class MB88xx {
 
     this.oOutput = 0; // zeroed once, here (cold start) — matches device_start()
 
+    // device_start() owns these external pin/timer states. MAME's
+    // device_reset() deliberately does not clear m_if, m_ctr, or cancel an
+    // already-running serial timer.
+    this.ifLine = 0;
+    this.ctr = 0;
+    this.serialEnabled = false;
+    this.serialCycleAccumulator = 0;
+    this.resetAsserted = false;
+
     this.halted = false;
     this.romLoaded = false;
 
@@ -59,26 +68,34 @@ class MB88xx {
     this.cf = 0;
     this.vf = 0;
     this.sf = 0;
-    this.ifLine = 0;
 
     this.pio = 0;
     this.TH = 0;
     this.TL = 0;
     this.TP = 0;
-    this.ctr = 0;
 
     this.SB = 0;
     this.SBcount = 0;
 
     this.pendingIrq = 0;
     this.inIrq = false;
-    this.serialEnabled = false;
 
     this.halted = false;
   }
 
   setHalt(state) {
     this.halted = !!state;
+  }
+
+  // CPU-framework RESET input. The Namco wrappers pass an asserted boolean.
+  // MAME calls device_reset() when reset is asserted and suspends execution
+  // until release; wrapper execution loops already enforce that suspension.
+  setResetLine(asserted) {
+    const next = !!asserted;
+    if (next === this.resetAsserted) return false;
+    this.resetAsserted = next;
+    if (next) this.reset();
+    return true;
   }
 
   getPC() {
@@ -123,15 +140,43 @@ class MB88xx {
   }
 
   pioEnable(newpio) {
+    newpio &= 0xff;
     if ((this.pio ^ newpio) & 0x30) {
       const serialBits = newpio & 0x30;
       if (serialBits === 0x00) {
         this.serialEnabled = false;
+        this.serialCycleAccumulator = 0;
       } else if (serialBits === 0x20) {
+        // MAME arms serial_timer at clock()/SERIAL_PRESCALE. MB88xx
+        // execute cycles are already clock()/6, so this is one MCU cycle.
         this.serialEnabled = true;
+        this.serialCycleAccumulator = 0;
+      } else {
+        throw new Error(
+          "mb88xx: pio_enable set serial enable to unsupported value " +
+          serialBits.toString(16).padStart(2, "0"));
       }
     }
-    this.pio = newpio & 0xff;
+    this.pio = newpio;
+  }
+
+  serialTimerTick() {
+    const C = this.constructor;
+    this.SBcount++;
+
+    if (this.SBcount >= C.SERIAL_DISABLE_THRESH)
+      this.serialEnabled = false;
+
+    // Match MAME: don't overwrite SB while the serial-full flag is set.
+    if (!this.sf) {
+      this.SB = (this.SB >>> 1) | (this.readSI() ? 8 : 0);
+      this.SB &= 0x0f;
+
+      if (this.SBcount >= 4) {
+        this.sf = 1;
+        this.pendingIrq |= C.INT_CAUSE_SERIAL;
+      }
+    }
   }
 
   incrementTimer() {
@@ -168,6 +213,17 @@ class MB88xx {
   burnCycles(cycles) {
     const C = this.constructor;
     let consumed = cycles;
+
+    // serial_timer is a scheduler timer in MAME. Its period is clock()/6,
+    // exactly one MB88xx execution cycle. Advance it before IRQ arbitration
+    // so a serial completion can become pending at the same cycle boundary.
+    if (this.serialEnabled) {
+      this.serialCycleAccumulator += cycles;
+      while (this.serialEnabled && this.serialCycleAccumulator >= 1) {
+        this.serialCycleAccumulator -= 1;
+        this.serialTimerTick();
+      }
+    }
 
     if (this.pio & 0x80) {
       this.TP += cycles;
@@ -436,7 +492,15 @@ class MB88xx {
         break;
       case 0x27:
         this.st = this.sf ^ 1;
-        if (this.sf) this.SBcount = 0;
+        if (this.sf) {
+          // MAME restarts the serial timer here if it had disabled itself
+          // after too many unserviced serial callbacks.
+          if (this.SBcount >= this.constructor.SERIAL_DISABLE_THRESH) {
+            this.serialEnabled = true;
+            this.serialCycleAccumulator = 0;
+          }
+          this.SBcount = 0;
+        }
         this.sf = 0;
         break;
       case 0x28:
@@ -742,7 +806,7 @@ class MB88xx {
     // addition to the instruction. Return the full amount so Namco custom
     // device schedulers do not run the MB88xx too fast around IRQs.
     return this.burnCycles(oc);
-  }}_defineProperty(MB88xx, "INT_CAUSE_SERIAL", 0x01);_defineProperty(MB88xx, "INT_CAUSE_TIMER", 0x02);_defineProperty(MB88xx, "INT_CAUSE_EXTERNAL", 0x04);_defineProperty(MB88xx, "TIMER_PRESCALE", 32);
+  }}_defineProperty(MB88xx, "INT_CAUSE_SERIAL", 0x01);_defineProperty(MB88xx, "INT_CAUSE_TIMER", 0x02);_defineProperty(MB88xx, "INT_CAUSE_EXTERNAL", 0x04);_defineProperty(MB88xx, "TIMER_PRESCALE", 32);_defineProperty(MB88xx, "SERIAL_DISABLE_THRESH", 1000);
 
 class MB8841 extends MB88xx {
   constructor() {
