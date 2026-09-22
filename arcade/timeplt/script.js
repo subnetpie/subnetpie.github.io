@@ -184,9 +184,17 @@ class TP{
     const charIncrement = sprite ? 512 : 128;
     const bitBase = code * charIncrement + xOffset + yOffset;
 
-    const bit0 = (rom[bitBase >> 3] >> (7 - (bitBase & 7))) & 1;
-    const plane1Bit = bitBase + 4;
-    const bit1 = (rom[plane1Bit >> 3] >> (7 - (plane1Bit & 7))) & 1;
+    // MAME gfx_layout plane order is { 4, 0 }. Plane 0 is the low
+    // significance pen bit, so it comes from bitBase + 4; plane 1 comes
+    // from bitBase + 0. Reversing these does not merely swap colors:
+    // Time Pilot's character lookup PROM maps some swapped pens to black,
+    // which made the cloud layer appear absent over part of the screen.
+    const plane0Bit = bitBase + 4;
+    const bit0 =
+      (rom[plane0Bit >> 3] >> (7 - (plane0Bit & 7))) & 1;
+    const bit1 =
+      (rom[bitBase >> 3] >> (7 - (bitBase & 7))) & 1;
+
     return bit0 | (bit1 << 1);
   }
   tile(code,col,X,Y,fx,fy){
