@@ -4,6 +4,10 @@ import { MB88xx, MB8841, MB8842, MB8843, MB8844 } from "../../chips/MB88xx.js";
 import { Namco51XX } from "../../chips/Namco51XX.js";
 import { Namco52XX } from "../../chips/Namco52XX.js";
 import { Namco54XX } from "../../chips/Namco54XX.js";
+import { NamcoWSG } from "../../chips/NamcoWSG.js";
+import { Namco52xxDac } from "../../audio/Namco52xxDac.js";
+import { Namco54xxDac } from "../../audio/Namco54xxDac.js";
+import { EmulatorAudioWorklet } from "../../audio/EmulatorAudioWorklet.js";
 import { Z80 } from "../../cpu/z80.js";
 
 function _defineProperty(obj, key, value) {if (key in obj) {Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true });} else {obj[key] = value;}return obj;}class EmulatorConfig {
@@ -2025,759 +2029,6 @@ class Namco05XX {
 
 
 
-class voice52xxDac {
-
-
-
-
-
-
-
-
-
-
-
-
-  constructor() {
-    this.audioCtx = null;
-
-    this.source = null;
-    this.highPass = null;
-    this.lowPass = null;
-    this.gainNode = null;
-
-    this.lastNibble = 0x08;
-
-    this.masterTickBase = null;
-    this.audioTimeBase = 0;
-    this.lastScheduledAudioTime = 0;
-  }
-
-  attach(audioCtx, destination) {
-    if (this.audioCtx === audioCtx && this.source) {
-      return;
-    }
-
-    this.detach();
-
-    this.audioCtx = audioCtx;
-
-    this.masterTickBase = null;
-    this.audioTimeBase = 0;
-    this.lastScheduledAudioTime = 0;
-
-    this.source = audioCtx.createConstantSource();
-    this.source.offset.setValueAtTime(
-    this.nibbleToDacLevel(this.lastNibble),
-    audioCtx.currentTime);
-
-
-    this.highPass = audioCtx.createBiquadFilter();
-    this.highPass.type = "highpass";
-    this.highPass.frequency.setValueAtTime(80, audioCtx.currentTime);
-    this.highPass.Q.setValueAtTime(0.3, audioCtx.currentTime);
-
-    this.lowPass = audioCtx.createBiquadFilter();
-    this.lowPass.type = "lowpass";
-    this.lowPass.frequency.setValueAtTime(2400, audioCtx.currentTime);
-    this.lowPass.Q.setValueAtTime(0.9, audioCtx.currentTime);
-
-    this.gainNode = audioCtx.createGain();
-    this.gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime);
-
-    this.source.connect(this.highPass);
-    this.highPass.connect(this.lowPass);
-    this.lowPass.connect(this.gainNode);
-    this.gainNode.connect(destination);
-
-    this.source.start();
-  }
-
-  nibbleToDacLevel(nibble) {
-    const value = nibble & 0x0f;
-    const weights = voice52xxDac.BIT_WEIGHTS;
-
-    let output = 0;
-
-    if (value & 0x01) {
-      output += weights[0];
-    }
-
-    if (value & 0x02) {
-      output += weights[1];
-    }
-
-    if (value & 0x04) {
-      output += weights[2];
-    }
-
-    if (value & 0x08) {
-      output += weights[3];
-    }
-
-    return output;
-  }
-
-  mapMasterTickToAudioTime(masterTick) {
-    const ctx = this.audioCtx;
-
-    if (!ctx) {
-      return null;
-    }
-
-    const now = ctx.currentTime;
-    const minimumTime = now + voice52xxDac.AUDIO_LEAD_SECONDS;
-
-    if (!Number.isFinite(masterTick)) {
-      return Math.max(minimumTime, this.lastScheduledAudioTime);
-    }
-
-    if (this.masterTickBase == null) {
-      this.masterTickBase = masterTick;
-      this.audioTimeBase = minimumTime;
-      this.lastScheduledAudioTime = minimumTime;
-
-      return minimumTime;
-    }
-
-    let audioTime =
-    this.audioTimeBase +
-    (masterTick - this.masterTickBase) / voice52xxDac.MASTER_CLOCK;
-
-    if (audioTime < minimumTime) {
-      this.masterTickBase = masterTick;
-      this.audioTimeBase = minimumTime;
-      audioTime = minimumTime;
-    }
-
-    if (audioTime < this.lastScheduledAudioTime) {
-      audioTime = this.lastScheduledAudioTime;
-    }
-
-    this.lastScheduledAudioTime = audioTime;
-
-    return audioTime;
-  }
-
-  pushNibble(nibble, masterTick = null) {
-    const value = nibble & 0x0f;
-
-    this.lastNibble = value;
-
-    if (!this.source || !this.audioCtx) {
-      return;
-    }
-
-    const audioTime = this.mapMasterTickToAudioTime(masterTick);
-
-    if (audioTime == null) {
-      return;
-    }
-
-    this.source.offset.setValueAtTime(this.nibbleToDacLevel(value), audioTime);
-  }
-
-  reset() {
-    this.lastNibble = 0x08;
-
-    this.masterTickBase = null;
-    this.audioTimeBase = 0;
-    this.lastScheduledAudioTime = 0;
-
-    if (!this.source || !this.audioCtx) {
-      return;
-    }
-
-    const now = this.audioCtx.currentTime;
-
-    this.source.offset.cancelScheduledValues(now);
-
-    this.source.offset.setValueAtTime(
-    this.nibbleToDacLevel(this.lastNibble),
-    now);
-
-  }
-
-  detach() {var _this$source2, _this$highPass, _this$lowPass, _this$gainNode;
-    try {var _this$source;
-      (_this$source = this.source) === null || _this$source === void 0 ? void 0 : _this$source.stop();
-    } catch (_) {}
-
-    (_this$source2 = this.source) === null || _this$source2 === void 0 ? void 0 : _this$source2.disconnect();
-    (_this$highPass = this.highPass) === null || _this$highPass === void 0 ? void 0 : _this$highPass.disconnect();
-    (_this$lowPass = this.lowPass) === null || _this$lowPass === void 0 ? void 0 : _this$lowPass.disconnect();
-    (_this$gainNode = this.gainNode) === null || _this$gainNode === void 0 ? void 0 : _this$gainNode.disconnect();
-
-    this.source = null;
-    this.highPass = null;
-    this.lowPass = null;
-    this.gainNode = null;
-    this.audioCtx = null;
-
-    this.masterTickBase = null;
-    this.audioTimeBase = 0;
-    this.lastScheduledAudioTime = 0;
-  }}_defineProperty(voice52xxDac, "MASTER_CLOCK", 18432000);_defineProperty(voice52xxDac, "AUDIO_LEAD_SECONDS", 0.04);_defineProperty(voice52xxDac, "BIT_WEIGHTS", (() => {const conductance = [1 / 100000, 1 / 47000, 1 / 22000, 1 / 10000];const total = conductance[0] + conductance[1] + conductance[2] + conductance[3];return conductance.map(value => value / total);})());
-
-class Namco54xxDac {
-
-
-
-  constructor() {
-    this.audioCtx = null;
-    this.destination = null;
-
-    this.source = new Array(Namco54xxDac.CHANNEL_COUNT).fill(null);
-    this.highPass = new Array(Namco54xxDac.CHANNEL_COUNT).fill(null);
-    this.lowPass = new Array(Namco54xxDac.CHANNEL_COUNT).fill(null);
-    this.channelGain = new Array(Namco54xxDac.CHANNEL_COUNT).fill(null);
-
-    this.mixer = null;
-    this.outputGain = null;
-
-    this.channelData = new Uint8Array(Namco54xxDac.CHANNEL_COUNT);
-
-    this.masterTickBase = null;
-    this.audioTimeBase = 0;
-    this.lastScheduledAudioTime = 0;
-  }
-
-  attach(audioCtx, destination) {
-    if (this.audioCtx === audioCtx && this.mixer) {
-      return;
-    }
-
-    this.detach();
-
-    this.audioCtx = audioCtx;
-    this.destination = destination;
-    this.masterTickBase = null;
-    this.audioTimeBase = 0;
-    this.lastScheduledAudioTime = 0;
-
-    const now = audioCtx.currentTime;
-
-    this.mixer = audioCtx.createGain();
-    this.mixer.gain.setValueAtTime(1, now);
-
-    this.outputGain = audioCtx.createGain();
-    this.outputGain.gain.setValueAtTime(0.16, now);
-
-    this.mixer.connect(this.outputGain);
-    this.outputGain.connect(destination);
-
-    const config = [
-    {
-      channel: 2,
-      highPass: 1500,
-      lowPass: 750,
-      gain: 1.0 },
-
-    {
-      channel: 1,
-      highPass: 320,
-      lowPass: 110,
-      gain: 0.82 },
-
-    {
-      channel: 0,
-      highPass: 1050,
-      lowPass: 725,
-      gain: 0.52 }];
-
-
-
-    for (let path = 0; path < config.length; path++) {
-      const spec = config[path];
-      const channel = spec.channel;
-
-      const source = audioCtx.createConstantSource();
-
-      const highPass = audioCtx.createBiquadFilter();
-      highPass.type = "highpass";
-      highPass.frequency.setValueAtTime(spec.highPass, now);
-      highPass.Q.setValueAtTime(0.707, now);
-
-      const lowPass = audioCtx.createBiquadFilter();
-      lowPass.type = "lowpass";
-      lowPass.frequency.setValueAtTime(spec.lowPass, now);
-      lowPass.Q.setValueAtTime(0.707, now);
-
-      const channelGain = audioCtx.createGain();
-      channelGain.gain.setValueAtTime(spec.gain, now);
-
-      source.offset.setValueAtTime(
-      this.nibbleToVoltage(this.channelData[channel]),
-      now);
-
-
-      source.connect(highPass);
-      highPass.connect(lowPass);
-      lowPass.connect(channelGain);
-      channelGain.connect(this.mixer);
-
-      source.start(now);
-
-      this.source[channel] = source;
-      this.highPass[channel] = highPass;
-      this.lowPass[channel] = lowPass;
-      this.channelGain[channel] = channelGain;
-    }
-  }
-
-  detach() {var _this$mixer, _this$outputGain;
-    for (let channel = 0; channel < Namco54xxDac.CHANNEL_COUNT; channel++) {var _this$source$channel2, _this$highPass$channe, _this$lowPass$channel, _this$channelGain$cha;
-      try {var _this$source$channel;
-        (_this$source$channel = this.source[channel]) === null || _this$source$channel === void 0 ? void 0 : _this$source$channel.stop();
-      } catch (_) {}
-
-      (_this$source$channel2 = this.source[channel]) === null || _this$source$channel2 === void 0 ? void 0 : _this$source$channel2.disconnect();
-      (_this$highPass$channe = this.highPass[channel]) === null || _this$highPass$channe === void 0 ? void 0 : _this$highPass$channe.disconnect();
-      (_this$lowPass$channel = this.lowPass[channel]) === null || _this$lowPass$channel === void 0 ? void 0 : _this$lowPass$channel.disconnect();
-      (_this$channelGain$cha = this.channelGain[channel]) === null || _this$channelGain$cha === void 0 ? void 0 : _this$channelGain$cha.disconnect();
-
-      this.source[channel] = null;
-      this.highPass[channel] = null;
-      this.lowPass[channel] = null;
-      this.channelGain[channel] = null;
-    }
-
-    (_this$mixer = this.mixer) === null || _this$mixer === void 0 ? void 0 : _this$mixer.disconnect();
-    (_this$outputGain = this.outputGain) === null || _this$outputGain === void 0 ? void 0 : _this$outputGain.disconnect();
-
-    this.mixer = null;
-    this.outputGain = null;
-    this.audioCtx = null;
-    this.destination = null;
-    this.masterTickBase = null;
-    this.audioTimeBase = 0;
-    this.lastScheduledAudioTime = 0;
-  }
-
-  reset() {var _this$audioCtx$curren, _this$audioCtx;
-    this.channelData.fill(0);
-
-    const now = (_this$audioCtx$curren = (_this$audioCtx = this.audioCtx) === null || _this$audioCtx === void 0 ? void 0 : _this$audioCtx.currentTime) !== null && _this$audioCtx$curren !== void 0 ? _this$audioCtx$curren : 0;
-
-    for (let channel = 0; channel < Namco54xxDac.CHANNEL_COUNT; channel++) {var _this$source$channel3, _this$source$channel4;
-      (_this$source$channel3 = this.source[channel]) === null || _this$source$channel3 === void 0 ? void 0 : _this$source$channel3.offset.cancelScheduledValues(now);
-      (_this$source$channel4 = this.source[channel]) === null || _this$source$channel4 === void 0 ? void 0 : _this$source$channel4.offset.setValueAtTime(this.nibbleToVoltage(0), now);
-    }
-  }
-
-  nibbleToVoltage(nibble) {
-    const value = nibble & 0x0f;
-
-    const r0 = 47000;
-    const r1 = 22000;
-    const r2 = 10000;
-    const r3 = 4700;
-
-    const g0 = 1 / r0;
-    const g1 = 1 / r1;
-    const g2 = 1 / r2;
-    const g3 = 1 / r3;
-
-    const totalConductance = g0 + g1 + g2 + g3;
-
-    let enabledConductance = 0;
-
-    if (value & 0x01) enabledConductance += g0;
-    if (value & 0x02) enabledConductance += g1;
-    if (value & 0x04) enabledConductance += g2;
-    if (value & 0x08) enabledConductance += g3;
-
-    return 4 * enabledConductance / totalConductance - 2;
-  }
-
-  masterTickToAudioTime(masterTick) {
-    const ctx = this.audioCtx;
-
-    if (!ctx) {
-      return 0;
-    }
-
-    const tick = Math.max(0, Math.floor(Number(masterTick) || 0));
-
-    if (this.masterTickBase === null) {
-      this.masterTickBase = tick;
-      this.audioTimeBase = ctx.currentTime + 0.015;
-      this.lastScheduledAudioTime = this.audioTimeBase;
-      return this.audioTimeBase;
-    }
-
-    const target =
-    this.audioTimeBase +
-    (tick - this.masterTickBase) / Namco54xxDac.MASTER_CLOCK;
-
-    const minimum = ctx.currentTime + 0.001;
-    const scheduled = Math.max(
-    minimum,
-    Math.min(target, this.lastScheduledAudioTime + 0.05));
-
-
-    this.lastScheduledAudioTime = scheduled;
-
-    return scheduled;
-  }
-
-  writeChannel(channel, value, masterTick = 0, force = false) {
-    const index = channel | 0;
-
-    if (index < 0 || index >= Namco54xxDac.CHANNEL_COUNT) {
-      return false;
-    }
-
-    const next = value & 0x0f;
-
-    if (!force && this.channelData[index] === next) {
-      return false;
-    }
-
-    this.channelData[index] = next;
-
-    const source = this.source[index];
-    const ctx = this.audioCtx;
-
-    if (!source || !ctx) {
-      return true;
-    }
-
-    const when = this.masterTickToAudioTime(masterTick);
-    const voltage = this.nibbleToVoltage(next);
-
-    source.offset.cancelScheduledValues(when);
-    source.offset.setValueAtTime(voltage, when);
-
-    return true;
-  }
-
-  synchronizeState(masterTick = 0) {
-    for (let channel = 0; channel < Namco54xxDac.CHANNEL_COUNT; channel++) {
-      this.writeChannel(channel, this.channelData[channel], masterTick, true);
-    }
-  }
-
-  getTraceState() {var _this$audioCtx$state, _this$audioCtx2;
-    return {
-      attached: !!this.mixer,
-      contextState: (_this$audioCtx$state = (_this$audioCtx2 = this.audioCtx) === null || _this$audioCtx2 === void 0 ? void 0 : _this$audioCtx2.state) !== null && _this$audioCtx$state !== void 0 ? _this$audioCtx$state : null,
-      channel0: this.channelData[0] & 0x0f,
-      channel1: this.channelData[1] & 0x0f,
-      channel2: this.channelData[2] & 0x0f,
-      masterTickBase: this.masterTickBase,
-      audioTimeBase: this.audioTimeBase,
-      lastScheduledAudioTime: this.lastScheduledAudioTime };
-
-  }}_defineProperty(Namco54xxDac, "MASTER_CLOCK", 18432000);_defineProperty(Namco54xxDac, "CHANNEL_COUNT", 3);
-
-class NamcoWSG {
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  constructor(config) {var _config$audio;
-    this.config = config;
-    this.prom = new Uint8Array(256);
-    this.regs = new Uint8Array(32);
-    this.channels = [
-    { freq: 0, wave: 0, vol: 0 },
-    { freq: 0, wave: 0, vol: 0 },
-    { freq: 0, wave: 0, vol: 0 }];
-
-    this.audioCtx = null;
-    this.gainNode = null;
-    this.wsgNode = null;
-    this.port = null;
-    this.state = "idle";
-    this.enabled = (config === null || config === void 0 ? void 0 : (_config$audio = config.audio) === null || _config$audio === void 0 ? void 0 : _config$audio.enabled) !== false;
-    this.onAudioReady = null;
-    this.gestureEvents = null;
-    this.onGesture = null;
-  }
-
-  write(offset, data) {
-    this.regs[offset & 0x1f] = data & 0x0f;
-    this.decodeAndSend();
-  }
-
-  flushRegisters() {
-    this.decodeAndSend();
-  }
-
-  notifyPromLoaded() {
-    this.decodeAndSend();
-  }
-
-  reset() {var _this$port, _this$port2;
-    this.regs.fill(0);
-    for (const channel of this.channels) {
-      channel.freq = 0;
-      channel.wave = 0;
-      channel.vol = 0;
-    }
-    (_this$port = this.port) === null || _this$port === void 0 ? void 0 : _this$port.postMessage({ type: "reset" });
-    this.decodeAndSend();
-    (_this$port2 = this.port) === null || _this$port2 === void 0 ? void 0 : _this$port2.postMessage({ type: "enabled", v: this.enabled });
-  }
-
-  initAudio() {
-    if (this.onGesture) return;
-    this.gestureEvents = ["touchend", "pointerup", "mousedown", "keydown"];
-    this.onGesture = event => {
-      if (event.isTrusted) this.unlockFromGesture();
-    };
-    for (const event of this.gestureEvents) {
-      window.addEventListener(event, this.onGesture, {
-        capture: true,
-        passive: true });
-
-    }
-  }
-
-  async setEnabled(enabled) {var _this$port3;
-    this.enabled = !!enabled;
-    if (this.state === "idle") await this.createAudioGraph();
-    if (this.state === "ready") await this.resumeIfNeeded();
-    (_this$port3 = this.port) === null || _this$port3 === void 0 ? void 0 : _this$port3.postMessage({ type: "enabled", v: this.enabled });
-  }
-
-  async unlockFromGesture() {
-    if (this.state === "idle") await this.createAudioGraph();
-    if (this.state === "ready") await this.resumeIfNeeded();
-  }
-
-  async resumeIfNeeded() {
-    if (!this.audioCtx || this.audioCtx.state === "running") return;
-    try {
-      await this.audioCtx.resume();
-    } catch (_) {}
-  }
-
-  async createAudioGraph() {
-    if (this.state !== "idle") return;
-    this.state = "pending";
-    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-    if (!AudioContextClass) {
-      this.state = "idle";
-      return;
-    }
-    try {var _this$config$audio$ma, _this$config2, _this$config2$audio, _this$onAudioReady;
-      this.audioCtx = new AudioContextClass();
-      await this.resumeIfNeeded();
-      this.gainNode = this.audioCtx.createGain();
-      this.gainNode.gain.setValueAtTime((_this$config$audio$ma = (_this$config2 =
-      this.config) === null || _this$config2 === void 0 ? void 0 : (_this$config2$audio = _this$config2.audio) === null || _this$config2$audio === void 0 ? void 0 : _this$config2$audio.masterVolume) !== null && _this$config$audio$ma !== void 0 ? _this$config$audio$ma : 0.5,
-      this.audioCtx.currentTime);
-
-      this.gainNode.connect(this.audioCtx.destination);
-      const url = URL.createObjectURL(
-      new Blob([NamcoWSG.WORKLET_SOURCE], { type: "application/javascript" }));
-
-      try {
-        await this.audioCtx.audioWorklet.addModule(url);
-      } finally {
-        URL.revokeObjectURL(url);
-      }
-      this.wsgNode = new AudioWorkletNode(this.audioCtx, "namco-wsg", {
-        numberOfInputs: 0,
-        numberOfOutputs: 1,
-        outputChannelCount: [1],
-        processorOptions: {
-          waveData: Array.from(this.prom, value => value & 15) } });
-
-
-      this.wsgNode.connect(this.gainNode);
-      this.port = this.wsgNode.port;
-      this.state = "ready";
-      this.decodeAndSend();
-      this.port.postMessage({ type: "enabled", v: this.enabled });
-      (_this$onAudioReady = this.onAudioReady) === null || _this$onAudioReady === void 0 ? void 0 : _this$onAudioReady.call(this, this.audioCtx, this.gainNode);
-    } catch (error) {
-      console.warn("[WSG] Audio init failed", error);
-      this.teardownAudioGraph();
-    }
-  }
-
-  teardownAudioGraph() {var _this$wsgNode, _this$gainNode2, _this$audioCtx3, _this$audioCtx3$close, _this$audioCtx3$close2, _this$audioCtx3$close3;
-    (_this$wsgNode = this.wsgNode) === null || _this$wsgNode === void 0 ? void 0 : _this$wsgNode.disconnect();
-    (_this$gainNode2 = this.gainNode) === null || _this$gainNode2 === void 0 ? void 0 : _this$gainNode2.disconnect();
-    (_this$audioCtx3 = this.audioCtx) === null || _this$audioCtx3 === void 0 ? void 0 : (_this$audioCtx3$close = _this$audioCtx3.close) === null || _this$audioCtx3$close === void 0 ? void 0 : (_this$audioCtx3$close2 = (_this$audioCtx3$close3 = _this$audioCtx3$close.call(_this$audioCtx3)).catch) === null || _this$audioCtx3$close2 === void 0 ? void 0 : _this$audioCtx3$close2.call(_this$audioCtx3$close3, () => {});
-    this.audioCtx = null;
-    this.gainNode = null;
-    this.wsgNode = null;
-    this.port = null;
-    this.state = "idle";
-  }
-
-  decodeAndSend() {var _this$port4;
-    const r = this.regs;
-    this.channels[0].freq =
-    r[0x10] |
-    r[0x11] << 4 |
-    r[0x12] << 8 |
-    r[0x13] << 12 |
-    r[0x14] << 16;
-    this.channels[0].wave = r[0x05] & 7;
-    this.channels[0].vol = r[0x15] & 15;
-    this.channels[1].freq =
-    r[0x16] << 4 | r[0x17] << 8 | r[0x18] << 12 | r[0x19] << 16;
-    this.channels[1].wave = r[0x0a] & 7;
-    this.channels[1].vol = r[0x1a] & 15;
-    this.channels[2].freq =
-    r[0x1b] << 4 | r[0x1c] << 8 | r[0x1d] << 12 | r[0x1e] << 16;
-    this.channels[2].wave = r[0x0f] & 7;
-    this.channels[2].vol = r[0x1f] & 15;
-    (_this$port4 = this.port) === null || _this$port4 === void 0 ? void 0 : _this$port4.postMessage({ type: "voices", v: this.channels });
-  }}_defineProperty(NamcoWSG, "WORKLET_SOURCE", `
-class NamcoWSGProcessor extends AudioWorkletProcessor {
-  constructor({ processorOptions: { waveData } }) {
-    super();
-    this.wave = new Uint8Array(waveData);
-    this.accum = new Float64Array(3);
-    this.voices = [
-      { freq: 0, wave: 0, vol: 0 },
-      { freq: 0, wave: 0, vol: 0 },
-      { freq: 0, wave: 0, vol: 0 }
-    ];
-    this.enabled = true;
-    this.step = 192000 / sampleRate;
-    this.port.onmessage = ({ data }) => {
-      if (data.type === "voices") this.voices = data.v;
-      if (data.type === "enabled") this.enabled = !!data.v;
-      if (data.type === "reset") this.accum.fill(0);
-    };
-  }
-  process(inputs, outputs) {
-    void inputs;
-    const out = outputs[0][0];
-    if (!out) return true;
-    if (!this.enabled) {
-      out.fill(0);
-      return true;
-    }
-    for (let i = 0; i < out.length; i++) {
-      let mix = 0;
-      for (let voiceIndex = 0; voiceIndex < 3; voiceIndex++) {
-        const voice = this.voices[voiceIndex];
-        if (!voice.freq || !voice.vol) continue;
-        const position = ((this.accum[voiceIndex] | 0) >>> 16) & 31;
-        const sample = (this.wave[((voice.wave & 7) << 5) + position] & 15) - 8;
-        mix += sample * (voice.vol & 15);
-        this.accum[voiceIndex] = (this.accum[voiceIndex] + voice.freq * this.step) % 0x200000;
-      }
-      out[i] = mix / 384;
-    }
-    return true;
-  }
-}
-registerProcessor("namco-wsg", NamcoWSGProcessor);
-`);class NamcoLS259Latch {constructor(name = "ls259") {this.name = name;this.state = 0x00;this.callbacks = new Array(8).fill(null);}setCallback(bit, fn) {this.callbacks[bit & 0x07] = fn;return this;}getBit(bit) {return this.state >>> (bit & 0x07) & 0x01;}write(addr, data) {var _window$JSBosco;const address = addr & 0xffff;const bit = address & 0x07;const next = data & 0x01;const trace = false;const e = (_window$JSBosco = window.JSBosco) === null || _window$JSBosco === void 0 ? void 0 : _window$JSBosco.emulator;if (trace) {var _e$timing$schedulerTi, _e$timing, _e$_activeCpuName, _this$getBit, _this$getBit2;console.log("[CPU BOARD LS259 WRITE]", { tick: (_e$timing$schedulerTi = e === null || e === void 0 ? void 0 : (_e$timing = e.timing) === null || _e$timing === void 0 ? void 0 : _e$timing.schedulerTick) !== null && _e$timing$schedulerTi !== void 0 ? _e$timing$schedulerTi : null, cpu: (_e$_activeCpuName = e === null || e === void 0 ? void 0 : e._activeCpuName) !== null && _e$_activeCpuName !== void 0 ? _e$_activeCpuName : null, addr: "0x" + address.toString(16), bit, data: "0x" + (data & 0xff).toString(16), d0: next, qBefore: (_this$getBit = (_this$getBit2 = this.getBit) === null || _this$getBit2 === void 0 ? void 0 : _this$getBit2.call(this, bit)) !== null && _this$getBit !== void 0 ? _this$getBit : null });}
-
-    this.setBit(bit, next);
-
-    if (trace) {var _e$timing$schedulerTi2, _e$timing2, _this$getBit3, _this$getBit4, _this$getBit5, _this$getBit6, _e$sub2NmiMask, _e$cpu3NmiEnabled, _ref, _e$cpuBoardResetAsser, _ref2, _e$sub2Cpu$inReset, _e$sub2Cpu, _e$sub2Cpu2, _e$sub2Cpu2$isReset, _ref3, _ref4, _e$sub2Cpu$getPC, _e$sub2Cpu3, _e$sub2Cpu3$getPC, _e$sub2Cpu4, _e$sub2Cpu5;
-      console.log("[CPU BOARD LS259 RESULT]", {
-        tick: (_e$timing$schedulerTi2 = e === null || e === void 0 ? void 0 : (_e$timing2 = e.timing) === null || _e$timing2 === void 0 ? void 0 : _e$timing2.schedulerTick) !== null && _e$timing$schedulerTi2 !== void 0 ? _e$timing$schedulerTi2 : null,
-
-        q2: (_this$getBit3 = (_this$getBit4 = this.getBit) === null || _this$getBit4 === void 0 ? void 0 : _this$getBit4.call(this, 2)) !== null && _this$getBit3 !== void 0 ? _this$getBit3 : null,
-
-        q3: (_this$getBit5 = (_this$getBit6 = this.getBit) === null || _this$getBit6 === void 0 ? void 0 : _this$getBit6.call(this, 3)) !== null && _this$getBit5 !== void 0 ? _this$getBit5 : null,
-
-        sub2NmiMask: (_e$sub2NmiMask =
-        e === null || e === void 0 ? void 0 : e.sub2NmiMask) !== null && _e$sub2NmiMask !== void 0 ? _e$sub2NmiMask :
-        (e === null || e === void 0 ? void 0 : e.cpu3NmiEnabled) == null ? null : !e.cpu3NmiEnabled,
-
-        soundNmiEnabled: (_e$cpu3NmiEnabled = e === null || e === void 0 ? void 0 : e.cpu3NmiEnabled) !== null && _e$cpu3NmiEnabled !== void 0 ? _e$cpu3NmiEnabled : null,
-
-        cpuBoardResetAsserted: (_ref = (_e$cpuBoardResetAsser =
-        e === null || e === void 0 ? void 0 : e.cpuBoardResetAsserted) !== null && _e$cpuBoardResetAsser !== void 0 ? _e$cpuBoardResetAsser : e === null || e === void 0 ? void 0 : e.subsystemsReset) !== null && _ref !== void 0 ? _ref : null,
-
-        soundCpuInReset: (_ref2 = (_e$sub2Cpu$inReset = e === null || e === void 0 ? void 0 : (_e$sub2Cpu = e.sub2Cpu) === null || _e$sub2Cpu === void 0 ? void 0 : _e$sub2Cpu.inReset) !== null && _e$sub2Cpu$inReset !== void 0 ? _e$sub2Cpu$inReset : e === null || e === void 0 ? void 0 : (_e$sub2Cpu2 = e.sub2Cpu) === null || _e$sub2Cpu2 === void 0 ? void 0 : (_e$sub2Cpu2$isReset = _e$sub2Cpu2.isReset) === null || _e$sub2Cpu2$isReset === void 0 ? void 0 : _e$sub2Cpu2$isReset.call(_e$sub2Cpu2)) !== null && _ref2 !== void 0 ? _ref2 : null,
-
-        soundPc: (_ref3 = (_ref4 = (_e$sub2Cpu$getPC =
-        e === null || e === void 0 ? void 0 : (_e$sub2Cpu3 = e.sub2Cpu) === null || _e$sub2Cpu3 === void 0 ? void 0 : (_e$sub2Cpu3$getPC = _e$sub2Cpu3.getPC) === null || _e$sub2Cpu3$getPC === void 0 ? void 0 : _e$sub2Cpu3$getPC.call(_e$sub2Cpu3)) !== null && _e$sub2Cpu$getPC !== void 0 ? _e$sub2Cpu$getPC : e === null || e === void 0 ? void 0 : (_e$sub2Cpu4 = e.sub2Cpu) === null || _e$sub2Cpu4 === void 0 ? void 0 : _e$sub2Cpu4.PC) !== null && _ref4 !== void 0 ? _ref4 : e === null || e === void 0 ? void 0 : (_e$sub2Cpu5 = e.sub2Cpu) === null || _e$sub2Cpu5 === void 0 ? void 0 : _e$sub2Cpu5.pc) !== null && _ref3 !== void 0 ? _ref3 : null });
-
-    }
-
-    return true;
-  }
-
-  setBit(bit, value, force = false) {var _this$callbacks$index, _this$callbacks;
-    const index = bit & 0x07;
-    const next = value & 0x01;
-    const previous = this.getBit(index);
-
-    if (!force && previous === next) {
-      return false;
-    }
-
-    this.state = this.state & ~(1 << index) | next << index;
-
-    (_this$callbacks$index = (_this$callbacks = this.callbacks)[index]) === null || _this$callbacks$index === void 0 ? void 0 : _this$callbacks$index.call(_this$callbacks, next, this.state, index);
-
-    return true;
-  }
-
-  clear(forceCallbacks = false) {
-    const previousState = this.state;
-
-    if (previousState === 0x00 && !forceCallbacks) {
-      return;
-    }
-
-    this.state = 0x00;
-
-    for (let bit = 0; bit < 8; bit++) {
-      const previous = previousState >>> bit & 0x01;
-
-      if (forceCallbacks || previous !== 0) {var _this$callbacks$bit, _this$callbacks2;
-        (_this$callbacks$bit = (_this$callbacks2 = this.callbacks)[bit]) === null || _this$callbacks$bit === void 0 ? void 0 : _this$callbacks$bit.call(_this$callbacks2, 0, this.state, bit);
-      }
-    }
-  }}
-
 class NamcoVideoLatch extends NamcoLS259Latch {
   constructor(onScreenFlip = null, onChipReset = null) {
     super("video_latch");
@@ -2920,47 +2171,39 @@ class BoscoEmulator {
     this.cpuBoard50xx = new Namco50XX();
     this.videoBoard50xx = new Namco50XX();
 
-    this.voice52xxDac = new voice52xxDac();
+    // MAME 0.289: Bosco's unclocked discrete device runs at the
+    // machine audio sample rate. 52XX and 54XX feed that shared board network.
+    this.voice52xxDac = new Namco52xxDac({ sampleRate: this.config.audio.sampleRate });
     this.voiceChip = new Namco52XX(this.voiceRom, {
       externalClockPeriodTicks: BoscoEmulator.NAMCO52XX_TC_PERIOD_TICKS,
       onDacWrite: (data, masterTick) => {
-        this.voice52xxDac.pushNibble(data & 0x0f, masterTick);
-      } });
+        this.voice52xxDac.write(data, masterTick);
+      }
+    });
 
-
-    this.namco54xxDac = new Namco54xxDac();
+    this.namco54xxDac = new Namco54xxDac({
+      sampleRate: this.config.audio.sampleRate,
+      routing: Namco54xxDac.BOSCO
+    });
     this.namco54xx = new Namco54XX({
       onChannelData: (channel, nibble, masterTick, force) => {
         this.namco54xxDac.writeChannel(channel, nibble, masterTick, force);
       },
-
-      onReset: (_resetLine, masterTick) => {
-        this.namco54xxDac.synchronizeState(masterTick);
-      } });
-
+      onReset: () => {
+        this.namco54xxDac.reset();
+      }
+    });
 
     this.starfield = new Namco05XX();
     this.starfield.setStarfieldConfig(0, 16, 224);
     this.movementMcu1 = this.cpuBoard50xx;
     this.movementMcu2 = this.videoBoard50xx;
 
-    this.soundChip = new NamcoWSG(this.config);
-    if (!(((_this$soundChip = this.soundChip) === null || _this$soundChip === void 0 ? void 0 : _this$soundChip.prom) instanceof Uint8Array)) {
-      throw new Error("NamcoWSG did not expose a Uint8Array waveform PROM");
-    }
-    if (this.soundChip.prom.length !== this.waveProm.length) {
-      throw new Error(
-      "NamcoWSG PROM size mismatch: expected " +
-      this.waveProm.length +
-      ", got " +
-      this.soundChip.prom.length);
-
-    }
-    this.soundChip.prom = this.waveProm;
-    this.soundChip.onAudioReady = (audioCtx, gainNode) => {
-      this.voice52xxDac.attach(audioCtx, gainNode);
-      this.namco54xxDac.attach(audioCtx, gainNode);
-    };
+    this.soundChip = new NamcoWSG({ waveformProm: this.waveProm });
+    this.audio = new EmulatorAudioWorklet({ gain: this.config.audio.masterVolume });
+    this.audioSampleFraction = 0;
+    this.discreteSampleFraction = 0;
+    this.boscoMixerCapAmp = 0;
 
     this.timing = new BoscoTimingSequencer(this);
     this.timing.setCpu3NmiGateFromQ2(0);
@@ -3190,6 +2433,12 @@ class BoscoEmulator {
     this.flipScreen = false;
 
     this.timing.reset();
+    this.audioSampleFraction = 0;
+    this.discreteSampleFraction = 0;
+    this.boscoMixerCapAmp = 0;
+    this.audio.clear();
+    this.voice52xxDac.reset();
+    this.namco54xxDac.reset();
 
     this.timing.cpu3NmiTimerEnabled = true;
 
@@ -3530,7 +2779,10 @@ class BoscoEmulator {
   }
 
   step() {
+    const audioStartTick = this.timing.now;
     this.timing.runFrame();
+    const audioEndTick = this.timing.now;
+    this.renderAudioFrame(audioStartTick, audioEndTick);
     if (this.watchdogResetPending) {
       this.watchdogResetPending = false;
       this.onWatchdogFired();
@@ -3539,6 +2791,64 @@ class BoscoEmulator {
     this.frameCounter++;
   }
 
+
+  renderAudioFrame(startTick, endTick) {
+    if (!this.audio.ready || endTick <= startTick) return;
+
+    this.audioSampleFraction +=
+      (endTick - startTick) * this.soundChip.sampleRate /
+      BoscoTimingSequencer.MASTER_CLOCK;
+    const count = Math.floor(this.audioSampleFraction);
+    this.audioSampleFraction -= count;
+    if (!count) return;
+
+    const wsg = new Float32Array(count);
+    this.soundChip.renderMono(wsg);
+
+    this.discreteSampleFraction +=
+      (endTick - startTick) * this.config.audio.sampleRate /
+      BoscoTimingSequencer.MASTER_CLOCK;
+    const discreteCount = Math.floor(this.discreteSampleFraction);
+    this.discreteSampleFraction -= discreteCount;
+
+    const discrete = new Float32Array(discreteCount);
+    if (discreteCount) {
+      const effect54 = new Float32Array(discreteCount);
+      const voice52 = new Float32Array(discreteCount);
+      this.namco54xxDac.render(effect54, startTick, endTick);
+      this.voice52xxDac.render(voice52, startTick, endTick);
+
+      // MAME bosco_final_mixer:
+      // resistor mixer R51=10k, R55=10k, VR1/rF=1k, cAmp=0.1uF,
+      // gain=462000. DISCRETE_OUTPUT then converts by 1/32768 and the
+      // machine route contributes 0.90.
+      const rTotal = 1 / (1 / 10000 + 1 / 10000 + 1 / 1000);
+      const cAmpExponent =
+        1 - Math.exp(-1 / (100000 * 1e-7 * this.config.audio.sampleRate));
+      for (let i = 0; i < discreteCount; i++) {
+        const mixed = (effect54[i] / 10000 + voice52[i] / 10000) * rTotal;
+        this.boscoMixerCapAmp +=
+          (mixed - this.boscoMixerCapAmp) * cAmpExponent;
+        const ac = mixed - this.boscoMixerCapAmp;
+        discrete[i] = ac * 462000 * (1 / 32768) * 0.90;
+      }
+    }
+
+    // MAME routes the WSG independently at 0.90 * 10/16.
+    for (let i = 0; i < count; i++) {
+      let board = 0;
+      if (discreteCount) {
+        const sourceIndex = Math.min(
+          discreteCount - 1,
+          Math.floor(i * discreteCount / count)
+        );
+        board = discrete[sourceIndex];
+      }
+      wsg[i] = wsg[i] * (0.90 * 10 / 16) + board;
+    }
+
+    this.audio.push(wsg, this.soundChip.sampleRate);
+  }
 
   buildTileCache() {
     // Pre-decode all immutable ROM graphics so the render hot path
@@ -4233,7 +3543,19 @@ Cause: ${BoscoApp.formatError(error.cause)}`;
       dpadRadius: 82,
       ringRadius: 18 });
 
-    this.emulator.soundChip.initAudio();
+    const unlockAudio = () => {
+      this.emulator.audio.unlock()
+        .then(() => {
+          this.emulator.audio.setEnabled(this.config.audio.enabled !== false);
+          this.emulator.voice52xxDac?.synchronizeState?.(this.emulator.timing.now);
+          this.emulator.namco54xxDac?.synchronizeState?.(this.emulator.timing.now);
+        })
+        .catch((error) => console.warn("[Bosco audio] unlock failed:", error));
+    };
+    const resumeAudio = () => this.emulator.audio.resume();
+    document.addEventListener("click", unlockAudio);
+    document.addEventListener("touchstart", unlockAudio, { passive: true });
+    document.addEventListener("mousedown", resumeAudio);
     return true;
   }
   gameLoop() {
