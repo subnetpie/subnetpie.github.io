@@ -300,26 +300,6 @@ class BoscoDipSwitches {
   }}
 
 class InputManager {
-  // keyboard pulse duration (coin/start/service)
-  // touch pulse duration (longer: finger dwell/debounce)
-
-  // Canonical hardware buttons, each optionally carrying lowercase aliases
-  // used by virtual/analog controls (e.g. Touchpads). Keeping aliases here
-  // means there is exactly one table to update when adding an input.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
   constructor(config) {
     this.config = config;
 
@@ -327,34 +307,18 @@ class InputManager {
       in0: 0xff,
       in1: 0xff };
 
-
     this.buttons = InputManager.BUTTONS;
-
-    // Reverse lookup: lowercase alias -> uppercase button key. Built once
-    // from BUTTONS so aliases can never drift out of sync with the
-    // canonical table.
     this._aliasToButton = {};
     for (const [key, def] of Object.entries(this.buttons)) {
       if (def.alias) this._aliasToButton[def.alias] = key;
     }
-    // Bosconian's real cabinet has no second action button. "bomb" is
-    // accepted as a known-but-inert alias so virtual controls that offer
-    // it don't spam console warnings; it resolves to null, and
-    // pressButton(null)/releaseButton(null) are safe no-ops.
-    this._aliasToButton.bomb = null;
-
     this.onStateChange = null;
     this._lastNotifiedIn0 = undefined;
     this._lastNotifiedIn1 = undefined;
-
     this.heldButtons = new Set();
     this.pulseTimers = new Map();
-
     this._keyboardBound = false;
     this._blurBound = false;
-
-    // Bound handler references, populated by setupKeyboardControls() /
-    // _setupButton(), needed so destroy() can actually remove them.
     this._onKeydown = null;
     this._onKeyup = null;
     this._onBlur = null;
@@ -366,7 +330,6 @@ class InputManager {
     return {
       in0: this.ports.in0 & 0xff,
       in1: this.ports.in1 & 0xff };
-
   }
 
   setOnStateChange(fn, notifyImmediately = true) {
@@ -580,33 +543,6 @@ class InputManager {
   }
 
   /* ---------------- keyboard ---------------- */
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
   setupKeyboardControls() {
     if (this._keyboardBound) return;
     this._keyboardBound = true;
