@@ -232,8 +232,6 @@ function _defineProperty(obj, key, value) {if (key in obj) {Object.definePropert
         critical: true,
         crc32: "ee7357e0" }] };
 
-
-
   }
   getCanvasSize() {
     return { width: this.display.width, height: this.display.height };
@@ -621,7 +619,6 @@ class InputManager {
 
 class Touchpads {
 
-
   constructor(inputs = {}, options = {}) {var _options$deadzone, _options$dpadRadius, _options$ringRadius, _this$canvas$getConte, _this$canvas, _this$canvas$width, _this$canvas2, _this$canvas$height, _this$canvas3;
     this.inputs = inputs;
 
@@ -646,7 +643,6 @@ class Touchpads {
       left: false,
       right: false };
 
-
     this._bound = {
       dpadStart: event => this._dpadStart(event),
       dpadMove: event => this._dpadMove(event),
@@ -654,7 +650,6 @@ class Touchpads {
       fireStart: event => this._fireStart(event),
       fireEnd: event => this._fireEnd(event),
       preventContextMenu: event => event.preventDefault() };
-
 
     this.bindEvents();
   }
@@ -844,7 +839,6 @@ class Touchpads {
       left: false,
       right: false };
 
-
     switch (octant) {
       case 0: // right
         next.right = true;
@@ -882,13 +876,11 @@ class Touchpads {
         next.right = true;
         break;}
 
-
     this._setDirections(next);
 
     const visualLimit = Math.min(
     distance,
     Math.min(this.dpadRadius, Math.min(rect.width, rect.height) / 2));
-
 
     this.drawTouchRing(
     Math.cos(angle) * visualLimit,
@@ -982,33 +974,11 @@ class UIManager {
     return this.ctx;
   }}
 
-
 class BoscoTimingSequencer {
-
 
   // All three Z80 CPUs run at MASTER_CLOCK / 6.
 
-
   // Pixel clock is MASTER_CLOCK / 3.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
   constructor(machine) {
     this.machine = machine;
@@ -1044,7 +1014,6 @@ class BoscoTimingSequencer {
       local: 0,
       cpu: () => this.machine.sub2Cpu }];
 
-
     this.mcuSlots = [
     {
       kind: "mcu",
@@ -1075,7 +1044,6 @@ class BoscoTimingSequencer {
       name: "54xx",
       local: 0,
       device: () => this.machine.namco54xx }];
-
 
   }
   get schedulerTick() {var _this$activeTick;
@@ -1134,7 +1102,6 @@ class BoscoTimingSequencer {
       callback,
       owner,
       cancelled: false };
-
 
     let low = this.eventHead;
     let high = this.events.length;
@@ -1233,7 +1200,6 @@ class BoscoTimingSequencer {
         this.ownerName(event.owner) +
         ": " +
         message);
-
 
         error.cause = cause;
         throw error;
@@ -1559,7 +1525,6 @@ class BoscoTimingSequencer {
     const cpuBoardResetAsserted = !!((_machine$cpuBoardRese =
     machine.cpuBoardResetAsserted) !== null && _machine$cpuBoardRese !== void 0 ? _machine$cpuBoardRese : machine.subsystemsReset);
 
-
     const soundCpuReset = !!(soundCpu !== null && soundCpu !== void 0 && soundCpu.inReset || soundCpu !== null && soundCpu !== void 0 && (_soundCpu$isReset = soundCpu.isReset) !== null && _soundCpu$isReset !== void 0 && _soundCpu$isReset.call(soundCpu));
 
     const accepted =
@@ -1623,12 +1588,6 @@ class BoscoTimingSequencer {
 
 class Namco05XX {
 
-
-
-
-
-
-
   /*
    * MAME starfield speed timing.
    *
@@ -1636,29 +1595,6 @@ class Namco05XX {
    * Motion comes from advancing the LFSR a different number of times
    * during horizontal blanking before/after visible pixels.
    */
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
   /*
    * Fixed Bosconian/Namco 05XX star palette resistor weights.
@@ -1676,9 +1612,6 @@ class Namco05XX {
    * values used by the prior ResNet.build() star calculation.
    */
 
-
-
-
   /*
    * Prebuilt CSS colors indexed by the 6-bit 05XX star color value.
    *
@@ -1690,7 +1623,6 @@ class Namco05XX {
    * This avoids allocating an RGB object and formatting a new CSS string
    * for every star on every frame.
    */
-
 
   constructor(opts = {}) {var _opts$offsetX, _opts$offsetY, _opts$limitX, _opts$scrollXIndex, _opts$scrollYIndex, _opts$sf, _opts$sf2;
     /*
@@ -1963,8 +1895,6 @@ class Namco05XX {
     this.lfsr = lfsr;
   }}_defineProperty(Namco05XX, "VISIBLE_LINES", 224);_defineProperty(Namco05XX, "STARFIELD_PIXEL_WIDTH", 256);_defineProperty(Namco05XX, "LFSR_HIT_MASK", 0xfa14);_defineProperty(Namco05XX, "LFSR_HIT_VALUE", 0x7800);_defineProperty(Namco05XX, "LFSR_SEED", 0x7fff);_defineProperty(Namco05XX, "SPEED_X_CYCLE_COUNT_OFFSET", [0, 1, 2, 3, -4, -3, -2, -1]);_defineProperty(Namco05XX, "PRE_VIS_CYCLE_COUNT_VALUES", [22 * 256, 23 * 256, 22 * 256, 23 * 256, 19 * 256, 20 * 256, 20 * 256, 22 * 256]);_defineProperty(Namco05XX, "POST_VIS_CYCLE_COUNT_VALUES", [10 * 256, 10 * 256, 12 * 256, 12 * 256, 9 * 256, 9 * 256, 10 * 256, 9 * 256]);_defineProperty(Namco05XX, "STAR_R", new Uint8Array([0, 71, 151, 222]));_defineProperty(Namco05XX, "STAR_G", new Uint8Array([0, 71, 151, 222]));_defineProperty(Namco05XX, "STAR_B", new Uint8Array([0, 81, 174, 255]));_defineProperty(Namco05XX, "STAR_CSS", Namco05XX.buildStarCssPalette());
 
-
-
 class NamcoLS259Latch {constructor(name = "ls259") {this.name = name;this.state = 0x00;this.callbacks = new Array(8).fill(null);}setCallback(bit, fn) {this.callbacks[bit & 0x07] = fn;return this;}getBit(bit) {return this.state >>> (bit & 0x07) & 0x01;}write(addr, data) {var _window$JSBosco;const address = addr & 0xffff;const bit = address & 0x07;const next = data & 0x01;const trace = false;const e = (_window$JSBosco = window.JSBosco) === null || _window$JSBosco === void 0 ? void 0 : _window$JSBosco.emulator;if (trace) {var _e$timing$schedulerTi, _e$timing, _e$_activeCpuName, _this$getBit, _this$getBit2;console.log("[CPU BOARD LS259 WRITE]", { tick: (_e$timing$schedulerTi = e === null || e === void 0 ? void 0 : (_e$timing = e.timing) === null || _e$timing === void 0 ? void 0 : _e$timing.schedulerTick) !== null && _e$timing$schedulerTi !== void 0 ? _e$timing$schedulerTi : null, cpu: (_e$_activeCpuName = e === null || e === void 0 ? void 0 : e._activeCpuName) !== null && _e$_activeCpuName !== void 0 ? _e$_activeCpuName : null, addr: "0x" + address.toString(16), bit, data: "0x" + (data & 0xff).toString(16), d0: next, qBefore: (_this$getBit = (_this$getBit2 = this.getBit) === null || _this$getBit2 === void 0 ? void 0 : _this$getBit2.call(this, bit)) !== null && _this$getBit !== void 0 ? _this$getBit : null });}
 
     this.setBit(bit, next);
@@ -2062,15 +1992,9 @@ class NamcoVideoLatch extends NamcoLS259Latch {
     }
   }}
 
-
 class BoscoEmulator {
   // MAME: PERIOD_OF_555_ASTABLE_NSEC(RES_K(33), RES_K(10), CAP_U(0.0047)).
   // The integer master-tick scheduler uses the closest representable period.
-
-
-
-
-
 
   constructor(config) {var _this$soundChip, _this$inputController, _this$inputController2, _this$cpuBoard50xx$se, _this$cpuBoard50xx, _this$videoBoard50xx$, _this$videoBoard50xx, _this$voiceChip$setSc, _this$voiceChip, _this$namco54xx$setSc, _this$namco54xx;
     this.config = config;
@@ -2157,7 +2081,6 @@ class BoscoEmulator {
     address => this.sub2Read(address),
     (address, data) => this.sub2Write(address, data));
 
-
     this.inputController = new Namco51XX(
     this.dipSwitches,
     data => {
@@ -2167,7 +2090,6 @@ class BoscoEmulator {
     locked => {
       this.coinLocked = !!locked;
     });
-
 
     this.cpuBoard50xx = new Namco50XX();
     this.videoBoard50xx = new Namco50XX();
@@ -2300,7 +2222,6 @@ class BoscoEmulator {
       (_this$voiceChip$setRe = (_this$voiceChip2 = this.voiceChip).setResetLine) === null || _this$voiceChip$setRe === void 0 ? void 0 : _this$voiceChip$setRe.call(_this$voiceChip2, resetLine);
     });
 
-
     this.miscLatch.setBit(2, 0, true);
     this.miscLatch.setBit(3, 0, true);
     this.videoLatch.setBit(7, 0, true);
@@ -2392,10 +2313,8 @@ class BoscoEmulator {
     const cpuBoardResetAsserted = !!((_this$cpuBoardResetAs =
     this.cpuBoardResetAsserted) !== null && _this$cpuBoardResetAs !== void 0 ? _this$cpuBoardResetAs : this.subsystemsReset);
 
-
     const soundCpuReset = !!(
     (_this$sub2Cpu2 = this.sub2Cpu) !== null && _this$sub2Cpu2 !== void 0 && _this$sub2Cpu2.inReset || (_this$sub2Cpu3 = this.sub2Cpu) !== null && _this$sub2Cpu3 !== void 0 && (_this$sub2Cpu3$isRese = _this$sub2Cpu3.isReset) !== null && _this$sub2Cpu3$isRese !== void 0 && _this$sub2Cpu3$isRese.call(_this$sub2Cpu3));
-
 
     return timerEnabled && !cpuBoardResetAsserted && !soundCpuReset;
   }
@@ -2730,7 +2649,6 @@ class BoscoEmulator {
         cpu = this.sub2Cpu;
         break;}
 
-
     const pc =
     typeof ((_cpu = cpu) === null || _cpu === void 0 ? void 0 : _cpu.getPC) === "function" ? cpu.getPC() : (_ref9 = (_cpu$PC2 = (_cpu2 = cpu) === null || _cpu2 === void 0 ? void 0 : _cpu2.PC) !== null && _cpu$PC2 !== void 0 ? _cpu$PC2 : (_cpu3 = cpu) === null || _cpu3 === void 0 ? void 0 : _cpu3.pc) !== null && _ref9 !== void 0 ? _ref9 : 0;
 
@@ -2759,7 +2677,6 @@ class BoscoEmulator {
         pc: pc & 0xffff,
         countBeforeKick: this.watchdogTimer,
         writesThisFrameAtRecord: this.watchdogKickCountThisFrame });
-
 
       if (this.watchdogKickHistory.length > 64) {
         this.watchdogKickHistory.shift();
@@ -2791,7 +2708,6 @@ class BoscoEmulator {
     }
     this.frameCounter++;
   }
-
 
   renderAudioFrame(startTick, endTick) {
     if (!this.audio.ready || endTick <= startTick) return;
@@ -3061,7 +2977,6 @@ class BoscoEmulator {
     spriteBase + 0x0800,
     spriteBase + 0x0800 + 0x0c);
 
-
     for (let offs = 0; offs < 0x0c; offs += 2) {
       let sx = spriteram[offs + 1] - 2;
       const sy = 224 - spriteram2[offs];
@@ -3120,7 +3035,6 @@ class BoscoEmulator {
     const radary = this.videoram.subarray(
     radarBase + 0x0800,
     radarBase + 0x0800 + 0x10);
-
 
     // Exact MAME loop: offs = 4 through 15.
     // Despite the function name, these are the 12 dot/radar slots
@@ -3232,7 +3146,6 @@ class BoscoEmulator {
     this.applyRadarShift(data, W, H);
 
     ctx.putImageData(imgData, 0, 0);
-    this.soundChip.flushRegisters();
   }
 
   initPaletteFromProm() {
@@ -3264,7 +3177,6 @@ class BoscoEmulator {
     computeWeights(resistances),
     computeWeights(resistances),
     computeWeights(resistances.slice(1))]);
-
 
     for (let i = 0; i < 32; i++) {
       const byte = this.masterPaletteProm[i];
@@ -3405,7 +3317,6 @@ class BoscoEmulator {
       }
     }));
 
-
     const failed = results.filter(result => !result.success);
     const failedFiles = failed.map(result => result.file.name);
     const criticalMissing = failed.some(result => result.file.critical);
@@ -3422,7 +3333,6 @@ class BoscoEmulator {
           target: result.file.target,
           offset: (_result$file$offset = result.file.offset) !== null && _result$file$offset !== void 0 ? _result$file$offset : 0,
           error: (_result$error$message = (_result$error = result.error) === null || _result$error === void 0 ? void 0 : _result$error.message) !== null && _result$error$message !== void 0 ? _result$error$message : "unknown error" };}));
-
 
     }
     if (criticalMissing) {
@@ -3660,7 +3570,6 @@ ${message}`;
       message,
       stack: error instanceof Error ? error.stack : null });
 
-
     const statusBar = document.getElementById("statusBar");
 
     if (statusBar) {
@@ -3670,7 +3579,6 @@ ${message}`;
 
     (_this$ui$showError = (_this$ui3 = this.ui).showError) === null || _this$ui$showError === void 0 ? void 0 : _this$ui$showError.call(_this$ui3, displayText);
   }}
-
 
 let app = null;
 window.JSBosco = {
