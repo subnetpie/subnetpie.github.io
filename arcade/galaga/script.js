@@ -2792,7 +2792,7 @@ class EmulatorConfig {
       touchPulseDurationMs: 250
     };
     this.roms = {
-      baseUrl: "https://subnetpie.github.io/arcade/galaga/",
+      baseUrl: "https://subnetpie.github.io/arcade/galaga/roms/",
       files: [
         {
           name: "gg1_1b.3p",
