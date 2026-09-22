@@ -2199,7 +2199,7 @@ class BoscoEmulator {
     this.movementMcu1 = this.cpuBoard50xx;
     this.movementMcu2 = this.videoBoard50xx;
 
-    this.soundChip = new NamcoWSG({ waveformProm: this.waveProm });
+    this.soundChip = new NamcoWSG({ waveformProm: this.soundProm });
     this.audio = new EmulatorAudioWorklet({ gain: this.config.audio.masterVolume });
     this.audioSampleFraction = 0;
     this.discreteSampleFraction = 0;
