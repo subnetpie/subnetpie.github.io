@@ -1751,35 +1751,6 @@ class GalagaEmulator {
       },
 
       /*
-       * Diagnostic one-shot: Galaga's 0x20 54XX effect is the explosion path
-       * under investigation. Let roughly 60 ms of machine time run after the
-       * synchronized command boundary, then freeze after that frame's PCM has
-       * been rendered so the copied dump contains the complete signal path.
-       */
-      onCommand: (command, masterTick) => {
-        if (
-          command === 0x20 &&
-          !this.explosionBreak?.armed &&
-          !this.explosionBreak?.reached
-        ) {
-          this.explosionBreak = {
-            armed: true,
-            reached: false,
-            command,
-            commandTick: masterTick,
-            stopTick: masterTick + Math.round(TimingSequencer.MASTER_CLOCK * 0.06)
-          };
-          this.namco54xx.clearTrace?.();
-          this.namco54xx.recordTrace?.("cmd", { value: command });
-          if (this.audioBoundaryTrace) this.audioBoundaryTrace.dacHold = 0;
-          // Keep the strongest 54XX-containing PCM block after CMD 20.
-          // This is machine-side data immediately before audio.push(), so it
-          // distinguishes discrete/mix errors from browser transport errors.
-          this.explosionPcmCapture = null;
-        }
-      },
-
-      /*
        * Reset the analog/DAC state when the 54XX is reset.
        */
       onReset: () => {
@@ -1874,13 +1845,6 @@ class GalagaEmulator {
     this.watchdogTimer = 0;
     this.watchdogEverKicked = false;
     this.soundNmiCount = 0;
-    this.explosionBreak = {
-      armed: false,
-      reached: false,
-      command: 0,
-      commandTick: 0,
-      stopTick: 0
-    };
 
     this.subCpu.setReset?.(true);
     this.sub2Cpu.setReset?.(true);
@@ -2231,17 +2195,6 @@ class GalagaEmulator {
     const audioEndTick = this.timing.now;
     this.renderAudioFrame(audioStartTick, audioEndTick);
 
-    if (
-      this.explosionBreak?.armed &&
-      !this.explosionBreak.reached &&
-      audioEndTick >= this.explosionBreak.stopTick
-    ) {
-      this.explosionBreak.armed = false;
-      this.explosionBreak.reached = true;
-      this.explosionBreak.reachedTick = audioEndTick;
-      this.running = false;
-    }
-
     this.frameCounter++;
     this.watchdogTimer++;
     if (this.watchdogTimer >= 8) {
@@ -2256,13 +2209,6 @@ class GalagaEmulator {
     this.watchdogTimer = 0;
     this.watchdogEverKicked = false;
     this.soundNmiCount = 0;
-    this.explosionBreak = {
-      armed: false,
-      reached: false,
-      command: 0,
-      commandTick: 0,
-      stopTick: 0
-    };
 
     this.mainIrqEnabled = false;
     this.subIrqArmed = false;
@@ -2284,7 +2230,6 @@ class GalagaEmulator {
     this.timing.reset();
     this.audioSampleFraction = 0;
     this.dac54SampleFraction = 0;
-    this.explosionPcmCapture = null;
     this.audio.clear();
     this.namco54xxDac.reset();
 
@@ -2360,52 +2305,9 @@ class GalagaEmulator {
         dac54[i] = dacNative[sourceIndex];
       }
     }
-    let wsgPeak = 0, dacPeak = 0, mixPeak = 0;
-    let wsgPeakIndex = -1, dacPeakIndex = -1, mixPeakIndex = -1;
-    let dacFirstIndex = -1, dacLastIndex = -1;
     for (let i = 0; i < count; i++) {
-      const wsgAbs = Math.abs(wsg[i]);
-      const dacAbs = Math.abs(dac54[i]);
-      if (wsgAbs > wsgPeak) { wsgPeak = wsgAbs; wsgPeakIndex = i; }
-      if (dacAbs > dacPeak) { dacPeak = dacAbs; dacPeakIndex = i; }
-      if (dacAbs > 1e-7) {
-        if (dacFirstIndex < 0) dacFirstIndex = i;
-        dacLastIndex = i;
-      }
       wsg[i] = wsg[i] * 0.25 + dac54[i];
-      const mixAbs = Math.abs(wsg[i]);
-      if (mixAbs > mixPeak) { mixPeak = mixAbs; mixPeakIndex = i; }
     }
-    this.audioBoundaryTrace = {
-      wsgPeak, dacPeak, mixPeak,
-      dacHold: Math.max(this.audioBoundaryTrace?.dacHold || 0, dacPeak)
-    };
-
-    // Capture exactly the strongest frame sent to the browser during the
-    // deterministic self-test explosion. Preserve the separate WSG/54XX
-    // streams as well as the final mixed Float32 block.
-    if (
-      this.explosionBreak?.armed &&
-      dacPeak > (this.explosionPcmCapture?.dacPeak ?? -1)
-    ) {
-      this.explosionPcmCapture = {
-        startTick,
-        endTick,
-        count,
-        sampleRate: this.soundChip.sampleRate,
-        wsgPeak,
-        wsgPeakIndex,
-        dacPeak,
-        dacPeakIndex,
-        dacFirstIndex,
-        dacLastIndex,
-        mixPeak,
-        mixPeakIndex,
-        dac54: Array.from(dac54),
-        mixed: Array.from(wsg)
-      };
-    }
-
     this.audio.push(wsg, this.soundChip.sampleRate);
   }
 
@@ -3179,81 +3081,6 @@ Cause: ${GalagaApp.formatError(error.cause)}`;
       }
     }, { passive: true });
 
-    const audioDiag = document.createElement("button");
-    audioDiag.id = "galaga54Diag";
-    audioDiag.type = "button";
-    audioDiag.title = "Tap to copy the recent 54XX command/DAC trace";
-    audioDiag.style.cssText =
-      "position:fixed;top:0;left:0;z-index:2147483647;" +
-      "width:44vw;max-width:320px;max-height:18vh;padding:4px;border:0;" +
-      "background:#111;color:#0f0;font:10px monospace;text-align:left;" +
-      "white-space:pre-wrap;overflow:auto;opacity:.88";
-    document.body.appendChild(audioDiag);
-    const traceText = () => {
-      const d = this.emulator.namco54xxDac;
-      const chip = this.emulator.namco54xx;
-      const lines = chip?.dumpTrace?.().split("\\n").slice(-18) ?? [];
-      const brk = this.emulator.explosionBreak;
-      return (brk?.reached
-        ? "STOPPED @ EXPLOSION tick=" + brk.reachedTick +
-          " cmdTick=" + brk.commandTick + "\n"
-        : brk?.armed
-          ? "EXPLOSION CAPTURE ARMED stop=" + brk.stopTick + "\n"
-          : "") +
-        "54XX writes=" + d.totalWrites +
-        " ch=" + Array.from(d.channelWrites).join("/") +
-        " nz=" + Array.from(d.nonzeroWrites).join("/") +
-        " data=" + Array.from(d.channelData).join("/") +
-        " peak=" + d.lastPeak.toFixed(4) +
-        " hold=" + d.peakHold.toFixed(4) +
-        (this.emulator.audioBoundaryTrace
-          ? " PCM=" + this.emulator.audioBoundaryTrace.wsgPeak.toFixed(3) +
-            "/" + this.emulator.audioBoundaryTrace.dacPeak.toFixed(3) +
-            "/" + this.emulator.audioBoundaryTrace.mixPeak.toFixed(3) +
-            " h54=" + this.emulator.audioBoundaryTrace.dacHold.toFixed(3)
-          : "") +
-        (this.emulator.explosionPcmCapture
-          ? "\\nCAP ticks=" + this.emulator.explosionPcmCapture.startTick +
-            ".." + this.emulator.explosionPcmCapture.endTick +
-            " n=" + this.emulator.explosionPcmCapture.count +
-            " 54=" + this.emulator.explosionPcmCapture.dacPeak.toFixed(4) +
-            "@" + this.emulator.explosionPcmCapture.dacPeakIndex +
-            " mix=" + this.emulator.explosionPcmCapture.mixPeak.toFixed(4) +
-            "@" + this.emulator.explosionPcmCapture.mixPeakIndex +
-            " active=" + this.emulator.explosionPcmCapture.dacFirstIndex +
-            ".." + this.emulator.explosionPcmCapture.dacLastIndex
-          : "") +
-        "\\nTap this panel to copy trace\\n" + lines.join("\\n");
-    };
-    audioDiag.addEventListener("click", async () => {
-      const capture = this.emulator.explosionPcmCapture;
-      const pcmDump = capture
-        ? "\n\nEXPLOSION PCM BLOCK (exact pre-audio.push data)\n" +
-          JSON.stringify(capture)
-        : "";
-      const commandHistory =
-        this.emulator.namco54xx?.dumpCommandHistory?.() ?? "";
-      const text = traceText() +
-        "\n\n54XX COMMAND HISTORY (preserved before CMD 20)\n" +
-        commandHistory +
-        "\n\nFULL 54XX TRACE\n" +
-        (this.emulator.namco54xx?.dumpTrace?.() ?? "") + pcmDump;
-      try {
-        await navigator.clipboard.writeText(text);
-        audioDiag.dataset.copied = "1";
-      } catch {
-        // iOS may deny Clipboard API outside a secure/allowed context.
-        // A prompt provides a selectable fallback without requiring Web Inspector.
-        window.prompt("Copy 54XX trace:", text);
-      }
-    });
-    setInterval(() => {
-      audioDiag.textContent = traceText();
-      if (audioDiag.dataset.copied === "1") {
-        audioDiag.textContent = "COPIED 54XX TRACE\\n" + audioDiag.textContent;
-        delete audioDiag.dataset.copied;
-      }
-    }, 250);
 
     return true;
   }
