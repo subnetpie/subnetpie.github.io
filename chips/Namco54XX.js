@@ -35,6 +35,11 @@ class Namco54XX {
     // host commands and MB8844 O/R1 DAC writes with master-tick timestamps.
     this.traceLog = [];
     this.traceLimit = 512;
+    // Commands are sparse and diagnostically important. Keep a separate
+    // history so later MCU/output traffic cannot evict the Type A/B/C
+    // parameter programming that precedes a play command.
+    this.commandHistory = [];
+    this.commandHistoryLimit = 256;
     this.mcuTraceRemaining = 0;
     this.installMcuCallbacks();
     this.mcu.onInstruction = state => {
@@ -117,6 +122,7 @@ class Namco54XX {
     const value = data & 0xff;
     this.synchronize(() => {
       this.latchedCmd = value;
+      this.recordCommand(value);
       this.recordTrace("cmd", { value });
       this.onCommand?.(value, this.getMasterTick());
       // Capture the firmware path after effect commands without permanently
@@ -260,6 +266,24 @@ class Namco54XX {
       console.log("[54XX OUT]", tick, channel, next, force ? 1 : 0);
     }
     return true;
+  }
+
+  recordCommand(value) {
+    const entry = { tick: this.getMasterTick(), value: value & 0xff };
+    this.commandHistory.push(entry);
+    if (this.commandHistory.length > this.commandHistoryLimit)
+      this.commandHistory.splice(0, this.commandHistory.length - this.commandHistoryLimit);
+    return entry;
+  }
+
+  getCommandHistory() {
+    return this.commandHistory.map(entry => ({ ...entry }));
+  }
+
+  dumpCommandHistory() {
+    return this.commandHistory.map(entry =>
+      `${entry.tick} CMD ${entry.value.toString(16).padStart(2, "0")}`
+    ).join("\\n");
   }
 
   recordTrace(type, fields = {}) {
