@@ -17,6 +17,11 @@ class Namco54XX {
     this.resetLine = 1;
     this.irqState = false;
     this.pendingMasterTicks = 0;
+    // Signed MCU-cycle budget. A MB88xx instruction/interrupt may consume
+    // more cycles than the current scheduler quantum supplies; MAME carries
+    // that negative icount into the following execution slice rather than
+    // executing the next instruction early.
+    this.mcuCycleBudget = 0;
     this.tickCount = 0;
     this.lastOutput = new Uint8Array(3);
     this.onChannelData =
@@ -30,6 +35,11 @@ class Namco54XX {
     // host commands and MB8844 O/R1 DAC writes with master-tick timestamps.
     this.traceLog = [];
     this.traceLimit = 512;
+    // Commands are sparse and diagnostically important. Keep a separate
+    // history so later MCU/output traffic cannot evict the Type A/B/C
+    // parameter programming that precedes a play command.
+    this.commandHistory = [];
+    this.commandHistoryLimit = 256;
     this.mcuTraceRemaining = 0;
     this.installMcuCallbacks();
     this.mcu.onInstruction = state => {
@@ -100,7 +110,10 @@ class Namco54XX {
     if (next === this.resetLine) return false;
     this.resetLine = next;
     this.applyResetLineToMcu();
-    if (next === 0) this.pendingMasterTicks = 0;
+    if (next === 0) {
+      this.pendingMasterTicks = 0;
+      this.mcuCycleBudget = 0;
+    }
     (_this$onReset = this.onReset) === null || _this$onReset === void 0 ? void 0 : _this$onReset.call(this, next, this.getMasterTick());
     return true;
   }
@@ -109,6 +122,7 @@ class Namco54XX {
     const value = data & 0xff;
     this.synchronize(() => {
       this.latchedCmd = value;
+      this.recordCommand(value);
       this.recordTrace("cmd", { value });
       this.onCommand?.(value, this.getMasterTick());
       // Capture the firmware path after effect commands without permanently
@@ -163,14 +177,32 @@ class Namco54XX {
   }
 
   executeMcuCycles(cycles) {
-    let remaining = cycles | 0;
-    while (remaining > 0 && this.resetLine !== 0 && !this.mcu.halted) {var _this$mcu$step7, _this$mcu$step8, _this$mcu16;
+    const supplied = Math.floor(Number(cycles));
+    if (!Number.isFinite(supplied) || supplied < 0) {
+      throw new RangeError(
+      "Namco54XX.executeMcuCycles() requires a non-negative integer");
+    }
+
+    /*
+     * MAME's execute_run() owns a signed m_icount. An instruction is allowed
+     * to take it below zero; the scheduler compensates on the next slice.
+     * Preserve that debt here. Without it, a two-cycle interrupt/instruction
+     * started in a one-cycle quantum makes the MB8844 run one cycle early.
+     */
+    this.mcuCycleBudget += supplied;
+
+    while (
+    this.mcuCycleBudget > 0 &&
+    this.resetLine !== 0 &&
+    !this.mcu.halted)
+    {var _this$mcu$step7, _this$mcu$step8, _this$mcu16;
       const used = (_this$mcu$step7 = (_this$mcu$step8 = (_this$mcu16 = this.mcu).step) === null || _this$mcu$step8 === void 0 ? void 0 : _this$mcu$step8.call(_this$mcu16)) !== null && _this$mcu$step7 !== void 0 ? _this$mcu$step7 : 0;
       if (!Number.isFinite(used) || used < 0) {
         throw new Error("Invalid MB8844 cycle result: " + String(used));
       }
-      const consumed = used > 0 ? used : 1;
-      remaining -= consumed;
+
+      const consumed = used > 0 ? Math.floor(used) : 1;
+      this.mcuCycleBudget -= consumed;
       this.tickCount += consumed;
     }
   }
@@ -236,6 +268,24 @@ class Namco54XX {
     return true;
   }
 
+  recordCommand(value) {
+    const entry = { tick: this.getMasterTick(), value: value & 0xff };
+    this.commandHistory.push(entry);
+    if (this.commandHistory.length > this.commandHistoryLimit)
+      this.commandHistory.splice(0, this.commandHistory.length - this.commandHistoryLimit);
+    return entry;
+  }
+
+  getCommandHistory() {
+    return this.commandHistory.map(entry => ({ ...entry }));
+  }
+
+  dumpCommandHistory() {
+    return this.commandHistory.map(entry =>
+      `${entry.tick} CMD ${entry.value.toString(16).padStart(2, "0")}`
+    ).join("\\n");
+  }
+
   recordTrace(type, fields = {}) {
     const entry = { tick: this.getMasterTick(), type, ...fields };
     this.traceLog.push(entry);
@@ -281,6 +331,7 @@ class Namco54XX {
       irq: this.irqState ? 1 : 0,
       latchedCmd: this.latchedCmd & 0xff,
       pendingMasterTicks: this.pendingMasterTicks,
+      mcuCycleBudget: this.mcuCycleBudget,
       ticksToNextMcuCycle: this.nextMasterTickBoundary(),
       mcuHalted: !!this.mcu.halted,
       mcuPC:
