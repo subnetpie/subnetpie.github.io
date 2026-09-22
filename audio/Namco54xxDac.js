@@ -23,6 +23,18 @@ export class Namco54xxDac {
     pcmScale: 1 / 32768
   });
 
+  // Bosconian uses the same three 54XX DAC/filter paths as Galaga, but
+  // MAME routes their op-amp sum into a second board-level mixer together
+  // with the 52XX voice path. Keep this routing in volts until that mixer.
+  static BOSCO = Object.freeze({
+    channels: Namco54xxDac.GALAGA.channels,
+    mixerRF: 3300,
+    mixerCAmp: 0,
+    gain: 1,
+    routeGain: 1,
+    pcmScale: 1
+  });
+
   constructor({ sampleRate = 192000, masterClock = Namco54xxDac.MASTER_CLOCK, routing = Namco54xxDac.GALAGA } = {}) {
     this.sampleRate = sampleRate;
     this.masterClock = masterClock;
@@ -39,7 +51,7 @@ export class Namco54xxDac {
     this.coefficients = new Array(Namco54xxDac.CHANNEL_COUNT);
     for (const spec of routing.channels) this.coefficients[spec.channel] = this._makeOpAmpBandPass(spec);
     this.mixerCapAmp = 0;
-    this.mixerAmpExponent = 1 - Math.exp(-1 / (100000 * routing.mixerCAmp * sampleRate));
+    this.mixerAmpExponent = routing.mixerCAmp ? 1 - Math.exp(-1 / (100000 * routing.mixerCAmp * sampleRate)) : 0;
   }
 
   reset() {
@@ -101,9 +113,11 @@ export class Namco54xxDac {
       }
       let mixed = current * this.routing.mixerRF;
 
-      // DISCRETE_MIXER cAmp=0.1uF uses a 100k assumed output impedance.
-      this.mixerCapAmp += (mixed - this.mixerCapAmp) * this.mixerAmpExponent;
-      mixed -= this.mixerCapAmp;
+      // DISCRETE_MIXER cAmp uses a 100k assumed output impedance.
+      if (this.routing.mixerCAmp) {
+        this.mixerCapAmp += (mixed - this.mixerCapAmp) * this.mixerAmpExponent;
+        mixed -= this.mixerCapAmp;
+      }
       out[i] = mixed * this.routing.gain * this.routing.routeGain * this.routing.pcmScale;
     }
     let cut = 0;
