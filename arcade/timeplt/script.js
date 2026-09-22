@@ -174,9 +174,21 @@ class TP{
     this.im.data[o+1]=v[1];
     this.im.data[o+2]=v[2];
     this.im.data[o+3]=255}
-  gp(rom,code,x,y,sprite=false){
-    let xb=sprite?(x<4?x:x<8?64+x-4:x<12?128+x-8:192+x-12):(x<4?x:64+x-4),yb=sprite?(y<8?y*8:256+(y-8)*8):y*8,bit=xb+yb,sz=sprite?64:16,o=code*sz+(bit>>3),sh=7-(bit&7);
-    return ((rom[o]>>sh)&1)|(((rom[o]>>(sh>=4?sh-4:sh+4))&1)<<1)}
+  gp(rom, code, x, y, sprite = false) {
+    const xOffset = sprite
+      ? (x < 4 ? x : x < 8 ? 64 + x - 4 : x < 12 ? 128 + x - 8 : 192 + x - 12)
+      : (x < 4 ? x : 64 + x - 4);
+    const yOffset = sprite
+      ? (y < 8 ? y * 8 : 256 + (y - 8) * 8)
+      : y * 8;
+    const charIncrement = sprite ? 512 : 128;
+    const bitBase = code * charIncrement + xOffset + yOffset;
+
+    const bit0 = (rom[bitBase >> 3] >> (7 - (bitBase & 7))) & 1;
+    const plane1Bit = bitBase + 4;
+    const bit1 = (rom[plane1Bit >> 3] >> (7 - (plane1Bit & 7))) & 1;
+    return bit0 | (bit1 << 1);
+  }
   tile(code,col,X,Y,fx,fy){
     for(let y=0;
     y<8;
