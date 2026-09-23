@@ -470,9 +470,10 @@ class DigDug {
     const bitBase = (code & 0xff) * 128 +
                     (x < 4 ? 64 + x : x - 4) +
                     y * 8;
-    const byte = this.bgGfxRom[bitBase >> 3];
-    const bit = bitBase & 7;
-    return ((byte >> bit) & 1) | (((byte >> (bit + 4)) & 1) << 1);
+    const p0 = (this.bgGfxRom[bitBase >> 3] >> (bitBase & 7)) & 1;
+    const p1Bit = bitBase + 4;
+    const p1 = (this.bgGfxRom[p1Bit >> 3] >> (p1Bit & 7)) & 1;
+    return p0 | (p1 << 1);
   }
 
   spritePixel(code, x, y) {
@@ -484,9 +485,10 @@ class DigDug {
                     192 + x - 12;
     const yOffset = y < 8 ? y * 8 : 256 + (y - 8) * 8;
     const bitBase = (code & 0xff) * 512 + xOffset + yOffset;
-    const byte = this.spriteRom[bitBase >> 3];
-    const bit = bitBase & 7;
-    return ((byte >> bit) & 1) | (((byte >> (bit + 4)) & 1) << 1);
+    const p0 = (this.spriteRom[bitBase >> 3] >> (bitBase & 7)) & 1;
+    const p1Bit = bitBase + 4;
+    const p1 = (this.spriteRom[p1Bit >> 3] >> (p1Bit & 7)) & 1;
+    return p0 | (p1 << 1);
   }
 
   putPixel(x, y, pen) {
@@ -609,6 +611,7 @@ class DigDug {
 
   draw() {
     this.image.data.fill(0);
+    // MAME screen_update_digdug: background, transparent text, then sprites.
     this.drawBackground();
     this.drawText();
     this.drawSprites();
