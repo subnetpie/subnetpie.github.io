@@ -342,7 +342,6 @@ class DigDug {
     const readMode = (this.ioControl & 0x10) !== 0;
 
     this.io51.rw(readMode ? 1 : 0);
-    this.io53.rw(readMode ? 1 : 0);
     this.io51.chipSelect(active && (mask & 1) ? 1 : 0);
     this.io53.chipSelect(active && (mask & 2) ? 1 : 0);
   }
