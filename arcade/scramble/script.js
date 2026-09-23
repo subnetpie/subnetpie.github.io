@@ -1431,15 +1431,7 @@ class Scramble {
 
 }
 
-// ── Boot ──────────────────────────────────────────────────
-(async () => {
- try {
-  const emu = new ScrambleEmu("gameCanvas");
-  window.scramble = emu;
-  await emu.init();
-  await emu.start();
- } catch (err) {
-  console.error("Emulator boot failed:", err?.message ?? err, err);
- }
-})();
-
+const e=new Scramble;
+await e.init();
+e.run();
+window.scramble=e;
