@@ -478,7 +478,10 @@ class DigDug {
     const p0 = (this.bgGfxRom[bitBase >> 3] >> (7 - (bitBase & 7))) & 1;
     const p1Bit = bitBase + 4;
     const p1 = (this.bgGfxRom[p1Bit >> 3] >> (7 - (p1Bit & 7))) & 1;
-    return p0 | (p1 << 1);
+    // MAME decode() assigns plane 0 the high output bit and plane 1
+    // the low output bit. Swapping these changes only pen/color selection,
+    // not tile geometry.
+    return (p0 << 1) | p1;
   }
 
   spritePixel(code, x, y) {
@@ -493,7 +496,8 @@ class DigDug {
     const p0 = (this.spriteRom[bitBase >> 3] >> (7 - (bitBase & 7))) & 1;
     const p1Bit = bitBase + 4;
     const p1 = (this.spriteRom[p1Bit >> 3] >> (7 - (p1Bit & 7))) & 1;
-    return p0 | (p1 << 1);
+    // Same MAME plane significance as charlayout_2bpp.
+    return (p0 << 1) | p1;
   }
 
   putPixel(x, y, pen) {
