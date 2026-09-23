@@ -21,13 +21,56 @@ class Mathbox{
 class Battlezone{
  constructor(){this.cv=document.querySelector("#gameCanvas");this.cx=this.cv.getContext("2d");this.cv.width=W;this.cv.height=H;this.mem=new Uint8Array(32768);this.math=new Mathbox();this.i={coin1:0,start1:0,fire:0,lu:0,ld:0,ru:0,rd:0};this.sound=0;this.avgDone=1;this.vectors=[];this.bind()}
  async rom(n){const r=await fetch("./roms/"+n);if(!r.ok)throw Error("ROM "+n);return new Uint8Array(await r.arrayBuffer())}
- async init(){const files=["036414-02.e1","036413-01.h1","036412-01.j1","036411-01.k1","036410-01.lm1","036409-01.n1","036422-01.bc3","036421-01.a3"],a=Object.fromEntries(await Promise.all(files.map(async n=>[n,await this.rom(n)])));[["036414-02.e1",20480],["036413-01.h1",22528],["036412-01.j1",24576],["036411-01.k1",26624],["036410-01.lm1",28672],["036409-01.n1",30720],["036422-01.bc3",12288],["036421-01.a3",14336]].forEach(([n,o])=>this.mem.set(a[n],o));this.cpu=new M6502(x=>this.read(x),(x,d)=>this.write(x,d));this.cpu.reset();console.log("[BZONE] reset PC",this.cpu.pc.toString(16),"vector",this.read(0x7ffc).toString(16),this.read(0x7ffd).toString(16))}
+ async init(){const files=["036408-01.k7","036414-02.e1","036413-01.h1","036412-01.j1","036411-01.k1","036410-01.lm1","036409-01.n1","036422-01.bc3","036421-01.a3"],a=Object.fromEntries(await Promise.all(files.map(async n=>[n,await this.rom(n)])));[["036414-02.e1",20480],["036413-01.h1",22528],["036412-01.j1",24576],["036411-01.k1",26624],["036410-01.lm1",28672],["036409-01.n1",30720],["036422-01.bc3",12288],["036421-01.a3",14336]].forEach(([n,o])=>this.mem.set(a[n],o));this.avgProm=a["036408-01.k7"];this.cpu=new M6502(x=>this.read(x),(x,d)=>this.write(x,d));this.cpu.reset();console.log("[BZONE] reset PC",this.cpu.pc.toString(16),"vector",this.read(0x7ffc).toString(16),this.read(0x7ffd).toString(16))}
  in0(){let v=255;if(this.i.coin1)v&=254;if(this.avgDone)v|=64;else v&=191;if(this.cpu.cycles&256)v|=128;else v&=127;return v}
  in3(){let v=0;if(this.i.rd)v|=1;if(this.i.ru)v|=2;if(this.i.ld)v|=4;if(this.i.lu)v|=8;if(this.i.fire)v|=16;if(this.i.start1)v|=32;return v}
  read(a){a&=32767;if(a<1024)return this.mem[a];if(a===2048)return this.in0();if(a===2560)return 0x15;if(a===3072)return 0x02;if(a===6144)return 0;if(a===6160)return this.math.lo();if(a===6168)return this.math.hi();if(a>=6176&&a<=6191){let r=a&15;if(r===8)return this.in3();return 255;}if(a>=8192)return this.mem[a];return 255}
  write(a,d){a&=32767;d&=255;if(a<1024){this.mem[a]=d;return}if(a===4608){this.runAVG();return}if(a===5632){this.avgDone=1;return}if(a===6208){this.sound=d;return}if(a>=6240&&a<=6271){this.math.go(a-6240,d);return}if(a>=8192&&a<12288)this.mem[a]=d}
  word(pc){const a=8192+(pc&8191);return this.mem[a]|(this.mem[(a+1)&32767]<<8)}
- runAVG(){this.avgDone=0;let pc=0,stack=[],x=290,y=200,scale=255,intensity=15,steps=0,out=[];const line=(nx,ny,z)=>{if(z>0)out.push([x,y,nx,ny,z]);x=nx;y=ny};while(steps++<12000){const w=this.word(pc);pc=(pc+2)&8191;const op=w>>>13;if(op===0){const w2=this.word(pc);pc=(pc+2)&8191;let dy=sign13(w&8191),dx=sign13(w2&8191),z=(w2>>>12)&15,f=(scale+1)/4096;line(x+dx*f,y-dy*f,z||intensity)}else if(op===1)break;else if(op===2){let dx=w&3,dy=(w>>8)&3;if(dx&2)dx-=4;if(dy&2)dy-=4;let z=(w>>4)&15,s=(w>>2)&3,f=Math.pow(2,s)*(scale+1)/64;line(x+dx*f,y-dy*f,z||intensity)}else if(op===3)intensity=(w>>4)&15;else if(op===4){scale=255-(w&255);scale=Math.max(1,scale>>((w>>8)&7))}else if(op===5){stack.push(pc);pc=(w&8191)<<1}else if(op===6){if(!stack.length)break;pc=stack.pop()}else{pc=(w&8191)<<1;if(!pc)break}}this.vectors=out;this.avgDone=1;this.draw()}
+ runAVG(){
+  this.avgDone=0;
+  let pc=0,sp=0,dvx=0,dvy=0,data=0,state=0,scale=0,intensity=0,op=0,dvy12=0,timer=0,intLatch=0,binScale=0,halt=0;
+  let x=290<<16,y=200<<16,hst=0,lst=0,clip=[0,0,W<<16,H<<16],steps=0,out=[],stack=new Uint16Array(4);
+  const bit=(n)=> (op>>n)&1;
+  const rd=()=>this.mem[0x2000+(pc^1)];
+  const point=(nx,ny,z)=>{let x1=x/65536,y1=y/65536,x2=nx/65536,y2=ny/65536;if(z>0)out.push([x1,y1,x2,y2,z,clip.slice()]);x=nx;y=ny};
+  while(steps++<200000&&!halt){
+    state=(state&0x10)|(this.avgProm[(((state>>4)^1)<<7)|(op<<4)|(state&15)]&15);
+    if(state&8){
+      data=rd();
+      switch(state&7){
+        case 0:dvy=(dvy&0x1f00)|data;pc=(pc+1)&0x1fff;break;
+        case 1:
+          if(!hst){clip[2]=x;clip[1]=y} if(!lst){clip[0]=x;clip[3]=y} lst=hst=1;
+          dvy12=(data>>4)&1;op=data>>5;intLatch=0;dvy=(dvy12<<12)|((data&15)<<8);dvx=0;pc=(pc+1)&0x1fff;break;
+        case 2:dvx=(dvx&0x1f00)|data;pc=(pc+1)&0x1fff;break;
+        case 3:intLatch=data>>4;dvx=((intLatch&1)<<12)|((data&15)<<8)|(dvx&255);pc=(pc+1)&0x1fff;break;
+        case 4:
+          if(bit(0))stack[sp&3]=pc;
+          else{let i=0;while((((dvy^(dvy<<1))&0x1000)===0)&&(((dvx^(dvx<<1))&0x1000)===0)&&(i++<16)){dvy=(dvy&0x1000)|((dvy<<1)&0x1fff);dvx=(dvx&0x1000)|((dvx<<1)&0x1fff);timer=(timer>>>1)|0x4000|(bit(1)<<7)}if(bit(1))timer&=255}break;
+        case 5:
+          if(!bit(2)){for(let i=binScale;i>0;i--)timer=(timer>>>1)|0x4000|(bit(1)<<7);if(bit(1))timer&=255}
+          if(bit(2))sp=(sp+(bit(1)?15:1))&15;break;
+        case 6:
+          if(!bit(2)&&!dvy12){intensity=(dvy>>4)&15;if(!(dvy&0x400)){lst=dvy&0x200;hst=lst^0x200}}
+          if(bit(2)){if(bit(0)){pc=(dvy<<1)&0x1fff;if(dvy===0)break}else pc=stack[sp&3]}
+          else if(dvy12){scale=dvy&255;binScale=(dvy>>8)&7}break;
+        case 7:{
+          halt=bit(0);
+          if(!bit(0)&&!bit(2)){
+            let cycles=bit(1)?0x100-(timer&255):0x8000-timer;timer=0;
+            let nx=x+(((((dvx>>3)^0x200)-0x200)*cycles*(scale^255))>>4);
+            let ny=y-(((((dvy>>3)^0x200)-0x200)*cycles*(scale^255))>>4);
+            let z=(((intLatch>>1)===1)?intensity:(intLatch&14));
+            point(nx,ny,z);x=nx;y=ny;
+          }else if(bit(2)){timer=0;x=290<<16;y=200<<16}
+          break;}
+      }
+    }
+    state=(halt<<4)|(state&15);
+  }
+  this.vectors=out;this.avgDone=1;this.draw();
+ }
  draw(){const c=this.cx;c.fillStyle="#000";c.fillRect(0,0,W,H);c.lineCap="round";for(const v of this.vectors){let x1=v[0],y1=v[1],x2=v[2],y2=v[3],z=v[4];if(!Number.isFinite(x1+y1+x2+y2))continue;let alpha=Math.max(.18,z/15);c.strokeStyle=((y1+y2)/2>315?"rgba(255,45,30,":"rgba(80,255,80,")+alpha+")";c.lineWidth=1+z/12;c.beginPath();c.moveTo(x1,y1);c.lineTo(x2,y2);c.stroke()}}
  frame(){let per=CPU_CLOCK/FPS/6;for(let n=0;n<6;n++){let left=per;while(left>0){let pc=this.cpu.pc,op=this.read(pc),used=this.cpu.step();left-=used;if(this.cpu.pc===pc){console.error("[BZONE] CPU stalled",pc.toString(16));break}}this.cpu.nmi()}if(!this.vectors.length)this.draw()}
  run(){let last=0,loop=t=>{if(t-last>=1000/FPS){last=t;this.frame()}requestAnimationFrame(loop)};requestAnimationFrame(loop)}
