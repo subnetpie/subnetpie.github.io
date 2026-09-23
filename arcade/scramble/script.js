@@ -1,6 +1,8 @@
 import { Z80 } from "../../cpu/z80.js";
 import { AY8910 } from "../../chips/AY8910.js";
 
+const MC=3072000,SC=14318000/8,FPS=16000/132/2,W=256,H=256;
+
 class PPI8255 {
  constructor(
   portARead,
@@ -373,8 +375,8 @@ class Touchpads {
 }
 
 // ── ScrambleEmu ───────────────────────────────────────────
-class ScrambleEmu {
- constructor(canvasId) {
+class Scramble {
+ constructor() {
   this.inputs = {
    up: false,
    down: false,
@@ -388,25 +390,13 @@ class ScrambleEmu {
    start2: false,
    service: false
   };
-  this.initTimingConstants();
   this.initRomConfig();
-  this.initCanvas(canvasId);
+  this.initCanvas();
   this.initMemory();
   this.initVideoBuffers();
   this.initMachineState();
   this.initInputs();
   this.initRuntimeState();
- }
-
- initTimingConstants() {
-  this.CPUCLOCK = 3_072_000;
-  this.SOUNDCLOCK = 14_318_000 / 8;
-  this.FRAMERATE = 16000 / 132 / 2;
-  this.WIDTH = this.HEIGHT = 256;
-  this.cyclesPerFrame = Math.floor(this.CPUCLOCK / this.FRAMERATE);
-  this.QUANTUM = Math.floor(this.cyclesPerFrame / 4);
-  this.soundCyclesPerFrame = Math.floor(this.SOUNDCLOCK / this.FRAMERATE);
-  this.soundQuantum = Math.floor(this.soundCyclesPerFrame / 4);
  }
 
  initRomConfig() {
@@ -419,15 +409,12 @@ class ScrambleEmu {
   this.romBaseUrl = "./roms/";
  }
 
- initCanvas(canvasId) {
-  this.canvas =
-   document.getElementById(canvasId) ??
-   (() => {
-    throw new Error(`Canvas '${canvasId}' missing`);
-   })();
+ initCanvas() {
+  this.canvas=document.querySelector("#gameCanvas");
+  if(!this.canvas)throw Error("Canvas #gameCanvas missing");
   this.ctx = this.canvas.getContext("2d");
-  this.canvas.width = this.WIDTH;
-  this.canvas.height = this.HEIGHT;
+  this.canvas.width = W;
+  this.canvas.height = H;
   this.canvas.style.imageRendering = "pixelated";
  }
 
@@ -668,8 +655,8 @@ class ScrambleEmu {
  }
 
  initVideoBuffers() {
-  this.imageData = this.ctx.createImageData(this.WIDTH, this.HEIGHT);
-  this.starfield = new Starfield(this.WIDTH, this.HEIGHT);
+  this.imageData = this.ctx.createImageData(W, H);
+  this.starfield = new Starfield(W, H);
  }
 
  initIO() {
@@ -775,9 +762,9 @@ class ScrambleEmu {
   const ctx = new Ctx({ latencyHint: "interactive" });
 
   try {
-   const ay1 = new AY8910(ctx, this.SOUNDCLOCK);
+   const ay1 = new AY8910(ctx, SC);
 
-   const ay2 = new AY8910(ctx, this.SOUNDCLOCK,
+   const ay2 = new AY8910(ctx, SC,
     () => this.soundLatch, () => this.readScrambleTimer());
 
    if (oldAY1) { ay1.regs.set(oldAY1); ay1.addrLatch = this.ay1.addrLatch; }
@@ -1020,9 +1007,9 @@ class ScrambleEmu {
 
   // Preserve AY register activity before audio is unlocked.
   // AY at 0x40/0x80: port A = sound latch, port B = hardware timer.
-  this.ay1 = new AY8910(null, this.SOUNDCLOCK);
+  this.ay1 = new AY8910(null, SC);
 
-  this.ay2 = new AY8910(null, this.SOUNDCLOCK,
+  this.ay2 = new AY8910(null, SC,
    () => this.soundLatch, () => this.readScrambleTimer());
 
   this.initIO();
@@ -1057,32 +1044,28 @@ class ScrambleEmu {
   this.ready = true;
  }
 
- async start() {
-  if (!this.ready) await this.init();
-  this.running = true;
-  requestAnimationFrame((ts) => this.stepFrame(ts));
+ run() {
+  this.running=true;
+  requestAnimationFrame((ts)=>this.frame(ts));
  }
 
- stop() {
-  this.running = false;
- }
-
- stepFrame(timestamp) {
+ frame(timestamp) {
   if (!this.running || !this.cpu || !this.soundCpu) return;
 
-  const frameInterval = 1000 / this.FRAMERATE;
+  const frameInterval=1000/FPS;
   if (timestamp - this.lastFrameTime < frameInterval - 1) {
-   requestAnimationFrame((ts) => this.stepFrame(ts));
+   requestAnimationFrame((ts)=>this.frame(ts));
    return;
   }
   this.lastFrameTime = timestamp;
 
-  let mainLeft = this.cyclesPerFrame;
-  let soundLeft = this.soundCyclesPerFrame;
+  let mainLeft = Math.floor(MC/FPS);
+  let soundLeft = Math.floor(SC/FPS);
+  const mainQuantum=Math.floor(mainLeft/4),soundQuantum=Math.floor(soundLeft/4);
 
   for (let slice = 0; slice < 4; slice++) {
-   const mainBudget = slice < 3 ? this.QUANTUM : mainLeft;
-   const soundBudget = slice < 3 ? this.soundQuantum : soundLeft;
+   const mainBudget = slice < 3 ? mainQuantum : mainLeft;
+   const soundBudget = slice < 3 ? soundQuantum : soundLeft;
 
    let mainElapsed = 0;
    while (mainElapsed < mainBudget) {
@@ -1119,7 +1102,7 @@ class ScrambleEmu {
 
   this.frameCount++;
   this.render();
-  requestAnimationFrame((ts) => this.stepFrame(ts));
+  requestAnimationFrame((ts)=>this.frame(ts));
  }
 
  // ── Main CPU memory map ───────────────────────────────────
@@ -1370,7 +1353,7 @@ class ScrambleEmu {
 
  renderSprites(pixels) {
   const clipLeft = 16,
-   clipRight = this.WIDTH - 16;
+   clipRight = W - 16;
   for (let offs = 0x1c; offs >= 0; offs -= 4) {
    const rawX = this.mem[0x5040 + offs];
    const codeRaw = this.mem[0x5040 + offs + 1];
@@ -1387,8 +1370,8 @@ class ScrambleEmu {
    const sy0 = (rawY + 256) & 0xff;
    for (let dy = 0; dy < 16; dy++) {
     const sy = (sy0 + dy) & 0xff;
-    if (sy >= this.HEIGHT) continue;
-    const screenRowOffset = sy * this.WIDTH;
+    if (sy >= H) continue;
+    const screenRowOffset = sy * W;
     const py = flipX ? 15 - dy : dy;
     for (let dx = 0; dx < 16; dx++) {
      const sx = (sx0 + dx) & 0xff;
@@ -1439,10 +1422,10 @@ class ScrambleEmu {
   if (!this.ready || !this.tiles || !this.paletteRGB || !this.bgTilemap) return;
   const pixels = new Uint32Array(this.imageData.data.buffer);
   pixels.fill(0xff000000);
-  this.drawStars(pixels, this.WIDTH, this.HEIGHT);
-  this.renderTiles(pixels, this.WIDTH, this.HEIGHT);
+  this.drawStars(pixels, W, H);
+  this.renderTiles(pixels, W, H);
   this.renderSprites(pixels);
-  this.drawBullets(pixels, this.WIDTH, this.HEIGHT);
+  this.drawBullets(pixels, W, H);
   this.ctx.putImageData(this.imageData, 0, 0);
  }
 
