@@ -1,9 +1,6 @@
 import { Z80 } from "../../cpu/z80.js";
 import { AY8910 } from "../../chips/AY8910.js";
 
-//===========================================================
-// Scramble Emulator
-//===========================================================
 class PPI8255 {
  constructor(
   portARead,
@@ -419,7 +416,7 @@ class ScrambleEmu {
    gfx: ["5f", "5h"],
    prom: "c01s.6e"
   };
-  this.romBaseUrl = "https://subnetpie.github.io/arcade/scramble/roms/";
+  this.romBaseUrl = "./roms/";
  }
 
  initCanvas(canvasId) {
@@ -662,18 +659,12 @@ class ScrambleEmu {
   this.starPaletteRGB = null;
   this.bgTilemap = null;
   this.ready = false;
-  this.traceEnabled = false;
-  this.traceLog = [];
-  this.maxTrace = 4000;
-  this.lastOpPC = 0;
   this.touchTimers ??= new Map();
   this.touchBindings ??= {};
   this.audioCtx = null;
   this.audioUnlocked = false;
   this.audioUnlocking = false;
   this.audioResumePromise = null;
-  this.keepAliveSrc = null;
-  this.keepAliveGain = null;
  }
 
  initVideoBuffers() {
@@ -765,7 +756,6 @@ class ScrambleEmu {
   }
  }
 
- // ── Audio ─────────────────────────────────────────────────
  readScrambleTimer() {
   let clocks = ((this.soundCpu?.cycles ?? 0) * 8) % 40960;
   const high = clocks >= 20480 ? 0x80 : 0;
@@ -950,59 +940,6 @@ class ScrambleEmu {
    });
  }
 
- _startKeepAlive() {
-  const ctx = this._audioCtx;
-
-  if (!ctx || ctx.state === "closed" || this._keepAliveSrc) return;
-
-  const sr = ctx.sampleRate;
-  const buf = ctx.createBuffer(1, Math.ceil(sr * 0.5), sr);
-  const data = buf.getChannelData(0);
-
-  /*
-   * Keep a nonzero signal. Do not use literal zero: some Safari versions
-   * may optimize a permanently silent source away. At 1e-10 this is
-   * approximately -200 dBFS and is inaudible.
-   */
-  data.fill(1e-10);
-
-  const gain = ctx.createGain();
-  gain.gain.setValueAtTime(1, ctx.currentTime);
-
-  const src = ctx.createBufferSource();
-  src.buffer = buf;
-  src.loop = true;
-
-  src.connect(gain);
-  gain.connect(ctx.destination);
-  src.start();
-
-  this._keepAliveSrc = src;
-  this._keepAliveGain = gain;
-
-  src.addEventListener(
-   "ended",
-   () => {
-    if (this._keepAliveSrc === src) {
-     this._keepAliveSrc = null;
-     this._keepAliveGain = null;
-    }
-
-    try {
-     src.disconnect();
-     gain.disconnect();
-    } catch {}
-   },
-   { once: true }
-  );
-
-  console.log("[Audio] keepalive started", {
-   state: ctx.state,
-   sampleRate: sr,
-   loopFrames: buf.length
-  });
- }
-
  updateSelfTestGate() {
   if (!this.ppiCReady && this.cpu && this.cpu.PC === 0x016f)
    this.ppiCReady = true;
@@ -1078,8 +1015,7 @@ class ScrambleEmu {
   this.sprites = this.buildSprites(charROM);
   this.createTilemap();
 
-  // AudioContext created lazily on first user gesture
-  // AudioContext is created only after a trusted user gesture on iOS.
+  // AudioContext is created lazily after a trusted user gesture.
   this.audioCtx = null;
 
   // Preserve AY register activity before audio is unlocked.
@@ -1102,12 +1038,6 @@ class ScrambleEmu {
   this.cpu.SP = 0xffff;
   this.cpu.IFF1 = this.cpu.IFF2 = false;
   this.cpu.IM = 1;
-  this.opCount = 0;
-  const oldStep = this.cpu.step.bind(this.cpu);
-  this.cpu.step = () => {
-   this.opCount++;
-   return oldStep();
-  };
 
   // Sound CPU
   this.soundCpu = new Z80(
@@ -1149,7 +1079,6 @@ class ScrambleEmu {
 
   let mainLeft = this.cyclesPerFrame;
   let soundLeft = this.soundCyclesPerFrame;
-  if (!this.pcHistogram) this.pcHistogram = new Uint32Array(0x4000);
 
   for (let slice = 0; slice < 4; slice++) {
    const mainBudget = slice < 3 ? this.QUANTUM : mainLeft;
@@ -1158,8 +1087,6 @@ class ScrambleEmu {
    let mainElapsed = 0;
    while (mainElapsed < mainBudget) {
     this.updateSelfTestGate();
-    this.lastOpPC = this.cpu.PC;
-    if (this.cpu.PC < 0x4000) this.pcHistogram[this.cpu.PC]++;
     mainElapsed += this.stepCpu(this.cpu);
    }
    mainLeft -= mainElapsed;
@@ -1342,17 +1269,7 @@ class ScrambleEmu {
   return cycles;
  }
 
- runCycles(cpu, budget) {
-  let elapsed = 0;
-  while (elapsed < budget) elapsed += this.stepCpu(cpu);
-  return elapsed;
- }
-
  // ── Video ─────────────────────────────────────────────────
- getBackdropColor() {
-  return this.paletteRGB?.[this.bgColorIndex] ?? 0xff000000;
- }
-
  buildPalette(prom) {
   const out = new Uint32Array(32);
   const bit = (v, n) => (v >> n) & 1;
@@ -1491,8 +1408,6 @@ class ScrambleEmu {
    this.bgTilemap.markTileDirty((col << 5) | row);
  }
 
- drawBackdrop(pixels, width, height) {}
-
  drawStars(pixels, width, height) {
   if (!this.starsEnable || !this.starfield) return;
   this.starfield.render(
@@ -1524,7 +1439,6 @@ class ScrambleEmu {
   if (!this.ready || !this.tiles || !this.paletteRGB || !this.bgTilemap) return;
   const pixels = new Uint32Array(this.imageData.data.buffer);
   pixels.fill(0xff000000);
-  this.drawBackdrop(pixels, this.WIDTH, this.HEIGHT);
   this.drawStars(pixels, this.WIDTH, this.HEIGHT);
   this.renderTiles(pixels, this.WIDTH, this.HEIGHT);
   this.renderSprites(pixels);
@@ -1532,30 +1446,6 @@ class ScrambleEmu {
   this.ctx.putImageData(this.imageData, 0, 0);
  }
 
- trace(tag, data) {}
-
- debugAudio() {
-  console.table({
-   audioState: this.audioCtx?.state ?? "no context",
-   audioUnlocked: this.audioUnlocked,
-   soundCpuCycles: this.soundCpu?.cycles ?? -1,
-   soundLatch: `0x${(this.soundLatch ?? 0).toString(16).padStart(2, "0")}`,
-   soundIrqPending: this.soundIrqPending,
-   soundMuted: this.soundMuted,
-
-   ay1Address: this.ay1?.addrLatch ?? -1,
-   ay1Mixer: this.ay1?.regs?.[7] ?? -1,
-   ay1VolA: this.ay1?.regs?.[8] ?? -1,
-   ay1VolB: this.ay1?.regs?.[9] ?? -1,
-   ay1VolC: this.ay1?.regs?.[10] ?? -1,
-
-   ay2Address: this.ay2?.addrLatch ?? -1,
-   ay2Mixer: this.ay2?.regs?.[7] ?? -1,
-   ay2VolA: this.ay2?.regs?.[8] ?? -1,
-   ay2VolB: this.ay2?.regs?.[9] ?? -1,
-   ay2VolC: this.ay2?.regs?.[10] ?? -1
-  });
- }
 }
 
 // ── Boot ──────────────────────────────────────────────────
@@ -1569,6 +1459,4 @@ class ScrambleEmu {
   console.error("Emulator boot failed:", err?.message ?? err, err);
  }
 })();
-
-
 
