@@ -22,6 +22,7 @@ main {
   height: 100dvh;
   display: grid;
   place-items: center;
+  transform: translateY(-5dvh);
   overflow: hidden;
   overscroll-behavior: none;
   -webkit-touch-callout: none;
