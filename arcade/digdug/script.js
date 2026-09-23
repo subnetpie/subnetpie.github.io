@@ -551,8 +551,8 @@ class DigDug {
     for (let offset = 0; offset < 0x80; offset += 2) {
       let sprite = this.ram[0x8b80 + offset];
       const color = this.ram[0x8b80 + offset + 1] & 0x3f;
-      const sx = this.ram[0x9380 + offset + 1] - 39;
-      let sy = 257 - this.ram[0x9380 + offset];
+      const sx = this.ram[0x9380 + offset + 1] - 40 + 1;
+      let sy = 256 - this.ram[0x9380 + offset] + 1;
       let flipx = this.ram[0x9b80 + offset] & 1;
       let flipy = (this.ram[0x9b80 + offset] >> 1) & 1;
       const size = (sprite >> 7) & 1;
@@ -581,13 +581,22 @@ class DigDug {
                 flipy ? 15 - y : y
               );
 
-              if (!pixel) continue;
+              const pen = 32 + color * 4 + pixel;
+              // MAME uses transpen_mask(..., 0x1f): transparency is selected
+              // after the sprite lookup PROM, not by raw graphics pixel 0.
+              if (this.proms[0x20 + color * 4 + pixel] === 0x0f) continue;
 
               const px = ((sx + 16 * tx) & 0xff) + x;
               const py = sy + 16 * ty + y;
 
               if (px >= 16 && px < 272) {
-                this.putPixel(px, py, 32 + color * 4 + pixel);
+                this.putPixel(px, py, pen);
+              }
+
+              // MAME draws a second copy at +0x100 for X wraparound.
+              const wrapX = px + 0x100;
+              if (wrapX >= 16 && wrapX < 272) {
+                this.putPixel(wrapX, py, pen);
               }
             }
           }
