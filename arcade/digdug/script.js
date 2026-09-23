@@ -144,6 +144,7 @@ class DigDug {
 
     this.ioControl = 0;
     this.ioTimerState = false;
+    this.ioReadStretch = false;
 
     this.cpus = [0, 1, 2].map(index => {
       const cpu = new Z80(
@@ -318,14 +319,20 @@ class DigDug {
     this.ioControl = data & 0xff;
     this.ioTimerState = false;
     this.ioEdgeTicks = 0;
-    this.applyIoLines(false);
+
+    // MAME 06XX: disabling the divider clears NMI/chip-select but leaves RW
+    // unchanged. In read mode the first falling-edge NMI is suppressed so
+    // the selected MCU has one cycle to place its result on the bus.
+    this.setIoChipSelects(false);
+    this.ioReadStretch = (this.ioControl & 0x10) !== 0 &&
+                         (this.ioControl & 0xe0) !== 0;
   }
 
   ioDataWrite(data) {
     if (this.ioControl & 0x10) return;
     const mask = this.ioControl & 0x0f;
     if (mask & 1) this.io51.write(data);
-    if (mask & 2) this.io53.write(data);
+    // Dig Dug's 53XX is read-only on the 06XX data bus.
   }
 
   ioDataRead() {
@@ -337,11 +344,8 @@ class DigDug {
     return value & 0xff;
   }
 
-  applyIoLines(active) {
+  setIoChipSelects(active) {
     const mask = this.ioControl & 0x0f;
-    const readMode = (this.ioControl & 0x10) !== 0;
-
-    this.io51.rw(readMode ? 1 : 0);
     this.io51.chipSelect(active && (mask & 1) ? 1 : 0);
     this.io53.chipSelect(active && (mask & 2) ? 1 : 0);
   }
@@ -369,10 +373,17 @@ class DigDug {
       this.ioTimerState = !this.ioTimerState;
 
       if (this.ioTimerState) {
-        this.applyIoLines(true);
-        this.cpus[0].pulseNmi();
+        // MAME updates RW only on the falling 06XX clock edge.
+        this.io51.rw((this.ioControl & 0x10) ? 1 : 0);
+
+        if (!this.ioReadStretch) {
+          this.cpus[0].pulseNmi();
+        }
+        this.ioReadStretch = false;
+        this.setIoChipSelects(true);
       } else {
-        this.applyIoLines(false);
+        this.ioReadStretch = false;
+        this.setIoChipSelects(false);
       }
     }
   }
