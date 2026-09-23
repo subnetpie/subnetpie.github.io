@@ -465,26 +465,28 @@ class DigDug {
   }
 
   bgPixel(code, x, y) {
+    // MAME charlayout_2bpp: plane offsets {0,4},
+    // X offsets {64..67, 0..3}, Y offsets {0,8,...56}.
     const bitBase = (code & 0xff) * 128 +
                     (x < 4 ? 64 + x : x - 4) +
                     y * 8;
-    const p0 = (this.bgGfxRom[bitBase >> 3] >> (7 - (bitBase & 7))) & 1;
-    const p1Bit = bitBase + 4;
-    const p1 = (this.bgGfxRom[p1Bit >> 3] >> (7 - (p1Bit & 7))) & 1;
-    return p0 | (p1 << 1);
+    const byte = this.bgGfxRom[bitBase >> 3];
+    const bit = bitBase & 7;
+    return ((byte >> bit) & 1) | (((byte >> (bit + 4)) & 1) << 1);
   }
 
   spritePixel(code, x, y) {
+    // MAME spritelayout_galaga: plane offsets {0,4};
+    // X offsets are four 4-pixel groups at 0,64,128,192 bits.
     const xOffset = x < 4 ? x :
                     x < 8 ? 64 + x - 4 :
                     x < 12 ? 128 + x - 8 :
                     192 + x - 12;
     const yOffset = y < 8 ? y * 8 : 256 + (y - 8) * 8;
     const bitBase = (code & 0xff) * 512 + xOffset + yOffset;
-    const p0 = (this.spriteRom[bitBase >> 3] >> (7 - (bitBase & 7))) & 1;
-    const p1Bit = bitBase + 4;
-    const p1 = (this.spriteRom[p1Bit >> 3] >> (7 - (p1Bit & 7))) & 1;
-    return p0 | (p1 << 1);
+    const byte = this.spriteRom[bitBase >> 3];
+    const bit = bitBase & 7;
+    return ((byte >> bit) & 1) | (((byte >> (bit + 4)) & 1) << 1);
   }
 
   putPixel(x, y, pen) {
