@@ -34,7 +34,7 @@ main {
   height: min(100dvh, calc(100vw * 9 / 7));
   width: auto;
   max-width: 100vw;
-  transform: translateY(-12dvh);
+  transform: translateY(-10dvh);
   background: #000;
   image-rendering: pixelated;
   image-rendering: crisp-edges;
@@ -66,7 +66,7 @@ button {
 
 #top {
   position: fixed;
-  top: max(8px, env(safe-area-inset-top));
+  top: max(5px, env(safe-area-inset-top));
   left: 50%;
   z-index: 4;
   display: flex;
@@ -86,7 +86,7 @@ button {
 
 #dpad {
   left: 14px;
-  bottom: max(10px, env(safe-area-inset-bottom));
+  bottom: max(0px, env(safe-area-inset-bottom));
   display: grid;
   width: 150px;
   height: 150px;
@@ -97,7 +97,7 @@ button {
 
 #fire {
   right: 24px;
-  bottom: max(30px, env(safe-area-inset-bottom));
+  bottom: max(20px, env(safe-area-inset-bottom));
   width: 110px;
   height: 110px;
   border-radius: 50%;
