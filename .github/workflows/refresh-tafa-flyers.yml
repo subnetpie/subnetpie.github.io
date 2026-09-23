@@ -1,6 +1,9 @@
 name: Refresh TAFA flyers
 on:
   workflow_dispatch:
+  push:
+    branches: [master]
+    paths: ['.github/workflows/refresh-tafa-flyers.yml']
 permissions:
   contents: write
 jobs:
