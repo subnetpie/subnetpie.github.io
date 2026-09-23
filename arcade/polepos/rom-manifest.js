@@ -17,7 +17,6 @@ export const ROM_CONFIG = {
     "namco": 256,
     "engine": 16384,
     "52xx": 32768,
-    "user1": 256,
     "mcu51": 1024,
     "mcu52": 1024,
     "mcu53": 1024,
@@ -403,16 +402,6 @@ export const ROM_CONFIG = {
       "critical": true,
       "crc32": "8842138a",
       "sha1": "7e94f5b6ee32f6af37df54cfb72d96f9b543f9e2"
-    },
-    {
-      "name": "pp1-4.9h",
-      "size": 256,
-      "target": "user1",
-      "offset": 0,
-      "stride": 1,
-      "critical": false,
-      "crc32": "2401c817",
-      "sha1": "8991b7994513a469e64392fa8f233af5e5f06d54"
     },
     {
       "name": "51xx.bin",
