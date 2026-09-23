@@ -1,5 +1,6 @@
 import { Z80 } from "../../cpu/z80.js";
 import { Namco51XX } from "../../chips/Namco51XX.js";
+import { Namco53XX } from "../../chips/Namco53XX.js";
 import { NamcoWSG } from "../../chips/NamcoWSG.js";
 
 const MASTER_CLOCK = 18_432_000;
@@ -129,12 +130,17 @@ class DigDug {
       console.warn("[DigDug] shared 51XX ROM unavailable; controls may not respond", error);
     }
 
-    this.io53 = {
-      chipSelect: () => {},
-      rw: () => {},
-      write: () => {},
-      read: () => this.read53xx()
-    };
+    this.io53 = new Namco53XX();
+    this.io53.loadROM(await this.fetchRom("53xx.bin", "../polepos/roms/"));
+    this.io53.mcu.readK = () =>
+      ((this.miscLatch[7] & 1) << 3) |
+      ((this.miscLatch[6] & 1) << 2) |
+      ((this.miscLatch[5] & 1) << 1);
+    this.io53.mcu.readR[0] = () => this.dswa & 0x0f;
+    this.io53.mcu.readR[1] = () => (this.dswa >> 4) & 0x0f;
+    this.io53.mcu.readR[2] = () => this.dswb & 0x0f;
+    this.io53.mcu.readR[3] = () => (this.dswb >> 4) & 0x0f;
+    this.io53Ticks = 0;
 
     this.ioControl = 0;
     this.ioTimerState = false;
@@ -152,6 +158,8 @@ class DigDug {
     });
 
     this.setSubReset(true);
+    this.io51.setResetLine(0);
+    this.io53.setResetLine(0);
     this.update51Inputs();
     this.draw();
   }
@@ -266,6 +274,7 @@ class DigDug {
     } else if (bit === 3) {
       this.setSubReset(!value);
       this.io51.setResetLine(value);
+      this.io53.setResetLine(value);
     }
 
     if (bit >= 5) {
@@ -340,6 +349,15 @@ class DigDug {
 
   tickIo(masterTicks) {
     this.io51.advanceMasterTicks(masterTicks);
+    if (!this.io53.isReset()) {
+      this.io53Ticks += masterTicks;
+      let cycles = Math.floor(this.io53Ticks / 72);
+      this.io53Ticks -= cycles * 72;
+      while (cycles > 0 && !this.io53.mcu.halted) {
+        const used = this.io53.mcu.step();
+        cycles -= used > 0 ? used : 1;
+      }
+    }
 
     const shift = (this.ioControl >> 5) & 7;
     if (!shift) return;
@@ -358,17 +376,6 @@ class DigDug {
         this.applyIoLines(false);
       }
     }
-  }
-
-  read53xx() {
-    // 53XX mode 7 is the DIP-switch reader used by Dig Dug. The original
-    // MCU serializes these nibbles; this compact board adapter supplies the
-    // current DIP image and keeps the game on MAME's factory defaults.
-    const phase = (this.io53Phase = ((this.io53Phase || 0) + 1) & 3);
-    if (phase === 0) return this.dswa & 0x0f;
-    if (phase === 1) return (this.dswa >> 4) & 0x0f;
-    if (phase === 2) return this.dswb & 0x0f;
-    return (this.dswb >> 4) & 0x0f;
   }
 
   inputBytes() {
