@@ -167,8 +167,10 @@ class DigDug {
 
   buildPalette() {
     const base = [];
-    const rw = [33, 71, 151];
-    const bw = [81, 174];
+    // MAME compute_resistor_weights() results for {1000,470,220}
+    // and blue {470,220}. combine_weights() rounds to the nearest integer.
+    const rw = [33.2329216032, 70.7083438367, 151.0587345601];
+    const bw = [81.3043478261, 173.6956521739];
 
     for (let i = 0; i < 32; i++) {
       const p = this.proms[i];
@@ -180,7 +182,7 @@ class DigDug {
                 rw[2] * ((p >> 5) & 1);
       const b = bw[0] * ((p >> 6) & 1) +
                 bw[1] * ((p >> 7) & 1);
-      base.push([r, g, b]);
+      base.push([Math.round(r), Math.round(g), Math.round(b)]);
     }
 
     this.palette = new Array(544);
