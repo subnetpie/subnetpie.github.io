@@ -86,7 +86,7 @@ button {
 
 #dpad {
   left: 14px;
-  bottom: max(14px, env(safe-area-inset-bottom));
+  bottom: max(0px, env(safe-area-inset-bottom));
   display: grid;
   width: 150px;
   height: 150px;
@@ -97,7 +97,7 @@ button {
 
 #fire {
   right: 24px;
-  bottom: max(35px, env(safe-area-inset-bottom));
+  bottom: max(20px, env(safe-area-inset-bottom));
   width: 110px;
   height: 110px;
   border-radius: 50%;
