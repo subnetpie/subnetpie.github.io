@@ -1,0 +1,65 @@
+name: Refresh TAFA flyers
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download portrait flyer fronts from TAFA
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p assets/flyers /tmp/tafa
+          declare -A urls=(
+            [pacman]="https://flyers.arcade-museum.com/videogame-flyers/0/pac-man-00724-01.jpg"
+            [mspacman]="https://flyers.arcade-museum.com/videogame-flyers/0/ms-pac-man-00666-01.jpg"
+            [scramble]="https://flyers.arcade-museum.com/videogame-flyers/5/scramble--konami-05517-01.jpg"
+            [galaga]="https://flyers.arcade-museum.com/videogame-flyers/0/galaga-00397-01.jpg"
+            [bosco]="https://flyers.arcade-museum.com/videogame-flyers/0/bosconian-00140-01.jpg"
+            [polepos]="https://flyers.arcade-museum.com/videogame-flyers/0/pole-position-00752-01.jpg"
+            [timeplt]="https://flyers.arcade-museum.com/videogame-flyers/2/time-pilot-02603-01.jpg"
+          )
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq webp
+          for game in pacman mspacman scramble galaga bosco polepos timeplt; do
+            curl -fL --retry 3 -A "Mozilla/5.0" "${urls[$game]}" -o "/tmp/tafa/$game.jpg"
+            cwebp -quiet -q 88 "/tmp/tafa/$game.jpg" -o "assets/flyers/$game.webp"
+          done
+      - name: Use local Time Pilot flyer
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path("index.html")
+          s=p.read_text()
+          s=s.replace('https://centuri.net/data/timepilot/flyrer1.jpg','./assets/flyers/timeplt.webp')
+          p.write_text(s)
+          PY
+      - name: Document TAFA sources
+        run: |
+          cat > assets/flyers/README.md <<'EOF'
+          # Arcade flyer assets
+
+          The portrait/front flyer images used by the arcade tiles are sourced from **The Arcade Flyer Archive (TAFA)** / International Arcade Museum and stored locally as WebP assets.
+
+          Source entries:
+          - Pac-Man — TAFA video game flyer 723 (USA, 1980), front
+          - Ms. Pac-Man — TAFA video game flyer 665 (USA, 1981), front
+          - Scramble — TAFA video game flyer 5524 (Konami, 1981), front
+          - Galaga — TAFA video game flyer 396 (USA, 1981), front
+          - Bosconian — TAFA video game flyer 139 (USA, 1981), front
+          - Pole Position — TAFA video game flyer 751 (USA, 1982), front
+          - Time Pilot — TAFA video game flyer 2602 (Centuri), front
+
+          Flyer artwork remains the property of its respective owners. These local copies are used as historical promotional artwork for the emulator index.
+          EOF
+      - name: Commit refreshed assets
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/flyers index.html
+          git diff --cached --quiet && exit 0
+          git commit -m "Refresh arcade flyers from TAFA portrait fronts"
+          git push
