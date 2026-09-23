@@ -70,7 +70,7 @@ button {
   z-index: 4;
   display: flex;
   gap: 60px;
-  transform: translateX(-50%);
+  transform: translateX(-46%);
   -webkit-touch-callout: none;
   -webkit-user-select: none;
   user-select: none;
