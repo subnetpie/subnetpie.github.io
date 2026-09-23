@@ -34,7 +34,7 @@ main {
   height: min(100dvh, calc(100vw * 9 / 7));
   width: auto;
   max-width: 100vw;
-  transform: translateY(-15dvh);
+  transform: translateY(-12dvh);
   background: #000;
   image-rendering: pixelated;
   image-rendering: crisp-edges;
@@ -71,7 +71,7 @@ button {
   z-index: 4;
   display: flex;
   gap: 60px;
-  transform: translateX(-46%);
+  transform: translateX(-50%);
   -webkit-touch-callout: none;
   -webkit-user-select: none;
   user-select: none;
