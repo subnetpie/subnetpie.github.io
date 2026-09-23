@@ -59,8 +59,8 @@ class Battlezone{
           halt=bit(0);
           if(!bit(0)&&!bit(2)){
             let cycles=bit(1)?0x100-(timer&255):0x8000-timer;timer=0;
-            let nx=x+(((((dvx>>3)^0x200)-0x200)*cycles*(scale^255))>>4);
-            let ny=y-(((((dvy>>3)^0x200)-0x200)*cycles*(scale^255))>>4);
+            let nx=x+Math.trunc(((((dvx>>3)^0x200)-0x200)*cycles*(scale^255))/16);
+            let ny=y-Math.trunc(((((dvy>>3)^0x200)-0x200)*cycles*(scale^255))/16);
             let z=(((intLatch>>1)===1)?intensity:(intLatch&14));
             point(nx,ny,z);x=nx;y=ny;
           }else if(bit(2)){timer=0;x=290<<16;y=200<<16}
@@ -71,7 +71,13 @@ class Battlezone{
   }
   this.vectors=out;this.avgDone=1;this.draw();
  }
- draw(){const c=this.cx;c.fillStyle="#000";c.fillRect(0,0,W,H);c.lineCap="round";for(const v of this.vectors){let x1=v[0],y1=v[1],x2=v[2],y2=v[3],z=v[4];if(!Number.isFinite(x1+y1+x2+y2))continue;let alpha=Math.max(.18,z/15);c.strokeStyle=((y1+y2)/2>315?"rgba(255,45,30,":"rgba(80,255,80,")+alpha+")";c.lineWidth=1+z/12;c.beginPath();c.moveTo(x1,y1);c.lineTo(x2,y2);c.stroke()}}
+ draw(){const c=this.cx;c.fillStyle="#000";c.fillRect(0,0,W,H);c.lineCap="round";for(const v of this.vectors){let x1=v[0],y1=v[1],x2=v[2],y2=v[3],z=v[4];if(!Number.isFinite(x1+y1+x2+y2))continue;let alpha=Math.max(.18,z/15);const boundary=308;
+if((y1<boundary&&y2>boundary)||(y2<boundary&&y1>boundary)){
+  const t=(boundary-y1)/(y2-y1),xb=x1+(x2-x1)*t;
+  c.strokeStyle="rgba(80,255,80,"+alpha+")";c.lineWidth=1+z/12;c.beginPath();c.moveTo(x1,y1);c.lineTo(xb,boundary);c.stroke();
+  c.strokeStyle="rgba(255,45,30,"+alpha+")";c.beginPath();c.moveTo(xb,boundary);c.lineTo(x2,y2);c.stroke();continue
+}
+c.strokeStyle=(y1>=boundary?"rgba(255,45,30,":"rgba(80,255,80,")+alpha+")";c.lineWidth=1+z/12;c.beginPath();c.moveTo(x1,y1);c.lineTo(x2,y2);c.stroke()}}
  frame(){let per=CPU_CLOCK/FPS/6;for(let n=0;n<6;n++){let left=per;while(left>0){let pc=this.cpu.pc,op=this.read(pc),used=this.cpu.step();left-=used;if(this.cpu.pc===pc){console.error("[BZONE] CPU stalled",pc.toString(16));break}}this.cpu.nmi()}if(!this.vectors.length)this.draw()}
  run(){let last=0,loop=t=>{if(t-last>=1000/FPS){last=t;this.frame()}requestAnimationFrame(loop)};requestAnimationFrame(loop)}
  bind(){const set=(n,v)=>this.i[n]=v,pulse=n=>{set(n,1);setTimeout(()=>set(n,0),140)},km={KeyQ:"lu",KeyA:"ld",KeyE:"ru",KeyD:"rd",Space:"fire"};addEventListener("keydown",e=>{if(km[e.code])set(km[e.code],1);if(e.code==="Digit1")pulse("start1");if(e.code==="Digit5")pulse("coin1")});addEventListener("keyup",e=>km[e.code]&&set(km[e.code],0));document.querySelectorAll("[data-btn]").forEach(el=>{let n=el.dataset.btn;el.onpointerdown=e=>{e.preventDefault();n==="coin1"||n==="start1"?pulse(n):set(n,1)};el.onpointerup=()=>set(n,0)});const stick=(id,up,down)=>{let el=document.querySelector(id),move=e=>{let r=el.getBoundingClientRect(),y=e.clientY-r.top-r.height/2;set(up,y<-12);set(down,y>12)};el.onpointerdown=e=>{el.setPointerCapture(e.pointerId);move(e)};el.onpointermove=e=>el.hasPointerCapture(e.pointerId)&&move(e);el.onpointerup=()=>{set(up,0);set(down,0)}};stick("#leftStick","lu","ld");stick("#rightStick","ru","rd")}}
