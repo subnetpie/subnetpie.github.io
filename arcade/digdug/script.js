@@ -465,13 +465,13 @@ class DigDug {
   }
 
   bgPixel(code, x, y) {
-    // Dig Dug gfx3 uses MAME charlayout_2bpp:
-    // X offsets {64,65,66,67, 0,1,2,3}, planes {0,4}.
+    // MAME charlayout_2bpp. gfx_layout bit offsets are LSB-numbered
+    // within each byte (BIT(source, offset)), not display-order MSB bits.
     const xOffset = x < 4 ? 64 + x : x - 4;
     const bitBase = (code & 0xff) * 128 + xOffset + y * 8;
-    const p0 = (this.bgGfxRom[bitBase >> 3] >> (7 - (bitBase & 7))) & 1;
+    const p0 = (this.bgGfxRom[bitBase >> 3] >> (bitBase & 7)) & 1;
     const p1Bit = bitBase + 4;
-    const p1 = (this.bgGfxRom[p1Bit >> 3] >> (7 - (p1Bit & 7))) & 1;
+    const p1 = (this.bgGfxRom[p1Bit >> 3] >> (p1Bit & 7)) & 1;
     return p0 | (p1 << 1);
   }
 
