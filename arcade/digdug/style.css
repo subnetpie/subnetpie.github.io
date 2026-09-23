@@ -66,7 +66,7 @@ button {
 
 #top {
   position: fixed;
-  top: max(5px, env(safe-area-inset-top));
+  top: max(0px, env(safe-area-inset-top));
   left: 50%;
   z-index: 4;
   display: flex;
@@ -86,7 +86,7 @@ button {
 
 #dpad {
   left: 14px;
-  bottom: max(0px, env(safe-area-inset-bottom));
+  bottom: max(20px, env(safe-area-inset-bottom));
   display: grid;
   width: 150px;
   height: 150px;
