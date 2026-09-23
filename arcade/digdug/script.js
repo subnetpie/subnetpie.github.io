@@ -463,7 +463,9 @@ class DigDug {
 
   charPixel(code, x, y) {
     const offset = ((code & 0x7f) * 8 + y) & 0x7ff;
-    return (this.charRom[offset] >> (7 - x)) & 1;
+    // charlayout_digdug has X offsets {7,6,...0}; MAME readbit()
+    // treats bit offset 0 as the byte MSB, so this resolves to shifts {0..7}.
+    return (this.charRom[offset] >> x) & 1;
   }
 
   bgPixel(code, x, y) {
@@ -486,9 +488,9 @@ class DigDug {
                     192 + x - 12;
     const yOffset = y < 8 ? y * 8 : 256 + (y - 8) * 8;
     const bitBase = (code & 0xff) * 512 + xOffset + yOffset;
-    const p0 = (this.spriteRom[bitBase >> 3] >> (bitBase & 7)) & 1;
+    const p0 = (this.spriteRom[bitBase >> 3] >> (7 - (bitBase & 7))) & 1;
     const p1Bit = bitBase + 4;
-    const p1 = (this.spriteRom[p1Bit >> 3] >> (p1Bit & 7)) & 1;
+    const p1 = (this.spriteRom[p1Bit >> 3] >> (7 - (p1Bit & 7))) & 1;
     return p0 | (p1 << 1);
   }
 
