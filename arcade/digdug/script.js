@@ -306,6 +306,8 @@ class DigDug {
   writeVideoLatch(bit, value) {
     this.videoLatch[bit] = value;
 
+    // MAME feeds the LS259 parallel output to bg_select_w with mask 0x33.
+    // Bits 0-1 select one of four background maps; bits 4-5 are the color bank.
     this.bgSelect = (this.videoLatch[0] ? 1 : 0) |
                     (this.videoLatch[1] ? 2 : 0);
     this.txColorMode = this.videoLatch[2] ? 1 : 0;
@@ -469,9 +471,9 @@ class DigDug {
     // within each byte (BIT(source, offset)), not display-order MSB bits.
     const xOffset = x < 4 ? 64 + x : x - 4;
     const bitBase = (code & 0xff) * 128 + xOffset + y * 8;
-    const p0 = (this.bgGfxRom[bitBase >> 3] >> (bitBase & 7)) & 1;
+    const p0 = (this.bgGfxRom[bitBase >> 3] >> (7 - (bitBase & 7))) & 1;
     const p1Bit = bitBase + 4;
-    const p1 = (this.bgGfxRom[p1Bit >> 3] >> (p1Bit & 7)) & 1;
+    const p1 = (this.bgGfxRom[p1Bit >> 3] >> (7 - (p1Bit & 7))) & 1;
     return p0 | (p1 << 1);
   }
 
