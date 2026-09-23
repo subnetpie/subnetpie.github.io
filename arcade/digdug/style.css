@@ -34,7 +34,7 @@ main {
   height: min(100dvh, calc(100vw * 9 / 7));
   width: auto;
   max-width: 100vw;
-  transform: translateY(-10dvh);
+  transform: translateY(-5dvh);
   background: #000;
   image-rendering: pixelated;
   image-rendering: crisp-edges;
