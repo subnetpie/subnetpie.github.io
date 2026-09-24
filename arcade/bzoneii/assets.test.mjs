@@ -44,7 +44,7 @@ for(let frame=0;frame<2400;frame++) {
     assert.equal(JSON.stringify(v.slice(0,6)),JSON.stringify(ref.slice(0,6)),'geometry/intensity/clipping unchanged');
     const asset=v[8]?.asset??'unclassified';
     seen.set(asset,(seen.get(asset)||0)+1);
-    const expected={mountains:'purple',moon:'blue',obstacle:'orange',crosshair:'red',volcanoSpark:'red',logo:'blue'};
+    const expected={mountains:'purple',moon:'blue',obstacle:'orange',crosshair:'red',volcanoSpark:'red',logo:'blue',hudRadar:'red',score:'red',highScore:'orange',enemyInRange:'lightOrange',enemyDirection:'lightOrange'};
     assert.equal(v[6],expected[asset]??'green');
     if(asset==='obstacle') {
       assert.equal(shapeAsset(v[8].type),'obstacle');slots.add(v[8].record);
@@ -55,7 +55,7 @@ for(let frame=0;frame<2400;frame++) {
     positions.get(asset).add(Math.round(v[0]));
   }
 }
-for(const asset of ['mountains','moon','obstacle','crosshair','volcanoSpark','logo','hudRadar','unclassified'])
+for(const asset of ['mountains','moon','obstacle','crosshair','volcanoSpark','logo','hudRadar','score','highScore','enemyInRange','enemyDirection','unclassified'])
   assert.ok(seen.get(asset)>0,`runtime must exercise ${asset}`);
 assert.ok(slots.size>1,'multiple obstacle records are captured');
 assert.ok(positions.get('moon').size>10,'moon retains identity while scrolling');
@@ -78,7 +78,7 @@ cpu.pc=0x6ae9;cpu.s=0xee;t.beforeStep(cpu);t.write(0x2002);
 assert.equal(t.bytes[2].asset,'hudRadar');
 mem[0x1ed]=0x4e;mem[0x1ee]=0x6c;
 cpu.pc=0x6c98;cpu.s=0xec;cpu.x=0x10;t.beforeStep(cpu);t.write(0x2004);
-assert.equal(t.bytes[4].asset,'unclassified');assert.equal(t.bytes[4].textId,0x10);
+assert.equal(t.bytes[4].asset,'enemyInRange');assert.equal(t.bytes[4].textId,0x10);
 cpu.pc=0x6c4f;cpu.s=0xee;t.beforeStep(cpu);t.write(0x2006);
 assert.equal(t.bytes[6].asset,'hudRadar');
 cpu.pc=0x50cf;cpu.s=0xf0;t.beforeStep(cpu);t.write(0x2008);

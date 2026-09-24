@@ -124,7 +124,7 @@ class Battlezone{
  draw(){const c=this.cx;c.save();c.globalCompositeOperation="source-over";c.fillStyle="#000";c.fillRect(0,0,W,H);c.lineCap="round";
   /* Render only the color carried by each emitted AVG vector. There are no
      coordinate, region, shape, or screen-overlay color rules here. */
-  const rgb={green:"80,255,80",purple:"190,70,255",orange:"255,145,35",red:"255,45,45",blue:"70,135,255"};
+  const rgb={green:"80,255,80",purple:"190,70,255",orange:"255,145,35",lightOrange:"255,190,105",red:"255,45,45",blue:"70,135,255"};
   // Additive, concentric strokes approximate phosphor bloom around a sharp beam.
   // Draw all halos before the cores so intersections accumulate light naturally.
   c.globalCompositeOperation="lighter";

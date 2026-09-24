@@ -5,7 +5,8 @@ export const ASSETS = Object.freeze({
   crosshair: {color:"red"}, volcanoSpark: {color:"red",displayIntensity:15},
   tank: {color:"green"}, projectile: {color:"green"}, debris: {color:"green"},
   missile: {color:"green"}, logo: {color:"blue"}, saucer: {color:"green"},
-  hudRadar: {color:"green"}
+  hudRadar: {color:"red"}, score: {color:"red"}, highScore: {color:"orange"},
+  enemyInRange: {color:"lightOrange"}, enemyDirection: {color:"lightOrange"}
 });
 
 export function shapeAsset(type) {
@@ -49,9 +50,16 @@ export class AssetTrace {
         shape:this.mem[0x7472+type*2]|(this.mem[0x7473+type*2]<<8)};
     } else if(pc===0x6ae9) {
       asset="hudRadar";
-    } else if(pc===0x6c98 && this.scopes.at(-1)?.origin.asset==="hudRadar") {
-      // DrawRadar also emits ENEMY IN RANGE. Keep text outside the radar asset.
-      asset="unclassified"; fields={textId:cpu.x};
+    } else if(pc===0x6d59 || pc===0x6d6c) {
+      // One scope includes the label, fixed zeroes, and changing BCD digits.
+      asset=pc===0x6d59?"score":"highScore";
+      fields={record:pc===0x6d59?0xb8:0x300,textId:pc===0x6d59?0x18:0x0e};
+      end=pc===0x6d59?0x6d6c:0x6d8e;sp=cpu.s;
+    } else if(pc===0x6c98) {
+      if(["score","highScore"].includes(this.scopes.at(-1)?.origin.asset)) return;
+      // Direction strings comprise a shared prefix and a separate suffix.
+      asset=cpu.x===0x10?"enemyInRange":([0,2,4,6].includes(cpu.x)?"enemyDirection":"unclassified");
+      fields={textId:cpu.x};
     } else if(pc===0x58a7) {
       asset="mountains"; fields={segment:(cpu.a&14)>>>1};
     } else if(pc===0x50ff) {

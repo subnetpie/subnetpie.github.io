@@ -40,8 +40,12 @@ All addresses below are 6502 byte addresses, except the vector tuple's AVG PC
 | Logo | Types `$17,1e,1f` | Blue |
 | Saucer | Type `$20` | Green |
 | Debris | Other defined types in `$10–1d`, plus `$24–2b` | Green |
-| HUD radar | `DrawRadar` `$6ae9`: compass/vision marks, sweep, enemy blip | Green |
-| Horizon, text, unknown | No explicit asset color | Green |
+| HUD radar | `DrawRadar` `$6ae9`: compass/vision marks, sweep, enemy blip | Red |
+| Score label and digits | Text `$18`, RAM `$b8–b9`; scope `$6d59–6d6b` | Red |
+| High-score label and digits | Text `$0e`, RAM `$0300–0301`; scope `$6d6c–6d8d` | Orange |
+| ENEMY IN RANGE | Text `$10` through `$6c98` | Light orange |
+| ENEMY TO LEFT / RIGHT / REAR | Text prefix `$00` + suffix `$02` / `$04` / `$06` | Light orange |
+| Horizon, other text, unknown | No explicit asset color | Green |
 
 ## Data flow
 
@@ -55,7 +59,7 @@ interruptions and the game's RTS-based shape-command dispatch.
 
 The HUD radar uses a separate `hudRadar` scope at `$6ae9`, distinct from the
 enemy tank's type `$0d` radar part. Its nested text call at `$6c98` temporarily
-uses an unclassified text scope so ENEMY IN RANGE does not inherit radar tags.
+uses its own text asset scope so ENEMY IN RANGE does not inherit radar tags.
 
 Writes to vector RAM capture the active origin in a parallel byte array.
 The `$02/03` command pointer and shared writers at `$7a6e` and `$7aab` can
