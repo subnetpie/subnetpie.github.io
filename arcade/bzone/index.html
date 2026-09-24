@@ -10,9 +10,14 @@
   <main>
     <canvas id="gameCanvas"></canvas>
     <div id="top"><button data-btn="coin1">COIN</button><button data-btn="start1">START</button></div>
-    <div id="leftStick" class="stick"><span>↕</span></div>
-    <div id="rightStick" class="stick"><span>↕</span></div>
-    <button id="fire" data-btn="fire">FIRE</button>
+    <div id="leftControls" class="tank-controls">
+      <button class="fire" data-btn="fire">FIRE</button>
+      <div id="leftStick" class="stick"><span>↕</span></div>
+    </div>
+    <div id="rightControls" class="tank-controls">
+      <button class="fire" data-btn="fire">FIRE</button>
+      <div id="rightStick" class="stick"><span>↕</span></div>
+    </div>
   </main>
   <script type="module" src="./script.js"></script>
 </body>
