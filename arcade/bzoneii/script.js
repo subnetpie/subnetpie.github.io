@@ -72,7 +72,7 @@ class Battlezone{
   let x=290<<16,y=200<<16,hst=0,lst=0,clip=[0,0,W<<16,H<<16],steps=0,out=[],stack=new Uint16Array(4);
   const bit=(n)=> (op>>n)&1;
   const rd=()=>this.mem[0x2000+(pc^1)];
-  const point=(nx,ny,z)=>{let x1=x/65536,y1=y/65536,x2=nx/65536,y2=ny/65536;if(z>0)out.push([x1,y1,x2,y2,z,clip.slice()]);x=nx;y=ny};
+  let vectorColor="green";const point=(nx,ny,z)=>{let x1=x/65536,y1=y/65536,x2=nx/65536,y2=ny/65536;if(z>0)out.push([x1,y1,x2,y2,z,clip.slice(),vectorColor]);x=nx;y=ny};
   while(steps++<200000&&!halt){
     state=(state&0x10)|(this.avgProm[(((state>>4)^1)<<7)|(op<<4)|(state&15)]&15);
     if(state&8){
@@ -111,27 +111,14 @@ class Battlezone{
   this.vectors=out;this.avgDone=1;this.draw();
  }
  draw(){const c=this.cx;c.fillStyle="#000";c.fillRect(0,0,W,H);c.lineCap="round";
-  /* Color the actual AVG vector strokes. No screen tint/overlay is applied. */
-  const segs=this.vectors.filter(v=>Number.isFinite(v[0]+v[1]+v[2]+v[3]));
+  /* Render only the color carried by each emitted AVG vector. There are no
+     coordinate, region, shape, or screen-overlay color rules here. */
   const rgb={green:"80,255,80",purple:"190,70,255",orange:"255,145,35",red:"255,45,45",blue:"70,135,255"};
-  for(const v of segs){
-   const x1=v[0],y1=v[1],x2=v[2],y2=v[3],z=v[4],alpha=Math.max(.18,z/15);
-   const mx=(x1+x2)/2,my=(y1+y2)/2,dx=Math.abs(x2-x1),dy=Math.abs(y2-y1),len=Math.hypot(dx,dy);
-   let color="green";
-   /* Identify individual vector primitives by geometry/location and assign
-      their stroke color; the background remains pure black. */
-   const crosshair=Math.abs(mx-W/2)<65&&my>145&&my<255&&(len<85);
-   const moon=my<115&&mx>330&&mx<525&&len<80;
-   const lavaSpark=my<175&&mx>120&&mx<460&&dy>dx*1.15&&len<38;
-   const mountain=my<225&&y1<245&&y2<245&&len>12;
-   const obstacle=my>=185&&my<350&&len>6;
-   if(crosshair)color="red";
-   else if(moon)color="blue";
-   else if(lavaSpark)color="red";
-   else if(mountain)color="purple";
-   else if(obstacle)color="orange";
-   c.strokeStyle="rgba("+rgb[color]+","+alpha+")";
-   c.lineWidth=1+z/12;c.beginPath();c.moveTo(x1,y1);c.lineTo(x2,y2);c.stroke();
+  for(const v of this.vectors){
+   const x1=v[0],y1=v[1],x2=v[2],y2=v[3],z=v[4];if(!Number.isFinite(x1+y1+x2+y2))continue;
+   const alpha=Math.max(.18,z/15),color=rgb[v[6]]||rgb.green;
+   c.strokeStyle="rgba("+color+","+alpha+")";c.lineWidth=1+z/12;
+   c.beginPath();c.moveTo(x1,y1);c.lineTo(x2,y2);c.stroke();
   }}
   frame(){let per=CPU_CLOCK/FPS/6;for(let n=0;n<6;n++){let left=per;while(left>0){let pc=this.cpu.pc,op=this.read(pc),used=this.cpu.step();left-=used;if(this.cpu.pc===pc){console.error("[BZONE] CPU stalled",pc.toString(16));break}}this.cpu.nmi()}if(!this.vectors.length)this.draw()}
  run(){let last=0,loop=t=>{if(t-last>=1000/FPS){last=t;this.frame()}requestAnimationFrame(loop)};requestAnimationFrame(loop)}
