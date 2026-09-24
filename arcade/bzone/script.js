@@ -26,7 +26,7 @@ class BzoneAudio{
  control(d){this.start();d&=255;let old=this.latch;this.latch=d;this.haveControl=true;if((d&4)&&!(old&4))this.envShell=1;if((d&1)&&!(old&1))this.envExplosion=1}
  render(out){const sr=this.ctx.sampleRate,enabled=!this.haveControl||(this.latch&32)!==0,motor=(this.latch&128)!==0,rev=(this.latch&16)!==0;for(let i=0;i<out.length;i++){let s=0;
   if(enabled){
-   for(let ch=0;ch<4;ch++){let au=this.reg[ch*2],f=this.reg[ch*2+1];if(au&15){let hz=CPU_CLOCK/(28*(f+1));this.phase[ch]=(this.phase[ch]+hz/sr)%1;s+=(this.phase[ch]<.5?1:-1)*(au&15)/15*.045}}
+   for(let ch=0;ch<4;ch++){let f=this.reg[ch*2],au=this.reg[ch*2+1],vol=au&15;if(!vol)continue;let audctl=this.reg[8],div=(audctl&1)?114:28;if((ch===0&&(audctl&0x40))||(ch===2&&(audctl&0x20)))div=1;let n=f+(div===1?4:1),hz=CPU_CLOCK/(2*div*n);if(au&0x10){s+=(vol/15)*.035;continue}this.phase[ch]=(this.phase[ch]+hz/sr)%1;if(au&0x20)s+=(this.phase[ch]<.5?1:-1)*(vol/15)*.045;else{let gate=((Math.floor(this.phase[ch]*31)*13+ch*7)&16)?1:-1;s+=gate*(vol/15)*.025}}
    this.noisePhase+=6000/sr;if(this.noisePhase>=1){this.noisePhase-=1;let b=((this.noise>>3)^(this.noise>>14))&1;this.noise=((this.noise<<1)|((b^1)&1))&65535}
    let n=(this.noise&0x8000)?1:-1;
    if(this.envShell>.0005){s+=n*this.envShell*((this.latch&8)?.20:.10);this.envShell*=.99915}
