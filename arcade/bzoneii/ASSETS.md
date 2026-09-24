@@ -86,6 +86,11 @@ use maximum display intensity for core opacity and every layer's width,
 remaining bright until the ROM stops emitting them. Original AVG intensity
 and geometry remain unchanged.
 
+An additional endpoint pass adds compact bloom and a bright additive spot to
+simulate beam dwell. Shared corners accumulate the endpoint light from each
+adjoining vector. Hotspots use the asset color and display intensity; point
+vectors receive one spot rather than two coincident endpoint spots.
+
 ## Validation
 
 Run `node arcade/bzoneii/assets.test.mjs` from the repository root.
