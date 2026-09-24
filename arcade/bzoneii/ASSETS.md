@@ -45,7 +45,8 @@ All addresses below are 6502 byte addresses, except the vector tuple's AVG PC
 | High-score label and digits | Text `$0e`, RAM `$0300–0301`; scope `$6d6c–6d8d` | Orange |
 | ENEMY IN RANGE | Text `$10` through `$6c98` | Light orange |
 | ENEMY TO LEFT / RIGHT / REAR | Text prefix `$00` + suffix `$02` / `$04` / `$06` | Light orange |
-| Horizon, other text, unknown | No explicit asset color | Green |
+| Horizon | CPU call `$5806` to vector ROM `$3000` (AVG `$1000`) | Purple |
+| Other text, unknown | No explicit asset color | Green |
 
 ## Data flow
 

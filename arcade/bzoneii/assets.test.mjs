@@ -50,7 +50,7 @@ for(let frame=0;frame<2400;frame++) {
     assert.equal(JSON.stringify(v.slice(0,6)),JSON.stringify(ref.slice(0,6)),'geometry/intensity/clipping unchanged');
     const asset=v[8]?.asset??'unclassified';
     seen.set(asset,(seen.get(asset)||0)+1);
-    const expected={mountains:'purple',moon:'blue',obstacle:'orange',crosshair:'red',volcanoSpark:'red',logo:'blue',hudRadar:'red',score:'red',highScore:'orange',enemyInRange:'lightOrange',enemyDirection:'lightOrange'};
+    const expected={horizon:'purple',mountains:'purple',moon:'blue',obstacle:'orange',crosshair:'red',volcanoSpark:'red',logo:'blue',hudRadar:'red',score:'red',highScore:'orange',enemyInRange:'lightOrange',enemyDirection:'lightOrange'};
     assert.equal(v[6],expected[asset]??'green');
     if(asset==='obstacle') {
       assert.equal(shapeAsset(v[8].type),'obstacle');slots.add(v[8].record);
@@ -61,7 +61,7 @@ for(let frame=0;frame<2400;frame++) {
     positions.get(asset).add(Math.round(v[0]));
   }
 }
-for(const asset of ['mountains','moon','obstacle','crosshair','volcanoSpark','logo','hudRadar','score','highScore','enemyInRange','enemyDirection','unclassified'])
+for(const asset of ['horizon','mountains','moon','obstacle','crosshair','volcanoSpark','logo','hudRadar','score','highScore','enemyInRange','enemyDirection','unclassified'])
   assert.ok(seen.get(asset)>0,`runtime must exercise ${asset}`);
 assert.ok(maxDistinctSparks>=4,'particles must not collapse to two synchronized trajectories');
 console.log({maxDistinctSparks});

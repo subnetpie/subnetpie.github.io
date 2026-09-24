@@ -1,6 +1,6 @@
 // Battlezone rev 2 semantic provenance. See ASSETS.md for ROM/source evidence.
 export const ASSETS = Object.freeze({
-  unclassified: {color:"green"}, mountains: {color:"purple"},
+  unclassified: {color:"green"}, mountains: {color:"purple"}, horizon: {color:"purple"},
   moon: {color:"blue"}, obstacle: {color:"orange"},
   crosshair: {color:"red"}, volcanoSpark: {color:"red",displayIntensity:15},
   tank: {color:"green"}, projectile: {color:"green"}, debris: {color:"green"},
@@ -62,6 +62,8 @@ export class AssetTrace {
       fields={textId:cpu.x};
     } else if(pc===0x58a7) {
       asset="mountains"; fields={segment:(cpu.a&14)>>>1};
+    } else if(pc===0x5806) {
+      asset="horizon"; end=0x5809; sp=cpu.s;
     } else if(pc===0x50ff) {
       asset="crosshair"; end=0x5102; sp=cpu.s;
     } else if(pc===0x589e) {
