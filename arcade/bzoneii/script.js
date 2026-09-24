@@ -72,7 +72,14 @@ class Battlezone{
   let x=290<<16,y=200<<16,hst=0,lst=0,clip=[0,0,W<<16,H<<16],steps=0,out=[],stack=new Uint16Array(4);
   const bit=(n)=> (op>>n)&1;
   const rd=()=>this.mem[0x2000+(pc^1)];
-  let vectorColor="green";const point=(nx,ny,z)=>{let x1=x/65536,y1=y/65536,x2=nx/65536,y2=ny/65536;if(z>0)out.push([x1,y1,x2,y2,z,clip.slice(),vectorColor]);x=nx;y=ny};
+  const objectColors=new Map([
+   /* Bzone II object palette. Keys are AVG display-list/subroutine addresses;
+      vectors inherit the color of the object call that emits them. */
+  ]);
+  let vectorColor="green",objectPC=0;
+  const point=(nx,ny,z)=>{let x1=x/65536,y1=y/65536,x2=nx/65536,y2=ny/65536;
+   if(z>0)out.push([x1,y1,x2,y2,z,clip.slice(),vectorColor,objectPC]);
+   x=nx;y=ny};
   while(steps++<200000&&!halt){
     state=(state&0x10)|(this.avgProm[(((state>>4)^1)<<7)|(op<<4)|(state&15)]&15);
     if(state&8){
@@ -92,7 +99,7 @@ class Battlezone{
           if(bit(2))sp=(sp+(bit(1)?15:1))&15;break;
         case 6:
           if(!bit(2)&&!dvy12){intensity=(dvy>>4)&15;if(!(dvy&0x400)){lst=dvy&0x200;hst=lst^0x200}}
-          if(bit(2)){if(bit(0)){pc=(dvy<<1)&0x1fff;if(dvy===0)break}else pc=stack[sp&3]}
+          if(bit(2)){if(bit(0)){pc=(dvy<<1)&0x1fff;if(dvy===0)break;objectPC=pc;vectorColor=objectColors.get(objectPC)||"green"}else{pc=stack[sp&3];objectPC=pc;vectorColor=objectColors.get(objectPC)||"green"}}
           else if(dvy12){scale=dvy&255;binScale=(dvy>>8)&7}break;
         case 7:{
           halt=bit(0);
@@ -108,7 +115,12 @@ class Battlezone{
     }
     state=(halt<<4)|(state&15);
   }
-  this.vectors=out;this.avgDone=1;this.draw();
+  this.vectors=out;
+  if(this.debugObjectColors){
+   const seen=new Map();for(const v of out){const k=v[7];seen.set(k,(seen.get(k)||0)+1)}
+   console.table([...seen].sort((a,b)=>b[1]-a[1]).map(([pc,count])=>({avg:"0x"+pc.toString(16).padStart(4,"0"),vectors:count})));
+  }
+  this.avgDone=1;this.draw();
  }
  draw(){const c=this.cx;c.fillStyle="#000";c.fillRect(0,0,W,H);c.lineCap="round";
   /* Render only the color carried by each emitted AVG vector. There are no
