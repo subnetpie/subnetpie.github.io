@@ -19,20 +19,30 @@ class Mathbox{
  divide(c,q){let r=this.r,qq=s16(q);this.set(14,r[7]^qq);this.set(13,qq);if(qq>=0)qq=s16(c);else{this.set(13,-qq-1);qq=s16(-c-1);if(qq<0&&s16(qq+1)<0)this.set(13,r[13]+1);qq=s16(qq+1)}this.set(12,r[7]>=0?r[7]:-r[7]);this.set(15,r[6]);do{this.set(13,r[13]-r[12]);let msb=qq&32768;qq=s16(qq<<1);if(r[13]>=0)qq=s16(qq+1);else this.set(13,r[13]+r[12]);this.set(13,r[13]<<1);this.set(13,r[13]+(msb?1:0))}while(this.set(15,r[15]-1)>=0);this.result=s16(r[14]>=0?qq:-qq)}
  lo(){return this.result&255}hi(){return(this.result>>8)&255}}
 class BzoneAudio{
- constructor(){this.ctx=null;this.node=null;this.gain=null;this.reg=new Uint8Array(16);this.latch=0;this.haveControl=false;this.phase=new Float64Array(4);this.enginePhase=0;this.noise=1;this.noisePhase=0;this.envShell=0;this.envExplosion=0}
+ constructor(){this.ctx=null;this.node=null;this.gain=null;this.reg=new Uint8Array(16);this.latch=0;this.haveControl=false;this.phase=new Float64Array(4);this.enginePhase=0;this.engineLP=0;this.fxLP=0;this.noise=1;this.noisePhase=0;this.envShell=0;this.envExplosion=0}
  start(){if(!this.ctx){this.ctx=new (window.AudioContext||window.webkitAudioContext)({sampleRate:48000});this.node=this.ctx.createScriptProcessor(1024,0,1);this.node.onaudioprocess=e=>this.render(e.outputBuffer.getChannelData(0));this.gain=this.ctx.createGain();this.gain.gain.value=.9;this.node.connect(this.gain);this.gain.connect(this.ctx.destination)}if(this.ctx.state!=="running")this.ctx.resume()}
  read(r){r&=15;if(r===8)return window.battlezone?window.battlezone.in3():0;return this.reg[r]}
  write(r,d){this.start();this.reg[r&15]=d&255}
  control(d){this.start();d&=255;let old=this.latch;this.latch=d;this.haveControl=true;if((d&4)&&!(old&4))this.envShell=1;if((d&1)&&!(old&1))this.envExplosion=1}
  render(out){const sr=this.ctx.sampleRate,enabled=!this.haveControl||(this.latch&32)!==0,motor=(this.latch&128)!==0,rev=(this.latch&16)!==0;for(let i=0;i<out.length;i++){let s=0;
   if(enabled){
-   for(let ch=0;ch<4;ch++){let f=this.reg[ch*2],au=this.reg[ch*2+1],vol=au&15;if(!vol)continue;let audctl=this.reg[8],div=(audctl&1)?114:28;if((ch===0&&(audctl&0x40))||(ch===2&&(audctl&0x20)))div=1;let n=f+(div===1?4:1),hz=CPU_CLOCK/(2*div*n);if(au&0x10){s+=(vol/15)*.035;continue}this.phase[ch]=(this.phase[ch]+hz/sr)%1;if(au&0x20)s+=(this.phase[ch]<.5?1:-1)*(vol/15)*.045;else{let gate=((Math.floor(this.phase[ch]*31)*13+ch*7)&16)?1:-1;s+=gate*(vol/15)*.025}}
+   for(let ch=0;ch<4;ch++){let f=this.reg[ch*2],au=this.reg[ch*2+1],vol=au&15;if(!vol)continue;let audctl=this.reg[8],div=(audctl&1)?114:28;if((ch===0&&(audctl&0x40))||(ch===2&&(audctl&0x20)))div=1;let n=f+(div===1?4:1),hz=CPU_CLOCK/(2*div*n);if(au&0x10){s+=(vol/15)*.035;continue}this.phase[ch]=(this.phase[ch]+hz/sr)%1;if(au&0x20)s+=(this.phase[ch]<.5?1:-1)*(vol/15)*.022;else{let gate=((Math.floor(this.phase[ch]*31)*13+ch*7)&16)?1:-1;s+=gate*(vol/15)*.012}}
    this.noisePhase+=6000/sr;if(this.noisePhase>=1){this.noisePhase-=1;let b=((this.noise>>3)^(this.noise>>14))&1;this.noise=((this.noise<<1)|((b^1)&1))&65535}
    let n=(this.noise&0x8000)?1:-1;
-   if(this.envShell>.0005){s+=n*this.envShell*((this.latch&8)?.20:.10);this.envShell*=.99915}
-   if(this.envExplosion>.0005){s+=n*this.envExplosion*((this.latch&2)?.30:.15);this.envExplosion*=.99955}
-   if(motor){let hz=rev?105:72;this.enginePhase=(this.enginePhase+hz/sr)%1;let saw=this.enginePhase*2-1;s+=saw*.13}
-  }out[i]=Math.max(-.8,Math.min(.8,s))}
+   let fx=0;
+   if(this.envShell>.0005){fx+=n*this.envShell*((this.latch&8)?.18:.09);this.envShell*=.99915}
+   if(this.envExplosion>.0005){fx+=n*this.envExplosion*((this.latch&2)?.28:.14);this.envExplosion*=.99955}
+   this.fxLP+=.11*(fx-this.fxLP);s+=this.fxLP;
+   if(motor){
+    /* The recording's engine fundamental sits around 38-45 Hz.  Battlezone's
+       discrete board derives the motor from a VCO feeding binary counters,
+       not a sawtooth oscillator.  Recreate that divided, stepped waveform. */
+    let hz=rev?55:41;this.enginePhase=(this.enginePhase+hz/sr)%1;
+    let p=this.enginePhase,q=((p*2)%1),r=((p*4)%1);
+    let raw=(p<.5?1:-1)*.55+(q<.5?1:-1)*.28+(r<.5?1:-1)*.12;
+    this.engineLP+=.055*(raw-this.engineLP);s+=this.engineLP*.16
+   }
+  }out[i]=Math.max(-.65,Math.min(.65,s))}
  }}
 class Battlezone{
  constructor(){this.cv=document.querySelector("#gameCanvas");this.cx=this.cv.getContext("2d");this.cv.width=W;this.cv.height=H;this.mem=new Uint8Array(32768);this.math=new Mathbox();this.i={coin1:0,start1:0,fire:0,lu:0,ld:0,ru:0,rd:0};this.sound=0;this.audio=new BzoneAudio();this.avgDone=1;this.vectors=[];this.bind()}
