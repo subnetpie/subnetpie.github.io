@@ -4,10 +4,10 @@ main{height:100dvh;display:grid;place-items:center;overflow:hidden;touch-action:
 #gameCanvas{width:min(100vw,calc(100dvh * 580 / 400));height:auto;max-height:100dvh;transform:translateY(-7.5dvh);background:#000;touch-action:none}
 button,.stick{color:#ff4c00;background:#ffffff18;border:2px solid #c832c880;-webkit-appearance:none;appearance:none;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;touch-action:none;-webkit-tap-highlight-color:transparent}
 button{cursor:pointer}
-#top{position:fixed;top:max(8px,env(safe-area-inset-top));left:0;right:0;z-index:5;display:flex;justify-content:space-between;padding:0 max(14px,env(safe-area-inset-left));pointer-events:none}
-#top button{position:static;min-width:78px;padding:10px 16px;border-radius:10px;font-weight:700;pointer-events:auto}
+#top{position:fixed;top:max(8px,env(safe-area-inset-top));left:0;right:0;z-index:5;display:flex;justify-content:space-between;padding-left:max(14px,env(safe-area-inset-left));padding-right:max(14px,env(safe-area-inset-right));pointer-events:none}
+#top button{position:static;width:82px;height:48px;padding:0;border-radius:10px;font-weight:700;pointer-events:auto}
 .tank-controls{position:fixed;z-index:4;bottom:max(8px,env(safe-area-inset-bottom));display:flex;flex-direction:column;align-items:center;gap:10px;touch-action:none}
 #leftControls{left:max(12px,env(safe-area-inset-left))}
 #rightControls{right:max(12px,env(safe-area-inset-right))}
-.fire{position:static;width:112px;height:46px;border-radius:16px;font-size:17px;font-weight:700}
+.fire{position:static;width:112px;height:48px;padding:0;border-radius:14px;font-size:17px;font-weight:700}
 .stick{position:relative;display:grid;width:112px;height:150px;place-items:center;border-radius:28px;font-size:38px}
