@@ -69,6 +69,12 @@ Vectors are `[x1,y1,x2,y2,intensity,clip,color,avgInstructionPC,origin]`.
 landscape segment, or particle record as appropriate. The renderer reads
 only the supplied color. `battlezone.debugObjectColors=true` logs asset counts.
 
+The renderer draws four additive layers, from a faint broad halo to a narrow
+bright core, in each asset's color. All halos precede the cores. Point vectors
+use concentric disks so volcano sparks also glow. The particle brightness
+multiplier applies to every layer; original AVG intensity and geometry remain
+unchanged.
+
 ## Validation
 
 Run `node arcade/bzoneii/assets.test.mjs` from the repository root.
