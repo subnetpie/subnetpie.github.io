@@ -33,7 +33,7 @@ All addresses below are 6502 byte addresses, except the vector tuple's AVG PC
 | Mountains, including volcano outline | `DrawBackSeg` `$58a7`, segment `(A & 14) / 2`, calls selected from `$3006–3015` | Purple |
 | Moon | Embedded asset `$3054–30c3` within segment 0; Atari source marks its outline and details through END OF MOON | Blue |
 | Crosshair | Call site `$50ff`, selecting `$34cc` or `$3500` | Red |
-| Volcano particles | Call site `$589e`, particle slot saved in `$08`, lifetime record `$034d + slot` | Red, 1.8× opacity (capped at 1) |
+| Volcano particles | Call site `$589e`, particle slot saved in `$08`, lifetime record `$034d + slot` | Red, maximum display intensity (15) |
 | Tanks/treads/radar parts | Types `$02,04–0b,0d,21` | Green |
 | Projectile/explosion | Types `$03,0e` | Green |
 | Missile | Type `$16` | Green |
@@ -71,9 +71,10 @@ only the supplied color. `battlezone.debugObjectColors=true` logs asset counts.
 
 The renderer draws four additive layers, from a faint broad halo to a narrow
 bright core, in each asset's color. All halos precede the cores. Point vectors
-use concentric disks so volcano sparks also glow. The particle brightness
-multiplier applies to every layer; original AVG intensity and geometry remain
-unchanged.
+use concentric disks so volcano sparks also glow. Visible volcano particles
+use maximum display intensity for core opacity and every layer's width,
+remaining bright until the ROM stops emitting them. Original AVG intensity
+and geometry remain unchanged.
 
 ## Validation
 

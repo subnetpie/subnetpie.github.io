@@ -2,7 +2,7 @@
 export const ASSETS = Object.freeze({
   unclassified: {color:"green"}, mountains: {color:"purple"},
   moon: {color:"blue"}, obstacle: {color:"orange"},
-  crosshair: {color:"red"}, volcanoSpark: {color:"red",brightness:1.8},
+  crosshair: {color:"red"}, volcanoSpark: {color:"red",displayIntensity:15},
   tank: {color:"green"}, projectile: {color:"green"}, debris: {color:"green"},
   missile: {color:"green"}, logo: {color:"blue"}, saucer: {color:"green"}
 });

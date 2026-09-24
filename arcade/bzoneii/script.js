@@ -131,9 +131,8 @@ class Battlezone{
   const layers=[[7,.035],[4,.09],[2,.24],[1,1]];
   for(const [spread,gain] of layers){
   for(const v of this.vectors){
-   const x1=v[0],y1=v[1],x2=v[2],y2=v[3],z=v[4];if(!Number.isFinite(x1+y1+x2+y2))continue;
-   const brightness=ASSETS[v[8]?.asset]?.brightness??1;
-   const alpha=Math.min(1,Math.max(.18,z/15)*brightness),color=rgb[v[6]]||rgb.green;
+   const x1=v[0],y1=v[1],x2=v[2],y2=v[3],z=ASSETS[v[8]?.asset]?.displayIntensity??v[4];if(!Number.isFinite(x1+y1+x2+y2))continue;
+   const alpha=Math.min(1,Math.max(.18,z/15)),color=rgb[v[6]]||rgb.green;
    const ink="rgba("+color+","+(alpha*gain)+")";
    c.strokeStyle=ink;c.lineWidth=(.75+z/20)*spread;
    c.beginPath();
