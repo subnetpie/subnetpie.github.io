@@ -44,7 +44,7 @@ for(let frame=0;frame<2400;frame++) {
     assert.equal(JSON.stringify(v.slice(0,6)),JSON.stringify(ref.slice(0,6)),'geometry/intensity/clipping unchanged');
     const asset=v[8]?.asset??'unclassified';
     seen.set(asset,(seen.get(asset)||0)+1);
-    const expected={mountains:'purple',moon:'blue',obstacle:'orange',crosshair:'red',volcanoSpark:'red'};
+    const expected={mountains:'purple',moon:'blue',obstacle:'orange',crosshair:'red',volcanoSpark:'red',logo:'blue'};
     assert.equal(v[6],expected[asset]??'green');
     if(asset==='obstacle') {
       assert.equal(shapeAsset(v[8].type),'obstacle');slots.add(v[8].record);

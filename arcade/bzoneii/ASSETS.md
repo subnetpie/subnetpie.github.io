@@ -37,7 +37,7 @@ All addresses below are 6502 byte addresses, except the vector tuple's AVG PC
 | Tanks/treads/radar parts | Types `$02,04–0b,0d,21` | Green |
 | Projectile/explosion | Types `$03,0e` | Green |
 | Missile | Type `$16` | Green |
-| Logo | Types `$17,1e,1f` | Green |
+| Logo | Types `$17,1e,1f` | Blue |
 | Saucer | Type `$20` | Green |
 | Debris | Other defined types in `$10–1d`, plus `$24–2b` | Green |
 | Horizon, text, radar UI, unknown | No explicit asset color | Green |

@@ -4,7 +4,7 @@ export const ASSETS = Object.freeze({
   moon: {color:"blue"}, obstacle: {color:"orange"},
   crosshair: {color:"red"}, volcanoSpark: {color:"red"},
   tank: {color:"green"}, projectile: {color:"green"}, debris: {color:"green"},
-  missile: {color:"green"}, logo: {color:"green"}, saucer: {color:"green"}
+  missile: {color:"green"}, logo: {color:"blue"}, saucer: {color:"green"}
 });
 
 export function shapeAsset(type) {
