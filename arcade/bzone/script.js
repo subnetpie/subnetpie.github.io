@@ -53,7 +53,7 @@ class BzoneAudio{
     let a=this.engineCount4,b=this.engineCount6;
     let raw=((a>7)?1:-1)*.55+((a===15)?1:-1)*.28+
             ((b>7)?1:-1)*.12+((b===15)?1:-1)*.08;
-    this.engineLP+=.025*(raw-this.engineLP);s+=this.engineLP*.11
+    this.engineLP+=.025*(raw-this.engineLP);s+=this.engineLP*.0825
    }
   }out[i]=Math.max(-.65,Math.min(.65,s))}
  }}
@@ -110,7 +110,7 @@ class Battlezone{
   }
   this.vectors=out;this.avgDone=1;this.draw();
  }
- draw(){const c=this.cx;c.fillStyle="#000";c.fillRect(0,0,W,H);c.lineCap="round";for(const v of this.vectors){let x1=v[0],y1=v[1],x2=v[2],y2=v[3],z=v[4];if(!Number.isFinite(x1+y1+x2+y2))continue;let alpha=Math.max(.18,z/15);const boundary=50;
+ draw(){const c=this.cx;c.fillStyle="#000";c.fillRect(0,0,W,H);c.lineCap="round";for(const v of this.vectors){let x1=v[0],y1=v[1],x2=v[2],y2=v[3],z=v[4];if(!Number.isFinite(x1+y1+x2+y2))continue;let alpha=Math.max(.18,z/15);const boundary=90;
 if((y1<boundary&&y2>boundary)||(y2<boundary&&y1>boundary)){
   const t=(boundary-y1)/(y2-y1),xb=x1+(x2-x1)*t;
   const firstRed=y1<boundary;
