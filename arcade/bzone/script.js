@@ -19,7 +19,7 @@ class Mathbox{
  divide(c,q){let r=this.r,qq=s16(q);this.set(14,r[7]^qq);this.set(13,qq);if(qq>=0)qq=s16(c);else{this.set(13,-qq-1);qq=s16(-c-1);if(qq<0&&s16(qq+1)<0)this.set(13,r[13]+1);qq=s16(qq+1)}this.set(12,r[7]>=0?r[7]:-r[7]);this.set(15,r[6]);do{this.set(13,r[13]-r[12]);let msb=qq&32768;qq=s16(qq<<1);if(r[13]>=0)qq=s16(qq+1);else this.set(13,r[13]+r[12]);this.set(13,r[13]<<1);this.set(13,r[13]+(msb?1:0))}while(this.set(15,r[15]-1)>=0);this.result=s16(r[14]>=0?qq:-qq)}
  lo(){return this.result&255}hi(){return(this.result>>8)&255}}
 class BzoneAudio{
- constructor(){this.ctx=null;this.node=null;this.gain=null;this.reg=new Uint8Array(16);this.latch=0;this.haveControl=false;this.phase=new Float64Array(4);this.enginePhase=0;this.engineLP=0;this.fxLP=0;this.noise=1;this.noisePhase=0;this.envShell=0;this.envExplosion=0}
+ constructor(){this.ctx=null;this.node=null;this.gain=null;this.reg=new Uint8Array(16);this.latch=0;this.haveControl=false;this.phase=new Float64Array(4);this.enginePhase=0;this.engineCount4=4;this.engineCount6=6;this.engineLP=0;this.fxLP=0;this.noise=1;this.noisePhase=0;this.envShell=0;this.envExplosion=0}
  start(){if(!this.ctx){this.ctx=new (window.AudioContext||window.webkitAudioContext)({sampleRate:48000});this.node=this.ctx.createScriptProcessor(1024,0,1);this.node.onaudioprocess=e=>this.render(e.outputBuffer.getChannelData(0));this.gain=this.ctx.createGain();this.gain.gain.value=.9;this.node.connect(this.gain);this.gain.connect(this.ctx.destination)}if(this.ctx.state!=="running")this.ctx.resume()}
  read(r){r&=15;if(r===8)return window.battlezone?window.battlezone.in3():0;return this.reg[r]}
  write(r,d){this.start();this.reg[r&15]=d&255}
@@ -41,9 +41,16 @@ class BzoneAudio{
        The audible engine taps are counter states, so the engine pitch is
        divided down from the VCO rather than being the VCO frequency itself. */
     let vco=rev?430:300;
-    this.enginePhase=(this.enginePhase+vco/sr)%1;
-    let count=Math.floor(this.enginePhase*60);
-    let a=count&15,b=count%15;
+    this.enginePhase+=vco/sr;
+    if(this.enginePhase>=1){
+      this.enginePhase-=1;
+      /* MAME DISCRETE_COUNTER nodes 65/68 count one step per 555 edge.
+         The previous code incorrectly swept 60 counter states PER VCO cycle,
+         creating the measured 430/860/1290/1720 Hz whistle. */
+      this.engineCount4++;if(this.engineCount4>15)this.engineCount4=4;
+      this.engineCount6++;if(this.engineCount6>15)this.engineCount6=6;
+    }
+    let a=this.engineCount4,b=this.engineCount6;
     let raw=((a>7)?1:-1)*.55+((a===15)?1:-1)*.28+
             ((b>7)?1:-1)*.12+((b===15)?1:-1)*.08;
     this.engineLP+=.025*(raw-this.engineLP);s+=this.engineLP*.16
