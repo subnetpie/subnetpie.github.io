@@ -37,10 +37,16 @@ class BzoneAudio{
     /* The recording's engine fundamental sits around 38-45 Hz.  Battlezone's
        discrete board derives the motor from a VCO feeding binary counters,
        not a sawtooth oscillator.  Recreate that divided, stepped waveform. */
-    let hz=rev?55:41;this.enginePhase=(this.enginePhase+hz/sr)%1;
-    let p=this.enginePhase,q=((p*2)%1),r=((p*4)%1);
-    let raw=(p<.5?1:-1)*.55+(q<.5?1:-1)*.28+(r<.5?1:-1)*.12;
-    this.engineLP+=.055*(raw-this.engineLP);s+=this.engineLP*.16
+    /* MAME 0.289 bzone_a.cpp: the 555 VCO clocks two counters.
+       The audible engine taps are counter states, so the engine pitch is
+       divided down from the VCO rather than being the VCO frequency itself. */
+    let vco=rev?430:300;
+    this.enginePhase=(this.enginePhase+vco/sr)%1;
+    let count=Math.floor(this.enginePhase*60);
+    let a=count&15,b=count%15;
+    let raw=((a>7)?1:-1)*.55+((a===15)?1:-1)*.28+
+            ((b>7)?1:-1)*.12+((b===15)?1:-1)*.08;
+    this.engineLP+=.025*(raw-this.engineLP);s+=this.engineLP*.16
    }
   }out[i]=Math.max(-.65,Math.min(.65,s))}
  }}
