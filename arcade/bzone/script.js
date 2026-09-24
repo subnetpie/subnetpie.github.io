@@ -110,7 +110,7 @@ class Battlezone{
   }
   this.vectors=out;this.avgDone=1;this.draw();
  }
- draw(){const c=this.cx;c.fillStyle="#000";c.fillRect(0,0,W,H);c.lineCap="round";for(const v of this.vectors){let x1=v[0],y1=v[1],x2=v[2],y2=v[3],z=v[4];if(!Number.isFinite(x1+y1+x2+y2))continue;let alpha=Math.max(.18,z/15);const boundary=308;
+ draw(){const c=this.cx;c.fillStyle="#000";c.fillRect(0,0,W,H);c.lineCap="round";for(const v of this.vectors){let x1=v[0],y1=v[1],x2=v[2],y2=v[3],z=v[4];if(!Number.isFinite(x1+y1+x2+y2))continue;let alpha=Math.max(.18,z/15);const boundary=50;
 if((y1<boundary&&y2>boundary)||(y2<boundary&&y1>boundary)){
   const t=(boundary-y1)/(y2-y1),xb=x1+(x2-x1)*t;
   const firstRed=y1<boundary;
