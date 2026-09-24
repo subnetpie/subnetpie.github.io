@@ -4,7 +4,8 @@ export const ASSETS = Object.freeze({
   moon: {color:"blue"}, obstacle: {color:"orange"},
   crosshair: {color:"red"}, volcanoSpark: {color:"red",displayIntensity:15},
   tank: {color:"green"}, projectile: {color:"green"}, debris: {color:"green"},
-  missile: {color:"green"}, logo: {color:"blue"}, saucer: {color:"green"}
+  missile: {color:"green"}, logo: {color:"blue"}, saucer: {color:"green"},
+  hudRadar: {color:"green"}
 });
 
 export function shapeAsset(type) {
@@ -46,6 +47,11 @@ export class AssetTrace {
       asset=shapeAsset(type);
       fields={slot:slot>>>1,record:0x270+slot,type,
         shape:this.mem[0x7472+type*2]|(this.mem[0x7473+type*2]<<8)};
+    } else if(pc===0x6ae9) {
+      asset="hudRadar";
+    } else if(pc===0x6c98 && this.scopes.at(-1)?.origin.asset==="hudRadar") {
+      // DrawRadar also emits ENEMY IN RANGE. Keep text outside the radar asset.
+      asset="unclassified"; fields={textId:cpu.x};
     } else if(pc===0x58a7) {
       asset="mountains"; fields={segment:(cpu.a&14)>>>1};
     } else if(pc===0x50ff) {

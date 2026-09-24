@@ -40,7 +40,8 @@ All addresses below are 6502 byte addresses, except the vector tuple's AVG PC
 | Logo | Types `$17,1e,1f` | Blue |
 | Saucer | Type `$20` | Green |
 | Debris | Other defined types in `$10–1d`, plus `$24–2b` | Green |
-| Horizon, text, radar UI, unknown | No explicit asset color | Green |
+| HUD radar | `DrawRadar` `$6ae9`: compass/vision marks, sweep, enemy blip | Green |
+| Horizon, text, unknown | No explicit asset color | Green |
 
 ## Data flow
 
@@ -51,6 +52,10 @@ slot, type, and shape pointer from `$7472 + 2*type`. Each draw invocation has
 a distinct ID; the slot is a visible-list slot, not a permanent world ID.
 CPU return address and stack pointer delimit the scope, including through
 interruptions and the game's RTS-based shape-command dispatch.
+
+The HUD radar uses a separate `hudRadar` scope at `$6ae9`, distinct from the
+enemy tank's type `$0d` radar part. Its nested text call at `$6c98` temporarily
+uses an unclassified text scope so ENEMY IN RANGE does not inherit radar tags.
 
 Writes to vector RAM capture the active origin in a parallel byte array.
 The `$02/03` command pointer and shared writers at `$7a6e` and `$7aab` can
