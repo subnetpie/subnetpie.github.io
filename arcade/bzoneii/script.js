@@ -1,4 +1,5 @@
 import { M6502 } from "../../cpu/m6502.js";
+import { AssetTrace, ASSETS } from "./assets.js";
 const CPU_CLOCK=12096000/8,IRQ_HZ=(12096000/4096)/12,FPS=IRQ_HZ/6,W=580,H=400;
 const s16=v=>((v&65535)^32768)-32768,sign13=v=>(v&4096)?v-8192:v;
 class Mathbox{
@@ -60,11 +61,11 @@ class BzoneAudio{
 class Battlezone{
  constructor(){this.cv=document.querySelector("#gameCanvas");this.cx=this.cv.getContext("2d");this.cv.width=W;this.cv.height=H;this.mem=new Uint8Array(32768);this.math=new Mathbox();this.i={coin1:0,start1:0,fire:0,lu:0,ld:0,ru:0,rd:0};this.sound=0;this.audio=new BzoneAudio();this.avgDone=1;this.vectors=[];this.bind()}
  async rom(n){const r=await fetch("../bzone/roms/"+n);if(!r.ok)throw Error("ROM "+n);return new Uint8Array(await r.arrayBuffer())}
- async init(){const files=["036408-01.k7","036414-02.e1","036413-01.h1","036412-01.j1","036411-01.k1","036410-01.lm1","036409-01.n1","036422-01.bc3","036421-01.a3"],a=Object.fromEntries(await Promise.all(files.map(async n=>[n,await this.rom(n)])));[["036414-02.e1",20480],["036413-01.h1",22528],["036412-01.j1",24576],["036411-01.k1",26624],["036410-01.lm1",28672],["036409-01.n1",30720],["036422-01.bc3",12288],["036421-01.a3",14336]].forEach(([n,o])=>this.mem.set(a[n],o));this.avgProm=a["036408-01.k7"];this.cpu=new M6502(x=>this.read(x),(x,d)=>this.write(x,d));this.cpu.reset();console.log("[BZONE] reset PC",this.cpu.pc.toString(16),"vector",this.read(0x7ffc).toString(16),this.read(0x7ffd).toString(16))}
+ async init(){const files=["036408-01.k7","036414-02.e1","036413-01.h1","036412-01.j1","036411-01.k1","036410-01.lm1","036409-01.n1","036422-01.bc3","036421-01.a3"],a=Object.fromEntries(await Promise.all(files.map(async n=>[n,await this.rom(n)])));[["036414-02.e1",20480],["036413-01.h1",22528],["036412-01.j1",24576],["036411-01.k1",26624],["036410-01.lm1",28672],["036409-01.n1",30720],["036422-01.bc3",12288],["036421-01.a3",14336]].forEach(([n,o])=>this.mem.set(a[n],o));this.avgProm=a["036408-01.k7"];this.assetTrace=new AssetTrace(this.mem);this.cpu=new M6502(x=>this.read(x),(x,d)=>this.write(x,d));this.cpu.reset();console.log("[BZONE] reset PC",this.cpu.pc.toString(16),"vector",this.read(0x7ffc).toString(16),this.read(0x7ffd).toString(16))}
  in0(){let v=255;if(this.i.coin1)v&=254;if(this.avgDone)v|=64;else v&=191;if(this.cpu.cycles&256)v|=128;else v&=127;return v}
  in3(){let v=0;if(this.i.rd)v|=1;if(this.i.ru)v|=2;if(this.i.ld)v|=4;if(this.i.lu)v|=8;if(this.i.fire)v|=16;if(this.i.start1)v|=32;return v}
  read(a){a&=32767;if(a<1024)return this.mem[a];if(a===2048)return this.in0();if(a===2560)return 0x15;if(a===3072)return 0x03;if(a===6144)return 0;if(a===6160)return this.math.lo();if(a===6168)return this.math.hi();if(a>=6176&&a<=6191)return this.audio.read(a&15);if(a>=8192)return this.mem[a];return 255}
- write(a,d){a&=32767;d&=255;if(a<1024){this.mem[a]=d;return}if(a===4608){this.runAVG();return}if(a===5632){this.avgDone=1;return}if(a>=6176&&a<=6191){this.audio.write(a&15,d);return}if(a===6208){this.sound=d;this.audio.control(d);return}if(a>=6240&&a<=6271){this.math.go(a-6240,d);return}if(a>=8192&&a<12288)this.mem[a]=d}
+ write(a,d){a&=32767;d&=255;if(a<1024){this.mem[a]=d;return}if(a===4608){this.runAVG();return}if(a===5632){this.avgDone=1;return}if(a>=6176&&a<=6191){this.audio.write(a&15,d);return}if(a===6208){this.sound=d;this.audio.control(d);return}if(a>=6240&&a<=6271){this.math.go(a-6240,d);return}if(a>=8192&&a<12288){this.mem[a]=d;this.assetTrace?.write(a)}}
  word(pc){const a=8192+(pc&8191);return this.mem[a]|(this.mem[(a+1)&32767]<<8)}
  runAVG(){
   this.avgDone=0;
@@ -72,20 +73,10 @@ class Battlezone{
   let x=290<<16,y=200<<16,hst=0,lst=0,clip=[0,0,W<<16,H<<16],steps=0,out=[],stack=new Uint16Array(4);
   const bit=(n)=> (op>>n)&1;
   const rd=()=>this.mem[0x2000+(pc^1)];
-  const objectPalette=["purple","orange","red","blue","red","orange","purple","red"];
-  const objectColors=new Map();
-  const colorForObject=addr=>{
-   addr&=0x1fff;
-   if(!objectColors.has(addr)){
-    /* Main list remains green. Each called AVG object gets a stable palette
-       color derived only from its display-list address. */
-    objectColors.set(addr,addr===0?"green":objectPalette[((addr>>>1)^(addr>>>4)^(addr>>>7))&7]);
-   }
-   return objectColors.get(addr);
-  };
-  let vectorColor="green",objectPC=0;
+  let origin=null,callOrigin=null,instructionPC=0;
+  const originStack=new Array(4).fill(null);
   const point=(nx,ny,z)=>{let x1=x/65536,y1=y/65536,x2=nx/65536,y2=ny/65536;
-   if(z>0)out.push([x1,y1,x2,y2,z,clip.slice(),vectorColor,objectPC]);
+   if(z>0)out.push([x1,y1,x2,y2,z,clip.slice(),ASSETS[origin?.asset??"unclassified"].color,instructionPC,origin]);
    x=nx;y=ny};
   while(steps++<200000&&!halt){
     state=(state&0x10)|(this.avgProm[(((state>>4)^1)<<7)|(op<<4)|(state&15)]&15);
@@ -94,19 +85,20 @@ class Battlezone{
       switch(state&7){
         case 0:dvy=(dvy&0x1f00)|data;pc=(pc+1)&0x1fff;break;
         case 1:
+          instructionPC=pc;origin=this.assetTrace.instruction(pc,callOrigin);
           if(!hst){clip[2]=x;clip[1]=y} if(!lst){clip[0]=x;clip[3]=y} lst=hst=1;
           dvy12=(data>>4)&1;op=data>>5;intLatch=0;dvy=(dvy12<<12)|((data&15)<<8);dvx=0;pc=(pc+1)&0x1fff;break;
         case 2:dvx=(dvx&0x1f00)|data;pc=(pc+1)&0x1fff;break;
         case 3:intLatch=data>>4;dvx=((intLatch&1)<<12)|((data&15)<<8)|(dvx&255);pc=(pc+1)&0x1fff;break;
         case 4:
-          if(bit(0))stack[sp&3]=pc;
+          if(bit(0)){stack[sp&3]=pc;originStack[sp&3]=callOrigin;}
           else{let i=0;while((((dvy^(dvy<<1))&0x1000)===0)&&(((dvx^(dvx<<1))&0x1000)===0)&&(i++<16)){dvy=(dvy&0x1000)|((dvy<<1)&0x1fff);dvx=(dvx&0x1000)|((dvx<<1)&0x1fff);timer=(timer>>>1)|0x4000|(bit(1)<<7)}if(bit(1))timer&=255}break;
         case 5:
           if(!bit(2)){for(let i=binScale;i>0;i--)timer=(timer>>>1)|0x4000|(bit(1)<<7);if(bit(1))timer&=255}
           if(bit(2))sp=(sp+(bit(1)?15:1))&15;break;
         case 6:
           if(!bit(2)&&!dvy12){intensity=(dvy>>4)&15;if(!(dvy&0x400)){lst=dvy&0x200;hst=lst^0x200}}
-          if(bit(2)){if(bit(0)){pc=(dvy<<1)&0x1fff;if(dvy===0)break;objectPC=pc;vectorColor=colorForObject(objectPC)}else{pc=stack[sp&3];objectPC=pc;vectorColor=colorForObject(objectPC)}}
+          if(bit(2)){if(bit(0)){pc=(dvy<<1)&0x1fff;callOrigin=origin}else{pc=stack[sp&3];callOrigin=originStack[sp&3]}}
           else if(dvy12){scale=dvy&255;binScale=(dvy>>8)&7}break;
         case 7:{
           halt=bit(0);
@@ -124,8 +116,8 @@ class Battlezone{
   }
   this.vectors=out;
   if(this.debugObjectColors){
-   const seen=new Map();for(const v of out){const k=v[7];seen.set(k,(seen.get(k)||0)+1)}
-   console.table([...seen].sort((a,b)=>b[1]-a[1]).map(([pc,count])=>({avg:"0x"+pc.toString(16).padStart(4,"0"),vectors:count})));
+   const seen=new Map();for(const v of out){const k=v[8]?.asset??"unclassified";seen.set(k,(seen.get(k)||0)+1)}
+   console.table([...seen].sort((a,b)=>b[1]-a[1]).map(([asset,count])=>({asset,vectors:count})));
   }
   this.avgDone=1;this.draw();
  }
@@ -139,7 +131,7 @@ class Battlezone{
    c.strokeStyle="rgba("+color+","+alpha+")";c.lineWidth=1+z/12;
    c.beginPath();c.moveTo(x1,y1);c.lineTo(x2,y2);c.stroke();
   }}
-  frame(){let per=CPU_CLOCK/FPS/6;for(let n=0;n<6;n++){let left=per;while(left>0){let pc=this.cpu.pc,op=this.read(pc),used=this.cpu.step();left-=used;if(this.cpu.pc===pc){console.error("[BZONE] CPU stalled",pc.toString(16));break}}this.cpu.nmi()}if(!this.vectors.length)this.draw()}
+  frame(){let per=CPU_CLOCK/FPS/6;for(let n=0;n<6;n++){let left=per;while(left>0){this.assetTrace.beforeStep(this.cpu);let pc=this.cpu.pc,used=this.cpu.step();left-=used;if(this.cpu.pc===pc){console.error("[BZONE] CPU stalled",pc.toString(16));break}}this.cpu.nmi()}if(!this.vectors.length)this.draw()}
  run(){let last=0,loop=t=>{if(t-last>=1000/FPS){last=t;this.frame()}requestAnimationFrame(loop)};requestAnimationFrame(loop)}
  bind(){let lastTouch=0;document.addEventListener("touchend",e=>{if(!e.target.closest("#top,.tank-controls"))return;const now=Date.now();if(now-lastTouch<350)e.preventDefault();lastTouch=now},{passive:false});const unlock=()=>this.audio.start();addEventListener("pointerdown",unlock,{passive:true});addEventListener("touchstart",unlock,{passive:true});addEventListener("keydown",unlock);const set=(n,v)=>this.i[n]=v,pulse=n=>{set(n,1);setTimeout(()=>set(n,0),140)},km={KeyQ:"lu",KeyA:"ld",KeyE:"ru",KeyD:"rd",Space:"fire"};addEventListener("keydown",e=>{if(km[e.code])set(km[e.code],1);if(e.code==="Digit1")pulse("start1");if(e.code==="Digit5")pulse("coin1")});addEventListener("keyup",e=>km[e.code]&&set(km[e.code],0));document.querySelectorAll("[data-btn]").forEach(el=>{let n=el.dataset.btn;el.onpointerdown=e=>{e.preventDefault();this.audio.start();n==="coin1"||n==="start1"?pulse(n):set(n,1)};el.onpointerup=()=>set(n,0)});const stick=(id,up,down)=>{let el=document.querySelector(id),move=e=>{let r=el.getBoundingClientRect(),y=e.clientY-r.top-r.height/2;set(up,y<-12);set(down,y>12)};el.onpointerdown=e=>{this.audio.start();el.setPointerCapture(e.pointerId);move(e)};el.onpointermove=e=>el.hasPointerCapture(e.pointerId)&&move(e);el.onpointerup=()=>{set(up,0);set(down,0)}};stick("#leftStick","lu","ld");stick("#rightStick","ru","rd")}}
 const game=new Battlezone();await game.init();game.run();window.battlezone=game;
