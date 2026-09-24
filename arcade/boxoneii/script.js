@@ -111,25 +111,27 @@ class Battlezone{
   this.vectors=out;this.avgDone=1;this.draw();
  }
  draw(){const c=this.cx;c.fillStyle="#000";c.fillRect(0,0,W,H);c.lineCap="round";
+  /* Color the actual AVG vector strokes. No screen tint/overlay is applied. */
   const segs=this.vectors.filter(v=>Number.isFinite(v[0]+v[1]+v[2]+v[3]));
-  /* Battlezone II color treatment: classify vector geometry rather than using
-     the original cabinet overlay.  Sky details stay distinct while ground
-     objects retain the AVG geometry and intensity. */
-  for(const v of segs){let x1=v[0],y1=v[1],x2=v[2],y2=v[3],z=v[4],alpha=Math.max(.18,z/15),mx=(x1+x2)/2,my=(y1+y2)/2,dx=Math.abs(x2-x1),dy=Math.abs(y2-y1);
-   let color;
-   const center=Math.abs(mx-W/2);
-   const crosshair=center<70&&my>125&&my<270&&(dx<90||dy<90);
-   const moon=my<105&&mx>330&&mx<525;
-   const spark=my<150&&dx<24&&dy>5;
-   const mountain=my<230&&dy>3&&dx>8;
-   const obstacle=my>=190&&my<345&&dx+dy>8;
-   if(crosshair)color="255,45,45";
-   else if(moon)color="70,135,255";
-   else if(spark)color="255,45,45";
-   else if(mountain)color="190,70,255";
-   else if(obstacle)color="255,145,35";
-   else color="80,255,80";
-   c.strokeStyle="rgba("+color+","+alpha+")";c.lineWidth=1+z/12;c.beginPath();c.moveTo(x1,y1);c.lineTo(x2,y2);c.stroke()
+  const rgb={green:"80,255,80",purple:"190,70,255",orange:"255,145,35",red:"255,45,45",blue:"70,135,255"};
+  for(const v of segs){
+   const x1=v[0],y1=v[1],x2=v[2],y2=v[3],z=v[4],alpha=Math.max(.18,z/15);
+   const mx=(x1+x2)/2,my=(y1+y2)/2,dx=Math.abs(x2-x1),dy=Math.abs(y2-y1),len=Math.hypot(dx,dy);
+   let color="green";
+   /* Identify individual vector primitives by geometry/location and assign
+      their stroke color; the background remains pure black. */
+   const crosshair=Math.abs(mx-W/2)<65&&my>145&&my<255&&(len<85);
+   const moon=my<115&&mx>330&&mx<525&&len<80;
+   const lavaSpark=my<175&&mx>120&&mx<460&&dy>dx*1.15&&len<38;
+   const mountain=my<225&&y1<245&&y2<245&&len>12;
+   const obstacle=my>=185&&my<350&&len>6;
+   if(crosshair)color="red";
+   else if(moon)color="blue";
+   else if(lavaSpark)color="red";
+   else if(mountain)color="purple";
+   else if(obstacle)color="orange";
+   c.strokeStyle="rgba("+rgb[color]+","+alpha+")";
+   c.lineWidth=1+z/12;c.beginPath();c.moveTo(x1,y1);c.lineTo(x2,y2);c.stroke();
   }}
   frame(){let per=CPU_CLOCK/FPS/6;for(let n=0;n<6;n++){let left=per;while(left>0){let pc=this.cpu.pc,op=this.read(pc),used=this.cpu.step();left-=used;if(this.cpu.pc===pc){console.error("[BZONE] CPU stalled",pc.toString(16));break}}this.cpu.nmi()}if(!this.vectors.length)this.draw()}
  run(){let last=0,loop=t=>{if(t-last>=1000/FPS){last=t;this.frame()}requestAnimationFrame(loop)};requestAnimationFrame(loop)}
