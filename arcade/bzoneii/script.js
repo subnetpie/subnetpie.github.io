@@ -72,10 +72,17 @@ class Battlezone{
   let x=290<<16,y=200<<16,hst=0,lst=0,clip=[0,0,W<<16,H<<16],steps=0,out=[],stack=new Uint16Array(4);
   const bit=(n)=> (op>>n)&1;
   const rd=()=>this.mem[0x2000+(pc^1)];
-  const objectColors=new Map([
-   /* Bzone II object palette. Keys are AVG display-list/subroutine addresses;
-      vectors inherit the color of the object call that emits them. */
-  ]);
+  const objectPalette=["purple","orange","red","blue","red","orange","purple","red"];
+  const objectColors=new Map();
+  const colorForObject=addr=>{
+   addr&=0x1fff;
+   if(!objectColors.has(addr)){
+    /* Main list remains green. Each called AVG object gets a stable palette
+       color derived only from its display-list address. */
+    objectColors.set(addr,addr===0?"green":objectPalette[((addr>>>1)^(addr>>>4)^(addr>>>7))&7]);
+   }
+   return objectColors.get(addr);
+  };
   let vectorColor="green",objectPC=0;
   const point=(nx,ny,z)=>{let x1=x/65536,y1=y/65536,x2=nx/65536,y2=ny/65536;
    if(z>0)out.push([x1,y1,x2,y2,z,clip.slice(),vectorColor,objectPC]);
@@ -99,7 +106,7 @@ class Battlezone{
           if(bit(2))sp=(sp+(bit(1)?15:1))&15;break;
         case 6:
           if(!bit(2)&&!dvy12){intensity=(dvy>>4)&15;if(!(dvy&0x400)){lst=dvy&0x200;hst=lst^0x200}}
-          if(bit(2)){if(bit(0)){pc=(dvy<<1)&0x1fff;if(dvy===0)break;objectPC=pc;vectorColor=objectColors.get(objectPC)||"green"}else{pc=stack[sp&3];objectPC=pc;vectorColor=objectColors.get(objectPC)||"green"}}
+          if(bit(2)){if(bit(0)){pc=(dvy<<1)&0x1fff;if(dvy===0)break;objectPC=pc;vectorColor=colorForObject(objectPC)}else{pc=stack[sp&3];objectPC=pc;vectorColor=colorForObject(objectPC)}}
           else if(dvy12){scale=dvy&255;binScale=(dvy>>8)&7}break;
         case 7:{
           halt=bit(0);
