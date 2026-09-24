@@ -11,3 +11,12 @@ button{cursor:pointer}
 #rightControls{right:max(12px,env(safe-area-inset-right))}
 .fire{position:static;width:112px;height:48px;padding:0;border-radius:14px;font-size:17px;font-weight:700}
 .stick{position:relative;display:grid;width:112px;height:150px;place-items:center;border-radius:28px;font-size:38px}
+
+/* Touch controls only: suppress browser gestures/selection without affecting the game canvas. */
+#top button,.tank-controls,.tank-controls button,.stick{
+  touch-action:none;
+  -webkit-touch-callout:none;
+  -webkit-user-select:none;
+  user-select:none;
+  -webkit-tap-highlight-color:transparent;
+}
