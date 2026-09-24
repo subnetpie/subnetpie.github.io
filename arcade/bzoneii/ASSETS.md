@@ -96,3 +96,22 @@ and differently colored callers sharing the same nested ROM primitive.
 Syntax checks: `node --check arcade/bzoneii/script.js` and
 `node --check arcade/bzoneii/assets.js`. This is not a full browser/audio or
 cycle-by-cycle MAME conformance test.
+
+## POKEY random register
+
+`pokey-random.js` implements `$182a` RANDOM from MAME 0.289
+`src/devices/sound/pokey.cpp` (poly_init_9_17, RANDOM_C, SKCTL_C).
+Both polynomial phases advance from emulated CPU cycles, matching the shared
+MASTER_CLOCK / 8 clock specified in `bzone_a.cpp`. AUDCTL bit 7 selects the
+9-bit sequence; otherwise RANDOM reads bits 8–15 of the 17-bit sequence.
+SKCTL low bits hold/reset the generator. The sequence is independent of audio
+callbacks and wall-clock time. Timing is at the existing CPU core's instruction
+boundaries, not individual bus accesses.
+
+Previously RANDOM incorrectly read the audio register array's zero byte. This
+made five volcano slots spawn together with only two distinct trajectories.
+The runtime regression now requires at least four distinct simultaneous spark
+positions (five observed), with the camera directed at the volcano in the last
+400 frames. `node arcade/bzoneii/pokey-random.test.mjs` compares both complete
+polynomial periods against independent bit-array wiring and checks reset,
+resume, wraparound, and repeated reads at the same emulated time.

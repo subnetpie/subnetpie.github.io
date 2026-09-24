@@ -12,13 +12,14 @@ async function boot(traced=true) {
   vm.createContext(sandbox);
   const cpu=readFileSync(new URL('cpu/m6502.js',root),'utf8').replace('export class','class');
   const assets=readFileSync(new URL('assets.js',import.meta.url),'utf8').replaceAll('export ','');
+  const random=readFileSync(new URL('pokey-random.js',import.meta.url),'utf8').replaceAll('export ','');
   const game=source.replace(/^import .*;\r?\n/gm,'').replace(/const game=new Battlezone\(\);[\s\S]*$/,'');
-  vm.runInContext(cpu+'\n'+assets+'\n'+game+`
+  vm.runInContext(cpu+'\n'+assets+'\n'+random+'\n'+game+`
     Battlezone.prototype.bind=function(){};
     Battlezone.prototype.draw=function(){};
     BzoneAudio.prototype.start=function(){};
     globalThis.game=new Battlezone();`,sandbox);
-  await sandbox.game.init();
+  await sandbox.game.init();sandbox.window.battlezone=sandbox.game;
   if(!traced) sandbox.game.assetTrace.enabled=false;
   return sandbox.game;
 }
@@ -26,6 +27,7 @@ async function boot(traced=true) {
 const game=await boot(), control=await boot(false);
 assert.equal(game.assetTrace.enabled,true,'repository ROM revision is recognized');
 const seen=new Map(),slots=new Set(),positions=new Map();
+let maxDistinctSparks=0;
 for(let frame=0;frame<2400;frame++) {
   // Attract, insert coin, start, then rotate/fire to exercise landscape and entities.
   for(const g of [game,control]) {
@@ -33,12 +35,16 @@ for(let frame=0;frame<2400;frame++) {
     g.i.start1=frame>=830&&frame<840?1:0;
     g.i.lu=frame>=850?1:0;g.i.rd=frame>=850?1:0;
     g.i.fire=frame>=850?1:0;
+    // Fix the camera toward the volcano for deterministic particle coverage.
+    if(frame>=2000) g.mem[0x2a]=0x60;
     g.frame();
   }
   assert.deepEqual(Buffer.from(game.mem),Buffer.from(control.mem),'metadata must not change emulated RAM');
   assert.equal(game.cpu.pc,control.cpu.pc);
   assert.equal(game.cpu.cycles,control.cpu.cycles);
   assert.equal(game.vectors.length,control.vectors.length);
+  const sparks=game.vectors.filter(v=>v[8]?.asset==='volcanoSpark');
+  maxDistinctSparks=Math.max(maxDistinctSparks,new Set(sparks.map(v=>v[0]+','+v[1])).size);
   for(let i=0;i<game.vectors.length;i++) {
     const v=game.vectors[i],ref=control.vectors[i];
     assert.equal(JSON.stringify(v.slice(0,6)),JSON.stringify(ref.slice(0,6)),'geometry/intensity/clipping unchanged');
@@ -57,6 +63,8 @@ for(let frame=0;frame<2400;frame++) {
 }
 for(const asset of ['mountains','moon','obstacle','crosshair','volcanoSpark','logo','hudRadar','score','highScore','enemyInRange','enemyDirection','unclassified'])
   assert.ok(seen.get(asset)>0,`runtime must exercise ${asset}`);
+assert.ok(maxDistinctSparks>=4,'particles must not collapse to two synchronized trajectories');
+console.log({maxDistinctSparks});
 assert.ok(slots.size>1,'multiple obstacle records are captured');
 assert.ok(positions.get('moon').size>10,'moon retains identity while scrolling');
 
