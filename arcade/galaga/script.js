@@ -3027,6 +3027,13 @@ Cause: ${GalagaApp.formatError(error.cause)}`;
       throw new Error(`Critical ROMs missing: ${roms.failedFiles.join(", ")}`);
     }
     this.emulator.reset();
+
+    // Preserve the stock ROM byte so FAST SHOT can be reversed immediately
+    // without reloading the ROM set. MAME's historical Fast Shoot cheat is
+    // the one-byte 0x070d -> 0x0d modification.
+    this.fastShotOriginalByte = this.emulator.mainCpuRom[0x070d];
+    this.fastShotEnabled = false;
+
     this.emulator.connectInput(this.input);
     this.input.setupKeyboardControls();
 
@@ -3035,6 +3042,32 @@ Cause: ${GalagaApp.formatError(error.cause)}`;
     if (container) {
       this.input.setupTouchControls(container);
     }
+
+    const setupToggle = (id, onChange) => {
+      const button = document.getElementById(id);
+      if (!button) return;
+
+      button.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        const enabled = button.getAttribute("aria-pressed") !== "true";
+        button.setAttribute("aria-pressed", String(enabled));
+        button.classList.toggle("enabled", enabled);
+        onChange(enabled);
+      });
+    };
+
+    setupToggle("btnFastShot", (enabled) => {
+      this.fastShotEnabled = enabled;
+      this.emulator.mainCpuRom[0x070d] = enabled
+        ? 0x0d
+        : this.fastShotOriginalByte;
+    });
+
+    setupToggle("btnRapidFire", (enabled) => {
+      this.input.setRapidFireEnabled(enabled);
+    });
+
     this.swipeController?.dispose?.();
     this.swipeController = new SwipeController(this.input, window);
 
@@ -3270,6 +3303,14 @@ class InputManager {
 
     this._keyboardBound = false;
     this._blurBound = false;
+
+    // Midway rapid-fire daughterboard approximation: while the physical
+    // FIRE control is held, alternate the active-low fire line. The timer
+    // only affects the input switch; it does not alter Galaga program ROM.
+    this.rapidFireEnabled = false;
+    this.rapidFireTimer = null;
+    this.rapidFirePhase = false;
+    this.rapidFireHalfPeriodMs = 60;
   }
 
   getState() {
@@ -3306,7 +3347,56 @@ class InputManager {
       this._notifyStateChange();
     }
 
+    if (button === "FIRE" && this.rapidFireEnabled) {
+      this._startRapidFire();
+    }
+
     return true;
+  }
+
+  setRapidFireEnabled(enabled) {
+    this.rapidFireEnabled = !!enabled;
+
+    if (!this.rapidFireEnabled) {
+      this._stopRapidFire();
+      if (this.heldButtons.has("FIRE")) {
+        const b = this.buttons.FIRE;
+        const before = this.ports[b.port];
+        this.ports[b.port] = before & ~b.mask & 0xff;
+        if (this.ports[b.port] !== before) this._notifyStateChange();
+      }
+    } else if (this.heldButtons.has("FIRE")) {
+      this._startRapidFire();
+    }
+  }
+
+  _startRapidFire() {
+    if (this.rapidFireTimer != null) return;
+
+    const b = this.buttons.FIRE;
+    this.rapidFirePhase = true;
+    this.rapidFireTimer = setInterval(() => {
+      if (!this.rapidFireEnabled || !this.heldButtons.has("FIRE")) {
+        this._stopRapidFire();
+        return;
+      }
+
+      this.rapidFirePhase = !this.rapidFirePhase;
+      const before = this.ports[b.port];
+      this.ports[b.port] = this.rapidFirePhase
+        ? (before & ~b.mask & 0xff)
+        : ((before | b.mask) & 0xff);
+
+      if (this.ports[b.port] !== before) this._notifyStateChange();
+    }, this.rapidFireHalfPeriodMs);
+  }
+
+  _stopRapidFire() {
+    if (this.rapidFireTimer != null) {
+      clearInterval(this.rapidFireTimer);
+      this.rapidFireTimer = null;
+    }
+    this.rapidFirePhase = false;
   }
 
   releaseButton(button) {
@@ -3320,6 +3410,11 @@ class InputManager {
     }
 
     const wasHeld = this.heldButtons.delete(button);
+
+    if (button === "FIRE") {
+      this._stopRapidFire();
+    }
+
     const before = this.ports[b.port];
     const after = (before | b.mask) & 0xff;
 
@@ -3353,6 +3448,8 @@ class InputManager {
   }
 
   releaseAll() {
+    this._stopRapidFire();
+
     for (const timer of this.pulseTimers.values()) {
       clearTimeout(timer);
     }
