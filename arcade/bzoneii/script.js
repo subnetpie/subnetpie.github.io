@@ -123,33 +123,6 @@ class Battlezone{
   this.avgDone=1;this.draw();
  }
  draw(){const c=this.cx;c.save();c.globalCompositeOperation="source-over";c.fillStyle="#000";c.fillRect(0,0,W,H);c.lineCap="round";
-  // Fill the projected obstacle silhouette.  The previous face-cycle search
-  // walked every graph cycle each frame and could explode combinatorially,
-  // stalling the emulator.  A convex hull is bounded and follows the actual
-  // projected AVG object, so the fill remains object-bound rather than regional.
-  if(this.colorized){
-   const groups=new Map();
-   for(const v of this.vectors){
-    if(v[8]?.asset!=="obstacle")continue;
-    const id=v[8]?.id??"obstacle";
-    if(!groups.has(id))groups.set(id,[]);
-    const g=groups.get(id);
-    if(Number.isFinite(v[0]+v[1]))g.push([v[0],v[1]]);
-    if(Number.isFinite(v[2]+v[3]))g.push([v[2],v[3]]);
-   }
-   c.save();c.globalCompositeOperation="source-over";c.fillStyle="rgba(255,145,35,.16)";
-   for(const points of groups.values()){
-    const uniq=[...new Map(points.map(p=>[p[0].toFixed(2)+","+p[1].toFixed(2),p])).values()];
-    if(uniq.length<3)continue;
-    uniq.sort((a,b)=>a[0]-b[0]||a[1]-b[1]);
-    const cross=(o,a,b)=>(a[0]-o[0])*(b[1]-o[1])-(a[1]-o[1])*(b[0]-o[0]);
-    const lo=[];for(const p of uniq){while(lo.length>=2&&cross(lo[lo.length-2],lo[lo.length-1],p)<=0)lo.pop();lo.push(p)}
-    const hi=[];for(let i=uniq.length-1;i>=0;i--){const p=uniq[i];while(hi.length>=2&&cross(hi[hi.length-2],hi[hi.length-1],p)<=0)hi.pop();hi.push(p)}
-    const hull=lo.slice(0,-1).concat(hi.slice(0,-1));if(hull.length<3)continue;
-    c.beginPath();c.moveTo(hull[0][0],hull[0][1]);for(let i=1;i<hull.length;i++)c.lineTo(hull[i][0],hull[i][1]);c.closePath();c.fill();
-   }
-   c.restore();
-  }
   /* Render only the color carried by each emitted AVG vector. There are no
      coordinate, region, shape, or screen-overlay color rules here. */
   const rgb={green:"80,255,80",purple:"190,70,255",darkPurple:"95,30,140",orange:"255,145,35",lightOrange:"255,190,105",red:"255,45,45",blue:"70,135,255"};
