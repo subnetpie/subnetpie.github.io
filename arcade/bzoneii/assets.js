@@ -3,7 +3,7 @@ export const ASSETS = Object.freeze({
   unclassified: {color:"green"}, mountains: {color:"purple"}, horizon: {color:"darkPurple"},
   moon: {color:"blue"}, obstacle: {color:"orange"},
   crosshair: {color:"red"}, volcanoSpark: {color:"red",displayIntensity:15},
-  tank: {color:"green"}, projectile: {color:"green"}, debris: {color:"green"},
+  tank: {color:"green"}, playerLives: {color:"green"}, projectile: {color:"green"}, debris: {color:"green"},
   missile: {color:"green"}, logo: {color:"blue"}, saucer: {color:"green"},
   hudRadar: {color:"red"}, score: {color:"red"}, highScore: {color:"orange"},
   enemyInRange: {color:"lightOrange"}, enemyDirection: {color:"lightOrange"},
@@ -44,7 +44,10 @@ export class AssetTrace {
       this.scopes.pop();
     }
     let asset, fields={}, end, sp;
-    if(pc===0x5c5c) {
+    if(pc===0x6d3c) {
+      // DrawScoreLives: isolate the extra-player tank icons before score drawing begins.
+      asset="playerLives"; fields={record:0x00cc}; end=0x6d59; sp=cpu.s;
+    } else if(pc===0x5c5c) {
       const slot=this.mem[0x10], type=cpu.a;
       asset=shapeAsset(type);
       fields={slot:slot>>>1,record:0x270+slot,type,
