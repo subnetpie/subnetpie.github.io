@@ -156,7 +156,7 @@ class Battlezone{
    const asset=v[8]?.asset,originalRed=asset==="hudRadar"||asset==="score"||asset==="highScore"||asset==="enemyInRange"||asset==="enemyDirection"||asset==="motionBlocked";
    const alpha=Math.min(1,Math.max(.18,z/15)),color=this.colorized?(rgb[v[6]]||rgb.green):(originalRed?rgb.red:rgb.green);
    const ink="rgba("+color+","+(alpha*gain)+")";
-   c.strokeStyle=ink;c.lineWidth=(.75+z/20)*(hudAssets.has(asset)?Math.min(spread,1.7):spread);
+   const distanceGlow=hudAssets.has(asset)?1:Math.max(.28,Math.min(1,z/15));c.strokeStyle=ink;c.lineWidth=(.75+z/20)*(hudAssets.has(asset)?Math.min(spread,1.7):spread)*(spread>1?distanceGlow:1);
    c.beginPath();
    // AVG points (including lava sparks) need a disk, even with identical endpoints.
    if(x1===x2&&y1===y2){c.fillStyle=ink;c.arc(x1,y1,c.lineWidth/2,0,Math.PI*2);c.fill()}
@@ -171,7 +171,7 @@ class Battlezone{
    const alpha=Math.min(1,Math.max(.18,z/15)),color=this.colorized?(rgb[v[6]]||rgb.green):(originalRed?rgb.red:rgb.green);
    const radius=(.75+z/20)/2;
    const endpoints=x1===x2&&y1===y2?[[x1,y1]]:[[x1,y1],[x2,y2]];
-   for(const [spread,gain] of (hudAssets.has(asset)?[[1.4,.08],[1,.5]]:[[3,.12],[1.1,.65]])){
+   const distanceGlow=hudAssets.has(asset)?1:Math.max(.28,Math.min(1,z/15));for(const [spread,gain] of (hudAssets.has(asset)?[[1.4,.08],[1,.5]]:[[1+2*distanceGlow,.12*distanceGlow],[1.1,.65]])){
     c.fillStyle="rgba("+color+","+(alpha*gain)+")";
     for(const [px,py] of endpoints){c.beginPath();c.arc(px,py,radius*spread,0,Math.PI*2);c.fill()}
    }
