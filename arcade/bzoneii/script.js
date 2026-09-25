@@ -136,26 +136,25 @@ class Battlezone{
     const h=lo.slice(0,-1).concat(hi.slice(0,-1));if(h.length<3)continue;c.beginPath();c.moveTo(h[0][0],h[0][1]);for(let i=1;i<h.length;i++)c.lineTo(h[i][0],h[i][1]);c.closePath();c.fill();
    }c.restore();
   }
-  // Polygon fill from the visible tank wireframe only. Build a planar graph from
-  // the AVG segments and fill its bounded cells; open regions can never be filled.
+  // Tank polygon fill: trace bounded faces of each connected wireframe component.
   if(this.colorized){
-   const groups=new Map(),q=(x,y)=>Math.round(x*8)+","+Math.round(y*8);
+   const groups=new Map(),q=(x,y)=>Math.round(x*4)+","+Math.round(y*4);
    for(const v of this.vectors){const o=v[8];if(o?.asset!=="tank"||o.id==null||v[4]<=0)continue;let g=groups.get(o.id);if(!g){g=[];groups.set(o.id,g)}g.push(v)}
    c.save();c.globalCompositeOperation="source-over";c.fillStyle="rgba(80,255,80,.32)";
    for(const lines of groups.values()){
-    const pts=new Map(),edges=[],adj=new Map();
-    const add=(x,y)=>{const k=q(x,y);if(!pts.has(k))pts.set(k,[x,y]);if(!adj.has(k))adj.set(k,[]);return k};
-    for(const v of lines){const a=add(v[0],v[1]),b=add(v[2],v[3]);if(a===b)continue;edges.push([a,b]);if(!adj.get(a).includes(b))adj.get(a).push(b);if(!adj.get(b).includes(a))adj.get(b).push(a)}
-    for(const [k,ns] of adj){const p=pts.get(k);ns.sort((a,b)=>Math.atan2(pts.get(a)[1]-p[1],pts.get(a)[0]-p[0])-Math.atan2(pts.get(b)[1]-p[1],pts.get(b)[0]-p[0]))}
+    const pts=new Map(),adj=new Map();
+    const add=(x,y)=>{const k=q(x,y);if(!pts.has(k))pts.set(k,[x,y]);if(!adj.has(k))adj.set(k,new Set);return k};
+    for(const v of lines){const a=add(v[0],v[1]),b=add(v[2],v[3]);if(a!==b){adj.get(a).add(b);adj.get(b).add(a)}}
+    const nbr=new Map();for(const [k,set] of adj){const p=pts.get(k),a=[...set];a.sort((u,v)=>Math.atan2(pts.get(u)[1]-p[1],pts.get(u)[0]-p[0])-Math.atan2(pts.get(v)[1]-p[1],pts.get(v)[0]-p[0]));nbr.set(k,a)}
     const seen=new Set(),faces=[];
-    for(const [a,ns] of adj)for(const b of ns){const first=a+">"+b;if(seen.has(first))continue;let u=a,v=b,face=[],ok=false;
-     for(let n=0;n<edges.length*2+4;n++){const h=u+">"+v;if(seen.has(h))break;seen.add(h);face.push(u);const vn=adj.get(v),ri=vn.indexOf(u);if(ri<0)break;const w=vn[(ri+1)%vn.length];u=v;v=w;if(u===a&&v===b){ok=true;break}}
-     if(!ok||face.length<3)continue;let area=0;for(let i=0;i<face.length;i++){const p=pts.get(face[i]),r=pts.get(face[(i+1)%face.length]);area+=p[0]*r[1]-r[0]*p[1]}area*=.5;if(Math.abs(area)>.2)faces.push({face,area});
+    for(const [a,ns] of nbr)for(const b of ns){const seed=a+">"+b;if(seen.has(seed))continue;let u=a,v=b,face=[],closed=false;
+     for(let n=0;n<adj.size*4+8;n++){const h=u+">"+v;if(seen.has(h)){if(h===seed)closed=true;break}seen.add(h);face.push(u);const vn=nbr.get(v),ri=vn.indexOf(u);if(ri<0)break;const w=vn[(ri-1+vn.length)%vn.length];u=v;v=w;if(u===a&&v===b){closed=true;break}}
+     if(!closed||face.length<3)continue;let area=0;for(let i=0;i<face.length;i++){const p=pts.get(face[i]),r=pts.get(face[(i+1)%face.length]);area+=p[0]*r[1]-r[0]*p[1]}area*=.5;
+     // With canvas Y increasing downward and the clockwise half-edge walk above,
+     // bounded cells have positive signed area; exterior walks are negative.
+     if(area>.5)faces.push(face);
     }
-    if(!faces.length)continue;
-    // One traversal is the exterior boundary. It is the largest absolute-area face.
-    let outer=0;for(let i=1;i<faces.length;i++)if(Math.abs(faces[i].area)>Math.abs(faces[outer].area))outer=i;
-    for(let fi=0;fi<faces.length;fi++){if(fi===outer)continue;const face=faces[fi].face,p0=pts.get(face[0]);c.beginPath();c.moveTo(p0[0],p0[1]);for(let i=1;i<face.length;i++){const p=pts.get(face[i]);c.lineTo(p[0],p[1])}c.closePath();c.fill()}
+    for(const face of faces){const p0=pts.get(face[0]);c.beginPath();c.moveTo(p0[0],p0[1]);for(let i=1;i<face.length;i++){const p=pts.get(face[i]);c.lineTo(p[0],p[1])}c.closePath();c.fill()}
    }c.restore();
   }
   /* Render only the color carried by each emitted AVG vector. There are no
