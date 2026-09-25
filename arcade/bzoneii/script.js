@@ -136,12 +136,22 @@ class Battlezone{
     const h=lo.slice(0,-1).concat(hi.slice(0,-1));if(h.length<3)continue;c.beginPath();c.moveTo(h[0][0],h[0][1]);for(let i=1;i<h.length;i++)c.lineTo(h[i][0],h[i][1]);c.closePath();c.fill();
    }c.restore();
   }
-  // Give projected enemy tanks a restrained translucent green body fill.
+  // Fill only closed polygons actually defined by each tank's AVG line graph.
+  // Do not use a convex hull: that incorrectly paints across open/concave geometry.
   if(this.colorized){
-   const groups=new Map();
-   for(const v of this.vectors){const o=v[8];if(o?.asset!=="tank"||o.id==null)continue;let g=groups.get(o.id);if(!g){g=[];groups.set(o.id,g)};if(Number.isFinite(v[0]+v[1]))g.push([v[0],v[1]]);if(Number.isFinite(v[2]+v[3]))g.push([v[2],v[3]])}
+   const groups=new Map(),key=(x,y)=>Math.round(x*16)+","+Math.round(y*16);
+   for(const v of this.vectors){const o=v[8];if(o?.asset!=="tank"||o.id==null)continue;let g=groups.get(o.id);if(!g){g=[];groups.set(o.id,g)};if(Number.isFinite(v[0]+v[1]+v[2]+v[3]))g.push(v)}
    c.save();c.globalCompositeOperation="source-over";c.fillStyle="rgba(80,255,80,.32)";
-   for(const g of groups.values()){const seen=new Set(),p=[];for(const q of g){const k=Math.round(q[0]*16)+","+Math.round(q[1]*16);if(!seen.has(k)){seen.add(k);p.push(q)}}if(p.length<3)continue;p.sort((a,b)=>a[0]-b[0]||a[1]-b[1]);const cross=(a,b,d)=>(b[0]-a[0])*(d[1]-a[1])-(b[1]-a[1])*(d[0]-a[0]),lo=[],hi=[];for(const q of p){while(lo.length>1&&cross(lo[lo.length-2],lo[lo.length-1],q)<=0)lo.pop();lo.push(q)}for(let i=p.length-1;i>=0;i--){const q=p[i];while(hi.length>1&&cross(hi[hi.length-2],hi[hi.length-1],q)<=0)hi.pop();hi.push(q)}const h=lo.slice(0,-1).concat(hi.slice(0,-1));if(h.length<3)continue;c.beginPath();c.moveTo(h[0][0],h[0][1]);for(let i=1;i<h.length;i++)c.lineTo(h[i][0],h[i][1]);c.closePath();c.fill()}c.restore();
+   for(const lines of groups.values()){
+    const pts=new Map(),adj=new Map(),edges=[];
+    const add=(x,y)=>{const k=key(x,y);if(!pts.has(k))pts.set(k,[x,y]);if(!adj.has(k))adj.set(k,new Set);return k};
+    for(const v of lines){const a=add(v[0],v[1]),b=add(v[2],v[3]);if(a===b)continue;adj.get(a).add(b);adj.get(b).add(a);edges.push([a,b])}
+    const used=new Set(),ek=(a,b)=>a<b?a+"|"+b:b+"|"+a;
+    for(const [ea,eb] of edges){const first=ek(ea,eb);if(used.has(first))continue;let path=[ea],prev=ea,cur=eb,closed=false;used.add(first);
+     for(let n=0;n<edges.length+1;n++){path.push(cur);if(cur===ea){closed=true;break}const next=[...(adj.get(cur)||[])].filter(x=>x!==prev&&!used.has(ek(cur,x)));if(next.length!==1)break;const nx=next[0];used.add(ek(cur,nx));prev=cur;cur=nx}
+     if(!closed||path.length<4)continue;const p0=pts.get(path[0]);c.beginPath();c.moveTo(p0[0],p0[1]);for(let i=1;i<path.length-1;i++){const p=pts.get(path[i]);c.lineTo(p[0],p[1])}c.closePath();c.fill();
+    }
+   }c.restore();
   }
   /* Render only the color carried by each emitted AVG vector. There are no
      coordinate, region, shape, or screen-overlay color rules here. */
