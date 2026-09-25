@@ -139,10 +139,10 @@ class Battlezone{
   // Tank polygon fill: trace bounded faces of each connected wireframe component.
   if(this.colorized){
    const groups=new Map(),snap=1.0,q=(x,y)=>Math.round(x/snap)+","+Math.round(y/snap);
-   // Snap projected endpoints to a full pixel before topology construction.
-   // AVG fixed-point rounding can otherwise move a shared vertex across adjacent
-   // subpixel bins on successive frames, making a face appear/disappear (flicker).
-   for(const v of this.vectors){const o=v[8];if(o?.asset!=="tank"||o.id==null||v[4]<=0)continue;let g=groups.get(o.id);if(!g){g=[];groups.set(o.id,g)}g.push(v)}
+   // AssetTrace origin ids are per draw invocation, not persistent object ids.
+   // Group tank vectors by the stable Battlezone object slot instead; otherwise a
+   // changing trace id can split one tank into different polygon graphs frame-to-frame.
+   for(const v of this.vectors){const o=v[8];if(o?.asset!=="tank"||o.slot==null||v[4]<=0)continue;let g=groups.get(o.slot);if(!g){g=[];groups.set(o.slot,g)}g.push(v)}
    c.save();c.globalCompositeOperation="source-over";c.fillStyle="rgba(80,255,80,.32)";
    for(const lines of groups.values()){
     const pts=new Map(),adj=new Map();
