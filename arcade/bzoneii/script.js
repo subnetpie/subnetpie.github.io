@@ -27,7 +27,7 @@ class BzoneAudio{
  start(){if(!this.ctx){this.ctx=new (window.AudioContext||window.webkitAudioContext)({sampleRate:48000});this.node=this.ctx.createScriptProcessor(1024,0,1);this.node.onaudioprocess=e=>this.render(e.outputBuffer.getChannelData(0));this.gain=this.ctx.createGain();this.gain.gain.value=.9;this.node.connect(this.gain);this.gain.connect(this.ctx.destination)}if(this.ctx.state!=="running")this.ctx.resume()}
  read(r){r&=15;if(r===8)return window.battlezone?window.battlezone.in3():0;return this.reg[r]}
  write(r,d){this.start();this.reg[r&15]=d&255}
- control(d){this.start();d&=255;let old=this.latch;this.latch=d;this.haveControl=true;if((d&4)&&!(old&4))this.envShell=1;if((d&1)&&!(old&1))this.envExplosion=1}
+ control(d){this.start();d&=255;this.latch=d;this.haveControl=true;if(d&4)this.envShell=1;if(d&1)this.envExplosion=1}
  render(out){const sr=this.ctx.sampleRate,enabled=!this.haveControl||(this.latch&32)!==0,motor=(this.latch&128)!==0,rev=(this.latch&16)!==0;for(let i=0;i<out.length;i++){let s=0;
   if(enabled){
    for(let ch=0;ch<4;ch++){let f=this.reg[ch*2],au=this.reg[ch*2+1],vol=au&15;if(!vol)continue;let audctl=this.reg[8],div=(audctl&1)?114:28;if((ch===0&&(audctl&0x40))||(ch===2&&(audctl&0x20)))div=1;let n=f+(div===1?4:1),hz=CPU_CLOCK/(2*div*n);if(au&0x10){s+=(vol/15)*.035;continue}this.phase[ch]=(this.phase[ch]+hz/sr)%1;if(au&0x20)s+=(this.phase[ch]<.5?1:-1)*(vol/15)*.060;else{let gate=((Math.floor(this.phase[ch]*31)*13+ch*7)&16)?1:-1;s+=gate*(vol/15)*.035}}
