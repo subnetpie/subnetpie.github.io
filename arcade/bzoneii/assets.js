@@ -6,7 +6,8 @@ export const ASSETS = Object.freeze({
   tank: {color:"green"}, projectile: {color:"green"}, debris: {color:"green"},
   missile: {color:"green"}, logo: {color:"blue"}, saucer: {color:"green"},
   hudRadar: {color:"red"}, score: {color:"red"}, highScore: {color:"orange"},
-  enemyInRange: {color:"lightOrange"}, enemyDirection: {color:"lightOrange"},\n  motionBlocked: {color:"lightOrange"}
+  enemyInRange: {color:"lightOrange"}, enemyDirection: {color:"lightOrange"},
+  motionBlocked: {color:"lightOrange"}
 });
 
 export function shapeAsset(type) {
