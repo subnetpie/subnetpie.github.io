@@ -6,7 +6,7 @@ export const ASSETS = Object.freeze({
   tank: {color:"green"}, projectile: {color:"green"}, debris: {color:"green"},
   missile: {color:"green"}, logo: {color:"blue"}, saucer: {color:"green"},
   hudRadar: {color:"red"}, score: {color:"red"}, highScore: {color:"orange"},
-  enemyInRange: {color:"lightOrange"}, enemyDirection: {color:"lightOrange"}
+  enemyInRange: {color:"lightOrange"}, enemyDirection: {color:"lightOrange"},\n  motionBlocked: {color:"lightOrange"}
 });
 
 export function shapeAsset(type) {
@@ -58,7 +58,7 @@ export class AssetTrace {
     } else if(pc===0x6c98) {
       if(["score","highScore"].includes(this.scopes.at(-1)?.origin.asset)) return;
       // Direction strings comprise a shared prefix and a separate suffix.
-      asset=cpu.x===0x10?"enemyInRange":([0,2,4,6].includes(cpu.x)?"enemyDirection":"unclassified");
+      asset=cpu.x===0x10?"enemyInRange":(cpu.x===0x12?"motionBlocked":([0,2,4,6].includes(cpu.x)?"enemyDirection":"unclassified"));
       fields={textId:cpu.x};
     } else if(pc===0x58a7) {
       asset="mountains"; fields={segment:(cpu.a&14)>>>1};
