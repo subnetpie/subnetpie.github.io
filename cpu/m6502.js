@@ -7,8 +7,8 @@ export class M6502 {
   push(v){this.w(0x100|this.s,v);this.s=(this.s-1)&255} pop(){this.s=(this.s+1)&255;return this.r(0x100|this.s)}
   nz(v){v&=255;this.p=(this.p&0x7d)|(v?0:2)|(v&0x80);return v}
   set(f,b){this.p=b?this.p|f:this.p&~f}
-  adc(v){let a=this.a,c=this.p&1,s=a+v+c,r=s&255;this.set(1,s>255);this.set(0x40,(~(a^v)&(a^r)&0x80)!==0);this.a=this.nz(r)}
-  sbc(v){this.adc(v^255)}
+  adc(v){let a=this.a,c=this.p&1,s=a+v+c,r=s&255;this.set(0x40,(~(a^v)&(a^r)&0x80)!==0);if(this.p&8){let lo=(a&15)+(v&15)+c,hi=(a>>4)+(v>>4);if(lo>9){lo+=6;hi++}if(hi>9)hi+=6;this.set(1,hi>15);this.a=this.nz(((hi<<4)|(lo&15))&255)}else{this.set(1,s>255);this.a=this.nz(r)}}
+  sbc(v){if(!(this.p&8)){this.adc(v^255);return}let a=this.a,c=this.p&1,d=a-v-(c?0:1),r=d&255;this.set(0x40,((a^r)&(a^v)&0x80)!==0);let lo=(a&15)-(v&15)-(c?0:1),hi=(a>>4)-(v>>4);if(lo<0){lo-=6;hi--}if(hi<0)hi-=6;this.set(1,d>=0);this.a=this.nz(((hi<<4)|(lo&15))&255)}
   cmp(a,v){let q=(a-v)&0x1ff;this.set(1,a>=v);this.nz(q)}
   branch(ok){let d=this.r(this.pc++);if(d&0x80)d-=256;if(ok){this.pc=(this.pc+d)&0xffff;return 3}return 2}
   nmi(){this.push(this.pc>>8);this.push(this.pc);this.push((this.p&~0x10)|0x20);this.p|=4;this.pc=this.r16(0xfffa);this.cycles+=7}
