@@ -139,10 +139,10 @@ class Battlezone{
   // Tank polygon fill: trace bounded faces of each connected wireframe component.
   if(this.colorized){
    const groups=new Map(),snap=1.0,q=(x,y)=>Math.round(x/snap)+","+Math.round(y/snap);
-   // AssetTrace origin ids are per draw invocation, not persistent object ids.
-   // Group tank vectors by the stable Battlezone object slot instead; otherwise a
-   // changing trace id can split one tank into different polygon graphs frame-to-frame.
-   for(const v of this.vectors){const o=v[8];if(o?.asset!=="tank"||o.slot==null||v[4]<=0)continue;let g=groups.get(o.slot);if(!g){g=[];groups.set(o.slot,g)}g.push(v)}
+   // A Battlezone slot can be rendered through multiple shape/draw invocations.
+   // Keep those graphs separate. Merging every tank vector in a slot creates false
+   // connections when the tank is close enough for projected components to overlap.
+   for(const v of this.vectors){const o=v[8];if(o?.asset!=="tank"||o.slot==null||o.id==null||v[4]<=0)continue;const key=o.slot+":"+o.id;let g=groups.get(key);if(!g){g=[];groups.set(key,g)}g.push(v)}
    c.save();c.globalCompositeOperation="source-over";c.fillStyle="rgba(80,255,80,.32)";
    for(const lines of groups.values()){
     const pts=new Map(),adj=new Map();
@@ -158,13 +158,14 @@ class Battlezone{
      if(area>.5)faces.push(face);
     }
     const polys=faces.map(face=>face.map(k=>pts.get(k)));
-    if(polys.length)this.tankFillCache.set(lines[0]?.[8]?.slot,polys);
-    const drawPolys=polys.length?polys:(this.tankFillCache.get(lines[0]?.[8]?.slot)||[]);
+    const o=lines[0]?.[8],cacheKey=o?.slot+":"+o?.type+":"+o?.shape;
+    if(polys.length)this.tankFillCache.set(cacheKey,polys);
+    const drawPolys=polys.length?polys:(this.tankFillCache.get(cacheKey)||[]);
     for(const poly of drawPolys){const p0=poly[0];c.beginPath();c.moveTo(p0[0],p0[1]);for(let i=1;i<poly.length;i++)c.lineTo(poly[i][0],poly[i][1]);c.closePath();c.fill()}
    }
    // Expire cache entries for tanks no longer present; retain one object's last
    // valid polygon set only while that object slot is still being drawn.
-   const active=new Set([...groups.keys()]);for(const k of this.tankFillCache.keys())if(!active.has(k))this.tankFillCache.delete(k);
+   const activeSlots=new Set([...groups.values()].map(g=>g[0]?.[8]?.slot));for(const k of this.tankFillCache.keys()){const slot=Number(String(k).split(":")[0]);if(!activeSlots.has(slot))this.tankFillCache.delete(k)}
    c.restore();
   }
   /* Render only the color carried by each emitted AVG vector. There are no
