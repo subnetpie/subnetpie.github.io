@@ -149,11 +149,11 @@ class Battlezone{
   // Additive, concentric strokes approximate phosphor bloom around a sharp beam.
   // Draw all halos before the cores so intersections accumulate light naturally.
   c.globalCompositeOperation="lighter";
-  const layers=[[7,.035],[4,.09],[2,.24],[1,1]],hudAssets=new Set(["hudRadar","score","highScore","enemyInRange","enemyDirection","motionBlocked"]);
+  const layers=[[7,.035],[4,.09],[2,.24],[1,1]],hudAssets=new Set(["hudRadar","playerLives","score","highScore","enemyInRange","enemyDirection","motionBlocked"]);
   for(const [spread,gain] of layers){
   for(const v of this.vectors){
    const x1=v[0],y1=v[1],x2=v[2],y2=v[3],z=ASSETS[v[8]?.asset]?.displayIntensity??v[4];if(!Number.isFinite(x1+y1+x2+y2))continue;
-   const asset=v[8]?.asset,hudRed=asset==="hudRadar"||asset==="score"||asset==="highScore"||asset==="enemyInRange"||asset==="enemyDirection"||asset==="motionBlocked",originalRed=hudRed;
+   const asset=v[8]?.asset,hudRed=asset==="hudRadar"||asset==="playerLives"||asset==="score"||asset==="highScore"||asset==="enemyInRange"||asset==="enemyDirection"||asset==="motionBlocked",originalRed=hudRed;
    const alpha=Math.min(1,Math.max(.18,z/15)),color=this.colorized?(rgb[v[6]]||rgb.green):(originalRed?rgb.red:rgb.green);
    const ink="rgba("+color+","+(alpha*gain)+")";
    const distanceGlow=hudAssets.has(asset)?1:Math.max(.28,Math.min(1,z/15));c.strokeStyle=ink;c.lineWidth=(.75+z/20)*(hudAssets.has(asset)?Math.min(spread,1.7):spread)*(spread>1?distanceGlow:1);
@@ -167,7 +167,7 @@ class Battlezone{
   for(const v of this.vectors){
    const x1=v[0],y1=v[1],x2=v[2],y2=v[3];if(!Number.isFinite(x1+y1+x2+y2))continue;
    const z=ASSETS[v[8]?.asset]?.displayIntensity??v[4];
-   const asset=v[8]?.asset,hudRed=asset==="hudRadar"||asset==="score"||asset==="highScore"||asset==="enemyInRange"||asset==="enemyDirection"||asset==="motionBlocked",originalRed=hudRed;
+   const asset=v[8]?.asset,hudRed=asset==="hudRadar"||asset==="playerLives"||asset==="score"||asset==="highScore"||asset==="enemyInRange"||asset==="enemyDirection"||asset==="motionBlocked",originalRed=hudRed;
    const alpha=Math.min(1,Math.max(.18,z/15)),color=this.colorized?(rgb[v[6]]||rgb.green):(originalRed?rgb.red:rgb.green);
    const radius=(.75+z/20)/2;
    const endpoints=x1===x2&&y1===y2?[[x1,y1]]:[[x1,y1],[x2,y2]];
