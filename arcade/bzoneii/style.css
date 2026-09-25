@@ -5,12 +5,14 @@ main{height:100dvh;display:grid;place-items:center;overflow:hidden;touch-action:
 button,.stick{color:#ff4c00;background:#ffffff18;border:2px solid #c832c880;-webkit-appearance:none;appearance:none;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;touch-action:none;-webkit-tap-highlight-color:transparent}
 button{cursor:pointer}
 #top{position:fixed;top:max(8px,env(safe-area-inset-top));left:0;right:0;z-index:5;display:flex;justify-content:space-between;padding-left:max(14px,env(safe-area-inset-left));padding-right:max(14px,env(safe-area-inset-right));pointer-events:none}
-#top button{position:static;width:82px;height:48px;padding:0;border-radius:10px;font-weight:700;pointer-events:auto}\n#leftTop{display:flex;flex-direction:column;gap:6px;pointer-events:auto}\n#leftTop button{width:82px}
+#top button{position:static;width:82px;height:48px;padding:0;border-radius:10px;font-weight:700;pointer-events:auto}
+#leftTop{display:flex;flex-direction:column;gap:6px;pointer-events:auto}
+#leftTop button{width:82px}
 .tank-controls{position:fixed;z-index:4;bottom:max(8px,env(safe-area-inset-bottom));display:flex;flex-direction:column;align-items:center;gap:10px;touch-action:none}
 #leftControls{left:max(12px,env(safe-area-inset-left))}
 #rightControls{right:max(12px,env(safe-area-inset-right))}
-.fire{position:static;width:82px;height:48px;padding:0;border-radius:14px;font-size:17px;font-weight:700}
-.stick{position:relative;display:grid;width:82px;height:150px;place-items:center;border-radius:28px;font-size:38px}
+.stick{position:relative;width:82px;height:150px;border-radius:28px}
+.stick-knob{position:absolute;left:8px;top:50%;width:62px;height:48px;border-radius:16px;background:#ffffff24;border:2px solid #ff4c00;transform:translateY(-50%);pointer-events:none;transition:transform .06s ease-out}
 
 /* Touch controls only: suppress browser gestures/selection without affecting the game canvas. */
 #top button,.tank-controls,.tank-controls button,.stick{
