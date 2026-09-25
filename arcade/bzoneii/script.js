@@ -46,18 +46,18 @@ class BzoneAudio{
     const exploGain=loud?330000/(33000+(270*10000)/(270+10000))+1:330000/(33000+10000)+1;
     const shellIn=this.shellRC*(1000/23000)*shellGain,exploIn=this.exploRC*(1000/23000)*exploGain;
     this.shellFilter=rc(this.shellFilter,shellIn,330000,4.7e-9);this.exploFilter=rc(this.exploFilter,exploIn,330000,4.7e-9);
-    s+=(this.shellFilter-.02)*.55+(this.exploFilter-.02)*.75;
+    s+=(this.shellFilter*1.8)+(this.exploFilter*2.6);
     if(this.latch&128){
      // Rev switch -> RCDISC3 control voltage -> 555 astable CV. No fixed-frequency rev jump.
      const rpar=(1270*4700)/(1270+4700),cvTarget=(this.latch&16)?5*(1000/rpar)/(1+1000/rpar):5*(1000/4700);
-     const tau=(this.latch&16?22000:100000)*10e-6;this.engineCV+= (cvTarget-this.engineCV)*(1-Math.exp(-dt/tau));
+     const tau=(this.latch&16?22000:100000)*10e-6;if(this.engineCV===0)this.engineCV=cvTarget;else this.engineCV+=(cvTarget-this.engineCV)*(1-Math.exp(-dt/tau));
      // 555 astable CV approximation from MAME component values R10=100k, R11 nominal midpoint 42.5k, C11=.015uF.
      const R1=100000,R2=42500,C=.015e-6,vc=Math.max(.35,this.engineCV),vh=vc,vl=vc*.5,V=5;
      const charge=Math.max(1e-6,(R1+R2)*C*Math.log(Math.max(1.000001,(V-vl)/(V-vh+.000001))));
      const discharge=Math.max(1e-6,R2*C*Math.log(Math.max(1.000001,vh/vl)));const hz=Math.min(2000,1/(charge+discharge));
      this.enginePhase+=hz/sr;while(this.enginePhase>=1){this.enginePhase-=1;this.engineCount4++;if(this.engineCount4>15)this.engineCount4=4;this.engineCount6++;if(this.engineCount6>15)this.engineCount6=6}
      const a=this.engineCount4,b=this.engineCount6,raw=(a>7?1:-1)*.55+(a===15?1:-1)*.28+(b>7?1:-1)*.12+(b===15?1:-1)*.08;
-     this.engineMix=rc(this.engineMix,raw,33000,.47e-6);s+=this.engineMix*.085
+     this.engineMix=rc(this.engineMix,raw,33000,.47e-6);s+=this.engineMix*.18
     }else{this.engineCount4=4;this.engineCount6=6}
    }
    out[i]=Math.max(-.65,Math.min(.65,s))
