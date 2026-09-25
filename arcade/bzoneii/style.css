@@ -11,7 +11,7 @@ button{cursor:pointer}
 .tank-controls{position:fixed;z-index:4;bottom:max(8px,env(safe-area-inset-bottom));display:flex;flex-direction:column;align-items:center;gap:10px;touch-action:none}
 #leftControls{left:max(12px,env(safe-area-inset-left))}
 #rightControls{right:max(12px,env(safe-area-inset-right))}
-.stick{position:relative;width:90px;height:210px;border-radius:28px}
+.stick{position:relative;width:90px;height:250px;border-radius:28px}
 .stick-knob{position:absolute;left:8px;top:50%;width:80px;height:48px;border-radius:16px;background:#ffffff24;border:2px solid #ff4c00;transform:translateY(-50%);pointer-events:none;transition:transform .06s ease-out}
 
 /* Touch controls only: suppress browser gestures/selection without affecting the game canvas. */
