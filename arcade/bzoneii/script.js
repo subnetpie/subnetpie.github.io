@@ -77,7 +77,7 @@ class Battlezone{
   let origin=null,callOrigin=null,instructionPC=0;
   const originStack=new Array(4).fill(null);
   const point=(nx,ny,z)=>{let x1=x/65536,y1=y/65536,x2=nx/65536,y2=ny/65536;
-   if(z>0||origin?.asset==="tank")out.push([x1,y1,x2,y2,z,clip.slice(),ASSETS[origin?.asset??"unclassified"].color,instructionPC,origin]);
+   if(z>0)out.push([x1,y1,x2,y2,z,clip.slice(),ASSETS[origin?.asset??"unclassified"].color,instructionPC,origin]);
    x=nx;y=ny};
   while(steps++<200000&&!halt){
     state=(state&0x10)|(this.avgProm[(((state>>4)^1)<<7)|(op<<4)|(state&15)]&15);
@@ -136,23 +136,9 @@ class Battlezone{
     const h=lo.slice(0,-1).concat(hi.slice(0,-1));if(h.length<3)continue;c.beginPath();c.moveTo(h[0][0],h[0][1]);for(let i=1;i<h.length;i++)c.lineTo(h[i][0],h[i][1]);c.closePath();c.fill();
    }c.restore();
   }
-  // Tank fill from the actual Atari TNKTBL model.  Capture the projected
-  // TNKOBJ vertices, but define surfaces explicitly from TNKTBL's 3-D geometry.
-  if(this.colorized){
-   const sequence=[17,16,13,14,20,18,15,14,17,16,19,21,17,15,16,19,18,20,21,15,3,0,4,7,6,2,3,7,11,10,6,5,9,10,13,9,8,11,12,8,4,5,1,2,1,0];
-   // Chassis: lower rectangle 0-3, outer shoulder 4-7, upper deck 8-11.
-   // These faces come from TNKTBL coordinate planes, not from TNKOBJ path order.
-   const faces=[[0,1,2,3],[0,4,5,1],[1,5,6,2],[2,6,7,3],[3,7,4,0],
-    [4,5,9,8],[5,6,10,9],[6,7,11,10],[7,4,8,11],[8,9,10,11]];
-   const groups=new Map();
-   for(const v of this.vectors){const o=v[8];if(o?.asset!=="tank"||o.type!==2||o.id==null)continue;let g=groups.get(o.id);if(!g){g=[];groups.set(o.id,g)}g.push(v)}
-   c.save();c.globalCompositeOperation="source-over";c.fillStyle="rgba(80,255,80,.32)";
-   for(const lines of groups.values()){
-    const p=new Map();for(let i=0;i<sequence.length&&i<lines.length;i++){const v=lines[i];if(Number.isFinite(v[2]+v[3]))p.set(sequence[i],[v[2],v[3]])}
-    for(const face of faces){if(!face.every(id=>p.has(id)))continue;let area=0;for(let i=0;i<face.length;i++){const a=p.get(face[i]),b=p.get(face[(i+1)%face.length]);area+=a[0]*b[1]-b[0]*a[1]}area*=.5;if(Math.abs(area)<.2)continue;
-     const a=p.get(face[0]);c.beginPath();c.moveTo(a[0],a[1]);for(let i=1;i<face.length;i++){const q=p.get(face[i]);c.lineTo(q[0],q[1])}c.closePath();c.fill()}
-   }c.restore();
-  }
+  // Tank fill intentionally disabled.  The Atari TNKTBL supplies the model
+  // vertices, but the original game does not supply a polygon/face mesh.  Do not
+  // synthesize faces from the vector draw order or coordinate planes.
   /* Render only the color carried by each emitted AVG vector. There are no
      coordinate, region, shape, or screen-overlay color rules here. */
   const rgb={green:"80,255,80",purple:"190,70,255",darkPurple:"95,30,140",orange:"255,145,35",lightOrange:"255,190,105",red:"255,45,45",blue:"70,135,255"};
