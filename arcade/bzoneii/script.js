@@ -77,9 +77,7 @@ class Battlezone{
   let origin=null,callOrigin=null,instructionPC=0;
   const originStack=new Array(4).fill(null);
   const point=(nx,ny,z)=>{let x1=x/65536,y1=y/65536,x2=nx/65536,y2=ny/65536;
-   // Preserve zero-brightness AVG moves for object topology. Rendering still ignores z<=0,
-   // but model-space fill needs those move endpoints to recover every TNKOBJ vertex.
-   if(z>0||origin?.asset==="tank")out.push([x1,y1,x2,y2,z,clip.slice(),ASSETS[origin?.asset??"unclassified"].color,instructionPC,origin]);
+   if(z>0)out.push([x1,y1,x2,y2,z,clip.slice(),ASSETS[origin?.asset??"unclassified"].color,instructionPC,origin]);
    x=nx;y=ny};
   while(steps++<200000&&!halt){
     state=(state&0x10)|(this.avgProm[(((state>>4)^1)<<7)|(op<<4)|(state&15)]&15);
@@ -138,25 +136,6 @@ class Battlezone{
     const h=lo.slice(0,-1).concat(hi.slice(0,-1));if(h.length<3)continue;c.beginPath();c.moveTo(h[0][0],h[0][1]);for(let i=1;i<h.length;i++)c.lineTo(h[i][0],h[i][1]);c.closePath();c.fill();
    }c.restore();
   }
-  // Tank fill uses Atari TNKOBJ topology from BZONE.MAC, not 2-D cycle inference.
-  // Each face is a fixed set of model vertices; AVG vectors only supply their projected positions.
-  if(this.colorized){
-   const tankEdges=[[17,16],[12,13],[14,20],[20,18],[18,15],[15,14],[14,17],[17,16],[16,19],[19,21],[21,17],[15,16],[19,18],[20,21],[3,0],[0,4],[4,7],[7,6],[6,2],[2,3],[3,7],[7,11],[11,10],[10,6],[6,5],[5,9],[9,10],[10,13],[13,9],[9,8],[8,11],[11,12],[12,8],[8,4],[4,5],[5,1],[1,2],[1,0]];
-   const tankFaces=[[14,15,18,20],[15,16,19,18],[16,17,21,19],[17,14,20,21],[18,19,21,20],[14,17,16,15],[3,0,4,7],[3,7,6,2],[7,11,10,6],[7,4,8,11],[11,8,9,10],[10,9,13],[11,12,8],[4,5,9,8],[4,0,1,5],[0,3,2,1],[5,1,2,6],[5,6,10,9],/* upper deck, opposite winding */[4,8,12,11,7,3],[2,5,9,13,10,6]];
-   const groups=new Map();
-   for(const v of this.vectors){const o=v[8];if(o?.asset!=="tank"||o.type!==2||o.id==null)continue;let g=groups.get(o.id);if(!g){g=[];groups.set(o.id,g)}g.push(v)}
-   c.save();c.globalCompositeOperation="source-over";c.fillStyle="rgba(80,255,80,.32)";
-   for(const lines of groups.values()){
-    // TNKOBJ topology is fixed. Keep the original AVG vector slots intact:
-    // removing clipped/zero vectors shifts every later edge onto the wrong model edge.
-    // Missing slots simply leave only the faces that truly cannot be projected.
-    const sum=new Map();
-    for(let i=0;i<Math.min(lines.length,tankEdges.length);i++){const v=lines[i];if(!Number.isFinite(v[0]+v[1]+v[2]+v[3]))continue;const [a,b]=tankEdges[i];for(const [id,x,y] of [[a,v[0],v[1]],[b,v[2],v[3]]]){let p=sum.get(id);if(!p){p=[0,0,0];sum.set(id,p)}p[0]+=x;p[1]+=y;p[2]++}}
-    const p=new Map();for(const [id,q] of sum)p.set(id,[q[0]/q[2],q[1]/q[2]]);
-    for(const face of tankFaces){if(!face.every(id=>p.has(id)))continue;let area=0;for(let i=0;i<face.length;i++){const a=p.get(face[i]),b=p.get(face[(i+1)%face.length]);area+=a[0]*b[1]-b[0]*a[1]}if(Math.abs(area)<.15)continue;
-     const a=p.get(face[0]);c.beginPath();c.moveTo(a[0],a[1]);for(let i=1;i<face.length;i++){const q=p.get(face[i]);c.lineTo(q[0],q[1])}c.closePath();c.fill()}
-   }c.restore();
-  }
   /* Render only the color carried by each emitted AVG vector. There are no
      coordinate, region, shape, or screen-overlay color rules here. */
   const rgb={green:"80,255,80",purple:"190,70,255",darkPurple:"95,30,140",orange:"255,145,35",lightOrange:"255,190,105",red:"255,45,45",blue:"70,135,255"};
@@ -166,7 +145,7 @@ class Battlezone{
   const layers=[[7,.035],[4,.09],[2,.24],[1,1]],hudAssets=new Set(["hudRadar","playerLives","score","highScore","enemyInRange","enemyDirection","motionBlocked"]);
   for(const [spread,gain] of layers){
   for(const v of this.vectors){
-   const x1=v[0],y1=v[1],x2=v[2],y2=v[3],z=ASSETS[v[8]?.asset]?.displayIntensity??v[4];if(v[4]<=0||!Number.isFinite(x1+y1+x2+y2))continue;
+   const x1=v[0],y1=v[1],x2=v[2],y2=v[3],z=ASSETS[v[8]?.asset]?.displayIntensity??v[4];if(!Number.isFinite(x1+y1+x2+y2))continue;
    const asset=v[8]?.asset,hudRed=asset==="hudRadar"||asset==="playerLives"||asset==="score"||asset==="highScore"||asset==="enemyInRange"||asset==="enemyDirection"||asset==="motionBlocked",originalRed=hudRed;
    const alpha=Math.min(1,Math.max(.18,z/15)),color=this.colorized?(rgb[v[6]]||rgb.green):(originalRed?rgb.red:rgb.green);
    const ink="rgba("+color+","+(alpha*gain)+")";
