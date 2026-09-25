@@ -2,6 +2,8 @@ import { M6502 } from "../../cpu/m6502.js";
 import { AssetTrace, ASSETS } from "./assets.js";
 import { PokeyRandom } from "./pokey-random.js";
 const CPU_CLOCK=12096000/8,IRQ_HZ=(12096000/4096)/12,FPS=IRQ_HZ/6,W=580,H=400;
+// MAME 0.289 DIP banks: 3 tanks; 1 coin / 1 play, x1 coin multipliers, no bonus coins.
+const DSW0=0x15,DSW1=0x02;
 const s16=v=>((v&65535)^32768)-32768,sign13=v=>(v&4096)?v-8192:v;
 class Mathbox{
  constructor(){this.r=new Int16Array(16);this.result=0}
@@ -65,7 +67,7 @@ class Battlezone{
  async init(){const files=["036408-01.k7","036414-02.e1","036413-01.h1","036412-01.j1","036411-01.k1","036410-01.lm1","036409-01.n1","036422-01.bc3","036421-01.a3"],a=Object.fromEntries(await Promise.all(files.map(async n=>[n,await this.rom(n)])));[["036414-02.e1",20480],["036413-01.h1",22528],["036412-01.j1",24576],["036411-01.k1",26624],["036410-01.lm1",28672],["036409-01.n1",30720],["036422-01.bc3",12288],["036421-01.a3",14336]].forEach(([n,o])=>this.mem.set(a[n],o));this.avgProm=a["036408-01.k7"];this.assetTrace=new AssetTrace(this.mem);this.cpu=new M6502(x=>this.read(x),(x,d)=>this.write(x,d));this.cpu.reset();console.log("[BZONE] reset PC",this.cpu.pc.toString(16),"vector",this.read(0x7ffc).toString(16),this.read(0x7ffd).toString(16))}
  in0(){let v=255;if(this.i.coin1)v&=254;if(this.avgDone)v|=64;else v&=191;if(this.cpu.cycles&256)v|=128;else v&=127;return v}
  in3(){let v=0;if(this.i.rd)v|=1;if(this.i.ru)v|=2;if(this.i.ld)v|=4;if(this.i.lu)v|=8;if(this.i.fire)v|=16;if(this.i.start1)v|=32;return v}
- read(a){a&=32767;if(a<1024)return this.mem[a];if(a===2048)return this.in0();if(a===2560)return 0x15;if(a===3072)return 0x03;if(a===6144)return 0;if(a===6160)return this.math.lo();if(a===6168)return this.math.hi();if(a===0x182a)return this.pokeyRandom.read(this.cpu?.cycles??0);if(a>=6176&&a<=6191)return this.audio.read(a&15);if(a>=8192)return this.mem[a];return 255}
+ read(a){a&=32767;if(a<1024)return this.mem[a];if(a===2048)return this.in0();if(a===2560)return DSW0;if(a===3072)return DSW1;if(a===6144)return 0;if(a===6160)return this.math.lo();if(a===6168)return this.math.hi();if(a===0x182a)return this.pokeyRandom.read(this.cpu?.cycles??0);if(a>=6176&&a<=6191)return this.audio.read(a&15);if(a>=8192)return this.mem[a];return 255}
  write(a,d){a&=32767;d&=255;if(a<1024){this.mem[a]=d;return}if(a===4608){this.runAVG();return}if(a===5632){this.avgDone=1;return}if(a>=6176&&a<=6191){this.pokeyRandom.write(a&15,d,this.cpu?.cycles??0);this.audio.write(a&15,d);return}if(a===6208){this.sound=d;this.audio.control(d);return}if(a>=6240&&a<=6271){this.math.go(a-6240,d);return}if(a>=8192&&a<12288){this.mem[a]=d;this.assetTrace?.write(a)}}
  word(pc){const a=8192+(pc&8191);return this.mem[a]|(this.mem[(a+1)&32767]<<8)}
  runAVG(){
