@@ -138,12 +138,15 @@ class Battlezone{
   }
   // Tank polygon fill: trace bounded faces of each connected wireframe component.
   if(this.colorized){
-   const groups=new Map(),q=(x,y)=>Math.round(x*4)+","+Math.round(y*4);
+   const groups=new Map(),snap=1.0,q=(x,y)=>Math.round(x/snap)+","+Math.round(y/snap);
+   // Snap projected endpoints to a full pixel before topology construction.
+   // AVG fixed-point rounding can otherwise move a shared vertex across adjacent
+   // subpixel bins on successive frames, making a face appear/disappear (flicker).
    for(const v of this.vectors){const o=v[8];if(o?.asset!=="tank"||o.id==null||v[4]<=0)continue;let g=groups.get(o.id);if(!g){g=[];groups.set(o.id,g)}g.push(v)}
    c.save();c.globalCompositeOperation="source-over";c.fillStyle="rgba(80,255,80,.32)";
    for(const lines of groups.values()){
     const pts=new Map(),adj=new Map();
-    const add=(x,y)=>{const k=q(x,y);if(!pts.has(k))pts.set(k,[x,y]);if(!adj.has(k))adj.set(k,new Set);return k};
+    const add=(x,y)=>{const k=q(x,y);if(!pts.has(k)){const [ix,iy]=k.split(",").map(Number);pts.set(k,[ix*snap,iy*snap])}if(!adj.has(k))adj.set(k,new Set);return k};
     for(const v of lines){const a=add(v[0],v[1]),b=add(v[2],v[3]);if(a!==b){adj.get(a).add(b);adj.get(b).add(a)}}
     const nbr=new Map();for(const [k,set] of adj){const p=pts.get(k),a=[...set];a.sort((u,v)=>Math.atan2(pts.get(u)[1]-p[1],pts.get(u)[0]-p[0])-Math.atan2(pts.get(v)[1]-p[1],pts.get(v)[0]-p[0]));nbr.set(k,a)}
     const seen=new Set(),faces=[];
