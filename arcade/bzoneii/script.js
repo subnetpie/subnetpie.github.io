@@ -145,12 +145,11 @@ class Battlezone{
    for(const v of this.vectors){const o=v[8];if(o?.asset!=="tank"||o.type!==2||o.id==null)continue;let g=groups.get(o.id);if(!g){g=[];groups.set(o.id,g)}g.push(v)}
    c.save();c.globalCompositeOperation="source-over";c.fillStyle="rgba(80,255,80,.32)";
    for(const lines of groups.values()){
-    // TNKOBJ emits 39 visible vectors, but clipped/zero-bright vectors may be absent.
-    // Match the surviving projected vectors in sequence instead of requiring all 39.
-    const usable=lines.filter(v=>Number.isFinite(v[0]+v[1]+v[2]+v[3]));
-    if(usable.length<12)continue;
+    // TNKOBJ topology is fixed. Keep the original AVG vector slots intact:
+    // removing clipped/zero vectors shifts every later edge onto the wrong model edge.
+    // Missing slots simply leave only the faces that truly cannot be projected.
     const sum=new Map();
-    for(let i=0;i<Math.min(usable.length,tankEdges.length);i++){const v=usable[i],[a,b]=tankEdges[i];for(const [id,x,y] of [[a,v[0],v[1]],[b,v[2],v[3]]]){let p=sum.get(id);if(!p){p=[0,0,0];sum.set(id,p)}p[0]+=x;p[1]+=y;p[2]++}}
+    for(let i=0;i<Math.min(lines.length,tankEdges.length);i++){const v=lines[i];if(!Number.isFinite(v[0]+v[1]+v[2]+v[3]))continue;const [a,b]=tankEdges[i];for(const [id,x,y] of [[a,v[0],v[1]],[b,v[2],v[3]]]){let p=sum.get(id);if(!p){p=[0,0,0];sum.set(id,p)}p[0]+=x;p[1]+=y;p[2]++}}
     const p=new Map();for(const [id,q] of sum)p.set(id,[q[0]/q[2],q[1]/q[2]]);
     for(const face of tankFaces){if(!face.every(id=>p.has(id)))continue;let area=0;for(let i=0;i<face.length;i++){const a=p.get(face[i]),b=p.get(face[(i+1)%face.length]);area+=a[0]*b[1]-b[0]*a[1]}if(Math.abs(area)<.15)continue;
      const a=p.get(face[0]);c.beginPath();c.moveTo(a[0],a[1]);for(let i=1;i<face.length;i++){const q=p.get(face[i]);c.lineTo(q[0],q[1])}c.closePath();c.fill()}
