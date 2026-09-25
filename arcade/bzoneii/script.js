@@ -123,6 +123,19 @@ class Battlezone{
   this.avgDone=1;this.draw();
  }
  draw(){const c=this.cx;c.save();c.globalCompositeOperation="source-over";c.fillStyle="#000";c.fillRect(0,0,W,H);c.lineCap="round";
+    // Object-level obstacle fill from projected AVG vertices.
+  if(this.colorized){
+   const groups=new Map();
+   for(const v of this.vectors){const o=v[8];if(o?.asset!=="obstacle"||o.id==null)continue;let g=groups.get(o.id);if(!g){g=[];groups.set(o.id,g)};if(Number.isFinite(v[0]+v[1]))g.push([v[0],v[1]]);if(Number.isFinite(v[2]+v[3]))g.push([v[2],v[3]])}
+   c.save();c.globalCompositeOperation="source-over";c.fillStyle="rgba(255,145,35,.18)";
+   for(const g of groups.values()){
+    const seen=new Set(),p=[];for(const q of g){const k=Math.round(q[0]*16)+","+Math.round(q[1]*16);if(!seen.has(k)){seen.add(k);p.push(q)}}if(p.length<3)continue;
+    p.sort((a,b)=>a[0]-b[0]||a[1]-b[1]);const cross=(a,b,d)=>(b[0]-a[0])*(d[1]-a[1])-(b[1]-a[1])*(d[0]-a[0]),lo=[],hi=[];
+    for(const q of p){while(lo.length>1&&cross(lo[lo.length-2],lo[lo.length-1],q)<=0)lo.pop();lo.push(q)}
+    for(let i=p.length-1;i>=0;i--){const q=p[i];while(hi.length>1&&cross(hi[hi.length-2],hi[hi.length-1],q)<=0)hi.pop();hi.push(q)}
+    const h=lo.slice(0,-1).concat(hi.slice(0,-1));if(h.length<3)continue;c.beginPath();c.moveTo(h[0][0],h[0][1]);for(let i=1;i<h.length;i++)c.lineTo(h[i][0],h[i][1]);c.closePath();c.fill();
+   }c.restore();
+  }
   /* Render only the color carried by each emitted AVG vector. There are no
      coordinate, region, shape, or screen-overlay color rules here. */
   const rgb={green:"80,255,80",purple:"190,70,255",darkPurple:"95,30,140",orange:"255,145,35",lightOrange:"255,190,105",red:"255,45,45",blue:"70,135,255"};
