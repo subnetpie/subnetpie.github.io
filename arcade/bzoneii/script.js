@@ -136,21 +136,26 @@ class Battlezone{
     const h=lo.slice(0,-1).concat(hi.slice(0,-1));if(h.length<3)continue;c.beginPath();c.moveTo(h[0][0],h[0][1]);for(let i=1;i<h.length;i++)c.lineTo(h[i][0],h[i][1]);c.closePath();c.fill();
    }c.restore();
   }
-  // Fill only closed polygons actually defined by each tank's AVG line graph.
-  // Do not use a convex hull: that incorrectly paints across open/concave geometry.
+  // Fill only bounded faces of the tank's projected AVG line graph.
+  // Trace half-edges by angular order; discard the outer face so open/background
+  // regions can never become a tank fill.
   if(this.colorized){
    const groups=new Map(),key=(x,y)=>Math.round(x*16)+","+Math.round(y*16);
    for(const v of this.vectors){const o=v[8];if(o?.asset!=="tank"||o.id==null)continue;let g=groups.get(o.id);if(!g){g=[];groups.set(o.id,g)};if(Number.isFinite(v[0]+v[1]+v[2]+v[3]))g.push(v)}
    c.save();c.globalCompositeOperation="source-over";c.fillStyle="rgba(80,255,80,.32)";
    for(const lines of groups.values()){
-    const pts=new Map(),adj=new Map(),edges=[];
-    const add=(x,y)=>{const k=key(x,y);if(!pts.has(k))pts.set(k,[x,y]);if(!adj.has(k))adj.set(k,new Set);return k};
-    for(const v of lines){const a=add(v[0],v[1]),b=add(v[2],v[3]);if(a===b)continue;adj.get(a).add(b);adj.get(b).add(a);edges.push([a,b])}
-    const used=new Set(),ek=(a,b)=>a<b?a+"|"+b:b+"|"+a;
-    for(const [ea,eb] of edges){const first=ek(ea,eb);if(used.has(first))continue;let path=[ea],prev=ea,cur=eb,closed=false;used.add(first);
-     for(let n=0;n<edges.length+1;n++){path.push(cur);if(cur===ea){closed=true;break}const next=[...(adj.get(cur)||[])].filter(x=>x!==prev&&!used.has(ek(cur,x)));if(next.length!==1)break;const nx=next[0];used.add(ek(cur,nx));prev=cur;cur=nx}
-     if(!closed||path.length<4)continue;const p0=pts.get(path[0]);c.beginPath();c.moveTo(p0[0],p0[1]);for(let i=1;i<path.length-1;i++){const p=pts.get(path[i]);c.lineTo(p[0],p[1])}c.closePath();c.fill();
+    const pts=new Map(),adj=new Map();
+    const add=(x,y)=>{const k=key(x,y);if(!pts.has(k))pts.set(k,[x,y]);if(!adj.has(k))adj.set(k,[]);return k};
+    for(const v of lines){const a=add(v[0],v[1]),b=add(v[2],v[3]);if(a===b)continue;if(!adj.get(a).includes(b))adj.get(a).push(b);if(!adj.get(b).includes(a))adj.get(b).push(a)}
+    for(const [a,ns] of adj){const p=pts.get(a);ns.sort((b,d)=>Math.atan2(pts.get(b)[1]-p[1],pts.get(b)[0]-p[0])-Math.atan2(pts.get(d)[1]-p[1],pts.get(d)[0]-p[0]))}
+    const seen=new Set(),faces=[];
+    for(const [a,ns] of adj)for(const b of ns){const first=a+">"+b;if(seen.has(first))continue;let u=a,v=b,face=[],closed=false;
+     for(let n=0;n<lines.length*2+2;n++){const he=u+">"+v;if(seen.has(he))break;seen.add(he);face.push(u);const vn=adj.get(v),i=vn.indexOf(u);if(i<0)break;const w=vn[(i-1+vn.length)%vn.length];u=v;v=w;if(u===a&&v===b){closed=true;break}}
+     if(!closed||face.length<3)continue;let area=0;for(let i=0;i<face.length;i++){const p=pts.get(face[i]),q=pts.get(face[(i+1)%face.length]);area+=p[0]*q[1]-q[0]*p[1]}area*=.5;
+     // With screen Y increasing downward, this traversal leaves bounded faces positive.
+     if(area>1)faces.push(face);
     }
+    for(const face of faces){const p0=pts.get(face[0]);c.beginPath();c.moveTo(p0[0],p0[1]);for(let i=1;i<face.length;i++){const p=pts.get(face[i]);c.lineTo(p[0],p[1])}c.closePath();c.fill()}
    }c.restore();
   }
   /* Render only the color carried by each emitted AVG vector. There are no
