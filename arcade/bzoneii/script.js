@@ -140,7 +140,7 @@ class Battlezone{
   // Trace half-edges by angular order; discard the outer face so open/background
   // regions can never become a tank fill.
   if(this.colorized){
-   const groups=new Map(),key=(x,y)=>Math.round(x*16)+","+Math.round(y*16);
+   const groups=new Map(),key=(x,y)=>Math.round(x*4)+","+Math.round(y*4);
    for(const v of this.vectors){const o=v[8];if(o?.asset!=="tank"||o.id==null)continue;let g=groups.get(o.id);if(!g){g=[];groups.set(o.id,g)};if(Number.isFinite(v[0]+v[1]+v[2]+v[3]))g.push(v)}
    c.save();c.globalCompositeOperation="source-over";c.fillStyle="rgba(80,255,80,.32)";
    for(const lines of groups.values()){
@@ -153,7 +153,7 @@ class Battlezone{
      for(let n=0;n<lines.length*2+2;n++){const he=u+">"+v;if(seen.has(he))break;seen.add(he);face.push(u);const vn=adj.get(v),i=vn.indexOf(u);if(i<0)break;const w=vn[(i-1+vn.length)%vn.length];u=v;v=w;if(u===a&&v===b){closed=true;break}}
      if(!closed||face.length<3)continue;let area=0;for(let i=0;i<face.length;i++){const p=pts.get(face[i]),q=pts.get(face[(i+1)%face.length]);area+=p[0]*q[1]-q[0]*p[1]}area*=.5;
      // With screen Y increasing downward, this traversal leaves bounded faces positive.
-     if(area>1)faces.push(face);
+     if(area>0.15)faces.push(face);
     }
     for(const face of faces){const p0=pts.get(face[0]);c.beginPath();c.moveTo(p0[0],p0[1]);for(let i=1;i<face.length;i++){const p=pts.get(face[i]);c.lineTo(p[0],p[1])}c.closePath();c.fill()}
    }c.restore();
