@@ -60,7 +60,7 @@ class BzoneAudio{
   }out[i]=Math.max(-.65,Math.min(.65,s))}
  }}
 class Battlezone{
- constructor(){this.cv=document.querySelector("#gameCanvas");this.cx=this.cv.getContext("2d");this.cv.width=W;this.cv.height=H;this.mem=new Uint8Array(32768);this.math=new Mathbox();this.pokeyRandom=new PokeyRandom();this.i={coin1:0,start1:0,fire:0,lu:0,ld:0,ru:0,rd:0};this.sound=0;this.audio=new BzoneAudio();this.avgDone=1;this.vectors=[];this.tankFillCache=new Map();this.colorized=true;this.bind()}
+ constructor(){this.cv=document.querySelector("#gameCanvas");this.cx=this.cv.getContext("2d");this.cv.width=W;this.cv.height=H;this.mem=new Uint8Array(32768);this.math=new Mathbox();this.pokeyRandom=new PokeyRandom();this.i={coin1:0,start1:0,fire:0,lu:0,ld:0,ru:0,rd:0};this.sound=0;this.audio=new BzoneAudio();this.avgDone=1;this.vectors=[];this.colorized=true;this.bind()}
  async rom(n){const r=await fetch("../bzone/roms/"+n);if(!r.ok)throw Error("ROM "+n);return new Uint8Array(await r.arrayBuffer())}
  async init(){const files=["036408-01.k7","036414-02.e1","036413-01.h1","036412-01.j1","036411-01.k1","036410-01.lm1","036409-01.n1","036422-01.bc3","036421-01.a3"],a=Object.fromEntries(await Promise.all(files.map(async n=>[n,await this.rom(n)])));[["036414-02.e1",20480],["036413-01.h1",22528],["036412-01.j1",24576],["036411-01.k1",26624],["036410-01.lm1",28672],["036409-01.n1",30720],["036422-01.bc3",12288],["036421-01.a3",14336]].forEach(([n,o])=>this.mem.set(a[n],o));this.avgProm=a["036408-01.k7"];this.assetTrace=new AssetTrace(this.mem);this.cpu=new M6502(x=>this.read(x),(x,d)=>this.write(x,d));this.cpu.reset();console.log("[BZONE] reset PC",this.cpu.pc.toString(16),"vector",this.read(0x7ffc).toString(16),this.read(0x7ffd).toString(16))}
  in0(){let v=255;if(this.i.coin1)v&=254;if(this.avgDone)v|=64;else v&=191;if(this.cpu.cycles&256)v|=128;else v&=127;return v}
@@ -77,7 +77,7 @@ class Battlezone{
   let origin=null,callOrigin=null,instructionPC=0;
   const originStack=new Array(4).fill(null);
   const point=(nx,ny,z)=>{let x1=x/65536,y1=y/65536,x2=nx/65536,y2=ny/65536;
-   if(z>0)out.push([x1,y1,x2,y2,z,clip.slice(),ASSETS[origin?.asset??"unclassified"].color,instructionPC,origin]);
+   if(z>0||origin?.asset==="tank")out.push([x1,y1,x2,y2,z,clip.slice(),ASSETS[origin?.asset??"unclassified"].color,instructionPC,origin]);
    x=nx;y=ny};
   while(steps++<200000&&!halt){
     state=(state&0x10)|(this.avgProm[(((state>>4)^1)<<7)|(op<<4)|(state&15)]&15);
@@ -136,37 +136,24 @@ class Battlezone{
     const h=lo.slice(0,-1).concat(hi.slice(0,-1));if(h.length<3)continue;c.beginPath();c.moveTo(h[0][0],h[0][1]);for(let i=1;i<h.length;i++)c.lineTo(h[i][0],h[i][1]);c.closePath();c.fill();
    }c.restore();
   }
-  // Tank polygon fill: trace bounded faces of each connected wireframe component.
+  // Stable tank fill from Atari TNKOBJ topology (BZONE.MAC).
+  // BVCTR changes brightness only; TLABS/TVCTR select model vertices.  We retain
+  // dark tank moves above so every model vertex has a projected screen position.
   if(this.colorized){
-   const groups=new Map(),snap=1.0,q=(x,y)=>Math.round(x/snap)+","+Math.round(y/snap);
-   // A Battlezone slot can be rendered through multiple shape/draw invocations.
-   // Keep those graphs separate. Merging every tank vector in a slot creates false
-   // connections when the tank is close enough for projected components to overlap.
-   for(const v of this.vectors){const o=v[8];if(o?.asset!=="tank"||o.slot==null||o.id==null||v[4]<=0)continue;const key=o.slot+":"+o.id;let g=groups.get(key);if(!g){g=[];groups.set(key,g)}g.push(v)}
+   const targets=[17,16,13,20,18,15,14,17,16,19,21,17,15,16,19,18,20,21,15,3,0,4,7,6,2,3,7,11,10,6,5,9,10,13,9,8,11,12,8,4,5,1,2,1,0];
+   const faces=[[17,15,21],[17,16,15],[19,16,15,21],[17,14,15],[20,18,15,21],[19,18,15,21],
+    [3,0,4,7],[3,0,1,2],[4,0,1,5],[2,1,5,6],[3,2,6,7],[7,4,5,6],
+    [7,4,8,11],[8,4,5,9],[6,5,9,10],[7,6,10,11],[11,8,9,10],[11,8,12],[13,9,10]];
+   const groups=new Map();
+   for(const v of this.vectors){const o=v[8];if(o?.asset!=="tank"||o.type!==2||o.id==null)continue;let g=groups.get(o.id);if(!g){g=[];groups.set(o.id,g)}g.push(v)}
    c.save();c.globalCompositeOperation="source-over";c.fillStyle="rgba(80,255,80,.32)";
    for(const lines of groups.values()){
-    const pts=new Map(),adj=new Map();
-    const add=(x,y)=>{const k=q(x,y);if(!pts.has(k)){const [ix,iy]=k.split(",").map(Number);pts.set(k,[ix*snap,iy*snap])}if(!adj.has(k))adj.set(k,new Set);return k};
-    for(const v of lines){const a=add(v[0],v[1]),b=add(v[2],v[3]);if(a!==b){adj.get(a).add(b);adj.get(b).add(a)}}
-    const nbr=new Map();for(const [k,set] of adj){const p=pts.get(k),a=[...set];a.sort((u,v)=>Math.atan2(pts.get(u)[1]-p[1],pts.get(u)[0]-p[0])-Math.atan2(pts.get(v)[1]-p[1],pts.get(v)[0]-p[0]));nbr.set(k,a)}
-    const seen=new Set(),faces=[];
-    for(const [a,ns] of nbr)for(const b of ns){const seed=a+">"+b;if(seen.has(seed))continue;let u=a,v=b,face=[],closed=false;
-     for(let n=0;n<adj.size*4+8;n++){const h=u+">"+v;if(seen.has(h)){if(h===seed)closed=true;break}seen.add(h);face.push(u);const vn=nbr.get(v),ri=vn.indexOf(u);if(ri<0)break;const w=vn[(ri-1+vn.length)%vn.length];u=v;v=w;if(u===a&&v===b){closed=true;break}}
-     if(!closed||face.length<3)continue;let area=0;for(let i=0;i<face.length;i++){const p=pts.get(face[i]),r=pts.get(face[(i+1)%face.length]);area+=p[0]*r[1]-r[0]*p[1]}area*=.5;
-     // With canvas Y increasing downward and the clockwise half-edge walk above,
-     // bounded cells have positive signed area; exterior walks are negative.
-     if(area>.5)faces.push(face);
-    }
-    const polys=faces.map(face=>face.map(k=>pts.get(k)));
-    const o=lines[0]?.[8],cacheKey=o?.slot+":"+o?.type+":"+o?.shape;
-    if(polys.length)this.tankFillCache.set(cacheKey,polys);
-    const drawPolys=polys.length?polys:(this.tankFillCache.get(cacheKey)||[]);
-    for(const poly of drawPolys){const p0=poly[0];c.beginPath();c.moveTo(p0[0],p0[1]);for(let i=1;i<poly.length;i++)c.lineTo(poly[i][0],poly[i][1]);c.closePath();c.fill()}
-   }
-   // Expire cache entries for tanks no longer present; retain one object's last
-   // valid polygon set only while that object slot is still being drawn.
-   const activeSlots=new Set([...groups.values()].map(g=>g[0]?.[8]?.slot));for(const k of this.tankFillCache.keys()){const slot=Number(String(k).split(":")[0]);if(!activeSlots.has(slot))this.tankFillCache.delete(k)}
-   c.restore();
+    if(lines.length<targets.length)continue;
+    const p=new Map();
+    for(let i=0;i<targets.length&&i<lines.length;i++){const v=lines[i];if(Number.isFinite(v[2]+v[3]))p.set(targets[i],[v[2],v[3]])}
+    for(const face of faces){if(!face.every(id=>p.has(id)))continue;let area=0;for(let i=0;i<face.length;i++){const a=p.get(face[i]),b=p.get(face[(i+1)%face.length]);area+=a[0]*b[1]-b[0]*a[1]}if(Math.abs(area)<.2)continue;
+     const a=p.get(face[0]);c.beginPath();c.moveTo(a[0],a[1]);for(let i=1;i<face.length;i++){const q=p.get(face[i]);c.lineTo(q[0],q[1])}c.closePath();c.fill()}
+   }c.restore();
   }
   /* Render only the color carried by each emitted AVG vector. There are no
      coordinate, region, shape, or screen-overlay color rules here. */
@@ -177,7 +164,7 @@ class Battlezone{
   const layers=[[7,.035],[4,.09],[2,.24],[1,1]],hudAssets=new Set(["hudRadar","playerLives","score","highScore","enemyInRange","enemyDirection","motionBlocked"]);
   for(const [spread,gain] of layers){
   for(const v of this.vectors){
-   const x1=v[0],y1=v[1],x2=v[2],y2=v[3],z=ASSETS[v[8]?.asset]?.displayIntensity??v[4];if(!Number.isFinite(x1+y1+x2+y2))continue;
+   const x1=v[0],y1=v[1],x2=v[2],y2=v[3],z=ASSETS[v[8]?.asset]?.displayIntensity??v[4];if(v[4]<=0||!Number.isFinite(x1+y1+x2+y2))continue;
    const asset=v[8]?.asset,hudRed=asset==="hudRadar"||asset==="playerLives"||asset==="score"||asset==="highScore"||asset==="enemyInRange"||asset==="enemyDirection"||asset==="motionBlocked",originalRed=hudRed;
    const alpha=Math.min(1,Math.max(.18,z/15)),color=this.colorized?(rgb[v[6]]||rgb.green):(originalRed?rgb.red:rgb.green);
    const ink="rgba("+color+","+(alpha*gain)+")";
@@ -190,7 +177,7 @@ class Battlezone{
   // Simulate extra beam dwell at endpoints. Shared corners receive light from
   // both adjoining vectors; keep the bloom compact so straight edges stay crisp.
   for(const v of this.vectors){
-   const x1=v[0],y1=v[1],x2=v[2],y2=v[3];if(!Number.isFinite(x1+y1+x2+y2))continue;
+   const x1=v[0],y1=v[1],x2=v[2],y2=v[3];if(v[4]<=0||!Number.isFinite(x1+y1+x2+y2))continue;
    const z=ASSETS[v[8]?.asset]?.displayIntensity??v[4];
    const asset=v[8]?.asset,hudRed=asset==="hudRadar"||asset==="playerLives"||asset==="score"||asset==="highScore"||asset==="enemyInRange"||asset==="enemyDirection"||asset==="motionBlocked",originalRed=hudRed;
    const alpha=Math.min(1,Math.max(.18,z/15)),color=this.colorized?(rgb[v[6]]||rgb.green):(originalRed?rgb.red:rgb.green);
