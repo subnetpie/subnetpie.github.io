@@ -123,6 +123,44 @@ class Battlezone{
   this.avgDone=1;this.draw();
  }
  draw(){const c=this.cx;c.save();c.globalCompositeOperation="source-over";c.fillStyle="#000";c.fillRect(0,0,W,H);c.lineCap="round";
+  // Fill closed obstacle faces from the actual AVG obstacle vectors.  This is
+  // object-bound geometry, not a screen-region overlay; it follows the cube /
+  // pyramid as the original 3-D projection moves, rotates and scales it.
+  if(this.colorized){
+   const groups=new Map();
+   for(const v of this.vectors){
+    if(v[8]?.asset!=="obstacle")continue;
+    const id=v[8]?.id??"obstacle";
+    if(!groups.has(id))groups.set(id,[]);
+    groups.get(id).push(v);
+   }
+   c.save();c.globalCompositeOperation="source-over";
+   for(const vs of groups.values()){
+    const edges=vs.filter(v=>Number.isFinite(v[0]+v[1]+v[2]+v[3])&&(v[0]!==v[2]||v[1]!==v[3]));
+    if(edges.length<3)continue;
+    // Recover closed polygons directly from connected projected AVG edges.
+    const key=(x,y)=>x.toFixed(2)+","+y.toFixed(2), adj=new Map(), pts=new Map();
+    for(const v of edges){const a=key(v[0],v[1]),b=key(v[2],v[3]);pts.set(a,[v[0],v[1]]);pts.set(b,[v[2],v[3]]);if(!adj.has(a))adj.set(a,new Set);if(!adj.has(b))adj.set(b,new Set);adj.get(a).add(b);adj.get(b).add(a)}
+    const cycles=new Map(), nodes=[...adj.keys()];
+    const canon=path=>{let p=path.slice(0,-1), variants=[];for(const q of [p,p.slice().reverse()])for(let i=0;i<q.length;i++)variants.push(q.slice(i).concat(q.slice(0,i)).join("|"));return variants.sort()[0]};
+    const walk=(start,cur,path)=>{
+     if(path.length>7)return;
+     for(const n of adj.get(cur)||[]){
+      if(n===start&&path.length>=3){let p=path.concat(start),ck=canon(p);cycles.set(ck,p);continue}
+      if(path.includes(n))continue;
+      walk(start,n,path.concat(n));
+     }
+    };
+    for(const n of nodes)walk(n,n,[n]);
+    // Keep minimal faces: larger cycles that contain smaller closed faces are
+    // outlines/silhouettes and would over-darken the translucent solid.
+    let polys=[...cycles.values()].map(p=>p.slice(0,-1)).filter(p=>p.length<=4);
+    polys=polys.filter(p=>{let xy=p.map(k=>pts.get(k)),area=0;for(let i=0;i<xy.length;i++){let a=xy[i],b=xy[(i+1)%xy.length];area+=a[0]*b[1]-b[0]*a[1]}return Math.abs(area)>8});
+    c.fillStyle="rgba(255,145,35,.16)";
+    for(const p of polys){c.beginPath();let q=pts.get(p[0]);c.moveTo(q[0],q[1]);for(let i=1;i<p.length;i++){q=pts.get(p[i]);c.lineTo(q[0],q[1])}c.closePath();c.fill()}
+   }
+   c.restore();
+  }
   /* Render only the color carried by each emitted AVG vector. There are no
      coordinate, region, shape, or screen-overlay color rules here. */
   const rgb={green:"80,255,80",purple:"190,70,255",darkPurple:"95,30,140",orange:"255,145,35",lightOrange:"255,190,105",red:"255,45,45",blue:"70,135,255"};
