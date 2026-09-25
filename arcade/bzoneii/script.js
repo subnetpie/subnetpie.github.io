@@ -60,7 +60,7 @@ class BzoneAudio{
   }out[i]=Math.max(-.65,Math.min(.65,s))}
  }}
 class Battlezone{
- constructor(){this.cv=document.querySelector("#gameCanvas");this.cx=this.cv.getContext("2d");this.cv.width=W;this.cv.height=H;this.mem=new Uint8Array(32768);this.math=new Mathbox();this.pokeyRandom=new PokeyRandom();this.i={coin1:0,start1:0,fire:0,lu:0,ld:0,ru:0,rd:0};this.sound=0;this.audio=new BzoneAudio();this.avgDone=1;this.vectors=[];this.colorized=true;this.bind()}
+ constructor(){this.cv=document.querySelector("#gameCanvas");this.cx=this.cv.getContext("2d");this.cv.width=W;this.cv.height=H;this.mem=new Uint8Array(32768);this.math=new Mathbox();this.pokeyRandom=new PokeyRandom();this.i={coin1:0,start1:0,fire:0,lu:0,ld:0,ru:0,rd:0};this.sound=0;this.audio=new BzoneAudio();this.avgDone=1;this.vectors=[];this.tankFillCache=new Map();this.colorized=true;this.bind()}
  async rom(n){const r=await fetch("../bzone/roms/"+n);if(!r.ok)throw Error("ROM "+n);return new Uint8Array(await r.arrayBuffer())}
  async init(){const files=["036408-01.k7","036414-02.e1","036413-01.h1","036412-01.j1","036411-01.k1","036410-01.lm1","036409-01.n1","036422-01.bc3","036421-01.a3"],a=Object.fromEntries(await Promise.all(files.map(async n=>[n,await this.rom(n)])));[["036414-02.e1",20480],["036413-01.h1",22528],["036412-01.j1",24576],["036411-01.k1",26624],["036410-01.lm1",28672],["036409-01.n1",30720],["036422-01.bc3",12288],["036421-01.a3",14336]].forEach(([n,o])=>this.mem.set(a[n],o));this.avgProm=a["036408-01.k7"];this.assetTrace=new AssetTrace(this.mem);this.cpu=new M6502(x=>this.read(x),(x,d)=>this.write(x,d));this.cpu.reset();console.log("[BZONE] reset PC",this.cpu.pc.toString(16),"vector",this.read(0x7ffc).toString(16),this.read(0x7ffd).toString(16))}
  in0(){let v=255;if(this.i.coin1)v&=254;if(this.avgDone)v|=64;else v&=191;if(this.cpu.cycles&256)v|=128;else v&=127;return v}
@@ -157,8 +157,15 @@ class Battlezone{
      // bounded cells have positive signed area; exterior walks are negative.
      if(area>.5)faces.push(face);
     }
-    for(const face of faces){const p0=pts.get(face[0]);c.beginPath();c.moveTo(p0[0],p0[1]);for(let i=1;i<face.length;i++){const p=pts.get(face[i]);c.lineTo(p[0],p[1])}c.closePath();c.fill()}
-   }c.restore();
+    const polys=faces.map(face=>face.map(k=>pts.get(k)));
+    if(polys.length)this.tankFillCache.set(lines[0]?.[8]?.slot,polys);
+    const drawPolys=polys.length?polys:(this.tankFillCache.get(lines[0]?.[8]?.slot)||[]);
+    for(const poly of drawPolys){const p0=poly[0];c.beginPath();c.moveTo(p0[0],p0[1]);for(let i=1;i<poly.length;i++)c.lineTo(poly[i][0],poly[i][1]);c.closePath();c.fill()}
+   }
+   // Expire cache entries for tanks no longer present; retain one object's last
+   // valid polygon set only while that object slot is still being drawn.
+   const active=new Set([...groups.keys()]);for(const k of this.tankFillCache.keys())if(!active.has(k))this.tankFillCache.delete(k);
+   c.restore();
   }
   /* Render only the color carried by each emitted AVG vector. There are no
      coordinate, region, shape, or screen-overlay color rules here. */
