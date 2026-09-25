@@ -127,7 +127,7 @@ class Battlezone{
   if(this.colorized){
    const groups=new Map();
    for(const v of this.vectors){const o=v[8];if(o?.asset!=="obstacle"||o.id==null)continue;let g=groups.get(o.id);if(!g){g=[];groups.set(o.id,g)};if(Number.isFinite(v[0]+v[1]))g.push([v[0],v[1]]);if(Number.isFinite(v[2]+v[3]))g.push([v[2],v[3]])}
-   c.save();c.globalCompositeOperation="source-over";c.fillStyle="rgba(255,145,35,.18)";
+   c.save();c.globalCompositeOperation="source-over";c.fillStyle="rgba(255,145,35,.32)";
    for(const g of groups.values()){
     const seen=new Set(),p=[];for(const q of g){const k=Math.round(q[0]*16)+","+Math.round(q[1]*16);if(!seen.has(k)){seen.add(k);p.push(q)}}if(p.length<3)continue;
     p.sort((a,b)=>a[0]-b[0]||a[1]-b[1]);const cross=(a,b,d)=>(b[0]-a[0])*(d[1]-a[1])-(b[1]-a[1])*(d[0]-a[0]),lo=[],hi=[];
@@ -136,20 +136,27 @@ class Battlezone{
     const h=lo.slice(0,-1).concat(hi.slice(0,-1));if(h.length<3)continue;c.beginPath();c.moveTo(h[0][0],h[0][1]);for(let i=1;i<h.length;i++)c.lineTo(h[i][0],h[i][1]);c.closePath();c.fill();
    }c.restore();
   }
+  // Give projected enemy tanks a restrained translucent green body fill.
+  if(this.colorized){
+   const groups=new Map();
+   for(const v of this.vectors){const o=v[8];if(o?.asset!=="tank"||o.id==null)continue;let g=groups.get(o.id);if(!g){g=[];groups.set(o.id,g)};if(Number.isFinite(v[0]+v[1]))g.push([v[0],v[1]]);if(Number.isFinite(v[2]+v[3]))g.push([v[2],v[3]])}
+   c.save();c.globalCompositeOperation="source-over";c.fillStyle="rgba(80,255,80,.12)";
+   for(const g of groups.values()){const seen=new Set(),p=[];for(const q of g){const k=Math.round(q[0]*16)+","+Math.round(q[1]*16);if(!seen.has(k)){seen.add(k);p.push(q)}}if(p.length<3)continue;p.sort((a,b)=>a[0]-b[0]||a[1]-b[1]);const cross=(a,b,d)=>(b[0]-a[0])*(d[1]-a[1])-(b[1]-a[1])*(d[0]-a[0]),lo=[],hi=[];for(const q of p){while(lo.length>1&&cross(lo[lo.length-2],lo[lo.length-1],q)<=0)lo.pop();lo.push(q)}for(let i=p.length-1;i>=0;i--){const q=p[i];while(hi.length>1&&cross(hi[hi.length-2],hi[hi.length-1],q)<=0)hi.pop();hi.push(q)}const h=lo.slice(0,-1).concat(hi.slice(0,-1));if(h.length<3)continue;c.beginPath();c.moveTo(h[0][0],h[0][1]);for(let i=1;i<h.length;i++)c.lineTo(h[i][0],h[i][1]);c.closePath();c.fill()}c.restore();
+  }
   /* Render only the color carried by each emitted AVG vector. There are no
      coordinate, region, shape, or screen-overlay color rules here. */
   const rgb={green:"80,255,80",purple:"190,70,255",darkPurple:"95,30,140",orange:"255,145,35",lightOrange:"255,190,105",red:"255,45,45",blue:"70,135,255"};
   // Additive, concentric strokes approximate phosphor bloom around a sharp beam.
   // Draw all halos before the cores so intersections accumulate light naturally.
   c.globalCompositeOperation="lighter";
-  const layers=[[7,.035],[4,.09],[2,.24],[1,1]];
+  const layers=[[7,.035],[4,.09],[2,.24],[1,1]],hudAssets=new Set(["hudRadar","score","highScore","enemyInRange","enemyDirection","motionBlocked"]);
   for(const [spread,gain] of layers){
   for(const v of this.vectors){
    const x1=v[0],y1=v[1],x2=v[2],y2=v[3],z=ASSETS[v[8]?.asset]?.displayIntensity??v[4];if(!Number.isFinite(x1+y1+x2+y2))continue;
    const asset=v[8]?.asset,originalRed=asset==="hudRadar"||asset==="score"||asset==="highScore"||asset==="enemyInRange"||asset==="enemyDirection"||asset==="motionBlocked";
    const alpha=Math.min(1,Math.max(.18,z/15)),color=this.colorized?(rgb[v[6]]||rgb.green):(originalRed?rgb.red:rgb.green);
    const ink="rgba("+color+","+(alpha*gain)+")";
-   c.strokeStyle=ink;c.lineWidth=(.75+z/20)*spread;
+   c.strokeStyle=ink;c.lineWidth=(.75+z/20)*(hudAssets.has(asset)?Math.min(spread,1.7):spread);
    c.beginPath();
    // AVG points (including lava sparks) need a disk, even with identical endpoints.
    if(x1===x2&&y1===y2){c.fillStyle=ink;c.arc(x1,y1,c.lineWidth/2,0,Math.PI*2);c.fill()}
@@ -164,7 +171,7 @@ class Battlezone{
    const alpha=Math.min(1,Math.max(.18,z/15)),color=this.colorized?(rgb[v[6]]||rgb.green):(originalRed?rgb.red:rgb.green);
    const radius=(.75+z/20)/2;
    const endpoints=x1===x2&&y1===y2?[[x1,y1]]:[[x1,y1],[x2,y2]];
-   for(const [spread,gain] of [[3,.12],[1.1,.65]]){
+   for(const [spread,gain] of (hudAssets.has(asset)?[[1.4,.08],[1,.5]]:[[3,.12],[1.1,.65]])){
     c.fillStyle="rgba("+color+","+(alpha*gain)+")";
     for(const [px,py] of endpoints){c.beginPath();c.arc(px,py,radius*spread,0,Math.PI*2);c.fill()}
    }
