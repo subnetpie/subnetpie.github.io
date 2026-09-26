@@ -16,6 +16,17 @@ var joyButtons = document.getElementById("joyButtonsCanvas");
 var joyButtonsCtx = joyButtons.getContext("2d");
 document.oncontextmenu = new Function("return false;");
 
+// Keep iOS Safari gestures from stealing the emulator's touch controls.
+document.addEventListener("gesturestart", (e) => e.preventDefault(), { passive: false });
+document.addEventListener("gesturechange", (e) => e.preventDefault(), { passive: false });
+document.addEventListener("gestureend", (e) => e.preventDefault(), { passive: false });
+let lastTouchEnd = 0;
+document.addEventListener("touchend", (e) => {
+  const now = performance.now();
+  if (now - lastTouchEnd <= 350) e.preventDefault();
+  lastTouchEnd = now;
+}, { passive: false });
+
 import { Motherboard } from "https://subnetpie.github.io/computer/appleii/motherboard.js";
 
 class Drive {
@@ -502,7 +513,7 @@ $(function() {
       }
     }
     if (buttonDebug.innerText=="on") {
-      joyRender.debug(joyPadCtx,joyX,joyY,I1,val0,val1);
+      joyRender.debug(joyPadCtx,joyX,joyY,joyPadPointer===null?0:1,val0,val1);
     }
     joyRender.buttons(joyButtonsCtx);
   },1);
