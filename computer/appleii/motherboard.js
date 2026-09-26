@@ -15,6 +15,7 @@ import {IOManager} from "https://subnetpie.github.io/computer/appleii/io_manager
 import {TextDisplay} from "https://subnetpie.github.io/computer/appleii/display_text.js";
 import {TextDisplay80} from "https://subnetpie.github.io/computer/appleii/display_text_80.js";
 import {HiresDisplay} from "https://subnetpie.github.io/computer/appleii/display_hires.js";
+import {LoresDisplay} from "https://subnetpie.github.io/computer/appleii/display_lores.js";
 import {DoubleHiresDisplay} from "https://subnetpie.github.io/computer/appleii/display_double_hires.js";
 import {Keyboard} from "https://subnetpie.github.io/computer/appleii/keyboard.js";
 import {Floppy525} from "https://subnetpie.github.io/computer/appleii/FloppyWoz525.js";
@@ -32,6 +33,7 @@ export class Motherboard
         this.display_text = new TextDisplay(this.memory, canvas);
         this.display_text_80 = new TextDisplay80(this.memory, canvas);
         this.display_hires = new HiresDisplay(this.memory, canvas);
+        this.display_lores = new LoresDisplay(this.memory, canvas);
         this.display_double_hires = new DoubleHiresDisplay(this.memory, canvas);
         this.cycles = 0;
 
@@ -43,7 +45,7 @@ export class Motherboard
         this.audio = new AppleAudio(khz);
         this.io_manager = new IOManager(this.memory, this.keyboard,
                                         this.display_text, this.display_text_80,
-                                        this.display_hires, this.display_double_hires,
+                                        this.display_hires, this.display_double_hires, this.display_lores,
                                         this.audio_click.bind(this), joyValues, () => this.cycles);
     }
 
@@ -65,6 +67,7 @@ export class Motherboard
         this.display_text.reset();
         this.display_text_80.reset();
         this.display_hires.reset();
+        this.display_lores.reset();
         this.display_double_hires.reset();
         this.floppy525.reset();
         this.prodosBlock.reset();
