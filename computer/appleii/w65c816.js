@@ -61,6 +61,20 @@ export class W65C816 {
     let a,v,t,cy=2;
     switch(op){
       case 0xea: break; // NOP
+      case 0x04: // TSB dp
+      case 0x0c: { // TSB abs
+        a=op===0x04?this.dpAddr():((this.r.db<<16)|this.fetch16())&0xffffff;
+        v=this.readM(a); t=this.r.a&this.maskM();
+        this.r.p=(this.r.p&~Z)|((v&t)===0?Z:0);
+        this.writeM(a,v|t); cy=op===0x04?5:6; break;
+      }
+      case 0x14: // TRB dp
+      case 0x1c: { // TRB abs
+        a=op===0x14?this.dpAddr():((this.r.db<<16)|this.fetch16())&0xffffff;
+        v=this.readM(a); t=this.r.a&this.maskM();
+        this.r.p=(this.r.p&~Z)|((v&t)===0?Z:0);
+        this.writeM(a,v&~t); cy=op===0x14?5:6; break;
+      }
       case 0x09:v=m8?this.fetch8():this.fetch16();this.r.a=(this.r.a&~this.maskM())|((this.r.a|v)&this.maskM());this.setNZ(this.r.a,mb);cy=m8?2:3;break;
       case 0x29:v=m8?this.fetch8():this.fetch16();this.r.a=(this.r.a&~this.maskM())|((this.r.a&v)&this.maskM());this.setNZ(this.r.a,mb);cy=m8?2:3;break;
       case 0x49:v=m8?this.fetch8():this.fetch16();this.r.a=(this.r.a&~this.maskM())|((this.r.a^v)&this.maskM());this.setNZ(this.r.a,mb);cy=m8?2:3;break;
