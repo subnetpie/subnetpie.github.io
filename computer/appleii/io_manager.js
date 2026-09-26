@@ -63,7 +63,7 @@
 
 export class IOManager
 {
-    constructor(memory, keyboard, display_text, display_text_80, display_hires, display_double_hires, audio_cb, joystick) {
+    constructor(memory, keyboard, display_text, display_text_80, display_hires, display_double_hires, audio_cb, joystick, get_cycles = () => 0) {
         this._mem = memory;
         this._kbd = keyboard;
         this._display_text = display_text;
@@ -71,6 +71,7 @@ export class IOManager
         this._display_hires = display_hires;
         this._display_double_hires = display_double_hires;
         this._audio_cb = audio_cb;
+        this._get_cycles = get_cycles;
         this._cycles = 0;
         this._delta = 0;
         this._trigger = 0;
@@ -133,6 +134,9 @@ export class IOManager
                 case 0xc018: // 80store (0: 80store off, 0x80: 80store on)
                     //console.log("80 store: " + this._mem.dms_80store);
                     return this._mem.dms_80store ? 0x80 : 0;
+                case 0xc019: // RDVBLBAR: IIe bit 7 is low during vertical blank
+                    // NTSC: 65 CPU cycles/line, 192 visible + 70 blank lines.
+                    return (this._get_cycles() % (65 * 262)) < (65 * 192) ? 0x80 : 0;
                 case 0xc01a: // text (0: graphics mode, 0x80: text mode)
                     return this._text_mode ? 0x80 : 0;
                 case 0xc01b: // mixed mode (0: full screen, 0x80: mixed mode)
