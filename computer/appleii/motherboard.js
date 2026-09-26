@@ -24,6 +24,7 @@ import {Floppy525} from "https://subnetpie.github.io/computer/appleii/FloppyWoz5
 import {AppleAudio} from "https://subnetpie.github.io/computer/appleii/apple_audio.js";
 import {ProDOSBlockDevice} from "https://subnetpie.github.io/computer/appleii/prodos_block.js";
 import {IIgsVideo} from "https://subnetpie.github.io/computer/appleii/video_iigs.js";
+import {MachineTrace} from "https://subnetpie.github.io/computer/appleii/machine_trace.js";
 import {rom_342_0304_cd} from "https://subnetpie.github.io/computer/appleii/rom/342-0304-cd.js";
 import {rom_342_0303_ef} from "https://subnetpie.github.io/computer/appleii/rom/342-0303-ef.js";
 
@@ -31,6 +32,7 @@ export class Motherboard
 {
     constructor(khz, canvas, joyValues, floppy_led_cb, machine = "iie") {
         this.machine = machine;
+        this.trace = new MachineTrace();
         this.iigsEnabled = machine === "iigs";
         this.legacyMemory = new Memory(rom_342_0304_cd, rom_342_0303_ef);
         this.keyboard = new Keyboard();
@@ -75,6 +77,17 @@ export class Motherboard
             if(this.iigsEnabled && this.video_iigs) this.video_iigs.tick(used, 2800000);
         }
     }
+
+    startTrace() {
+        this.trace.start();
+        if(this.iigsEnabled) {
+            this.cpu.setTrace(e => this.trace.log("cpu", e));
+            this.memory.setTrace((rw,addr,value) => this.trace.log("mem",{rw,addr,value}));
+        }
+    }
+
+    stopTrace() { this.trace.stop(); return this.trace.snapshot(); }
+    traceText() { return this.trace.text(); }
 
     audio_click() {
         this.audio.click(this.cycles);
