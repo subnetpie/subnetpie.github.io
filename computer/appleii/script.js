@@ -1,4 +1,5 @@
-const machineType = new URLSearchParams(location.search).get("machine") === "iigs" ? "iigs" : "iie";
+const machineParam = new URLSearchParams(location.search).get("machine");
+const machineType = machineParam === "iie" ? "iie" : "iigs";
 const khz = machineType === "iigs" ? 2800 : 1020.5;
 let motherboard;
 let interval;
