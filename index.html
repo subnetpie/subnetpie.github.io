@@ -43,7 +43,7 @@ h2{font-size:28px;letter-spacing:-.03em;margin:0}
 .card-top{flex-shrink:0}
 .card:hover{transform:translateY(-3px);border-color:var(--game)}
 .card-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:32px;color:var(--game)}
-.num{font:32px/1 ui-monospace,monospace;letter-spacing:-.08em}
+
 .tag{font-size:10px;letter-spacing:.06em}
 h3{margin:0;font-size:27px;letter-spacing:-.035em}
 .card p{margin:8px 0 24px;color:var(--muted);font-size:14px}
@@ -61,7 +61,7 @@ footer .wrap{display:flex;justify-content:space-between;gap:20px}
 .skip{position:absolute;top:-100px;left:16px;padding:10px;background:var(--accent);color:#000;z-index:5}
 .skip:focus{top:10px}
 @media(max-width:850px){.project-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.hero{padding-top:56px}}
-@media(max-width:540px){.wrap{width:calc(100% - 32px)}header .wrap{min-height:76px;gap:12px}.brand{font-size:11px}nav{gap:16px;font-size:12px}.hero{padding:46px 0}.intro{font-size:16px}.grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.card{min-width:0;min-height:230px;padding:12px}.flyer{height:auto;aspect-ratio:3/4;margin-bottom:14px}.card-top{align-items:flex-start;flex-direction:column;gap:8px;margin-bottom:14px}.num{font-size:24px}.tag{font-size:9px}.card h3{font-size:20px;line-height:1.2;overflow-wrap:anywhere}.card p{font-size:12px;line-height:1.5;margin:8px 0 16px}.play{font-size:12px;gap:6px}.play span{flex-shrink:0}.section-head{align-items:center}.count{font-size:10px}footer .wrap{flex-direction:column;gap:8px}}
+@media(max-width:540px){.wrap{width:calc(100% - 32px)}header .wrap{min-height:76px;gap:12px}.brand{font-size:11px}nav{gap:16px;font-size:12px}.hero{padding:46px 0}.intro{font-size:16px}.grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.card{min-width:0;min-height:230px;padding:12px}.flyer{height:auto;aspect-ratio:3/4;margin-bottom:14px}.card-top{align-items:flex-start;flex-direction:column;gap:8px;margin-bottom:14px}.tag{font-size:9px}.card h3{font-size:20px;line-height:1.2;overflow-wrap:anywhere}.card p{font-size:12px;line-height:1.5;margin:8px 0 16px}.play{font-size:12px;gap:6px}.play span{flex-shrink:0}.section-head{align-items:center}.count{font-size:10px}footer .wrap{flex-direction:column;gap:8px}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.card{transition:none}.card:hover{transform:none}}
 </style>
 </head>
@@ -73,31 +73,31 @@ footer .wrap{display:flex;justify-content:space-between;gap:20px}
 <section id="arcade" aria-labelledby="arcade-title"><div class="section-head"><div><p class="section-kicker">01 / Press start</p><h2 id="arcade-title">The arcade</h2></div><span class="count">09 BROWSER GAMES</span></div><div class="grid">
 <a class="card" href="./arcade/pacman/" style="--game:#ffd34f" aria-label="Play Pac-Man"><div class="flyer" data-rom="pacman">
 <img src="assets/flyers/pacman.jpeg" alt="Pac-Man US arcade promotional flyer" loading="lazy" decoding="async">
-<span class="flyer-label" aria-hidden="true">Flyer</span></div><div class="card-top"><span class="num" aria-hidden="true">01</span><span class="tag">MAZE · ARCADE</span></div><h3>Pac-Man</h3><p>The original maze chase.</p><span class="play">Play Pac-Man<span aria-hidden="true">↗</span></span></a>
+<span class="flyer-label" aria-hidden="true">Flyer</span></div><div class="card-top"><span class="tag">MAZE · ARCADE</span></div><h3>Pac-Man</h3><p>The original maze chase.</p><span class="play">Play Pac-Man<span aria-hidden="true">↗</span></span></a>
 <a class="card" href="./arcade/mspacman/" style="--game:#ff8eaf" aria-label="Play Ms. Pac-Man"><div class="flyer" data-rom="mspacman">
 <img src="assets/flyers/mspacman.jpeg" alt="Ms. Pac-Man US arcade promotional flyer" loading="lazy" decoding="async">
-<span class="flyer-label" aria-hidden="true">Flyer</span></div><div class="card-top"><span class="num" aria-hidden="true">02</span><span class="tag">MAZE · ARCADE</span></div><h3>Ms. Pac-Man</h3><p>New mazes. Same appetite.</p><span class="play">Play Ms. Pac-Man<span aria-hidden="true">↗</span></span></a>
+<span class="flyer-label" aria-hidden="true">Flyer</span></div><div class="card-top"><span class="tag">MAZE · ARCADE</span></div><h3>Ms. Pac-Man</h3><p>New mazes. Same appetite.</p><span class="play">Play Ms. Pac-Man<span aria-hidden="true">↗</span></span></a>
 <a class="card" href="./arcade/scramble/" style="--game:#85e6b4" aria-label="Play Scramble"><div class="flyer" data-rom="scramble">
 <img src="assets/flyers/scramble.webp" alt="Scramble US arcade promotional flyer" loading="lazy" decoding="async">
-<span class="flyer-label" aria-hidden="true">Flyer</span></div><div class="card-top"><span class="num" aria-hidden="true">03</span><span class="tag">SHOOTER · ARCADE</span></div><h3>Scramble</h3><p>Fly low. Keep moving.</p><span class="play">Play Scramble<span aria-hidden="true">↗</span></span></a>
+<span class="flyer-label" aria-hidden="true">Flyer</span></div><div class="card-top"><span class="tag">SHOOTER · ARCADE</span></div><h3>Scramble</h3><p>Fly low. Keep moving.</p><span class="play">Play Scramble<span aria-hidden="true">↗</span></span></a>
 <a class="card" href="./arcade/galaga/" style="--game:#83baff" aria-label="Play Galaga"><div class="flyer" data-rom="galaga">
 <img src="assets/flyers/galaga.jpeg" alt="Galaga US arcade promotional flyer" loading="lazy" decoding="async">
-<span class="flyer-label" aria-hidden="true">Flyer</span></div><div class="card-top"><span class="num" aria-hidden="true">04</span><span class="tag">SHOOTER · ARCADE</span></div><h3>Galaga</h3><p>Take on the formation.</p><span class="play">Play Galaga<span aria-hidden="true">↗</span></span></a>
+<span class="flyer-label" aria-hidden="true">Flyer</span></div><div class="card-top"><span class="tag">SHOOTER · ARCADE</span></div><h3>Galaga</h3><p>Take on the formation.</p><span class="play">Play Galaga<span aria-hidden="true">↗</span></span></a>
 <a class="card" href="./arcade/bosco/" style="--game:#c7a0ff" aria-label="Play Bosconian"><div class="flyer" data-rom="bosco">
 <img src="assets/flyers/bosco.jpeg" alt="Bosconian US arcade promotional flyer" loading="lazy" decoding="async">
-<span class="flyer-label" aria-hidden="true">Flyer</span></div><div class="card-top"><span class="num" aria-hidden="true">05</span><span class="tag">SHOOTER · ARCADE</span></div><h3>Bosconian</h3><p>Open space. Every direction.</p><span class="play">Play Bosconian<span aria-hidden="true">↗</span></span></a>
+<span class="flyer-label" aria-hidden="true">Flyer</span></div><div class="card-top"><span class="tag">SHOOTER · ARCADE</span></div><h3>Bosconian</h3><p>Open space. Every direction.</p><span class="play">Play Bosconian<span aria-hidden="true">↗</span></span></a>
 <a class="card" href="./arcade/polepos/" style="--game:#ffad70" aria-label="Play Pole Position"><div class="flyer" data-rom="polepos">
 <img src="assets/flyers/polepos.jpeg" alt="Pole Position US arcade promotional flyer" loading="lazy" decoding="async">
-<span class="flyer-label" aria-hidden="true">Flyer</span></div><div class="card-top"><span class="num" aria-hidden="true">06</span><span class="tag">RACING · ARCADE</span></div><h3>Pole Position</h3><p>Take the wheel at Fuji Speedway.</p><span class="play">Play Pole Position<span aria-hidden="true">↗</span></span></a>
+<span class="flyer-label" aria-hidden="true">Flyer</span></div><div class="card-top"><span class="tag">RACING · ARCADE</span></div><h3>Pole Position</h3><p>Take the wheel at Fuji Speedway.</p><span class="play">Play Pole Position<span aria-hidden="true">↗</span></span></a>
 <a class="card" href="./arcade/timeplt/" style="--game:#ff6b4a" aria-label="Play Time Pilot"><div class="flyer" data-rom="timeplt">
 <img src="assets/flyers/timeplt.jpeg" alt="Time Pilot North American arcade promotional flyer" loading="lazy" decoding="async">
-<span class="flyer-label" aria-hidden="true">Flyer</span></div><div class="card-top"><span class="num" aria-hidden="true">07</span><span class="tag">SHOOTER · ARCADE</span></div><h3>Time Pilot</h3><p>Dogfight through time.</p><span class="play">Play Time Pilot<span aria-hidden="true">↗</span></span></a>
+<span class="flyer-label" aria-hidden="true">Flyer</span></div><div class="card-top"><span class="tag">SHOOTER · ARCADE</span></div><h3>Time Pilot</h3><p>Dogfight through time.</p><span class="play">Play Time Pilot<span aria-hidden="true">↗</span></span></a>
 <a class="card" href="./arcade/digdug/" style="--game:#8ad65b" aria-label="Play Dig Dug"><div class="flyer" data-rom="digdug">
 <img src="assets/flyers/digdug.jpeg" alt="Dig Dug Atari arcade promotional flyer" loading="lazy" decoding="async">
-<span class="flyer-label" aria-hidden="true">Flyer</span></div><div class="card-top"><span class="num" aria-hidden="true">08</span><span class="tag">MAZE · ARCADE</span></div><h3>Dig Dug</h3><p>Dig deep. Pump them up.</p><span class="play">Play Dig Dug<span aria-hidden="true">↗</span></span></a>
+<span class="flyer-label" aria-hidden="true">Flyer</span></div><div class="card-top"><span class="tag">MAZE · ARCADE</span></div><h3>Dig Dug</h3><p>Dig deep. Pump them up.</p><span class="play">Play Dig Dug<span aria-hidden="true">↗</span></span></a>
 <a class="card" href="./arcade/bzone/" style="--game:#76ff76" aria-label="Play Battlezone"><div class="flyer" data-rom="bzone">
 <img src="assets/flyers/bzone.webp" alt="Battlezone arcade promotional flyer" loading="lazy" decoding="async">
-<span class="flyer-label" aria-hidden="true">Flyer</span></div><div class="card-top"><span class="num" aria-hidden="true">09</span><span class="tag">VECTOR · ARCADE</span></div><h3>Battlezone</h3><p>Vector combat through the periscope.</p><span class="play">Play Battlezone<span aria-hidden="true">↗</span></span></a>
+<span class="flyer-label" aria-hidden="true">Flyer</span></div><div class="card-top"><span class="tag">VECTOR · ARCADE</span></div><h3>Battlezone</h3><p>Vector combat through the periscope.</p><span class="play">Play Battlezone<span aria-hidden="true">↗</span></span></a>
 </div><p class="notice">Arcade flyer artwork includes supplied scans and artwork from The Arcade Flyer Archive (TAFA). Artwork belongs to its respective owners.<br>On mobile, use each game’s on-screen controls. Tap a game control to enable sound.</p></section>
 <section id="projects" class="projects" aria-labelledby="projects-title"><div class="section-head"><div><p class="section-kicker">02 / Behind the screen</p><h2 id="projects-title">More experiments</h2></div></div><p class="project-intro">Explore the source for these projects on GitHub.</p><div class="project-grid"><a class="project" href="https://github.com/subnetpie/subnetpie.github.io/tree/master/console/ijsnes"><strong>NES</strong><span>View source ↗</span></a><a class="project" href="https://github.com/subnetpie/subnetpie.github.io/tree/master/computer/appleii"><strong>Apple II</strong><span>View source ↗</span></a><a class="project" href="https://github.com/subnetpie/subnetpie.github.io/tree/master/arcade/cannonball"><strong>Cannonball</strong><span>View source ↗</span></a></div></section>
 </main><footer><div class="wrap"><span>JavaScript Emulation Lab · Eric Jacobson / subnetpie</span><a href="https://github.com/subnetpie/subnetpie.github.io">Built in the open. Explore on GitHub ↗</a></div></footer>
