@@ -63,7 +63,7 @@
 
 export class IOManager
 {
-    constructor(memory, keyboard, display_text, display_text_80, display_hires, display_double_hires, display_lores, audio_cb, joystick, get_cycles = () => 0) {
+    constructor(memory, keyboard, display_text, display_text_80, display_hires, display_double_hires, display_lores, audio_cb, joystick, get_cycles = () => 0, video_iigs = null) {
         this._mem = memory;
         this._kbd = keyboard;
         this._display_text = display_text;
@@ -77,6 +77,7 @@ export class IOManager
         this._delta = 0;
         this._trigger = 0;
         this._joystick = joystick;
+        this._video_iigs = video_iigs;
 
         this._c3_rom = false;
         this._c8_rom = false;
@@ -150,6 +151,8 @@ export class IOManager
                     return this._altchar_mode ? 0x80 : 0;
                 case 0xc01f: // 80 col mode (0: 40 cols, 0x80: 80 cols)
                     return this._80col_mode ? 0x80 : 0;
+                case 0xc029: // IIgs NEWVIDEO
+                    return this._video_iigs ? this._video_iigs.readNewVideo() : 0;
                 case 0xc061: // js pb0
                     return this._joystick.button0 ? 0x80 : 0;
                 case 0xc062: // js pb1
@@ -300,6 +303,9 @@ export class IOManager
                     //console.log("alt char on");
                     this._altchar_mode = true;
                     return 0; // write handled
+                case 0xc029: // IIgs NEWVIDEO
+                    if(this._video_iigs) this._video_iigs.writeNewVideo(val);
+                    return 0;
                 //case 0xc010: // keyboard strobe (handled above)
                 //    this._kbd.strobe();
                 //    return 0; // write handled
@@ -435,6 +441,9 @@ export class IOManager
 
     ////////////////////////////////////////////
     draw_display(addr, val) {
+        // When IIgs Super Hi-Res owns video output, Mega II memory writes still
+        // update RAM/soft-switch state but must not paint over the SHR canvas.
+        if(this._video_iigs && this._video_iigs.isSuperHires()) return;
         const textPage = this._mem.dms_page2 && !this._mem.dms_80store ? 0x0800 : 0x0400;
         const textWrite = addr >= textPage && addr < textPage + 0x400;
         const mixedText = !this._text_mode && this._mixed_mode;
@@ -476,6 +485,10 @@ export class IOManager
 
     ////////////////////////////////////////////
     switch_display_mode() {
+        if(this._video_iigs && this._video_iigs.isSuperHires()) {
+            this._video_iigs.refresh(true);
+            return;
+        }
         const page = this._mem.dms_page2 && !this._mem.dms_80store ? 2 : 1;
 
         if(this._text_mode) {
