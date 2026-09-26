@@ -63,13 +63,14 @@
 
 export class IOManager
 {
-    constructor(memory, keyboard, display_text, display_text_80, display_hires, display_double_hires, audio_cb, joystick, get_cycles = () => 0) {
+    constructor(memory, keyboard, display_text, display_text_80, display_hires, display_double_hires, display_lores, audio_cb, joystick, get_cycles = () => 0) {
         this._mem = memory;
         this._kbd = keyboard;
         this._display_text = display_text;
         this._display_text_80 = display_text_80;
         this._display_hires = display_hires;
         this._display_double_hires = display_double_hires;
+        this._display_lores = display_lores;
         this._audio_cb = audio_cb;
         this._get_cycles = get_cycles;
         this._cycles = 0;
@@ -388,7 +389,7 @@ export class IOManager
             case 0xc05e: // double hires on
                 if(this._iou_disable) {
                     //console.log("double hires on");
-                    if(!this._mem._double_hires) {
+                    if(!this._double_hires) {
                       this._80col_mode = true;
                       this._double_hires = true;
                       this.switch_display_mode();
@@ -398,7 +399,7 @@ export class IOManager
             case 0xc05f: // double hires off
                 if(this._iou_disable) {
                     //console.log("double hires off");
-                    if(this._mem._double_hires) {
+                    if(this._double_hires) {
                         this._double_hires = false;
                         this.switch_display_mode();
                     }
@@ -434,84 +435,62 @@ export class IOManager
 
     ////////////////////////////////////////////
     draw_display(addr, val) {
-        if(this._text_mode) {
-            // 0400-07ff: text page 1
-            // 0800-0bff: text page 2
-            // : text page 80
-   
-            if( ((addr & 0xfc00) == 0x0400) ||
-                (((addr & 0xfc00) == 0x0800) && this._mem.dms_page2 && !this._mem.dms_80store) ) {
+        const textPage = this._mem.dms_page2 && !this._mem.dms_80store ? 0x0800 : 0x0400;
+        const textWrite = addr >= textPage && addr < textPage + 0x400;
+        const mixedText = !this._text_mode && this._mixed_mode;
 
-                //if(this._mem.dms_80store) {
-                //    this._display_text_80.draw_text(addr);
-                //} else {
-                    this._display_text.draw_text(addr, val);
-                //}
-
-            /* if(!this._mem.dms_80store) {
-            if( ((addr & 0xfc00) == 0x0400) || 
-                (((addr & 0xfc00) == 0x0800) && this._mem.dms_page2 && !this._mem.dms_80store) ) {
-                this._display_text.draw_text(addr, val);
-            }
-            } else 
-            if { this._display_text_80.draw_text(addr, val);*/
-            }
-        } else {
-            // 2000-3fff: graphics page 1
-            // 4000-5fff: graphics page 2
-            if( ((addr & 0xe000) == 0x2000) ||
-                (((addr & 0xe000) == 0x4000) && this._mem.dms_page2 && !this._mem.dms_80store) ) {
-                if(this._mem.dms_hires) {
-                    // hires graphics modes
-                    if(this._double_hires) {
-                        this._display_double_hires.draw(addr);
-                    } else {
-                        this._display_hires.draw(addr, val);
-                    }
-                } else {
-                    // TODO: lores graphics modes
-                }
-            }
+        if(textWrite && (this._text_mode || mixedText)) {
+            if(this._80col_mode) this._display_text_80.draw_text(addr, val);
+            else this._display_text.draw_text(addr, val);
+            if(mixedText) this.draw_mixed_text();
         }
+
+        if(this._text_mode) return;
+
+        if(this._mem.dms_hires) {
+            const page = this._mem.dms_page2 && !this._mem.dms_80store ? 0x4000 : 0x2000;
+            if(addr >= page && addr < page + 0x2000) {
+                if(this._double_hires) this._display_double_hires.draw(addr);
+                else this._display_hires.draw(addr, val);
+                if(this._mixed_mode) this.draw_mixed_text();
+            }
+        } else if(textWrite) {
+            this._display_lores.draw(addr);
+            if(this._mixed_mode) this.draw_mixed_text();
+        }
+    }
+
+    draw_mixed_text() {
+        // Mixed mode is graphics scanlines 0-159 plus text rows 20-23.
+        // Render those four rows directly over the active graphics canvas.
+        const d = this._80col_mode ? this._display_text_80 : this._display_text;
+        const page = this._mem.dms_page2 && !this._mem.dms_80store ? 0x0800 : 0x0400;
+        for(let a=page;a<page+0x400;a++) {
+            const col=(a&0x7f)%40;
+            const row=(((a-col)>>2)&0x18)|((a>>7)&7);
+            if(row>=20 && row<24) d.draw_text(a, this._mem._main[a]);
+        }
+        const src=d._id;
+        if(src) d._context.putImageData(src,0,0,0,20*16+4,564,4*16);
     }
 
     ////////////////////////////////////////////
     switch_display_mode() {
-        this._display_text.reset();
-        //this._display_text_80.reset();
-        this._display_hires.reset();
-        //this._display_double_hires.reset();
-        const is_page2 = this._mem.dms_page2 && !this._mem.dms_80store;
-        //const is_page2 = this._mem.dms_80store;
+        const page = this._mem.dms_page2 && !this._mem.dms_80store ? 2 : 1;
 
         if(this._text_mode) {
-            // text mode
-            if(this._80col_mode) {
-                this._display_text_80.set_active_page(is_page2 ? 2 : 1);
-            } else {
-                //console.log("enabling text mode: " + (is_page2 ? "page2" : "page1"));
-                this._display_text.set_active_page(is_page2 ? 2 : 1);
-            }
-        } else {
-            // graphics modes
-            // TODO: mixed modes
-            if(this._mem.dms_hires) {
-                if(this._double_hires) {
-                    //console.log("enabling double-hires graphics mode: " + (is_page2 ? "page2" : "page1"));
-                    this._display_double_hires.set_active_page(is_page2 ? 2 : 1);
-                } else {
-                    //console.log("enabling hires graphics mode: " + (is_page2 ? "page2" : "page1"));
-                    this._display_hires.set_active_page(is_page2 ? 2 : 1);
-                }
-            } else {
-                // TODO: lores graphics
-                if(this._double_hires) {
-                    //console.log("enabling " + (this._mixed_mode ? "mixed " : "") + "double-lores graphics mode, " + (is_page2 ? "page2" : "page1"));
-                } else {
-                    //console.log("enabling " + (this._mixed_mode ? "mixed " : "") + "lores graphics mode, " + (is_page2 ? "page2" : "page1"));
-                }
-            }
+            if(this._80col_mode) this._display_text_80.set_active_page(page);
+            else this._display_text.set_active_page(page);
+            return;
         }
+
+        if(this._mem.dms_hires) {
+            if(this._double_hires) this._display_double_hires.set_active_page(page);
+            else this._display_hires.set_active_page(page);
+        } else {
+            this._display_lores.set_active_page(page, this._double_hires && this._80col_mode);
+        }
+        if(this._mixed_mode) this.draw_mixed_text();
     }
 
     reset() {
