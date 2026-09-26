@@ -449,8 +449,10 @@ function composeScreen() {
   const joyControlsEl = document.getElementById("joyControls");
   const controlsEl = document.getElementById("controls");
 
+  document.body.classList.toggle("keyboard-mode", keyboardMode);
+  document.body.classList.toggle("joystick-mode", !keyboardMode);
   [keyboard0, keyboard1, keyboard2, keypad, joyStickEl, joyControlsEl]
-    .forEach(el => { if (el) el.style.display = "none"; });
+    .forEach(el => { if (el) el.style.removeProperty("display"); });
 
   controlsEl.style.display = "flex";
   document.body.style.backgroundColor = "#c4c1a0";
@@ -461,13 +463,7 @@ function composeScreen() {
     screen.style.width = "";
     screen.style.height = "";
 
-    if (keyboardMode) {
-      keyboard0.style.display = "block";
-      (symbols ? keyboard2 : keyboard1).style.display = "block";
-    } else {
-      joyStickEl.style.display = "block";
-      joyControlsEl.style.display = "block";
-    }
+    document.body.classList.toggle("symbols-mode", symbols);
     return;
   }
 
