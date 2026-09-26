@@ -54,10 +54,14 @@ export class IIgsMemory {
         v=this.video.readBankE1(off);
       else
         v=this.ram[((bank-0xe0)<<16)|off];
-    } else if(bank===0x00 && off>=0xc000 && off<=0xcfff) {
-      // Mega II I/O lives in bank 00. IOManager is installed as a 24-bit hook;
-      // fall back to legacy memory for slot/ROM behavior.
+    } else if(bank===0x00) {
+      // Bank $00 is the Mega II compatibility window. Delegating the full bank
+      // keeps IIe soft switches, language-card state and classic video RAM
+      // coherent with the existing renderers.
       v=this.legacy.read(off);
+    } else if(bank===0x01 && off<0xc000) {
+      // Bank $01 exposes the auxiliary 64K used by Mega II double/80-column modes.
+      v=this.legacy._aux[off];
     } else if(addr < this.ram.length) {
       v=this.ram[addr];
     } else {
@@ -80,8 +84,10 @@ export class IIgsMemory {
         this.video.writeBankE1(off,val);
       else
         this.ram[((bank-0xe0)<<16)|off]=val;
-    } else if(bank===0x00 && off>=0xc000 && off<=0xcfff) {
+    } else if(bank===0x00) {
       this.legacy.write(off,val);
+    } else if(bank===0x01 && off<0xc000) {
+      this.legacy._aux[off]=val;
     } else if(addr < this.ram.length) {
       this.ram[addr]=val;
     }
