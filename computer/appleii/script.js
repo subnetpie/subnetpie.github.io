@@ -16,17 +16,6 @@ var joyButtons = document.getElementById("joyButtonsCanvas");
 var joyButtonsCtx = joyButtons.getContext("2d");
 document.oncontextmenu = new Function("return false;");
 
-// Keep iOS Safari gestures from stealing the emulator's touch controls.
-document.addEventListener("gesturestart", (e) => e.preventDefault(), { passive: false });
-document.addEventListener("gesturechange", (e) => e.preventDefault(), { passive: false });
-document.addEventListener("gestureend", (e) => e.preventDefault(), { passive: false });
-let lastTouchEnd = 0;
-document.addEventListener("touchend", (e) => {
-  const now = performance.now();
-  if (now - lastTouchEnd <= 350) e.preventDefault();
-  lastTouchEnd = now;
-}, { passive: false });
-
 import { Motherboard } from "https://subnetpie.github.io/computer/appleii/motherboard.js";
 
 class Drive {
@@ -303,8 +292,9 @@ document.getElementById("buttonInput").addEventListener("pointerdown", () => {se
 document.getElementById("buttonColor").addEventListener("pointerdown", () => {setColor(buttonColor.innerText)});
 document.getElementById("buttonScanlines").addEventListener("pointerdown", () => {setScanlines(buttonScanlines.innerText)});
 
-$('#buttonLoad').click(function() {
-  $('#filedialog1').trigger('click');
+document.getElementById("buttonLoad").addEventListener("pointerdown", (e) => {
+  e.preventDefault();
+  document.getElementById("filedialog1").click();
 });
 
 document.getElementById("buttonRunStop").addEventListener("pointerdown", ()=>{(interval?stop:run)()});
