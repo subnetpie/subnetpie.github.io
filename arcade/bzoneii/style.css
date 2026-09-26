@@ -109,6 +109,9 @@ button {
   width: 90px;
   height: 225px;
   border-radius: 12px;
+  /* Keep moving knob repaints contained over an opaque track on iOS Safari. */
+  background: #181818;
+  contain: paint;
 }
 
 .stick-knob {
@@ -120,6 +123,7 @@ button {
   border: 2px solid #ff4c00;
   border-radius: 10px;
   background: #ffffff24;
+  will-change: transform;
   transform: translateY(-50%);
   transition: transform 0.06s ease-out;
   pointer-events: none;
