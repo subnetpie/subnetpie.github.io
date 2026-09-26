@@ -48,9 +48,15 @@ class Drive {
       // detection runs before the DSK size check. load_disk() was rejecting all
       // WOZ files with "invalid disk image size" because it only accepts 143360-byte
       // DSK images. load_image() detects WOZ1/WOZ2 by signature and routes correctly.
-      const ok = motherboard.floppy525.load_image(this.num, name, fr.result);
+      const lower = name.toLowerCase();
+      const bytes = fr.result.byteLength;
+      const hardDrive = lower.endsWith(".hdv") ||
+                        (lower.endsWith(".po") && bytes > 143360);
+      const ok = hardDrive
+        ? motherboard.prodosBlock.load_image(name, fr.result)
+        : motherboard.floppy525.load_image(this.num, name, fr.result);
 
-      // FIX 2: reset and run after a successful disk load so the machine boots
+      // Reset and run after a successful media load so the machine boots
       // from the newly mounted image without requiring the user to press Run.
       // The commented-out run() call below was the original intent but was never
       // completed; a reset is also needed to restart the CPU from $FFFC.
