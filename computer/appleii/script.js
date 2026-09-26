@@ -1,4 +1,5 @@
-const khz = 1020.5;
+const machineType = new URLSearchParams(location.search).get("machine") === "iigs" ? "iigs" : "iie";
+const khz = machineType === "iigs" ? 2800 : 1020.5;
 let motherboard;
 let interval;
 let last_ms;
@@ -39,6 +40,14 @@ class Drive {
       // DSK images. load_image() detects WOZ1/WOZ2 by signature and routes correctly.
       const lower = name.toLowerCase();
       const bytes = fr.result.byteLength;
+      if(machineType === "iigs" && (lower.endsWith(".rom") || lower.endsWith(".bin")) &&
+         (bytes === 0x20000 || bytes === 0x40000)) {
+        motherboard.loadIIgsROM(fr.result);
+        stop();
+        motherboard.reset();
+        run();
+        return;
+      }
       const hardDrive = lower.endsWith(".hdv") ||
                         (lower.endsWith(".po") && bytes > 143360);
       const ok = hardDrive
@@ -79,11 +88,11 @@ function on_interval(now_ms) {
 
 function init() {
   let canvas = document.querySelector("canvas");
-  motherboard = new Motherboard(khz, canvas, joyValues, (n, s) => {});
+  motherboard = new Motherboard(khz, canvas, joyValues, (n, s) => {}, machineType);
   motherboard.reset();
   setScanlines();
   setColor();
-  motherboard.message('press "run" to start');
+  motherboard.message(machineType === "iigs" ? 'load IIgs ROM to start' : 'press "run" to start');
 }
 
 function stop() {
