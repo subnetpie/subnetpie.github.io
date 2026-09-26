@@ -51,7 +51,7 @@ export class Motherboard
             : this.legacyMemory;
         this.cpu = this.iigsEnabled ? new W65C816(this.memory) : new W65C02S(this.memory);
         if(this.video_iigs) {
-            this.video_iigs.scanlineIrq = () => this.cpu.irq(true);
+            this.video_iigs.scanlineIrq = state => this.cpu.irq(state);
         }
         this.cycles = 0;
 
