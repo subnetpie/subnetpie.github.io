@@ -334,3 +334,37 @@ button,
   .KBbutton { flex-basis: 36px; }
   .SPbutton { height: 34px; }
 }
+
+
+/* Touch controls are fail-safe visible: joystick is the default portrait mode. */
+@media (orientation: portrait) {
+  #joyStick,
+  #joyControls {
+    display: block !important;
+  }
+
+  #keyboard0,
+  #keyboard1,
+  #keyboard2,
+  #keypad {
+    display: none !important;
+  }
+
+  body.keyboard-mode #joyStick,
+  body.keyboard-mode #joyControls {
+    display: none !important;
+  }
+
+  body.keyboard-mode #keyboard0,
+  body.keyboard-mode #keyboard1 {
+    display: block !important;
+  }
+
+  body.keyboard-mode.symbols-mode #keyboard1 {
+    display: none !important;
+  }
+
+  body.keyboard-mode.symbols-mode #keyboard2 {
+    display: block !important;
+  }
+}
