@@ -11,6 +11,9 @@ export class IIgsMemory {
     this.video = video;
     this.ram = new Uint8Array(Math.max(0x20000, Math.min(ramBytes, 0x800000)));
     this.rom = null;
+    this.slowE0 = new Uint8Array(0x10000);
+    this.slowE1 = new Uint8Array(0x10000);
+    if(this.video) this.video.attachBankE1(this.slowE1);
     this.readHooks = [];
     this.writeHooks = [];
     this.trace = null;
@@ -53,7 +56,7 @@ export class IIgsMemory {
       if(bank===0xe1 && off>=0x2000 && off<0xa000 && this.video)
         v=this.video.readBankE1(off);
       else
-        v=this.ram[((bank-0xe0)<<16)|off];
+        v=(bank===0xe0 ? this.slowE0 : this.slowE1)[off];
     } else if(bank===0x00) {
       // Bank $00 is the Mega II compatibility window. Delegating the full bank
       // keeps IIe soft switches, language-card state and classic video RAM
@@ -83,7 +86,7 @@ export class IIgsMemory {
       if(bank===0xe1 && off>=0x2000 && off<0xa000 && this.video)
         this.video.writeBankE1(off,val);
       else
-        this.ram[((bank-0xe0)<<16)|off]=val;
+        (bank===0xe0 ? this.slowE0 : this.slowE1)[off]=val;
     } else if(bank===0x00) {
       this.legacy.write(off,val);
     } else if(bank===0x01 && off<0xc000) {
@@ -101,6 +104,6 @@ export class IIgsMemory {
     return this.read_word(addr) | (this.read((addr+2)&0xffffff)<<16);
   }
   reset(cold=false) {
-    if(cold) this.ram.fill(0);
+    if(cold) { this.ram.fill(0); this.slowE0.fill(0); this.slowE1.fill(0); }
   }
 }
