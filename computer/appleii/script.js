@@ -70,7 +70,9 @@ function on_interval(now_ms) {
   motherboard.clock(cycles);
   interval = window.requestAnimationFrame(on_interval);
 
-    if (motherboard.io_manager._double_hires) {
+    if (motherboard.video_iigs && motherboard.video_iigs.isSuperHires()) {
+      motherboard.video_iigs.refresh();
+    } else if (motherboard.io_manager._double_hires) {
       motherboard.display_double_hires.refresh();
     };
 }
