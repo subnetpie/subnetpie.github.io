@@ -46,6 +46,11 @@ export class IIgsVideo {
     this.dirty = true;
     this.scanlineIrqPending = false;
     this.currentScanline = 0;
+    this.vgcIntEnable = 0;
+    this.vgcIntStatus = 0;
+    this.scanCycleAccum = 0;
+    this.frameCount = 0;
+    this.updateIRQ();
   }
 
   readVGCINT() {
