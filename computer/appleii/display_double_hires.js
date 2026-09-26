@@ -34,6 +34,9 @@ export class DoubleHiresDisplay
     this._id = undefined;
     this._page1_init = false;
     this._page2_init = false;
+    // IIgs NEWVIDEO bit 5 controls monochrome vs color DHGR.
+    // false = color, true = monochrome.
+    this.monochrome = false;
     this.r4 = [
       0,   // Black
       2,   // Dark Blue
@@ -71,6 +74,15 @@ export class DoubleHiresDisplay
       [255, 255, 255]  // 0xf white
     ];
     this.reset();
+  }
+
+  setMonochrome(enabled) {
+    const next = !!enabled;
+    if (this.monochrome === next) return;
+    this.monochrome = next;
+    // Rebuild the active page because NEWVIDEO changes interpretation of the
+    // same DHGR bytes without changing video RAM.
+    if (this._id) this.refresh();
   }
 
   draw(addr) {
@@ -138,7 +150,13 @@ export class DoubleHiresDisplay
       let off=0;
       for(let jdx = 0; jdx < 4; jdx++, off+=4) {
         var c0 = dcolor[0], c1 = dcolor[1], c2 = dcolor[2];
-        if ((c[idx] != c[idx - 1]) && (c[idx] != c[idx + 1]) &&
+        if (this.monochrome) {
+          // DHGR monochrome displays the underlying 1-bit 560-pixel stream.
+          // Each nibble contributes four adjacent pixels, independent of the
+          // artifact-color phase used by color DHGR.
+          const on = (c[idx] >> jdx) & 1;
+          c0 = c1 = c2 = on ? 255 : 0;
+        } else if ((c[idx] != c[idx - 1]) && (c[idx] != c[idx + 1]) &&
         (((bits & 0x1c) == 0x1c) ||
         ((bits & 0x70) == 0x70) ||
         ((bits & 0x38) == 0x38))) {
