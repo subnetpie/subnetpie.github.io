@@ -358,6 +358,11 @@ function updateFire() {
     if (button === 0) val0 = 1;
     else val1 = 1;
   }
+  // Hardware-visible state must change on the pointer event itself. Games such
+  // as Choplifter poll $C061/$C062 in a tight loop and should not depend on the
+  // separate UI repaint timer to publish a fire-button transition.
+  joyValues.button0 = val0;
+  joyValues.button1 = val1;
 }
 joyButtons.addEventListener("pointerdown", (e) => {
   e.preventDefault();
@@ -422,6 +427,9 @@ function setJoy() {
   } else {
     joyX = posX; joyY = posY;
   }
+  // Publish paddle state synchronously for the same reason as fire buttons.
+  joyValues.axis0 = joyX * 10;
+  joyValues.axis1 = joyY * 10;
 }
 
 function composeScreen() {
