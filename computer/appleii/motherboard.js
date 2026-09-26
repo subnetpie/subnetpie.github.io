@@ -40,7 +40,7 @@ export class Motherboard
         // SHR is dormant until NEWVIDEO bit 7 is selected.
         this.video_iigs = new IIgsVideo(canvas, {
             refresh: () => this.io_manager && this.io_manager.switch_display_mode()
-        });
+        }, null, this.display_double_hires);
         this.cycles = 0;
 
         // Pass a cycle-count getter into Floppy525 so the WOZ latch emulation
