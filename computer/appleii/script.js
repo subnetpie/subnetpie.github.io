@@ -11,6 +11,17 @@ function showBootStatus(text) {
   el.textContent = text;
   el.style.display = "block";
 }
+window.addEventListener("error", e => {
+  showBootStatus("JS STARTUP ERROR\n" + (e.message || "unknown error") +
+    (e.filename ? "\n" + e.filename.split("/").pop() + ":" + e.lineno + ":" + e.colno : ""));
+});
+window.addEventListener("unhandledrejection", e => {
+  const r = e.reason;
+  showBootStatus("JS PROMISE ERROR\n" + String(r && r.message ? r.message : r));
+});
+setTimeout(() => {
+  if(!motherboard) showBootStatus("JS STARTUP STALL\nscript loaded but motherboard was not initialized");
+}, 1500);
 var joyWidth = 256;
 var joyHeight = 256;
 var posX=127,posY=127, element="";
@@ -130,8 +141,10 @@ function on_interval(now_ms) {
 }
 
 function init() {
+  showBootStatus("IIgs startup: constructing motherboard...");
   let canvas = document.querySelector("canvas");
   motherboard = new Motherboard(khz, canvas, joyValues, (n, s) => {}, machineType);
+  showBootStatus("IIgs startup: motherboard constructed");
 
 async function loadBuiltInIIgsROM() {
   if(machineType !== "iigs") return false;
