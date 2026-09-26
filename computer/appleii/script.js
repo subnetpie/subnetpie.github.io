@@ -110,7 +110,6 @@ class Drive {
     e.target.value = "";
   }
 }
-}
 
 // The single picker mounts drive 1 only. Registering it for both drives
 // starts two asynchronous loads and resets the machine twice.
