@@ -300,3 +300,63 @@ button,
     height: 34px;
   }
 }
+
+
+/* Touch joystick: large independent movement and fire zones below the display. */
+@media (orientation: portrait) {
+  #joyStick {
+    left: 0 !important;
+    right: 0;
+    width: 100% !important;
+    transform: none !important;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px max(12px, env(safe-area-inset-right)) 8px max(12px, env(safe-area-inset-left));
+  }
+
+  #joyPadCanvas,
+  #joyButtonsCanvas {
+    position: static;
+    transform: none;
+    width: min(44vw, 260px);
+    height: min(44vw, 260px);
+    flex: 0 0 auto;
+  }
+
+  #joyButtonsCanvas {
+    width: min(34vw, 210px);
+    height: min(44vw, 260px);
+  }
+
+  #joyControls {
+    position: absolute;
+    top: auto;
+    bottom: -48px;
+    left: 50%;
+    width: min(62vw, 280px);
+    height: 42px;
+    transform: translateX(-50%);
+    display: flex !important;
+    justify-content: center;
+    gap: 6px;
+  }
+
+  #buttonMode,
+  #buttonCenter,
+  #buttonGrid,
+  #buttonDebug {
+    position: static;
+    transform: none;
+    width: 58px;
+    height: 36px;
+    font-size: 10px;
+  }
+
+  #buttonMode::before,
+  #buttonCenter::before,
+  #buttonGrid::before,
+  #buttonDebug::before {
+    display: none;
+  }
+}
