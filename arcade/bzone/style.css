@@ -77,7 +77,8 @@ button {
   pointer-events: auto;
 }
 
-#leftTop {
+#leftTop,
+#rightTop {
   display: flex;
   flex-direction: column;
   gap: 6px;
