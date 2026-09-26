@@ -70,7 +70,9 @@ export class Motherboard
         this.audio.begin_segment(this.cycles);
         const total = this.cycles + count;
         while(this.cycles < total) {
-            this.cycles += this.cpu.step();
+            const used=this.cpu.step();
+            this.cycles += used;
+            if(this.iigsEnabled && this.video_iigs) this.video_iigs.tick(used, 2800000);
         }
     }
 
