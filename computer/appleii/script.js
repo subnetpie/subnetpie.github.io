@@ -89,10 +89,47 @@ function on_interval(now_ms) {
 function init() {
   let canvas = document.querySelector("canvas");
   motherboard = new Motherboard(khz, canvas, joyValues, (n, s) => {}, machineType);
+
+async function loadBuiltInIIgsROM() {
+  if(machineType !== "iigs") return false;
+
+  // MAME ROM 03 is split across two 128K devices. Convert the raw chip
+  // layout into the 256K linear ROM image expected by the IIgs bus:
+  // 341-0728 + upper 64K of 341-0748 + lower 64K of 341-0748.
+  const [loResponse, hiResponse] = await Promise.all([
+    fetch("rom/341-0728"),
+    fetch("rom/341-0748")
+  ]);
+  if(!loResponse.ok || !hiResponse.ok)
+    throw new Error("Unable to load built-in Apple IIgs ROM 03");
+
+  const lo = new Uint8Array(await loResponse.arrayBuffer());
+  const hi = new Uint8Array(await hiResponse.arrayBuffer());
+  if(lo.length !== 0x20000 || hi.length !== 0x20000)
+    throw new Error("Apple IIgs ROM 03 chip images must each be 128K");
+
+  const rom = new Uint8Array(0x40000);
+  rom.set(lo, 0x00000);
+  rom.set(hi.subarray(0x10000, 0x20000), 0x20000);
+  rom.set(hi.subarray(0x00000, 0x10000), 0x30000);
+  motherboard.loadIIgsROM(rom);
+  return true;
+}
   motherboard.reset();
   setScanlines();
   setColor();
-  motherboard.message(machineType === "iigs" ? 'load IIgs ROM to start' : 'press "run" to start');
+  if(machineType === "iigs") {
+    motherboard.message("loading IIgs ROM 03...");
+    loadBuiltInIIgsROM().then(() => {
+      motherboard.message("IIgs ROM 03 loaded");
+      run();
+    }).catch(err => {
+      console.error(err);
+      motherboard.message("IIgs ROM load failed");
+    });
+  } else {
+    motherboard.message('press "run" to start');
+  }
 }
 
 function stop() {
