@@ -101,7 +101,16 @@ const drives = [new Drive(0, "drivetitle1", "led1", "filedialog1")];
 function on_interval(now_ms) {
   const cycles = ((now_ms - last_ms) * khz) & 0x7fff;
   last_ms = now_ms;
-  motherboard.clock(cycles);
+  try {
+    motherboard.clock(cycles);
+  } catch(err) {
+    window.appleBootError = err;
+    console.error("[Apple IIgs boot]", err);
+    interval = undefined;
+    buttonRunStop.innerText = "run";
+    motherboard.message(String(err.message || err).slice(0, 38));
+    return;
+  }
   interval = window.requestAnimationFrame(on_interval);
 
     if (motherboard.iigsEnabled && motherboard.video_iigs && motherboard.video_iigs.isSuperHires()) {
