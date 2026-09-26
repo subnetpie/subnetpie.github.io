@@ -257,8 +257,14 @@ function setGrid(e) {
 function setDebug(e) {
   if (e=="off") {
     buttonDebug.innerText = "on";
+    motherboard.startTrace();
   } else {
     buttonDebug.innerText = "off";
+    motherboard.stopTrace();
+    // Keep the last bounded trace reachable from Safari/Web Inspector without
+    // leaving instrumentation active during normal emulation.
+    window.appleTrace = motherboard.traceText();
+    console.log(window.appleTrace);
   }
 }
 
