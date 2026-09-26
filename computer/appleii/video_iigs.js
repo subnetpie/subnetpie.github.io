@@ -48,6 +48,49 @@ export class IIgsVideo {
     this.currentScanline = 0;
   }
 
+  readVGCINT() {
+    const active = ((this.vgcIntStatus & 0x20) && (this.vgcIntEnable & 0x02)) ||
+                   ((this.vgcIntStatus & 0x40) && (this.vgcIntEnable & 0x04));
+    return (active ? 0x80 : 0) | (this.vgcIntStatus & 0x60) | (this.vgcIntEnable & 0x06);
+  }
+
+  updateIRQ() {
+    const active = ((this.vgcIntStatus & 0x20) && (this.vgcIntEnable & 0x02)) ||
+                   ((this.vgcIntStatus & 0x40) && (this.vgcIntEnable & 0x04));
+    this.scanlineIrqPending = !!active;
+    if(this.scanlineIrq) this.scanlineIrq(!!active);
+  }
+
+  writeVGCINT(value) {
+    this.vgcIntEnable = value & 0x06;
+    this.updateIRQ();
+  }
+
+  writeSCANINT(value) {
+    if((value & 0x20) === 0) this.vgcIntStatus &= ~0x20;
+    if((value & 0x40) === 0) this.vgcIntStatus &= ~0x40;
+    this.updateIRQ();
+  }
+
+  tick(cycles, cpuHz=2800000) {
+    const perLine = cpuHz / (60 * 262);
+    this.scanCycleAccum += cycles;
+    while(this.scanCycleAccum >= perLine) {
+      this.scanCycleAccum -= perLine;
+      const y=this.currentScanline;
+      if(y < SHR_LINES) this.beginScanline(y);
+      this.currentScanline++;
+      if(this.currentScanline >= 262) {
+        this.currentScanline=0;
+        if(++this.frameCount >= 60) {
+          this.frameCount=0;
+          this.vgcIntStatus |= 0x40;
+          this.updateIRQ();
+        }
+      }
+    }
+  }
+
   // Decode one of the 200 scan-line control bytes at $E1:9D00-$E1:9DC7.
   // bit 7: 640 mode, bit 6: scan-line interrupt, bit 5: 320 fill mode,
   // bits 3-0: palette number. Fill is ignored by 640 mode.
@@ -66,13 +109,13 @@ export class IIgsVideo {
     this.currentScanline = y % SHR_LINES;
     const scb = this.decodeSCB(this.currentScanline);
     if (scb.interrupt) {
-      this.scanlineIrqPending = true;
-      if (this.scanlineIrq) this.scanlineIrq(this.currentScanline, scb.raw);
+      this.vgcIntStatus |= 0x20;
+      this.updateIRQ();
     }
     return scb;
   }
 
-  clearScanlineInterrupt() { this.scanlineIrqPending = false; }
+  clearScanlineInterrupt() { this.vgcIntStatus &= ~0x20; this.updateIRQ(); }
   isScanlineInterruptPending() { return this.scanlineIrqPending; }
 
   // $C029 NEWVIDEO is the hardware source of truth for IIgs video selection.
