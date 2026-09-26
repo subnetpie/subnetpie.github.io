@@ -80,8 +80,9 @@ export class Motherboard
 
     startTrace() {
         this.trace.start();
+        this.cpu.setTrace(e => this.trace.log("cpu", e));
+        this.floppy525.setTrace(e => this.trace.log("disk", e));
         if(this.iigsEnabled) {
-            this.cpu.setTrace(e => this.trace.log("cpu", e));
             this.memory.setTrace((rw,addr,value) => this.trace.log("mem",{rw,addr,value}));
         }
     }
