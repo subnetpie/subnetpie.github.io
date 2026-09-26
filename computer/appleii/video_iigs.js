@@ -5,11 +5,14 @@
 //   $9E00-$9FFF 16 x 16-entry 12-bit RGB palettes.
 
 export class IIgsVideo {
-  constructor(canvas, legacyVideo = null) {
+  constructor(canvas, legacyVideo = null, scanlineIrq = null) {
     this.canvas = canvas;
     this.context = canvas.getContext("2d", {alpha:false});
     this.context.imageSmoothingEnabled = false;
     this.legacy = legacyVideo;
+    this.scanlineIrq = scanlineIrq;
+    this.scanlineIrqPending = false;
+    this.currentScanline = 0;
     this.bankE1 = new Uint8Array(0x10000);
     this.newVideo = 0;
     this.superHires = false;
@@ -23,7 +26,36 @@ export class IIgsVideo {
     this.superHires = false;
     this.bankE1.fill(0);
     this.dirty = true;
+    this.scanlineIrqPending = false;
+    this.currentScanline = 0;
   }
+
+  // Decode one of the 200 scan-line control bytes at $E1:9D00-$E1:9DC7.
+  // bit 7: 640 mode, bit 6: scan-line interrupt, bit 5: 320 fill mode,
+  // bits 3-0: palette number. Fill is ignored by 640 mode.
+  decodeSCB(y) {
+    const raw = this.bankE1[0x9d00 + (y % 200)];
+    return {
+      raw,
+      mode640: (raw & 0x80) !== 0,
+      interrupt: (raw & 0x40) !== 0,
+      fill: (raw & 0x20) !== 0,
+      palette: raw & 0x0f
+    };
+  }
+
+  beginScanline(y) {
+    this.currentScanline = y % 200;
+    const scb = this.decodeSCB(this.currentScanline);
+    if (scb.interrupt) {
+      this.scanlineIrqPending = true;
+      if (this.scanlineIrq) this.scanlineIrq(this.currentScanline, scb.raw);
+    }
+    return scb;
+  }
+
+  clearScanlineInterrupt() { this.scanlineIrqPending = false; }
+  isScanlineInterruptPending() { return this.scanlineIrqPending; }
 
   // $C029 NEWVIDEO. Bit 7 selects Super Hi-Res; clearing it returns display
   // ownership to the Mega II-compatible Apple II/IIe video path.
@@ -62,8 +94,8 @@ export class IIgsVideo {
   }
 
   render320Line(y, scb, data) {
-    const palette = scb & 0x0f;
-    const fill = (scb & 0x20) !== 0;
+    const palette = scb.palette;
+    const fill = scb.fill;
     const base = 0x2000 + y * 160;
     let last = 0;
     for (let i=0;i<160;i++) {
@@ -82,15 +114,25 @@ export class IIgsVideo {
 
   render640Line(y, scb, data) {
     const base = 0x2000 + y * 160;
-    // 640 mode selects four 4-color subpalettes from the SCB palette group.
-    const group=(scb&0x0f)<<2;
+    const palette = scb.palette;
+    // In 640 mode each 2-bit pixel selects one of four colors from a
+    // position-dependent group inside the scan line's selected 16-color palette.
+    // Pixel positions 0..3 use entries {0,4,8,12}, {0,1,2,3},
+    // {0,5,10,15}, and {0,2,4,6}, respectively.
+    const maps = [
+      [0,4,8,12],
+      [0,1,2,3],
+      [0,5,10,15],
+      [0,2,4,6]
+    ];
     for(let i=0;i<160;i++) {
       const b=this.bankE1[base+i];
       const x=i*4;
-      this.putPixel(data,x,y,this.paletteColor((group+0)&15,(b>>6)&3));
-      this.putPixel(data,x+1,y,this.paletteColor((group+1)&15,(b>>4)&3));
-      this.putPixel(data,x+2,y,this.paletteColor((group+2)&15,(b>>2)&3));
-      this.putPixel(data,x+3,y,this.paletteColor((group+3)&15,b&3));
+      const p0=(b>>6)&3, p1=(b>>4)&3, p2=(b>>2)&3, p3=b&3;
+      this.putPixel(data,x,y,this.paletteColor(palette,maps[0][p0]));
+      this.putPixel(data,x+1,y,this.paletteColor(palette,maps[1][p1]));
+      this.putPixel(data,x+2,y,this.paletteColor(palette,maps[2][p2]));
+      this.putPixel(data,x+3,y,this.paletteColor(palette,maps[3][p3]));
     }
   }
 
@@ -98,8 +140,8 @@ export class IIgsVideo {
     if (!this.superHires || (!force && !this.dirty)) return false;
     const data=this.image.data;
     for(let y=0;y<200;y++) {
-      const scb=this.bankE1[0x9d00+y];
-      if (scb&0x80) this.render640Line(y,scb,data);
+      const scb=this.decodeSCB(y);
+      if (scb.mode640) this.render640Line(y,scb,data);
       else this.render320Line(y,scb,data);
     }
     // Scale 640x200 SHR to the emulator's 564x390 presentation canvas.
