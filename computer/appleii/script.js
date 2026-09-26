@@ -410,93 +410,46 @@ function setJoy() {
 }
 
 function composeScreen() {
-  var width = $(window).width();
-  var height = $(window).height();
-  let body = document.body;
-  let controls = document.getElementById('controls');
-  let screen = document.getElementById('screen');
-  let joystick = document.getElementById('joyStick');
-  let screenRatio = 390 / 564;
-  if (width>height && width!=414 && width!=428 && width!=430 && width!=736) {
-    if (width==735 || width==831) {
-      $("#keypad").hide();
-      $("#keyboard0").hide();
-      $("#keyboard1").hide();
-      $("#keyboard2").hide();
-      $("#controls").hide();
-      $("#joyStick").show();
-      $("#joyControls").hide();
-      screen.style.height = height + "px";
-      screen.style.width = width * screenRatio + "px";
-      joystick.style.top = height * 0.5 + "px";
-    } else {
-      $("#keypad").hide();
-      $("#keyboard0").hide();
-      $("#keyboard1").hide();
-      $("#keyboard2").hide();
-      $("#controls").hide();
-      $("#joyStick").show();
-      $("#joyControls").show();
-      screen.style.width = 551/screenRatio+"px";
-      screen.style.height = "551px";
-      joystick.style.top = "20px";
-    }
-    body.style.backgroundColor = "#0f0000";
+  const width = window.innerWidth;
+  const height = window.innerHeight;
+  const portrait = height >= width;
+  const keyboardMode = buttonInput.innerText === "joystick";
+  const symbols = buttonKeyboard.innerText !== "123";
+
+  $("#keypad,#keyboard0,#keyboard1,#keyboard2,#joyStick,#joyControls").hide();
+  $("#controls").show();
+  document.body.style.backgroundColor = "#c4c1a0";
+
+  if (portrait) {
     screen.style.left = "50%";
-    screen.style.top = "0px";
-    joystick.style.height = "70%";
-    joystick.style.opacity = "30%";
-  } else {
-    $("#keypad").show();
-    $("#keyboard0").hide();
-    $("#keyboard1").hide();
-    $("#keyboard2").hide();
-    $("#controls").show();
-    $("#joyStick").hide();
-    $("#joyControls").hide();
-    controls.style.top = "3px";
-    body.style.backgroundColor = "#c4c1a0";
-    screen.style.width = width * 0.75 + "px";
-    screen.style.height = width * 0.752 * screenRatio + "px";
-    screen.style.left = width * 0.38 + "px";
-    screen.style.top = "35px";
-    keypad.style.width = width * 0.24 + "px";
-    keypad.style.right = "1px";
-    keypad.style.top = "34.5px";
-    if (width < height) {
-      $("#keypad").hide();
-      if (buttonInput.innerText=="joystick") {
-        if (buttonKeyboard.innerText=="123") {
-          $("#keyboard0").show();
-          $("#keyboard1").show();
-          $("#keyboard2").hide();
-        } else {
-          $("#keyboard0").show();
-          $("#keyboard1").hide();
-          $("#keyboard2").show();
-        }
-        $("#joyStick").hide();
-      } else {
-        $("#keyboard0").hide();
-        $("#keyboard1").hide();
-        $("#keyboard2").hide();
-        $("#joyStick").show();
-      }
-      $("#controls").show();
-      $("#joyControls").show();
-      controls.style.top = "0px";
-      screen.style.height = width * screenRatio + "px";
-      screen.style.width = width + "px";
-      screen.style.left = width * 0.5 + "px";
-      screen.style.top = "28px";
-      joystick.style.top = "81.5%";
+    screen.style.top = "";
+    screen.style.width = "";
+    screen.style.height = "";
+
+    if (keyboardMode) {
+      $("#keyboard0").show();
+      $(symbols ? "#keyboard2" : "#keyboard1").show();
+    } else {
+      $("#joyStick,#joyControls").show();
     }
-    joystick.style.height = "34%";
-    joystick.style.opacity = "100%";
-    joystick.style.left = "51%";
+    return;
   }
+
+  // Landscape keeps the display large and overlays the joystick controls.
+  $("#controls").hide();
+  $("#joyStick").show();
+  $("#joyControls").hide();
+  document.body.style.backgroundColor = "#0f0000";
+  screen.style.left = "50%";
+  screen.style.top = "0px";
+  screen.style.height = height + "px";
+  screen.style.width = (height * 564 / 390) + "px";
+  joyStick.style.left = "50%";
+  joyStick.style.top = "50%";
+  joyStick.style.height = "70%";
+  joyStick.style.opacity = "0.3";
 }
-  
+
 // MAIN FUNCTION //
 $(function() {
   $(window).on('resize', function() {
