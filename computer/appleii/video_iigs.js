@@ -5,12 +5,13 @@
 //   $9E00-$9FFF 16 x 16-entry 12-bit RGB palettes.
 
 export class IIgsVideo {
-  constructor(canvas, legacyVideo = null, scanlineIrq = null) {
+  constructor(canvas, legacyVideo = null, scanlineIrq = null, doubleHires = null) {
     this.canvas = canvas;
     this.context = canvas.getContext("2d", {alpha:false});
     this.context.imageSmoothingEnabled = false;
     this.legacy = legacyVideo;
     this.scanlineIrq = scanlineIrq;
+    this.doubleHires = doubleHires;
     this.scanlineIrqPending = false;
     this.currentScanline = 0;
     this.bankE1 = new Uint8Array(0x10000);
@@ -57,13 +58,21 @@ export class IIgsVideo {
   clearScanlineInterrupt() { this.scanlineIrqPending = false; }
   isScanlineInterruptPending() { return this.scanlineIrqPending; }
 
-  // $C029 NEWVIDEO. Bit 7 selects Super Hi-Res; clearing it returns display
-  // ownership to the Mega II-compatible Apple II/IIe video path.
+  // $C029 NEWVIDEO is the hardware source of truth for IIgs video selection.
+  // Bit 7 selects SHR (0 = Mega II/Apple II-compatible video, 1 = SHR).
+  // Bit 5 controls DHGR color interpretation on the Mega II path
+  // (0 = color, 1 = monochrome).
   writeNewVideo(value) {
+    const previousShr = this.superHires;
     this.newVideo = value & 0xff;
     this.superHires = (this.newVideo & 0x80) !== 0;
+    if (this.doubleHires && this.doubleHires.setMonochrome) {
+      this.doubleHires.setMonochrome((this.newVideo & 0x20) !== 0);
+    }
     this.dirty = true;
-    if (!this.superHires && this.legacy && this.legacy.refresh) this.legacy.refresh();
+    if (previousShr && !this.superHires && this.legacy && this.legacy.refresh) {
+      this.legacy.refresh();
+    }
   }
 
   readNewVideo() { return this.newVideo; }
