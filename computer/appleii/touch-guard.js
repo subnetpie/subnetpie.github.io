@@ -4,8 +4,8 @@
 (() => {
   const options = {capture: true, passive: false};
   const preventGesture = (event) => {
-    // Preserve the native file picker. Its Load control uses pointerdown.
-    if(event.target instanceof Element && event.target.closest('input')) return;
+    // Allow native label activation to open the file picker on iOS.
+    if(event.target instanceof Element && event.target.closest('input, #buttonLoad')) return;
     if(event.cancelable) event.preventDefault();
   };
   for(const type of ['touchend', 'dblclick', 'gesturestart', 'gesturechange', 'gestureend']) {

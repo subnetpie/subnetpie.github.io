@@ -292,11 +292,6 @@ document.getElementById("buttonInput").addEventListener("pointerdown", () => {se
 document.getElementById("buttonColor").addEventListener("pointerdown", () => {setColor(buttonColor.innerText)});
 document.getElementById("buttonScanlines").addEventListener("pointerdown", () => {setScanlines(buttonScanlines.innerText)});
 
-document.getElementById("buttonLoad").addEventListener("pointerdown", (e) => {
-  e.preventDefault();
-  document.getElementById("filedialog1").click();
-});
-
 document.getElementById("buttonRunStop").addEventListener("pointerdown", ()=>{(interval?stop:run)()});
 document.getElementById("buttonReset").addEventListener("pointerdown", buttonReset);
 
@@ -308,7 +303,6 @@ document.getElementById("buttonDebug").addEventListener("pointerdown", ()=>{setD
 
 init();
 
-function buttonLoad(event) { $('#filedialog1').trigger('click'); }
 function buttonReset(event) {
   const was_stopped = !interval;
   stop();
@@ -429,6 +423,7 @@ function setJoy() {
 }
 
 function composeScreen() {
+  const screenCanvas = document.getElementById("screen");
   const portrait = window.innerHeight >= window.innerWidth;
   const keyboardMode = buttonInput.innerText.trim().toLowerCase() === "joystick";
   const symbols = buttonKeyboard.innerText.trim().toUpperCase() === "ABC";
@@ -450,10 +445,10 @@ function composeScreen() {
   document.body.style.backgroundColor = "#c4c1a0";
 
   if (portrait) {
-    screen.style.left = "50%";
-    screen.style.top = "";
-    screen.style.width = "";
-    screen.style.height = "";
+    screenCanvas.style.left = "50%";
+    screenCanvas.style.top = "";
+    screenCanvas.style.width = "";
+    screenCanvas.style.height = "";
 
     document.body.classList.toggle("symbols-mode", symbols);
     return;
@@ -461,10 +456,10 @@ function composeScreen() {
 
   controlsEl.style.display = "none";
   document.body.style.backgroundColor = "#0f0000";
-  screen.style.left = "50%";
-  screen.style.top = "0px";
-  screen.style.height = window.innerHeight + "px";
-  screen.style.width = (window.innerHeight * 564 / 390) + "px";
+  screenCanvas.style.left = "50%";
+  screenCanvas.style.top = "0px";
+  screenCanvas.style.height = window.innerHeight + "px";
+  screenCanvas.style.width = (window.innerHeight * 564 / 390) + "px";
 }
 
 // MAIN FUNCTION //
@@ -482,11 +477,7 @@ $(function() {
     joyValues.button0 = val0;
     joyValues.button1 = val1;
     joyRender.clear(joyPadCtx);
-    if ($(window).width()==414) {
-      joyRender.status(joyPadCtx,joyX,joyY);
-    } else {
-      joyRender.plot(joyPadCtx,joyX,joyY);
-    }
+    joyRender.plot(joyPadCtx,joyX,joyY);
     if (buttonGrid.innerText=="on") {
       joyRender.crosshair(joyPadCtx,Z);
       if (joyX<joyWidth/Z) {
