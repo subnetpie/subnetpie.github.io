@@ -249,17 +249,10 @@ button,
   transform: translateY(-50%);
 }
 
-/* Portrait: screen first, keyboard immediately below it. */
+/* Portrait touch layout */
 @media (orientation: portrait) {
-  #controls {
-    top: max(4px, env(safe-area-inset-top));
-  }
-
-  .button {
-    flex: 1 1 0;
-    width: auto;
-    max-width: 68px;
-  }
+  #controls { top: max(4px, env(safe-area-inset-top)); }
+  .button { flex: 1 1 0; width: auto; max-width: 68px; }
 
   .screen {
     top: calc(max(4px, env(safe-area-inset-top)) + 42px) !important;
@@ -271,115 +264,27 @@ button,
   #keyboard0 {
     top: calc(max(4px, env(safe-area-inset-top)) + 42px + (100vw * var(--screen-ratio)) + 8px);
   }
-
   #keyboard1,
   #keyboard2 {
     top: calc(max(4px, env(safe-area-inset-top)) + 42px + (100vw * var(--screen-ratio)) + 48px);
   }
 
   #joyStick {
-    top: calc(max(4px, env(safe-area-inset-top)) + 42px + (100vw * var(--screen-ratio)) + 18vh) !important;
-    height: min(34vh, 300px) !important;
-    opacity: 1 !important;
-  }
-}
-
-@media (max-width: 390px) and (orientation: portrait) {
-  button,
-  .KBbutton,
-  .Dbutton {
-    height: 38px;
-    font-size: 13px;
-  }
-
-  .KBbutton {
-    flex-basis: 36px;
-  }
-
-  .SPbutton {
-    height: 34px;
-  }
-}
-
-
-/* Touch joystick: large independent movement and fire zones below the display. */
-@media (orientation: portrait) {
-  #joyStick {
-    left: 0 !important;
-    right: 0;
-    width: 100% !important;
-    transform: none !important;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 8px max(12px, env(safe-area-inset-right)) 8px max(12px, env(safe-area-inset-left));
-  }
-
-  #joyPadCanvas,
-  #joyButtonsCanvas {
-    position: static;
-    transform: none;
-    width: min(44vw, 260px);
-    height: min(44vw, 260px);
-    flex: 0 0 auto;
-  }
-
-  #joyButtonsCanvas {
-    width: min(34vw, 210px);
-    height: min(44vw, 260px);
-  }
-
-  #joyControls {
-    position: absolute;
-    top: auto;
-    bottom: -48px;
-    left: 50%;
-    width: min(62vw, 280px);
-    height: 42px;
-    transform: translateX(-50%);
-    display: flex !important;
-    justify-content: center;
-    gap: 6px;
-  }
-
-  #buttonMode,
-  #buttonCenter,
-  #buttonGrid,
-  #buttonDebug {
-    position: static;
-    transform: none;
-    width: 58px;
-    height: 36px;
-    font-size: 10px;
-  }
-
-  #buttonMode::before,
-  #buttonCenter::before,
-  #buttonGrid::before,
-  #buttonDebug::before {
-    display: none;
-  }
-}
-
-
-/* CodePen-style portrait joystick layout. */
-@media (orientation: portrait) {
-  #joyStick {
     top: calc(max(4px, env(safe-area-inset-top)) + 42px + (100vw * var(--screen-ratio))) !important;
     bottom: max(8px, env(safe-area-inset-bottom));
     left: 0 !important;
     right: 0;
+    z-index: 3;
     width: 100% !important;
     height: auto !important;
-    min-height: 300px;
-    padding: 0 !important;
+    min-height: 280px;
     transform: none !important;
     opacity: 1 !important;
   }
 
   #joyPadCanvas {
     position: absolute;
-    left: 4%;
+    left: 3%;
     top: 50%;
     width: 46vw;
     height: 46vw;
@@ -392,11 +297,9 @@ button,
     position: absolute;
     left: 61%;
     top: 50%;
-    bottom: auto;
     width: 25%;
     height: 48%;
     transform: translate(-50%, -50%);
-    display: block !important;
   }
 
   #buttonMode,
@@ -404,27 +307,15 @@ button,
   #buttonGrid,
   #buttonDebug {
     position: absolute;
-    width: 62px;
+    width: 58px;
     height: 38px;
     transform: translate(-50%, -50%);
     font-size: 10px;
   }
-
   #buttonMode { left: 25%; top: 25%; }
   #buttonCenter { left: 75%; top: 25%; }
   #buttonGrid { left: 25%; top: 75%; }
   #buttonDebug { left: 75%; top: 75%; }
-
-  #buttonMode::before,
-  #buttonCenter::before,
-  #buttonGrid::before,
-  #buttonDebug::before {
-    display: block;
-    top: -55%;
-    color: #000;
-    font-family: "Rubik", sans-serif;
-    font-size: 10px;
-  }
 
   #joyButtonsCanvas {
     position: absolute;
@@ -436,4 +327,10 @@ button,
     max-height: 300px;
     transform: translateY(-50%);
   }
+}
+
+@media (max-width: 390px) and (orientation: portrait) {
+  button, .KBbutton, .Dbutton { height: 38px; font-size: 13px; }
+  .KBbutton { flex-basis: 36px; }
+  .SPbutton { height: 34px; }
 }
