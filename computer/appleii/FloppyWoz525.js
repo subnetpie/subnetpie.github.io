@@ -9,12 +9,9 @@
 //  DSK support is nibble-stream based.
 //  WOZ 1 and WOZ 2 read-only mount support for 5.25" images.
 //
-//  WOZ reads are cycle-accurate: the Disk II latch is emulated at the
-//  bit level using the CPU cycle counter supplied by the motherboard.
-//  One bit clocks into the latch every 4 CPU cycles (250 kHz bit rate).
-//  The latch holds its last valid nibble (bit 7 set) until a new one
-//  arrives, exactly as on real hardware.  This ensures the ROM's
-//  self-sync timing loops and copy-protection routines behave correctly.
+//  WOZ reads use CPU-cycle timing and a bit-level read sequencer.
+//  Completed nibbles remain visible briefly, then the latch exposes the
+//  next partial nibble (bit 7 clear), allowing the ROM to wait for new data.
 //
 //  refs:
 //    https://applesaucefdc.com/woz/reference1/
@@ -113,22 +110,11 @@ class WozTrack
 }
 
 // ---------------------------------------------------------------------------
-// WozMedium – cycle-accurate Disk II latch emulation over a WOZ bitstream
-//
-// The latch model:
-//   _bit_pos   : current position in the track bitstream (advances with time)
-//   _latch     : last nibble (bit 7 set) clocked into the latch
-//   _last_cycle: CPU cycle count at which _bit_pos was last updated
-//
-// On every read_byte(cycles) call:
-//   1. Calculate bits elapsed since last update: floor((cycles-_last_cycle)/4)
-//   2. Shift those bits through the latch shift register.
-//   3. Each time bit 7 goes high, capture the byte into _latch.
-//   4. Return _latch (holds until the next valid nibble clocks in).
-//
-// This reproduces the hardware behaviour: the CPU's tight read loop sees
-// the same latch value multiple times between nibbles, sync gaps repeat
-// for the correct number of cycles, and copy-protection timing is accurate.
+// WozMedium – timed Disk II read latch over a WOZ bitstream.
+// A completed nibble is held for approximately 7 CPU cycles, extended by
+// leading zero sync bits. Then partial shift-register values become visible
+// until the next nibble completes. Holding bit 7 indefinitely duplicates data
+// in the ROM's LDA/BPL polling loop.
 // ---------------------------------------------------------------------------
 class WozMedium extends BaseMedium
 {
@@ -141,7 +127,8 @@ class WozMedium extends BaseMedium
 
         // Latch state
         this._bit_pos    = 0;   // current bit position in the active track
-        this._latch      = 0;   // last valid nibble latched (bit 7 set)
+        this._latch      = 0;   // visible data latch (complete or partial nibble)
+        this._latch_delay = 0;
         this._shift      = 0;   // shift register (accumulates bits between nibbles)
         this._last_cycle = 0;   // CPU cycle count when _bit_pos was last advanced
     }
@@ -178,6 +165,7 @@ class WozMedium extends BaseMedium
     reset_rotation() {
         this._bit_pos    = 0;
         this._latch      = 0;
+        this._latch_delay = 0;
         this._shift      = 0;
         this._last_cycle = 0;
     }
@@ -199,9 +187,8 @@ class WozMedium extends BaseMedium
             // Advance the cycle timestamp by exactly the bits we consume.
             this._last_cycle = (this._last_cycle + bitsToAdvance * CYCLES_PER_BIT) >>> 0;
 
-            // Clock each bit through the shift register.
-            // When bit 7 of the shift register is set a valid GCR nibble has
-            // been latched — capture it and reset the shift register.
+            // Clock bits continuously, including when the CPU isn't polling.
+            // See AppleWin Disk.cpp DataLatchReadWOZ for the latch hold timing.
             let shift = this._shift;
             let bp    = this._bit_pos;
             const bc  = track.bitCount;
@@ -209,9 +196,16 @@ class WozMedium extends BaseMedium
             for(let i = 0; i < bitsToAdvance; i++) {
                 shift = ((shift << 1) | track.getBit(bp)) & 0xFF;
                 if(++bp >= bc) bp = 0;
-                if(shift & 0x80) {
+                if(this._latch_delay > 0) {
+                    this._latch_delay = Math.max(0, this._latch_delay - CYCLES_PER_BIT);
+                    if(shift === 0) this._latch_delay += CYCLES_PER_BIT;
+                }
+                if(this._latch_delay === 0) {
                     this._latch = shift;
-                    shift = 0;
+                    if(shift & 0x80) {
+                        this._latch_delay = 7;
+                        shift = 0;
+                    }
                 }
             }
 
@@ -276,7 +270,7 @@ class WozMedium extends BaseMedium
             // WOZ1: fixed 6656-byte slots.
             // Per slot: 6646 bytes of bit data | bytesUsed (u16) | bitCount (u16).
             let q = trksOffs;
-            for(let i = 0; i < 35 && q + 6656 <= trksOffs + trksSize; i++, q += 6656) {
+            for(let i = 0; i < 160 && q + 6656 <= trksOffs + trksSize; i++, q += 6656) {
                 const bytesUsed = u16le(src, q + 6646);
                 const bitCount  = u16le(src, q + 6648);
                 if(bytesUsed === 0 || bitCount === 0) { medium.tracks[i] = null; continue; }

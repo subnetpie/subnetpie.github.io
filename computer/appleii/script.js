@@ -40,8 +40,8 @@ class Drive {
 
   on_file_select(e) {
     const file = e.target.files[0];
-    const path = this.dialog.value;
-    const name = path.substring(path.lastIndexOf("\\")+1);
+    if(!file) return;
+    const name = file.name;
     const fr = new FileReader();
     fr.onload = () => {
       // FIX 1: use load_image() instead of load_disk() so that WOZ signature
@@ -71,13 +71,9 @@ class Drive {
   }
 }
 
-// Drive 2 reuses filedialog1 since only one file picker exists in the HTML.
-// To add independent drive 2 loading, add filedialog2 and led2 elements to
-// the HTML and change the second entry to: new Drive(1, "drivetitle2", "led2", "filedialog2")
-const drives = [
-  new Drive(0, "drivetitle1", "led1", "filedialog1"),
-  new Drive(1, "drivetitle1", "led1", "filedialog1")
-];
+// The single picker mounts drive 1 only. Registering it for both drives
+// starts two asynchronous loads and resets the machine twice.
+const drives = [new Drive(0, "drivetitle1", "led1", "filedialog1")];
 
 function on_interval(now_ms) {
   const cycles = ((now_ms - last_ms) * khz) & 0x7fff;
