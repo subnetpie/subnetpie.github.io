@@ -17,6 +17,13 @@ export class IIgsMemory {
     this.readHooks = [];
     this.writeHooks = [];
     this.trace = null;
+    this.shadow = 0x00;
+    this.speed = 0x80;
+    this.dmaBank = 0x00;
+    this.slotRom = 0x00;
+    this.langSel = 0x00;
+    this.diskReg = 0x00;
+    this.clockCtl = 0x00;
   }
 
   setTrace(fn) { this.trace = fn; }
@@ -41,6 +48,16 @@ export class IIgsMemory {
 
   read(addr) {
     addr &= 0xffffff;
+    if((addr>>>16)===0 && (addr&0xffff)>=0xc000 && (addr&0xffff)<=0xc0ff) {
+      const io=addr&0xffff;
+      if(io===0xc02b) return this.langSel;
+      if(io===0xc02d) return this.slotRom;
+      if(io===0xc031) return this.diskReg;
+      if(io===0xc034) return this.clockCtl;
+      if(io===0xc035) return this.shadow;
+      if(io===0xc036) return this.speed;
+      if(io===0xc037) return this.dmaBank;
+    }
     for(const fn of this.readHooks) {
       const v=fn(addr);
       if(v !== undefined) return v & 0xff;
@@ -76,6 +93,16 @@ export class IIgsMemory {
 
   write(addr,val) {
     addr &= 0xffffff; val &= 0xff;
+    if((addr>>>16)===0 && (addr&0xffff)>=0xc000 && (addr&0xffff)<=0xc0ff) {
+      const io=addr&0xffff;
+      if(io===0xc02b){this.langSel=val;return;}
+      if(io===0xc02d){this.slotRom=val;return;}
+      if(io===0xc031){this.diskReg=val;return;}
+      if(io===0xc034){this.clockCtl=val;return;}
+      if(io===0xc035){this.shadow=val;return;}
+      if(io===0xc036){this.speed=val&0x9f;return;}
+      if(io===0xc037){this.dmaBank=val;return;}
+    }
     for(const fn of this.writeHooks) {
       const r=fn(addr,val);
       if(r !== undefined) return;
@@ -89,8 +116,17 @@ export class IIgsMemory {
         (bank===0xe0 ? this.slowE0 : this.slowE1)[off]=val;
     } else if(bank===0x00) {
       this.legacy.write(off,val);
+      // IIgs display shadowing: classic display writes in bank $00 are copied
+      // to the corresponding slow-memory bank unless inhibited by $C035.
+      if(off>=0x0400 && off<0x0800 && !(this.shadow&0x01)) this.slowE0[off]=val;
+      else if(off>=0x2000 && off<0x4000 && !(this.shadow&0x02)) this.slowE0[off]=val;
+      else if(off>=0x4000 && off<0x6000 && !(this.shadow&0x04)) this.slowE0[off]=val;
     } else if(bank===0x01 && off<0xc000) {
       this.legacy._aux[off]=val;
+      if(off>=0x2000 && off<0xa000 && !(this.shadow&0x08)) {
+        this.slowE1[off]=val;
+        if(this.video) this.video.dirty=true;
+      }
     } else if(addr < this.ram.length) {
       this.ram[addr]=val;
     }
