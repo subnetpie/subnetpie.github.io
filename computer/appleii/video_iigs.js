@@ -1,8 +1,18 @@
 // Apple IIgs-capable video subsystem.
 // Legacy Apple II/IIe modes remain owned by IOManager (Mega II-compatible path).
-// Super Hi-Res uses IIgs bank $E1 video memory:
-//   $2000-$9CFF pixel data, $9D00-$9DC7 scan-line control bytes,
-//   $9E00-$9FFF 16 x 16-entry 12-bit RGB palettes.
+// Super Hi-Res uses the IIgs linear bank-$E1 video layout.
+// Unlike Apple II text/HGR memory there is no scan-line address interleave:
+//   $2000-$9CFF  200 scan lines x 160 consecutive bytes
+//   $9D00-$9DC7  200 scan-line control bytes (one byte per line)
+//   $9E00-$9FFF  16 palettes x 16 12-bit RGB entries (2 bytes/entry)
+const SHR_PIXEL_BASE = 0x2000;
+const SHR_BYTES_PER_LINE = 160;
+const SHR_LINES = 200;
+const SHR_PIXEL_END = SHR_PIXEL_BASE + SHR_BYTES_PER_LINE * SHR_LINES; // $9D00
+const SHR_SCB_BASE = 0x9d00;
+const SHR_SCB_END = SHR_SCB_BASE + SHR_LINES;                         // $9DC8
+const SHR_PALETTE_BASE = 0x9e00;
+const SHR_PALETTE_END = 0xa000;
 
 export class IIgsVideo {
   constructor(canvas, legacyVideo = null, scanlineIrq = null, doubleHires = null) {
@@ -35,7 +45,7 @@ export class IIgsVideo {
   // bit 7: 640 mode, bit 6: scan-line interrupt, bit 5: 320 fill mode,
   // bits 3-0: palette number. Fill is ignored by 640 mode.
   decodeSCB(y) {
-    const raw = this.bankE1[0x9d00 + (y % 200)];
+    const raw = this.bankE1[SHR_SCB_BASE + (y % SHR_LINES)];
     return {
       raw,
       mode640: (raw & 0x80) !== 0,
@@ -46,7 +56,7 @@ export class IIgsVideo {
   }
 
   beginScanline(y) {
-    this.currentScanline = y % 200;
+    this.currentScanline = y % SHR_LINES;
     const scb = this.decodeSCB(this.currentScanline);
     if (scb.interrupt) {
       this.scanlineIrqPending = true;
@@ -83,11 +93,15 @@ export class IIgsVideo {
   writeBankE1(addr, value) {
     addr &= 0xffff;
     this.bankE1[addr] = value & 0xff;
-    if (addr >= 0x2000 && addr < 0xa000) this.dirty = true;
+    if ((addr >= SHR_PIXEL_BASE && addr < SHR_PIXEL_END) ||
+        (addr >= SHR_SCB_BASE && addr < SHR_SCB_END) ||
+        (addr >= SHR_PALETTE_BASE && addr < SHR_PALETTE_END)) {
+      this.dirty = true;
+    }
   }
 
   paletteColor(palette, index) {
-    const a = 0x9e00 + ((palette & 0x0f) << 5) + ((index & 0x0f) << 1);
+    const a = SHR_PALETTE_BASE + ((palette & 0x0f) << 5) + ((index & 0x0f) << 1);
     const word = this.bankE1[a] | (this.bankE1[a + 1] << 8);
     // IIgs color is 0RGB, four bits per component.
     return [
@@ -105,9 +119,9 @@ export class IIgsVideo {
   render320Line(y, scb, data) {
     const palette = scb.palette;
     const fill = scb.fill;
-    const base = 0x2000 + y * 160;
+    const base = SHR_PIXEL_BASE + y * SHR_BYTES_PER_LINE;
     let last = 0;
-    for (let i=0;i<160;i++) {
+    for (let i=0; i<SHR_BYTES_PER_LINE; i++) {
       const b=this.bankE1[base+i];
       let a=(b>>4)&15, c=b&15;
       if (fill) {
@@ -122,7 +136,7 @@ export class IIgsVideo {
   }
 
   render640Line(y, scb, data) {
-    const base = 0x2000 + y * 160;
+    const base = SHR_PIXEL_BASE + y * SHR_BYTES_PER_LINE;
     const palette = scb.palette;
     // In 640 mode each 2-bit pixel selects one of four colors from a
     // position-dependent group inside the scan line's selected 16-color palette.
@@ -148,7 +162,7 @@ export class IIgsVideo {
   refresh(force=false) {
     if (!this.superHires || (!force && !this.dirty)) return false;
     const data=this.image.data;
-    for(let y=0;y<200;y++) {
+    for(let y=0; y<SHR_LINES; y++) {
       const scb=this.decodeSCB(y);
       if (scb.mode640) this.render640Line(y,scb,data);
       else this.render320Line(y,scb,data);
