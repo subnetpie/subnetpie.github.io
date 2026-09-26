@@ -172,7 +172,26 @@
 </div>
     <script src='https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js'></script>
 <script src="https://cdn.jsdelivr.net/npm/fflate@0.8.2/umd/index.js"></script>
-<script src="./joystick.js"></script><script type="module" src="./script.js"></script>
+<script>
+(function () {
+  var status = document.getElementById("bootStatus");
+  if (status) {
+    status.textContent = "IIgs startup: HTML loaded, waiting for module...";
+    status.style.display = "block";
+  }
+  window.addEventListener("error", function (e) {
+    if (!status) return;
+    status.textContent = "PAGE ERROR\n" + (e.message || "module/resource failed") +
+      (e.filename ? "\n" + e.filename.split("/").pop() + ":" + e.lineno + ":" + e.colno : "");
+    status.style.display = "block";
+  }, true);
+  setTimeout(function () {
+    if (status && status.textContent.indexOf("HTML loaded") >= 0)
+      status.textContent = "MODULE DID NOT START\nscript.js was not evaluated";
+  }, 1500);
+})();
+</script>
+<script src="./joystick.js"></script><script type="module" src="./script.js?v=20260926-1224"></script>
 
   </body>
   
