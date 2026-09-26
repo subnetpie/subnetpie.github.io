@@ -4,6 +4,13 @@ const khz = machineType === "iigs" ? 2800 : 1020.5;
 let motherboard;
 let interval;
 let last_ms;
+let bootWatchdog = 0;
+function showBootStatus(text) {
+  const el = document.getElementById("bootStatus");
+  if(!el) return;
+  el.textContent = text;
+  el.style.display = "block";
+}
 var joyWidth = 256;
 var joyHeight = 256;
 var posX=127,posY=127, element="";
@@ -108,7 +115,9 @@ function on_interval(now_ms) {
     console.error("[Apple IIgs boot]", err);
     interval = undefined;
     buttonRunStop.innerText = "run";
-    motherboard.message(String(err.message || err).slice(0, 38));
+    const msg = String(err && err.message ? err.message : err);
+    showBootStatus("IIgs BOOT ERROR\n" + msg);
+    motherboard.message(msg.slice(0, 38));
     return;
   }
   interval = window.requestAnimationFrame(on_interval);
@@ -157,8 +166,22 @@ async function loadBuiltInIIgsROM() {
     loadBuiltInIIgsROM().then(() => {
       motherboard.message("IIgs ROM 03 loaded");
       run();
+      clearTimeout(bootWatchdog);
+      bootWatchdog = setTimeout(() => {
+        if(!motherboard || !motherboard.cpu) return;
+        const r = motherboard.cpu.register;
+        const pc = (((r.pb || 0) << 16) | (r.pc || 0)) >>> 0;
+        showBootStatus("IIgs BOOT WATCHDOG\nPC=$" +
+          pc.toString(16).padStart(6,"0").toUpperCase() +
+          " A=$" + (r.a>>>0).toString(16).padStart(4,"0").toUpperCase() +
+          " X=$" + (r.x>>>0).toString(16).padStart(4,"0").toUpperCase() +
+          " Y=$" + (r.y>>>0).toString(16).padStart(4,"0").toUpperCase() +
+          " P=$" + (r.p>>>0).toString(16).padStart(2,"0").toUpperCase() +
+          " E=" + (r.e ? "1" : "0") + "\ncycles=" + motherboard.cycles);
+      }, 3000);
     }).catch(err => {
       console.error(err);
+      showBootStatus("IIgs ROM LOAD ERROR\n" + String(err && err.message ? err.message : err));
       motherboard.message("IIgs ROM load failed");
     });
   } else {
