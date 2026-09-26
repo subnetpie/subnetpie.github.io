@@ -392,6 +392,7 @@ export class Floppy525
         this._addr_io  = 0xc000 | (this._slot << 8);  // e.g. $C600 for slot 6
 
         this._write_disk = false;
+        this.trace = null;
 
         this._mem.add_read_hook(this.read.bind(this));
         this._mem.add_write_hook(this.write.bind(this));
@@ -427,10 +428,13 @@ export class Floppy525
         return undefined;
     }
 
+    setTrace(fn) { this.trace = fn; }
+
     // -----------------------------------------------------------------------
     // Soft-switch dispatcher  (Disk II ref manual p.6-2)
     // -----------------------------------------------------------------------
     select(op, io_write) {
+        if(this.trace) this.trace({op:op.toString(16),data:{write:io_write,head:this._active_disk.head_pos,motor:this._active_disk.motor_on}});
         switch(op) {
             case 0x08:  // motor off
                 this._disks[0].set_led(false);
