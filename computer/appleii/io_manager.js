@@ -63,7 +63,7 @@
 
 export class IOManager
 {
-    constructor(memory, keyboard, display_text, display_text_80, display_hires, display_double_hires, display_lores, audio_cb, joystick, get_cycles = () => 0, video_iigs = null) {
+    constructor(memory, keyboard, display_text, display_text_80, display_hires, display_double_hires, display_lores, audio_cb, joystick, get_cycles = () => 0, video_iigs = null, iigsEnabled = false) {
         this._mem = memory;
         this._kbd = keyboard;
         this._display_text = display_text;
@@ -78,6 +78,7 @@ export class IOManager
         this._trigger = 0;
         this._joystick = joystick;
         this._video_iigs = video_iigs;
+        this._iigsEnabled = !!iigsEnabled;
 
         this._c3_rom = false;
         this._c8_rom = false;
@@ -151,8 +152,9 @@ export class IOManager
                     return this._altchar_mode ? 0x80 : 0;
                 case 0xc01f: // 80 col mode (0: 40 cols, 0x80: 80 cols)
                     return this._80col_mode ? 0x80 : 0;
-                case 0xc029: // IIgs NEWVIDEO
-                    return this._video_iigs ? this._video_iigs.readNewVideo() : 0;
+                case 0xc029: // IIgs NEWVIDEO; absent on the Apple IIe machine
+                    if(this._iigsEnabled && this._video_iigs) return this._video_iigs.readNewVideo();
+                    break;
                 case 0xc061: // js pb0
                     return this._joystick.button0 ? 0x80 : 0;
                 case 0xc062: // js pb1
@@ -303,9 +305,12 @@ export class IOManager
                     //console.log("alt char on");
                     this._altchar_mode = true;
                     return 0; // write handled
-                case 0xc029: // IIgs NEWVIDEO
-                    if(this._video_iigs) this._video_iigs.writeNewVideo(val);
-                    return 0;
+                case 0xc029: // IIgs NEWVIDEO; do not expose it to Apple IIe software
+                    if(this._iigsEnabled && this._video_iigs) {
+                        this._video_iigs.writeNewVideo(val);
+                        return 0;
+                    }
+                    break;
                 //case 0xc010: // keyboard strobe (handled above)
                 //    this._kbd.strobe();
                 //    return 0; // write handled
