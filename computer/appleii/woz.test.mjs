@@ -85,3 +85,48 @@ test('DSK boot remains functional', () => {
   assert.equal(m.cpu.register.pc, 0x801);
   assert.deepEqual(m.mem._main.slice(0x800, 0x900), disk.slice(0, 256));
 });
+
+// Start at the system reset vector, including the slot-7 card and I/O switches.
+// Direct C600 tests alone miss boot-priority failures before Disk II is entered.
+const {ProDOSBlockDevice} = await import('./prodos_block.js');
+const {IOManager} = await import('./io_manager.js');
+for(const version of [1, 2]) {
+  test(`WOZ${version}: system reset skips empty slot 7 and boots the floppy`, () => {
+    const m = machine();
+    const hardDrive = new ProDOSBlockDevice(7, m.mem);
+    const display = new Proxy({}, {get: () => () => {}});
+    const io = new IOManager(m.mem, {key: 0, strobe() {}}, display, display,
+      display, display, () => {}, {});
+    io.reset();
+    const disk = new Uint8Array(143360);
+    for(let i = 0; i < 256; i++) disk[i] = (i * 73 + 19) & 255;
+    disk[0] = 1;
+    const track = [];
+    for(let s = 0; s < 16; s++) track.push(...m.floppy.sector_62encode(disk, 0, s));
+    assert.ok(m.floppy.load_image(0, 'reset-boot.woz', fixture(version, track)));
+    m.cpu.reset(); m.cpu.register.pc = m.mem.read_word(0xfffc);
+    let enteredFloppy = false;
+    while(m.cycles() < 3000000 && m.cpu.register.pc !== 0x801) {
+      assert.notEqual(m.cpu.register.pc, 0xc700, 'must not boot empty hard drive');
+      if(m.cpu.register.pc === 0xc600) enteredFloppy = true;
+      m.step();
+    }
+    assert.ok(enteredFloppy);
+    assert.equal(m.cpu.register.pc, 0x801);
+    assert.deepEqual(m.mem._main.slice(0x800, 0x900), disk.slice(0, 256));
+    assert.equal(hardDrive.image, null);
+  });
+}
+
+test('mounted hard drive retains its boot signature and block reads', () => {
+  const m = machine();
+  const hardDrive = new ProDOSBlockDevice(7, m.mem);
+  assert.equal(m.mem.read(0xc701), 0);
+  const image = new Uint8Array(512); image[0] = 1; image[1] = 0x60;
+  assert.ok(hardDrive.load_image('test.po', image));
+  assert.deepEqual([1,3,5,7].map(off => m.mem.read(0xc700 + off)), [0x20,0,3,0x3c]);
+  m.cpu.reset(); m.cpu.register.pc = 0xc700;
+  while(m.cycles() < 10000 && m.cpu.register.pc !== 0x801) m.step();
+  assert.equal(m.cpu.register.pc, 0x801);
+  assert.deepEqual(m.mem._main.slice(0x800, 0xa00), image);
+});

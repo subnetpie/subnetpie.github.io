@@ -85,6 +85,10 @@ export class ProDOSBlockDevice {
 
     read(addr) {
         if (addr >= this.romBase && addr <= this.romBase + 0xff) {
+            // The system ROM scans slot 7 before Disk II in slot 6. An empty
+            // hard drive must not advertise a boot signature: its failed boot
+            // cannot RTS because the firmware enters slot ROMs with JMP.
+            if (!this.image) return 0;
             const off = addr & 0xff;
             if (off === 0xfc) return this.blockCount & 0xff;
             if (off === 0xfd) return (this.blockCount >>> 8) & 0xff;
