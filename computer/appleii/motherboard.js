@@ -40,9 +40,9 @@ export class Motherboard
         this.display_double_hires = new DoubleHiresDisplay(this.memory, canvas);
         // IIgs video sits above the Mega II-compatible legacy display path.
         // SHR is dormant until NEWVIDEO bit 7 is selected.
-        this.video_iigs = new IIgsVideo(canvas, {
+        this.video_iigs = this.iigsEnabled ? new IIgsVideo(canvas, {
             refresh: () => this.io_manager && this.io_manager.switch_display_mode()
-        }, null, this.display_double_hires);
+        }, null, this.display_double_hires) : null;
         this.cycles = 0;
 
         // Pass a cycle-count getter into Floppy525 so the WOZ latch emulation
@@ -78,7 +78,7 @@ export class Motherboard
         this.display_hires.reset();
         this.display_lores.reset();
         this.display_double_hires.reset();
-        this.video_iigs.reset();
+        if(this.video_iigs) this.video_iigs.reset();
         this.floppy525.reset();
         this.prodosBlock.reset();
         this.audio.reset();
