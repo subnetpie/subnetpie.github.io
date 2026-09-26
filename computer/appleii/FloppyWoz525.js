@@ -77,12 +77,7 @@ class DskMedium extends BaseMedium
 
         for(let t = 0; t < 35; t++) {
             let track = [];
-            // Preserve the original Disk II nibble-stream ordering used by
-            // this emulator. sector_62encode() maps the DSK logical sector
-            // through sec_int; the physical stream itself is built 15 -> 0.
-            // Reversing this to 0 -> 15 lets the boot loader start but causes
-            // later sector reads to return unrelated data (e.g. Choplifter).
-            for(let s = 15; s >= 0; s--) {
+            for(let s = 0; s < 16; s++) {
                 track = track.concat(sectorEncoder(src, t, s));
             }
             this.track_bytes[t] = new Uint8Array(track);
