@@ -176,11 +176,19 @@ function run() {
   keys.set('#buttonRbrack', 0x5d);
   keys.set('#buttonHat', 0x5e);
   keys.set('#buttonDel', 0x7f);
-  for (const [key, val] of keys.entries()) {
-    $(key).bind('touchstart', function() {
-      motherboard.keyboard.key_down(val);
-    }).bind('touchend', function() {
-      motherboard.keyboard.key_up();
+  for (const [selector, val] of keys.entries()) {
+    document.querySelectorAll(selector).forEach((key) => {
+      key.addEventListener("pointerdown", (e) => {
+        e.preventDefault();
+        key.setPointerCapture?.(e.pointerId);
+        motherboard.keyboard.key_down(val, false, false, false);
+      });
+      const release = (e) => {
+        e.preventDefault();
+        motherboard.keyboard.key_up();
+      };
+      key.addEventListener("pointerup", release);
+      key.addEventListener("pointercancel", release);
     });
   }
 })();
@@ -278,22 +286,22 @@ function setScanlines(e) {
   }
 }
 
-document.getElementById("buttonInput").addEventListener("touchstart", () => {setInput(buttonInput.innerText)});
-document.getElementById("buttonColor").addEventListener("touchstart", () => {setColor(buttonColor.innerText)});
-document.getElementById("buttonScanlines").addEventListener("touchstart", () => {setScanlines(buttonScanlines.innerText)});
+document.getElementById("buttonInput").addEventListener("pointerdown", () => {setInput(buttonInput.innerText)});
+document.getElementById("buttonColor").addEventListener("pointerdown", () => {setColor(buttonColor.innerText)});
+document.getElementById("buttonScanlines").addEventListener("pointerdown", () => {setScanlines(buttonScanlines.innerText)});
 
 $('#buttonLoad').click(function() {
   $('#filedialog1').trigger('click');
 });
 
-document.getElementById("buttonRunStop").addEventListener("touchstart", ()=>{(interval?stop:run)()});
-document.getElementById("buttonReset").addEventListener("touchstart", buttonReset);
+document.getElementById("buttonRunStop").addEventListener("pointerdown", ()=>{(interval?stop:run)()});
+document.getElementById("buttonReset").addEventListener("pointerdown", buttonReset);
 
-document.getElementById("buttonKeyboard").addEventListener("touchstart", ()=>{setKeyboard(buttonKeyboard.innerText)});
-document.getElementById("buttonMode").addEventListener("touchstart", ()=>{setMode(buttonMode.innerText)});
-document.getElementById("buttonCenter").addEventListener("touchstart", ()=>{setCenter(buttonCenter.innerText)});
-document.getElementById("buttonGrid").addEventListener("touchstart", ()=>{setGrid(buttonGrid.innerText)});
-document.getElementById("buttonDebug").addEventListener("touchstart", ()=>{setDebug(buttonDebug.innerText)});
+document.getElementById("buttonKeyboard").addEventListener("pointerdown", ()=>{setKeyboard(buttonKeyboard.innerText)});
+document.getElementById("buttonMode").addEventListener("pointerdown", ()=>{setMode(buttonMode.innerText)});
+document.getElementById("buttonCenter").addEventListener("pointerdown", ()=>{setCenter(buttonCenter.innerText)});
+document.getElementById("buttonGrid").addEventListener("pointerdown", ()=>{setGrid(buttonGrid.innerText)});
+document.getElementById("buttonDebug").addEventListener("pointerdown", ()=>{setDebug(buttonDebug.innerText)});
 
 init();
 
@@ -306,64 +314,72 @@ function buttonReset(event) {
   run();
 }
 
-function getPos(e,element,I) {
-  var rect = element.getBoundingClientRect();
-  posX = Math.round((e.touches[I-1].clientX - rect.left) / (rect.right - rect.left) * element.width);
-  posY = Math.round((e.touches[I-1].clientY - rect.top) / (rect.bottom - rect.top) * element.height);
-  if (posX<0) { posX=0; };
-  if (posX>joyWidth) { posX=joyWidth; };
-  if (posY<0) { posY=0; };
-  if (posY>joyHeight) { posY=joyHeight; };  
-  return posX, posY;
+function getPointerPos(e, element) {
+  const rect = element.getBoundingClientRect();
+  posX = Math.max(0, Math.min(joyWidth,
+    Math.round((e.clientX - rect.left) / rect.width * element.width)));
+  posY = Math.max(0, Math.min(joyHeight,
+    Math.round((e.clientY - rect.top) / rect.height * element.height)));
 }
 
-function setButtons(joy0,joy1) {
-  joy1 < 128 ? val0 = 1 : val0 = 0;
-  joy1 > 128 ? val1 = 1 : val1 = 0;
+function setButtons(y) {
+  val0 = y < joyHeight / 2 ? 1 : 0;
+  val1 = y >= joyHeight / 2 ? 1 : 0;
 }
 
-joyPad.addEventListener("touchstart", function(e) {
+let joyPadPointer = null;
+joyPad.addEventListener("pointerdown", (e) => {
   e.preventDefault();
-  if (I1 == 0) { I1 = e.touches.length; }
-  getPos(e,joyPad,I1);
+  joyPadPointer = e.pointerId;
+  joyPad.setPointerCapture?.(e.pointerId);
+  getPointerPos(e, joyPad);
   setJoy();
-}, false);
-joyPad.addEventListener("touchmove", function(e) {
+});
+joyPad.addEventListener("pointermove", (e) => {
+  if (e.pointerId !== joyPadPointer) return;
   e.preventDefault();
-  if (I1 > e.touches.length) { 
-    I1=Math.max(0, I1-1); I2=Math.max(0, I2-1); };
-  getPos(e,joyPad,I1);
+  getPointerPos(e, joyPad);
   setJoy();
-}, false);
-joyPad.addEventListener("touchend", function() {
-  I1 = 0;
-  if (buttonCenter.innerText=="on") {
-    joyX=joyWidth/2;
-    joyY=joyHeight/2;
-    posX=joyWidth/2;
-    posY=joyHeight/2;
+});
+const releaseJoy = (e) => {
+  if (e.pointerId !== joyPadPointer) return;
+  joyPadPointer = null;
+  if (buttonCenter.innerText === "on") {
+    joyX = posX = joyWidth / 2;
+    joyY = posY = joyHeight / 2;
   }
-}, false);
+};
+joyPad.addEventListener("pointerup", releaseJoy);
+joyPad.addEventListener("pointercancel", releaseJoy);
 
-joyButtons.addEventListener("touchstart", function(e) {
+const firePointers = new Map();
+function updateFire() {
+  val0 = 0; val1 = 0;
+  for (const button of firePointers.values()) {
+    if (button === 0) val0 = 1;
+    else val1 = 1;
+  }
+}
+joyButtons.addEventListener("pointerdown", (e) => {
   e.preventDefault();
-  if (I2 == 0) { I2 = e.touches.length; }
-  getPos(e,joyButtons,I2);
-  setButtons(posX,posY);
-}, false);
-joyButtons.addEventListener("touchmove", function(e) {
+  joyButtons.setPointerCapture?.(e.pointerId);
+  getPointerPos(e, joyButtons);
+  firePointers.set(e.pointerId, posY < joyHeight / 2 ? 0 : 1);
+  updateFire();
+});
+joyButtons.addEventListener("pointermove", (e) => {
+  if (!firePointers.has(e.pointerId)) return;
   e.preventDefault();
-  if (I2 > e.touches.length) {
-    I1=Math.max(0, I1-1); I2=Math.max(0, I2-1); };
-  getPos(e,joyButtons,I2);
-  setButtons(posX,posY);
-}, false);
-joyButtons.addEventListener("touchend", function(e) {
-  I2 = 0;
-  val0 = 0;
-  val1 = 0;
-  joy0 = joyWidth/2; joy1 = joyHeight/2;
-}, false);
+  getPointerPos(e, joyButtons);
+  firePointers.set(e.pointerId, posY < joyHeight / 2 ? 0 : 1);
+  updateFire();
+});
+const releaseFire = (e) => {
+  firePointers.delete(e.pointerId);
+  updateFire();
+};
+joyButtons.addEventListener("pointerup", releaseFire);
+joyButtons.addEventListener("pointercancel", releaseFire);
 
 function setJoy() {
   if (buttonMode.innerText!="analog") {
