@@ -28,45 +28,69 @@ class Drive {
     this.dialog.addEventListener('change', this.on_file_select.bind(this));
   }
 
+  load_media(name, buffer) {
+    const lower = name.toLowerCase();
+    const bytes = buffer.byteLength;
+
+    if(machineType === "iigs" && (lower.endsWith(".rom") || lower.endsWith(".bin")) &&
+       (bytes === 0x20000 || bytes === 0x40000)) {
+      motherboard.loadIIgsROM(buffer);
+      stop();
+      motherboard.reset();
+      run();
+      return true;
+    }
+
+    const hardDrive = lower.endsWith(".hdv") ||
+                      lower.endsWith(".2mg") ||
+                      (lower.endsWith(".po") && bytes > 143360);
+    const ok = hardDrive
+      ? motherboard.prodosBlock.load_image(name, buffer)
+      : motherboard.floppy525.load_image(this.num, name, buffer);
+
+    if(ok) {
+      stop();
+      motherboard.reset();
+      run();
+    }
+    return ok;
+  }
+
+  async load_zip(name, buffer) {
+    if(!window.fflate) throw new Error("ZIP decompressor is not available");
+    const files = window.fflate.unzipSync(new Uint8Array(buffer));
+    const supported = Object.keys(files).filter(path =>
+      !path.endsWith("/") && /\.(2mg|po|hdv|dsk|do|woz|nib|rom|bin)$/i.test(path)
+    );
+    if(!supported.length)
+      throw new Error("ZIP contains no supported Apple II disk image");
+    if(supported.length > 1)
+      console.warn("ZIP contains multiple images; loading first:", supported);
+    const path = supported[0];
+    const data = files[path];
+    const raw = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength);
+    return this.load_media(path.split("/").pop(), raw);
+  }
+
   on_file_select(e) {
     const file = e.target.files[0];
     if(!file) return;
-    const name = file.name;
     const fr = new FileReader();
-    fr.onload = () => {
-      // FIX 1: use load_image() instead of load_disk() so that WOZ signature
-      // detection runs before the DSK size check. load_disk() was rejecting all
-      // WOZ files with "invalid disk image size" because it only accepts 143360-byte
-      // DSK images. load_image() detects WOZ1/WOZ2 by signature and routes correctly.
-      const lower = name.toLowerCase();
-      const bytes = fr.result.byteLength;
-      if(machineType === "iigs" && (lower.endsWith(".rom") || lower.endsWith(".bin")) &&
-         (bytes === 0x20000 || bytes === 0x40000)) {
-        motherboard.loadIIgsROM(fr.result);
-        stop();
-        motherboard.reset();
-        run();
-        return;
-      }
-      const hardDrive = lower.endsWith(".hdv") ||
-                        (lower.endsWith(".po") && bytes > 143360);
-      const ok = hardDrive
-        ? motherboard.prodosBlock.load_image(name, fr.result)
-        : motherboard.floppy525.load_image(this.num, name, fr.result);
-
-      // Reset and run after a successful media load so the machine boots
-      // from the newly mounted image without requiring the user to press Run.
-      // The commented-out run() call below was the original intent but was never
-      // completed; a reset is also needed to restart the CPU from $FFFC.
-      if(ok) {
-        stop();
-        motherboard.reset();
-        run();
+    fr.onload = async () => {
+      try {
+        if(file.name.toLowerCase().endsWith(".zip"))
+          await this.load_zip(file.name, fr.result);
+        else
+          this.load_media(file.name, fr.result);
+      } catch(err) {
+        console.error(err);
+        motherboard.message(err.message || "media load failed");
       }
     };
     fr.readAsArrayBuffer(file);
-    e.target.removeAttribute("open");
+    e.target.value = "";
   }
+}
 }
 
 // The single picker mounts drive 1 only. Registering it for both drives
