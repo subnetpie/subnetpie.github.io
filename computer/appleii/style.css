@@ -213,6 +213,30 @@ button,
   min-width: 0;
 }
 @media (orientation: landscape) {
+  /* Landscape starts in joystick mode; the input toggle can still switch
+     explicitly to the compact keyboard/keypad composition. */
+  body.joystick-mode #keyboard0,
+  body.joystick-mode #keyboard1,
+  body.joystick-mode #keyboard2,
+  body.joystick-mode #keypad {
+    display: none !important;
+  }
+
+  body.joystick-mode #joyStick,
+  body.joystick-mode #joyControls {
+    display: grid !important;
+  }
+
+  body.keyboard-mode #joyStick,
+  body.keyboard-mode #joyControls {
+    display: none !important;
+  }
+
+  body.keyboard-mode #keyboard0,
+  body.keyboard-mode #keypad {
+    display: block !important;
+  }
+
   #joyStick {
     grid-template-columns: min(28vh, 180px) 1fr min(16vh, 100px);
     align-items: end;
