@@ -23,47 +23,44 @@ class Mathbox{
  divide(c,q){let r=this.r,qq=s16(q);this.set(14,r[7]^qq);this.set(13,qq);if(qq>=0)qq=s16(c);else{this.set(13,-qq-1);qq=s16(-c-1);if(qq<0&&s16(qq+1)<0)this.set(13,r[13]+1);qq=s16(qq+1)}this.set(12,r[7]>=0?r[7]:-r[7]);this.set(15,r[6]);do{this.set(13,r[13]-r[12]);let msb=qq&32768;qq=s16(qq<<1);if(r[13]>=0)qq=s16(qq+1);else this.set(13,r[13]+r[12]);this.set(13,r[13]<<1);this.set(13,r[13]+(msb?1:0))}while(this.set(15,r[15]-1)>=0);this.result=s16(r[14]>=0?qq:-qq)}
  lo(){return this.result&255}hi(){return(this.result>>8)&255}}
 class BzoneAudio{
- constructor(){this.ctx=null;this.node=null;this.gain=null;this.reg=new Uint8Array(16);this.latch=0;this.haveControl=false;this.phase=new Float64Array(4);this.noise=1;this.noisePhase=0;this.noiseOut=0;this.n31=0;this.n34=0;this.prevNoise=0;this.prevNand=0;this.shellRC=0;this.exploRC=0;this.shellFilter=0;this.exploFilter=0;this.engineCV=0;this.enginePhase=0;this.engineCount4=4;this.engineCount6=6;this.engineMix=0}
+ constructor(){this.ctx=null;this.node=null;this.gain=null;this.reg=new Uint8Array(16);this.latch=0;this.haveControl=false;this.phase=new Float64Array(4);this.enginePhase=0;this.engineCount4=4;this.engineCount6=6;this.engineLP=0;this.fxLP=0;this.noise=1;this.noisePhase=0;this.envShell=0;this.envExplosion=0}
  start(){if(!this.ctx){this.ctx=new (window.AudioContext||window.webkitAudioContext)({sampleRate:48000});this.node=this.ctx.createScriptProcessor(1024,0,1);this.node.onaudioprocess=e=>this.render(e.outputBuffer.getChannelData(0));this.gain=this.ctx.createGain();this.gain.gain.value=.9;this.node.connect(this.gain);this.gain.connect(this.ctx.destination)}if(this.ctx.state!=="running")this.ctx.resume()}
  read(r){r&=15;if(r===8)return window.battlezone?window.battlezone.in3():0;return this.reg[r]}
  write(r,d){this.start();this.reg[r&15]=d&255}
- control(d){this.start();this.latch=d&255;this.haveControl=true}
- render(out){const sr=this.ctx.sampleRate,dt=1/sr,enabled=!this.haveControl||(this.latch&32)!==0;
-  const rc=(v,target,R,C)=>v+(target-v)*(1-Math.exp(-dt/(R*C)));
-  for(let i=0;i<out.length;i++){let s=0;
-   if(enabled){
-    // POKEY remains an approximation; discrete Battlezone effects below follow MAME's topology.
-    for(let ch=0;ch<4;ch++){let f=this.reg[ch*2],au=this.reg[ch*2+1],vol=au&15;if(!vol)continue;let audctl=this.reg[8],div=(audctl&1)?114:28;if((ch===0&&(audctl&0x40))||(ch===2&&(audctl&0x20)))div=1;let nn=f+(div===1?4:1),hz=CPU_CLOCK/(2*div*nn);if(au&0x10){s+=(vol/15)*.035;continue}this.phase[ch]=(this.phase[ch]+hz/sr)%1;if(au&0x20)s+=(this.phase[ch]<.5?1:-1)*(vol/15)*.060;else{let gate=((Math.floor(this.phase[ch]*31)*13+ch*7)&16)?1:-1;s+=gate*(vol/15)*.035}}
-    // MAME bzone_lfsr: 6 kHz, taps 3/14, inverted XOR shifted into bit 0, output bit 15.
-    this.noisePhase+=6000/sr;
-    while(this.noisePhase>=1){this.noisePhase-=1;const fb=((((this.noise>>3)^(this.noise>>14))&1)^1);this.noise=((this.noise<<1)|fb)&65535;const no=(this.noise>>15)&1;if(!this.prevNoise&&no)this.n31^=1;this.prevNoise=no;const nand=(((this.noise>>11)&15)===15)?0:1;if(!this.prevNand&&nand)this.n34^=1;this.prevNand=nand}
-    // RC_CIRCUIT_1 gates the divided noise into 4.7uF shell / 10uF explosion envelopes.
-    const shellTarget=(this.latch&4)?this.n31:0,exploTarget=(this.latch&1)?this.n34:0;
-    this.shellRC=rc(this.shellRC,shellTarget,23000,4.7e-6);this.exploRC=rc(this.exploRC,exploTarget,23000,10e-6);
-    // MAME's current graph uses D1 as the 4066 loud/soft input for both custom filters.
-    const loud=(this.latch&2)!==0;
-    const shellGain=loud?330000/(33000+(270*10000)/(270+10000))+1:330000/(33000+10000)+1;
-    const exploGain=loud?330000/(33000+(270*10000)/(270+10000))+1:330000/(33000+10000)+1;
-    const shellIn=this.shellRC*(1000/23000)*shellGain,exploIn=this.exploRC*(1000/23000)*exploGain;
-    this.shellFilter=rc(this.shellFilter,shellIn,330000,4.7e-9);this.exploFilter=rc(this.exploFilter,exploIn,330000,4.7e-9);
-    s+=(this.shellFilter*1.8)+(this.exploFilter*2.6);
-    if(this.latch&128){
-     // Rev switch -> RCDISC3 control voltage -> 555 astable CV. No fixed-frequency rev jump.
-     const rpar=(1270*4700)/(1270+4700),cvTarget=(this.latch&16)?5*(1000/rpar)/(1+1000/rpar):5*(1000/4700);
-     const tau=(this.latch&16?22000:100000)*10e-6;if(this.engineCV===0)this.engineCV=cvTarget;else this.engineCV+=(cvTarget-this.engineCV)*(1-Math.exp(-dt/tau));
-     // 555 astable CV approximation from MAME component values R10=100k, R11 nominal midpoint 42.5k, C11=.015uF.
-     const R1=100000,R2=42500,C=.015e-6,vc=Math.max(.35,this.engineCV),vh=vc,vl=vc*.5,V=5;
-     const charge=Math.max(1e-6,(R1+R2)*C*Math.log(Math.max(1.000001,(V-vl)/(V-vh+.000001))));
-     const discharge=Math.max(1e-6,R2*C*Math.log(Math.max(1.000001,vh/vl)));const hz=Math.min(2000,1/(charge+discharge));
-     this.enginePhase+=hz/sr;while(this.enginePhase>=1){this.enginePhase-=1;this.engineCount4++;if(this.engineCount4>15)this.engineCount4=4;this.engineCount6++;if(this.engineCount6>15)this.engineCount6=6}
-     const a=this.engineCount4,b=this.engineCount6,raw=(a>7?1:-1)*.55+(a===15?1:-1)*.28+(b>7?1:-1)*.12+(b===15?1:-1)*.08;
-     this.engineMix=rc(this.engineMix,raw,33000,.47e-6);s+=this.engineMix*.18
-    }else{this.engineCount4=4;this.engineCount6=6}
+ control(d){this.start();d&=255;let old=this.latch;this.latch=d;this.haveControl=true;if((d&4)&&!(old&4))this.envShell=1;if((d&1)&&!(old&1))this.envExplosion=1}
+ render(out){const sr=this.ctx.sampleRate,enabled=!this.haveControl||(this.latch&32)!==0,motor=(this.latch&128)!==0,rev=(this.latch&16)!==0;for(let i=0;i<out.length;i++){let s=0;
+  if(enabled){
+   for(let ch=0;ch<4;ch++){let f=this.reg[ch*2],au=this.reg[ch*2+1],vol=au&15;if(!vol)continue;let audctl=this.reg[8],div=(audctl&1)?114:28;if((ch===0&&(audctl&0x40))||(ch===2&&(audctl&0x20)))div=1;let n=f+(div===1?4:1),hz=CPU_CLOCK/(2*div*n);if(au&0x10){s+=(vol/15)*.035;continue}this.phase[ch]=(this.phase[ch]+hz/sr)%1;if(au&0x20)s+=(this.phase[ch]<.5?1:-1)*(vol/15)*.060;else{let gate=((Math.floor(this.phase[ch]*31)*13+ch*7)&16)?1:-1;s+=gate*(vol/15)*.035}}
+   this.noisePhase+=6000/sr;if(this.noisePhase>=1){this.noisePhase-=1;let b=((this.noise>>3)^(this.noise>>14))&1;this.noise=((this.noise<<1)|((b^1)&1))&65535}
+   let n=(this.noise&0x8000)?1:-1;
+   let fx=0;
+   if(this.envShell>.0005){fx+=n*this.envShell*((this.latch&8)?.48:.24);this.envShell*=.99915}
+   if(this.envExplosion>.0005){fx+=n*this.envExplosion*((this.latch&2)?.62:.31);this.envExplosion*=.99955}
+   this.fxLP+=.11*(fx-this.fxLP);s+=this.fxLP;
+   if(motor){
+    /* The recording's engine fundamental sits around 38-45 Hz.  Battlezone's
+       discrete board derives the motor from a VCO feeding binary counters,
+       not a sawtooth oscillator.  Recreate that divided, stepped waveform. */
+    /* MAME 0.289 bzone_a.cpp: the 555 VCO clocks two counters.
+       The audible engine taps are counter states, so the engine pitch is
+       divided down from the VCO rather than being the VCO frequency itself. */
+    let vco=rev?430:300;
+    this.enginePhase+=vco/sr;
+    if(this.enginePhase>=1){
+      this.enginePhase-=1;
+      /* MAME DISCRETE_COUNTER nodes 65/68 count one step per 555 edge.
+         The previous code incorrectly swept 60 counter states PER VCO cycle,
+         creating the measured 430/860/1290/1720 Hz whistle. */
+      this.engineCount4++;if(this.engineCount4>15)this.engineCount4=4;
+      this.engineCount6++;if(this.engineCount6>15)this.engineCount6=6;
+    }
+    let a=this.engineCount4,b=this.engineCount6;
+    let raw=((a>7)?1:-1)*.55+((a===15)?1:-1)*.28+
+            ((b>7)?1:-1)*.12+((b===15)?1:-1)*.08;
+    this.engineLP+=.025*(raw-this.engineLP);s+=this.engineLP*.0825
    }
-   out[i]=Math.max(-.65,Math.min(.65,s))
-  }
- }
-}
+  }out[i]=Math.max(-.65,Math.min(.65,s))}
+ }}
 class Battlezone{
  constructor(){this.cv=document.querySelector("#gameCanvas");this.cx=this.cv.getContext("2d");this.cv.width=W;this.cv.height=H;this.mem=new Uint8Array(32768);this.math=new Mathbox();this.pokeyRandom=new PokeyRandom();this.i={coin1:0,start1:0,fire:0,lu:0,ld:0,ru:0,rd:0};this.sound=0;this.audio=new BzoneAudio();this.avgDone=1;this.vectors=[];this.colorized=true;this.bind()}
  async rom(n){const r=await fetch("../bzone/roms/"+n);if(!r.ok)throw Error("ROM "+n);return new Uint8Array(await r.arrayBuffer())}
