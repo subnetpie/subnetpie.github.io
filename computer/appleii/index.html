@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+    <meta charset="UTF-8">
+    <title>Apple 2ios</title>
+    <link rel='stylesheet' href='https://fonts.googleapis.com/css2?family=Rubik'>
+<link rel='stylesheet' href='https://fonts.googleapis.com/css2?family=Russo+One&amp;display=swap'><link rel="stylesheet" href="./style.css">
+
+  </head>
+    
+  <body>
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-touch-fullscreen" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<canvas class="screen" id="screen" height="390" width="564"></canvas>
+<div class="keypad" id="keypad">
+  <button id="-button1">1</button>
+  <button id="-button2">2</button>
+  <button id="-button3">3</button>
+  <button id="-button4">4</button>
+  <button id="-button5">5</button>
+  <button id="-button6">6</button>
+  <button id="-button7">7</button>
+  <button id="-button8">8</button>
+  <button id="-button9">9</button>
+  <button id="-button0">0</button>
+  <button id="KPbuttonSpace">space</button>
+  <button id="-buttonA">A</button>
+  <button id="-buttonB">B</button>
+  <button id="-buttonC">C</button>
+  <button id="-buttonD">D</button>
+  <button id="-buttonE">E</button>
+  <button id="-buttonF">F</button>
+  <button id="-buttonJ">J</button>
+  <button id="-buttonK">K</button>
+  <button id="-buttonL">L</button>
+  <button id="-buttonEsc">esc</button>
+  <button id="-buttonUarr">&uarr;</button>
+  <button id="-buttonCR">&crarr;</button>
+  <button id="-buttonLarr">&larr;</button>
+  <button id="-buttonDarr">&darr;</button>
+  <button id="-buttonRarr">&rarr;</button>
+</div>
+<div id="keyboard0">
+  <div id="row0">
+    <div class="SPbutton" id="buttonEsc">esc</div>
+    <div class="SPbutton" id="buttonTab">tab</div>
+    <div class="SPbutton" id="buttonCtrl">ctrl</div>
+    <div class="SPbutton" id="buttonDel">del</div>
+    <div class="SPbutton" id="buttonKeyboard">123</div>
+  </div>
+</div>
+<div id="keyboard1">
+  <div id="row1">
+    <div class="KBbutton" id="button1">1</div>
+    <div class="KBbutton" id="button2">2</div>
+    <div class="KBbutton" id="button3">3</div>
+    <div class="KBbutton" id="button4">4</div>
+    <div class="KBbutton" id="button5">5</div>
+    <div class="KBbutton" id="button6">6</div>
+    <div class="KBbutton" id="button7">7</div>
+    <div class="KBbutton" id="button8">8</div>
+    <div class="KBbutton" id="button9">9</div>
+    <div class="KBbutton" id="button0">0</div>
+  </div>
+  <div id="row2">
+    <div class="KBbutton" id="buttonQ">Q</div>
+    <div class="KBbutton" id="buttonW">W</div>  
+    <div class="KBbutton" id="buttonE">E</div>
+    <div class="KBbutton" id="buttonR">R</div>
+    <div class="KBbutton" id="buttonT">T</div>
+    <div class="KBbutton" id="buttonY">Y</div>
+    <div class="KBbutton" id="buttonU">U</div>
+    <div class="KBbutton" id="buttonI">I</div>
+    <div class="KBbutton" id="buttonO">O</div>
+    <div class="KBbutton" id="buttonP">P</div>
+  </div>
+    <div id="row3">
+    <div class="KBbutton" id="buttonA">A</div>
+    <div class="KBbutton" id="buttonS">S</div>  
+    <div class="KBbutton" id="buttonD">D</div>
+    <div class="KBbutton" id="buttonF">F</div>
+    <div class="KBbutton" id="buttonG">G</div>
+    <div class="KBbutton" id="buttonH">H</div>
+    <div class="KBbutton" id="buttonJ">J</div>
+    <div class="KBbutton" id="buttonK">K</div>
+    <div class="KBbutton" id="buttonL">L</div>
+  </div>
+  <div id="row4">
+    <div class="KBbutton" id="buttonZ">Z</div>
+    <div class="KBbutton" id="buttonX">X</div>  
+    <div class="KBbutton" id="buttonC">C</div>
+    <div class="KBbutton" id="buttonV">V</div>
+    <div class="KBbutton" id="buttonB">B</div>
+    <div class="KBbutton" id="buttonN">N</div>
+    <div class="KBbutton" id="buttonM">M</div>
+    <div class="Dbutton" id="buttonUarr">&uarr;</div>
+  </div>
+  <div id="row5">
+    <div class="KBbutton" id="buttonCaps">caps</br>lock</div>
+    <div class="KBbutton" id="buttonShift">shift</div>
+    <div class="KBbutton" id="buttonSpace">space</div>
+    <div class="KBbutton" id="buttonCR">return</div>
+    <div class="Dbutton" id="buttonLarr">&larr;</div>
+    <div class="Dbutton" id="buttonDarr">&darr;</div>
+    <div class="Dbutton" id="buttonRarr">&rarr;</div>
+  </div>
+</div>
+<div id="keyboard2">
+
+  <div id="row2">
+    <div class="KBbutton" id="buttonExcl">&excl;</div>
+    <div class="KBbutton" id="buttonCommat">&commat;</div>
+    <div class="KBbutton" id="buttonNum">&num;</div>
+    <div class="KBbutton" id="buttonDollar">&dollar;</div>
+    <div class="KBbutton" id="buttonPercnt">&percnt;</div>
+    <div class="KBbutton" id="buttonHat">&Hat;</div>
+    <div class="KBbutton" id="buttonAmp">&amp;</div>
+    <div class="KBbutton" id="buttonAst">&ast;</div>
+    <div class="KBbutton" id="buttonLpar">&lpar;</div>
+    <div class="KBbutton" id="buttonRpar">&rpar;</div>
+  </div>
+  <div id="row3">
+    <div class="KBbutton" id="buttonLt">&lt;</div>
+    <div class="KBbutton" id="buttonGt">&gt;</div>
+    <div class="KBbutton" id="buttonColon">&colon;</div>
+    <div class="KBbutton" id="buttonSemi">&semi;</div>
+    <div class="KBbutton" id="buttonMinus">&minus;</div>
+    <div class="KBbutton" id="buttonPlus">&plus;</div>
+    <div class="KBbutton" id="buttonEquals">&equals;</div>
+    <div class="KBbutton" id="buttonUarr">&uarr;</div>
+    <div class="KBbutton" id="buttonLbrack">&lbrack;</div>
+    <div class="KBbutton" id="buttonRbrack">&rbrack;</div>
+  </div>
+  <div id="row4">
+    <div class="KBbutton" id="buttonQuot">&quot;</div>
+    <div class="KBbutton" id="buttonQuot">&quot;</div>
+    <div class="KBbutton" id="buttonQuot">&quot;</div>
+    <div class="KBbutton" id="buttonComma">&comma;</div>
+    <div class="KBbutton" id="buttonPeriod">&period;</div>
+    <div class="KBbutton" id="buttonApos">&apos;</div>
+    <div class="KBbutton" id="buttonLarr">&larr;</div>
+    <div class="KBbutton" id="buttonDarr">&darr;</div>
+    <div class="KBbutton" id="buttonRarr">&rarr;</div>
+    <div class="KBbutton" id="buttonQuot">&quot;</div>
+  </div>
+</div>
+<input type="file" id="filedialog1" style="display:none"/>
+
+<div id="controls">
+  <div class="button" id="buttonInput">keyboard</div>
+  <div class="button" id="buttonColor">color</div>
+  <div class="button" id="buttonScanlines">scanlines</div>
+  <div class="button" id="buttonLoad">load</div>
+  <div class="button" id="buttonRunStop">run</div>
+  <div class="button" id="buttonReset">reset</div>
+</div>
+
+<div id="joyStick">
+  <canvas id="joyPadCanvas" width="256" height="256"></canvas>
+  <div id="joyControls">
+    <div class="button" id="buttonMode">analog</div>
+    <div class="button" id="buttonCenter">on</div>
+    <div class="button" id="buttonGrid">off</div>
+    <div class="button" id="buttonDebug">off</div>
+  </div>
+  <canvas id="joyButtonsCanvas" width="256" height="256"></canvas>
+</div>
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js'></script>
+<script src='https://codepen.io/Subnetpie/pen/bGpjwBY.js'></script><script type="module" src="./script.js"></script>
+
+  </body>
+  
+</html>
