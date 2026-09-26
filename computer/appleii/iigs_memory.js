@@ -75,10 +75,13 @@ export class IIgsMemory {
       else
         v=(bank===0xe0 ? this.slowE0 : this.slowE1)[off];
     } else if(bank===0x00) {
-      // Bank $00 is the Mega II compatibility window. Delegating the full bank
-      // keeps IIe soft switches, language-card state and classic video RAM
-      // coherent with the existing renderers.
-      v=this.legacy.read(off);
+      // Bank $00 is the Mega II compatibility window. The IIgs ROM mirrors
+      // into $D000-$FFFF while the language-card RAM read switch is off.
+      // Leave all other reads (including RAM-selected reads) to Mega II.
+      if(off>=0xd000 && this.rom && !this.legacy.bsr_read)
+        v=this.romRead(0xff0000|off);
+      else
+        v=this.legacy.read(off);
     } else if(bank===0x01 && off<0xc000) {
       // Bank $01 exposes the auxiliary 64K used by Mega II double/80-column modes.
       v=this.legacy._aux[off];
