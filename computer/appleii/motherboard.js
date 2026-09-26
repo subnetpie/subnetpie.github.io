@@ -19,6 +19,7 @@ import {DoubleHiresDisplay} from "https://subnetpie.github.io/computer/appleii/d
 import {Keyboard} from "https://subnetpie.github.io/computer/appleii/keyboard.js";
 import {Floppy525} from "https://subnetpie.github.io/computer/appleii/FloppyWoz525.js";
 import {AppleAudio} from "https://subnetpie.github.io/computer/appleii/apple_audio.js";
+import {ProDOSBlockDevice} from "https://subnetpie.github.io/computer/appleii/prodos_block.js";
 import {rom_342_0304_cd} from "https://subnetpie.github.io/computer/appleii/rom/342-0304-cd.js";
 import {rom_342_0303_ef} from "https://subnetpie.github.io/computer/appleii/rom/342-0303-ef.js";
 
@@ -37,6 +38,7 @@ export class Motherboard
         // Pass a cycle-count getter into Floppy525 so the WOZ latch emulation
         // can advance the bitstream by the correct number of bits on each read.
         this.floppy525 = new Floppy525(6, this.memory, floppy_led_cb, () => this.cycles);
+        this.prodosBlock = new ProDOSBlockDevice(7, this.memory);
 
         this.audio = new AppleAudio(khz);
         this.io_manager = new IOManager(this.memory, this.keyboard,
@@ -65,6 +67,7 @@ export class Motherboard
         this.display_hires.reset();
         this.display_double_hires.reset();
         this.floppy525.reset();
+        this.prodosBlock.reset();
         this.audio.reset();
         this.io_manager.reset();
 
