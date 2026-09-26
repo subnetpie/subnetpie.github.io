@@ -61,6 +61,7 @@ export class W65C816 {
     let a,v,t,cy=2;
     switch(op){
       case 0xea: break; // NOP
+      case 0xf4:this.push16(this.fetch16());cy=5;break; // PEA
       case 0x04: // TSB dp
       case 0x0c: { // TSB abs
         a=op===0x04?this.dpAddr():((this.r.db<<16)|this.fetch16())&0xffffff;
