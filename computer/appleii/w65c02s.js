@@ -243,10 +243,12 @@ export class W65C02S
     constructor(memory) {
         this.mem = memory;
         this.reg = new Register6502();
+        this.trace = null;
         this.init();
     }
 
     get register() { return this.reg; }
+    setTrace(fn) { this.trace = fn; }
 
 
     //                                            n v b d i z c
@@ -951,7 +953,9 @@ export class W65C02S
     // step one instruction
     // returns cycles used for the operation
     step() {
+        const pc=this.reg.pc;
         const opcode = this.mem.read(this.reg.pc++);
+        if(this.trace) this.trace({pc,op:opcode,r:{a:this.reg.a,x:this.reg.x,y:this.reg.y,sp:this.reg.sp,p:this.reg.flag.value}});
         const opfcn = this.op[opcode];
         if(!opfcn) {
             console.log("!!!! illegal opcode: 0x" + opcode.toString(16).padStart(2, '0') + "  pc: 0x" + (this.reg.pc-1).toString(16).padStart(4, '0'));
