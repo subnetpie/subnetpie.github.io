@@ -61,6 +61,27 @@ export class W65C816 {
     let a,v,t,cy=2;
     switch(op){
       case 0xea: break; // NOP
+      case 0x09:v=m8?this.fetch8():this.fetch16();this.r.a=(this.r.a&~this.maskM())|((this.r.a|v)&this.maskM());this.setNZ(this.r.a,mb);cy=m8?2:3;break;
+      case 0x29:v=m8?this.fetch8():this.fetch16();this.r.a=(this.r.a&~this.maskM())|((this.r.a&v)&this.maskM());this.setNZ(this.r.a,mb);cy=m8?2:3;break;
+      case 0x49:v=m8?this.fetch8():this.fetch16();this.r.a=(this.r.a&~this.maskM())|((this.r.a^v)&this.maskM());this.setNZ(this.r.a,mb);cy=m8?2:3;break;
+      case 0xc9:v=m8?this.fetch8():this.fetch16();t=(this.r.a&this.maskM())-v;this.r.p=(this.r.p&~C)|(t>=0?C:0);this.setNZ(t,mb);cy=m8?2:3;break;
+      case 0xe0:v=x8?this.fetch8():this.fetch16();t=this.r.x-v;this.r.p=(this.r.p&~C)|(t>=0?C:0);this.setNZ(t,xb);cy=x8?2:3;break;
+      case 0xc0:v=x8?this.fetch8():this.fetch16();t=this.r.y-v;this.r.p=(this.r.p&~C)|(t>=0?C:0);this.setNZ(t,xb);cy=x8?2:3;break;
+      case 0x89:v=m8?this.fetch8():this.fetch16();this.r.p=(this.r.p&~Z)|(((this.r.a&v)&this.maskM())===0?Z:0);cy=m8?2:3;break;
+      case 0x69:
+        v=m8?this.fetch8():this.fetch16();a=this.r.a&this.maskM();t=a+v+(this.r.p&C?1:0);
+        this.r.p=(this.r.p&~(C|V))|(t>this.maskM()?C:0)|((~(a^v)&(a^t)&(m8?0x80:0x8000))?V:0);
+        this.r.a=(this.r.a&~this.maskM())|(t&this.maskM());this.setNZ(t,mb);cy=m8?2:3;break;
+      case 0xe9:
+        v=m8?this.fetch8():this.fetch16();a=this.r.a&this.maskM();t=a-v-(this.r.p&C?0:1);
+        this.r.p=(this.r.p&~(C|V))|(t>=0?C:0)|(((a^v)&(a^t)&(m8?0x80:0x8000))?V:0);
+        this.r.a=(this.r.a&~this.maskM())|(t&this.maskM());this.setNZ(t,mb);cy=m8?2:3;break;
+      case 0x0a:a=this.r.a&this.maskM();this.r.p=(this.r.p&~C)|((a&(m8?0x80:0x8000))?C:0);a=(a<<1)&this.maskM();this.r.a=(this.r.a&~this.maskM())|a;this.setNZ(a,mb);break;
+      case 0x4a:a=this.r.a&this.maskM();this.r.p=(this.r.p&~C)|(a&1?C:0);a>>>=1;this.r.a=(this.r.a&~this.maskM())|a;this.setNZ(a,mb);break;
+      case 0x2a:a=this.r.a&this.maskM();t=this.r.p&C?1:0;this.r.p=(this.r.p&~C)|((a&(m8?0x80:0x8000))?C:0);a=((a<<1)|t)&this.maskM();this.r.a=(this.r.a&~this.maskM())|a;this.setNZ(a,mb);break;
+      case 0x6a:a=this.r.a&this.maskM();t=this.r.p&C?(m8?0x80:0x8000):0;this.r.p=(this.r.p&~C)|(a&1?C:0);a=(a>>>1)|t;this.r.a=(this.r.a&~this.maskM())|a;this.setNZ(a,mb);break;
+      case 0x1a:a=((this.r.a&this.maskM())+1)&this.maskM();this.r.a=(this.r.a&~this.maskM())|a;this.setNZ(a,mb);break;
+      case 0x3a:a=((this.r.a&this.maskM())-1)&this.maskM();this.r.a=(this.r.a&~this.maskM())|a;this.setNZ(a,mb);break;
       case 0x18:this.r.p&=~C;break; case 0x38:this.r.p|=C;break;
       case 0x58:this.r.p&=~I;break; case 0x78:this.r.p|=I;break;
       case 0xd8:this.r.p&=~D;break; case 0xf8:this.r.p|=D;break;
