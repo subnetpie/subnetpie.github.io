@@ -24,7 +24,7 @@ export class IIgsVideo {
     this.doubleHires = doubleHires;
     this.scanlineIrqPending = false;
     this.currentScanline = 0;
-    this.bankE1 = new Uint8Array(0x10000);
+    this.bankE1 = new Uint8Array(0x10000); // replaced by bus backing store on IIgs
     this.newVideo = 0;
     this.superHires = false;
     this.dirty = true;
@@ -32,10 +32,17 @@ export class IIgsVideo {
     this.reset();
   }
 
+  attachBankE1(bytes) {
+    if(!(bytes instanceof Uint8Array) || bytes.length < 0x10000)
+      throw new Error("IIgs VGC requires a 64K bank E1 backing store");
+    this.bankE1 = bytes.subarray(0,0x10000);
+    this.dirty = true;
+  }
+
   reset() {
     this.newVideo = 0;
     this.superHires = false;
-    this.bankE1.fill(0);
+    // RAM clearing is owned by the IIgs memory bus, not the VGC.
     this.dirty = true;
     this.scanlineIrqPending = false;
     this.currentScanline = 0;
