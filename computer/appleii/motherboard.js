@@ -21,6 +21,7 @@ import {Keyboard} from "https://subnetpie.github.io/computer/appleii/keyboard.js
 import {Floppy525} from "https://subnetpie.github.io/computer/appleii/FloppyWoz525.js";
 import {AppleAudio} from "https://subnetpie.github.io/computer/appleii/apple_audio.js";
 import {ProDOSBlockDevice} from "https://subnetpie.github.io/computer/appleii/prodos_block.js";
+import {IIgsVideo} from "https://subnetpie.github.io/computer/appleii/video_iigs.js";
 import {rom_342_0304_cd} from "https://subnetpie.github.io/computer/appleii/rom/342-0304-cd.js";
 import {rom_342_0303_ef} from "https://subnetpie.github.io/computer/appleii/rom/342-0303-ef.js";
 
@@ -35,6 +36,11 @@ export class Motherboard
         this.display_hires = new HiresDisplay(this.memory, canvas);
         this.display_lores = new LoresDisplay(this.memory, canvas);
         this.display_double_hires = new DoubleHiresDisplay(this.memory, canvas);
+        // IIgs video sits above the Mega II-compatible legacy display path.
+        // SHR is dormant until NEWVIDEO bit 7 is selected.
+        this.video_iigs = new IIgsVideo(canvas, {
+            refresh: () => this.io_manager && this.io_manager.switch_display_mode()
+        });
         this.cycles = 0;
 
         // Pass a cycle-count getter into Floppy525 so the WOZ latch emulation
@@ -46,7 +52,8 @@ export class Motherboard
         this.io_manager = new IOManager(this.memory, this.keyboard,
                                         this.display_text, this.display_text_80,
                                         this.display_hires, this.display_double_hires, this.display_lores,
-                                        this.audio_click.bind(this), joyValues, () => this.cycles);
+                                        this.audio_click.bind(this), joyValues, () => this.cycles,
+                                        this.video_iigs);
     }
 
     clock(count) {
@@ -69,6 +76,7 @@ export class Motherboard
         this.display_hires.reset();
         this.display_lores.reset();
         this.display_double_hires.reset();
+        this.video_iigs.reset();
         this.floppy525.reset();
         this.prodosBlock.reset();
         this.audio.reset();
