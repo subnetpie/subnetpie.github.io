@@ -27,7 +27,9 @@ import {rom_342_0303_ef} from "https://subnetpie.github.io/computer/appleii/rom/
 
 export class Motherboard
 {
-    constructor(khz, canvas, joyValues, floppy_led_cb) {
+    constructor(khz, canvas, joyValues, floppy_led_cb, machine = "iie") {
+        this.machine = machine;
+        this.iigsEnabled = machine === "iigs";
         this.memory = new Memory(rom_342_0304_cd, rom_342_0303_ef);
         this.cpu = new W65C02S(this.memory);
         this.keyboard = new Keyboard();
@@ -53,7 +55,7 @@ export class Motherboard
                                         this.display_text, this.display_text_80,
                                         this.display_hires, this.display_double_hires, this.display_lores,
                                         this.audio_click.bind(this), joyValues, () => this.cycles,
-                                        this.video_iigs);
+                                        this.video_iigs, this.iigsEnabled);
     }
 
     clock(count) {
