@@ -11,6 +11,8 @@
 
 import {W65C02S} from "https://subnetpie.github.io/computer/appleii/w65c02s.js";
 import {Memory} from "https://subnetpie.github.io/computer/appleii/memory.js";
+import {IIgsMemory} from "https://subnetpie.github.io/computer/appleii/iigs_memory.js";
+import {W65C816} from "https://subnetpie.github.io/computer/appleii/w65c816.js";
 import {IOManager} from "https://subnetpie.github.io/computer/appleii/io_manager.js";
 import {TextDisplay} from "https://subnetpie.github.io/computer/appleii/display_text.js";
 import {TextDisplay80} from "https://subnetpie.github.io/computer/appleii/display_text_80.js";
@@ -30,28 +32,34 @@ export class Motherboard
     constructor(khz, canvas, joyValues, floppy_led_cb, machine = "iie") {
         this.machine = machine;
         this.iigsEnabled = machine === "iigs";
-        this.memory = new Memory(rom_342_0304_cd, rom_342_0303_ef);
-        this.cpu = new W65C02S(this.memory);
+        this.legacyMemory = new Memory(rom_342_0304_cd, rom_342_0303_ef);
         this.keyboard = new Keyboard();
-        this.display_text = new TextDisplay(this.memory, canvas);
-        this.display_text_80 = new TextDisplay80(this.memory, canvas);
-        this.display_hires = new HiresDisplay(this.memory, canvas);
-        this.display_lores = new LoresDisplay(this.memory, canvas);
-        this.display_double_hires = new DoubleHiresDisplay(this.memory, canvas);
+        this.display_text = new TextDisplay(this.legacyMemory, canvas);
+        this.display_text_80 = new TextDisplay80(this.legacyMemory, canvas);
+        this.display_hires = new HiresDisplay(this.legacyMemory, canvas);
+        this.display_lores = new LoresDisplay(this.legacyMemory, canvas);
+        this.display_double_hires = new DoubleHiresDisplay(this.legacyMemory, canvas);
         // IIgs video sits above the Mega II-compatible legacy display path.
         // SHR is dormant until NEWVIDEO bit 7 is selected.
         this.video_iigs = this.iigsEnabled ? new IIgsVideo(canvas, {
             refresh: () => this.io_manager && this.io_manager.switch_display_mode()
         }, null, this.display_double_hires) : null;
+        this.memory = this.iigsEnabled
+            ? new IIgsMemory(this.legacyMemory, this.video_iigs)
+            : this.legacyMemory;
+        this.cpu = this.iigsEnabled ? new W65C816(this.memory) : new W65C02S(this.memory);
+        if(this.video_iigs) {
+            this.video_iigs.scanlineIrq = () => this.cpu.irq(true);
+        }
         this.cycles = 0;
 
         // Pass a cycle-count getter into Floppy525 so the WOZ latch emulation
         // can advance the bitstream by the correct number of bits on each read.
-        this.floppy525 = new Floppy525(6, this.memory, floppy_led_cb, () => this.cycles);
-        this.prodosBlock = new ProDOSBlockDevice(7, this.memory);
+        this.floppy525 = new Floppy525(6, this.legacyMemory, floppy_led_cb, () => this.cycles);
+        this.prodosBlock = new ProDOSBlockDevice(7, this.legacyMemory);
 
         this.audio = new AppleAudio(khz);
-        this.io_manager = new IOManager(this.memory, this.keyboard,
+        this.io_manager = new IOManager(this.legacyMemory, this.keyboard,
                                         this.display_text, this.display_text_80,
                                         this.display_hires, this.display_double_hires, this.display_lores,
                                         this.audio_click.bind(this), joyValues, () => this.cycles,
@@ -86,20 +94,28 @@ export class Motherboard
 
         this.cycles = 0;
 
-        for(let a=0x0400; a<0x0800; a++) this.memory._main[a] = 0xa0;
+        for(let a=0x0400; a<0x0800; a++) this.legacyMemory._main[a] = 0xa0;
         this.display_text.set_active_page(1);  // text page 1 is default
 
-        this.cpu.register.pc = this.memory.read_word(0xfffc);
+        if(!this.iigsEnabled) {
+            this.cpu.register.pc = this.memory.read_word(0xfffc);
+        }
+    }
+
+    loadIIgsROM(data) {
+        if(!this.iigsEnabled) throw new Error("IIgs ROM can only be loaded in machine=iigs mode");
+        this.memory.loadROM(data);
+        this.cpu.reset();
     }
 
     // clear message on text page 1
     messageclear() {
-      for(let i=0; i<30; i++) this.memory.write(0x42C+i, 0xA0);
+      for(let i=0; i<30; i++) this.legacyMemory.write(0x42C+i, 0xA0);
     }
 
     // write message to text page 1
     message(text) {
         const addr = 0x43b - ((text.length / 2) & 0x0f);
-        for(let i=0; i<text.length; i++) this.memory.write(addr+i, text.charCodeAt(i)+0x80);
+        for(let i=0; i<text.length; i++) this.legacyMemory.write(addr+i, text.charCodeAt(i)+0x80);
     }
 }
