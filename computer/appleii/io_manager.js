@@ -305,9 +305,21 @@ export class IOManager
                     //console.log("alt char on");
                     this._altchar_mode = true;
                     return 0; // write handled
+                case 0xc023: // IIgs VGCINT: only enable bits are writable
+                    if(this._iigsEnabled && this._video_iigs) {
+                        this._video_iigs.writeVGCINT(val);
+                        return 0;
+                    }
+                    break;
                 case 0xc029: // IIgs NEWVIDEO; do not expose it to Apple IIe software
                     if(this._iigsEnabled && this._video_iigs) {
                         this._video_iigs.writeNewVideo(val);
+                        return 0;
+                    }
+                    break;
+                case 0xc032: // IIgs SCANINT interrupt clear
+                    if(this._iigsEnabled && this._video_iigs) {
+                        this._video_iigs.writeSCANINT(val);
                         return 0;
                     }
                     break;
