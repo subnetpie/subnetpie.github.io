@@ -1,220 +1,302 @@
+:root {
+  --apple-beige: #c4c1a0;
+  --key-brown: #734d26;
+  --control-brown: #6d4f44;
+  --key-border: #66594e;
+  --screen-ratio: 0.691489;
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html,
 body {
-  background-color: #c4c1a0;  /* Pantone 453 */
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  overscroll-behavior: none;
+  background: var(--apple-beige);
+  touch-action: none;
   -webkit-touch-callout: none;
   -webkit-text-size-adjust: none;
-  -webkit-user-select: none;  /* Chrome/Safari all */
-  -moz-user-select: none;     /* Firefox all */
-  -ms-user-select: none;      /* IE 10+ */
-  overflow: hidden;
-  margin: 0;
-  padding: 0;
+  -webkit-user-select: none;
+  user-select: none;
 }
-.keypad {
-  position: absolute;
-  transform: translate(0%, 0%);
-  right: 3px;
-  top: 2%;
-  width: 24%;
-}
-#keyboard0,#keyboard1,#keyboard2 {
-  position: absolute;
-  transform: translate(0%, 0%);
-  margin: 0;
-  padding: 0;
-  top: 68.75%;
-  width: 100%;
-}
-#keyboard0 {
-  top: 63.5%;
-}
-#keypad,#row0,#row1,#row2,#row3,#row4,#row5 {
-  display: flex;
-  flex-direction: row;
-  flex-wrap: nowrap;
-  justify-content: center;
-}
-#keypad {
-  flex-wrap: wrap;
-  justify-content: space-between;
-}
-#row0 {
-  justify-content: space-between;
-}
+
 .screen {
   position: absolute;
-  transform: translate(-50%, 0%);
-  image-rendering: optimizeSpeed;
-  image-rendering: pixelated;
   z-index: 1;
+  transform: translateX(-50%);
+  image-rendering: pixelated;
+  touch-action: none;
 }
+
+/* Emulator toolbar */
 #controls {
   position: absolute;
-  transform: translate(0%, 0%);
-  width: 100%;
-  top: 0px;
+  z-index: 3;
+  top: max(3px, env(safe-area-inset-top));
+  left: max(3px, env(safe-area-inset-left));
+  right: max(3px, env(safe-area-inset-right));
   display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
   justify-content: space-between;
-  font-family: "Rubik";
-  font-size: 100%;
-  z-index: 2;
+  gap: 3px;
+  font-family: "Rubik", sans-serif;
 }
-button, .button, .KBbutton, .SPbutton, .Dbutton {
+
+button,
+.button,
+.KBbutton,
+.SPbutton,
+.Dbutton {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 30px;
-  height: 23px;
-  background-color: #734d26;
-  border: 4px outset #66594E;
-  border-radius: 4px;
-  font-family: "Rubik";
-  font-size: 70%;
-  color: white;
+  min-width: 0;
+  height: 40px;
+  border: 3px outset var(--key-border);
+  border-radius: 5px;
+  background: var(--key-brown);
+  color: #fff;
+  font-family: "Rubik", sans-serif;
+  font-size: 15px;
+  line-height: 1;
   text-align: center;
+  touch-action: none;
 }
-button {
-  height: 24px;
-}
+
 .button {
-  width: 60px;
-  height: 20px;
-  background-color: #6d4f44;
+  width: 64px;
+  height: 36px;
+  background: var(--control-brown);
+  font-size: 12px;
 }
+
+#buttonReset {
+  background: #800;
+  border-color: #600;
+}
+
+/* Apple II touch keyboard */
+#keyboard0,
+#keyboard1,
+#keyboard2 {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  margin: 0;
+  padding: 0 4px;
+  z-index: 3;
+}
+
+#row0,
+#row1,
+#row2,
+#row3,
+#row4,
+#row5 {
+  display: flex;
+  flex-flow: row nowrap;
+  justify-content: center;
+  gap: 2px;
+  margin-bottom: 2px;
+}
+
+#row0 {
+  justify-content: space-between;
+}
+
 .KBbutton {
-  width: 37px;
-  font-size: 85%;
+  flex: 0 1 40px;
+  width: 40px;
 }
+
 .SPbutton {
-  width: 60px;
-  height: 16px;
-  background-color: #6d4f44;
+  width: 66px;
+  height: 36px;
+  background: var(--control-brown);
+  font-size: 12px;
 }
+
 .Dbutton {
-  width: 25px;
+  width: 36px;
 }
+
+#buttonSpace {
+  flex: 1 1 128px;
+  max-width: 150px;
+}
+
+#buttonCR,
+#buttonShift {
+  flex: 0 1 62px;
+  width: 62px;
+}
+
+#buttonCaps {
+  font-size: 9px;
+}
+
 #KPbuttonSpace {
   width: 65px;
 }
-#buttonSpace {
-  width: 150px;
-}
-#buttonCR {
-  width: 55px;
-}
-#buttonCaps {
-  font-size: 50%;
-}
-#buttonShift {
-  width: 55px;
-}
-#buttonReset {
-  background-color: #800;
-  border: 4px outset #600;
-}
-#joyStick {
-  font-family: 'Russo One', sans-serif;
+
+/* Compact landscape keypad */
+.keypad {
   position: absolute;
-  transform: translate(-50%, -50%);
-  padding: 0%;
-  margin: 0%;
+  top: 42px;
+  right: 3px;
+  width: 24%;
+}
+
+#keypad {
+  display: flex;
+  flex-flow: row wrap;
+  justify-content: space-between;
+}
+
+/* Joystick overlay */
+#joyStick {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 1;
   width: 100%;
   height: 70%;
-  left: 50%;
-  top: 50%;
-  opacity: 30%;
-  z-index: 1;
+  margin: 0;
+  padding: 0;
+  transform: translate(-50%, -50%);
+  opacity: 0.3;
+  font-family: "Russo One", sans-serif;
+  touch-action: none;
 }
+
 #joyControls {
   position: absolute;
-  transform: translate(-50%, -50%);
-  left: 62%;
-  height: 100%;
-  width: 35%;
   top: 50%;
-}
-#buttonMode {
-  background-color: #800;
-  border: 5px outset #600;
-  position: absolute;
+  left: 62%;
+  width: 35%;
+  height: 100%;
   transform: translate(-50%, -50%);
-  top: 35%;
-  left: 25%;
-  width: 50px;
 }
-#buttonMode::before {
-  position: absolute;
-  transform: translate(-50%, -50%);
-  top: -100%;
-  left: 50%;
-  color: #000;
-  content: "mode";
-}
-#buttonCenter {
-  background-color: #800;
-  border: 5px outset #600;
-  position: absolute;
-  transform: translate(-50%, -50%);
-  top: 35%;
-  left: 75%;
-  width: 50px;
-}
-#buttonCenter::before {
-  position: absolute;
-  transform: translate(-50%, -50%);
-  top: -100%;
-  left: 50%;
-  color: #000;
-  content: "center";
-}
-#buttonGrid {
-  background-color: #800;
-  border: 5px outset #600;
-  position: absolute;
-  transform: translate(-50%, -50%);
-  top: 70%;
-  left: 25%;
-  width: 50px;
-}
-#buttonGrid::before {
-  position: absolute;
-  transform: translate(-50%, -50%);
-  top: -100%;
-  left: 50%;
-  color: #000;
-  content: "grid";
-}
+
+#buttonMode,
+#buttonCenter,
+#buttonGrid,
 #buttonDebug {
-  background-color: #800;
-  border: 5px outset #600;
   position: absolute;
+  width: 56px;
+  height: 38px;
   transform: translate(-50%, -50%);
-  top: 70%;
-  left: 75%;
-   width: 50px;
+  border: 4px outset #600;
+  background: #800;
 }
+
+#buttonMode,
+#buttonGrid {
+  left: 25%;
+}
+
+#buttonCenter,
+#buttonDebug {
+  left: 75%;
+}
+
+#buttonMode,
+#buttonCenter {
+  top: 35%;
+}
+
+#buttonGrid,
+#buttonDebug {
+  top: 70%;
+}
+
+#buttonMode::before,
+#buttonCenter::before,
+#buttonGrid::before,
 #buttonDebug::before {
   position: absolute;
-  transform: translate(-50%, -50%);
-  top: -100%;
+  top: -75%;
   left: 50%;
+  transform: translate(-50%, -50%);
   color: #000;
-  content: "debug";
 }
+
+#buttonMode::before { content: "mode"; }
+#buttonCenter::before { content: "center"; }
+#buttonGrid::before { content: "grid"; }
+#buttonDebug::before { content: "debug"; }
+
 #joyPadCanvas {
   position: absolute;
-  transform: translate(0%, -50%);
-  left: 0%;
-  height: 100%;
   top: 50%;
+  left: 0;
+  height: 100%;
+  transform: translateY(-50%);
   border-radius: 10px;
 }
+
 #joyButtonsCanvas {
   position: absolute;
-  transform: translate(0%, -50%);
-  right: 0%;
+  top: 50%;
+  right: 0;
   width: 20%;
   height: 100%;
-  top: 50%;
+  transform: translateY(-50%);
+}
+
+/* Portrait: screen first, keyboard immediately below it. */
+@media (orientation: portrait) {
+  #controls {
+    top: max(4px, env(safe-area-inset-top));
+  }
+
+  .button {
+    flex: 1 1 0;
+    width: auto;
+    max-width: 68px;
+  }
+
+  .screen {
+    top: calc(max(4px, env(safe-area-inset-top)) + 42px) !important;
+    left: 50% !important;
+    width: 100vw !important;
+    height: calc(100vw * var(--screen-ratio)) !important;
+  }
+
+  #keyboard0 {
+    top: calc(max(4px, env(safe-area-inset-top)) + 42px + (100vw * var(--screen-ratio)) + 8px);
+  }
+
+  #keyboard1,
+  #keyboard2 {
+    top: calc(max(4px, env(safe-area-inset-top)) + 42px + (100vw * var(--screen-ratio)) + 48px);
+  }
+
+  #joyStick {
+    top: calc(max(4px, env(safe-area-inset-top)) + 42px + (100vw * var(--screen-ratio)) + 18vh) !important;
+    height: min(34vh, 300px) !important;
+    opacity: 1 !important;
+  }
+}
+
+@media (max-width: 390px) and (orientation: portrait) {
+  button,
+  .KBbutton,
+  .Dbutton {
+    height: 38px;
+    font-size: 13px;
+  }
+
+  .KBbutton {
+    flex-basis: 36px;
+  }
+
+  .SPbutton {
+    height: 34px;
+  }
 }
