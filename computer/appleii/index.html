@@ -160,14 +160,14 @@
 </div>
 
 <div id="joyStick">
-  <canvas id="joyPadCanvas" width="256" height="256"></canvas>
+  <canvas id="joyPadCanvas" aria-label="Analog joystick" width="256" height="256"></canvas>
   <div id="joyControls">
-    <div class="button" id="buttonMode">analog</div>
-    <div class="button" id="buttonCenter">on</div>
-    <div class="button" id="buttonGrid">off</div>
-    <div class="button" id="buttonDebug">off</div>
+    <label class="joy-setting"><span>mode</span><button type="button" class="button" id="buttonMode">analog</button></label>
+    <label class="joy-setting"><span>recenter</span><button type="button" class="button" id="buttonCenter">on</button></label>
+    <label class="joy-setting"><span>grid</span><button type="button" class="button" id="buttonGrid">off</button></label>
+    <label class="joy-setting"><span>debug</span><button type="button" class="button" id="buttonDebug">off</button></label>
   </div>
-  <canvas id="joyButtonsCanvas" width="256" height="256"></canvas>
+  <canvas id="joyButtonsCanvas" aria-label="Fire 1 above, Fire 2 below" width="256" height="256"></canvas>
 </div>
     <script src='https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js'></script>
 <script src="./joystick.js"></script><script type="module" src="./script.js"></script>

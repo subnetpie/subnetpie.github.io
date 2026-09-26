@@ -460,16 +460,11 @@ function composeScreen() {
   }
 
   controlsEl.style.display = "none";
-  joyStickEl.style.display = "block";
   document.body.style.backgroundColor = "#0f0000";
   screen.style.left = "50%";
   screen.style.top = "0px";
   screen.style.height = window.innerHeight + "px";
   screen.style.width = (window.innerHeight * 564 / 390) + "px";
-  joyStickEl.style.left = "50%";
-  joyStickEl.style.top = "50%";
-  joyStickEl.style.height = "70%";
-  joyStickEl.style.opacity = "0.3";
 }
 
 // MAIN FUNCTION //
@@ -510,6 +505,6 @@ $(function() {
     if (buttonDebug.innerText=="on") {
       joyRender.debug(joyPadCtx,joyX,joyY,joyPadPointer===null?0:1,val0,val1);
     }
-    joyRender.buttons(joyButtonsCtx);
+    joyRender.buttons(joyButtonsCtx, val0, val1);
   },1);
 });

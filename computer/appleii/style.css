@@ -159,95 +159,72 @@ button,
   justify-content: space-between;
 }
 
-/* Joystick overlay */
+/* Thumb controls: stick left, settings center, fire right. */
 #joyStick {
   position: absolute;
-  left: 50%;
-  top: 50%;
-  z-index: 1;
-  width: 100%;
-  height: 70%;
-  margin: 0;
-  padding: 0;
-  transform: translate(-50%, -50%);
-  opacity: 0.3;
-  font-family: "Russo One", sans-serif;
+  z-index: 3;
+  left: max(10px, env(safe-area-inset-left));
+  right: max(10px, env(safe-area-inset-right));
+  bottom: max(12px, env(safe-area-inset-bottom));
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 64px minmax(76px, .48fr);
+  align-items: center;
+  gap: 10px;
+  font-family: "Rubik", sans-serif;
   touch-action: none;
 }
-
-#joyControls {
-  position: absolute;
-  top: 50%;
-  left: 62%;
-  width: 35%;
-  height: 100%;
-  transform: translate(-50%, -50%);
-}
-
-#buttonMode,
-#buttonCenter,
-#buttonGrid,
-#buttonDebug {
-  position: absolute;
-  width: 56px;
-  height: 38px;
-  transform: translate(-50%, -50%);
-  border: 4px outset #600;
-  background: #800;
-}
-
-#buttonMode,
-#buttonGrid {
-  left: 25%;
-}
-
-#buttonCenter,
-#buttonDebug {
-  left: 75%;
-}
-
-#buttonMode,
-#buttonCenter {
-  top: 35%;
-}
-
-#buttonGrid,
-#buttonDebug {
-  top: 70%;
-}
-
-#buttonMode::before,
-#buttonCenter::before,
-#buttonGrid::before,
-#buttonDebug::before {
-  position: absolute;
-  top: -75%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  color: #000;
-}
-
-#buttonMode::before { content: "mode"; }
-#buttonCenter::before { content: "center"; }
-#buttonGrid::before { content: "grid"; }
-#buttonDebug::before { content: "debug"; }
-
 #joyPadCanvas {
-  position: absolute;
-  top: 50%;
-  left: 0;
-  height: 100%;
-  transform: translateY(-50%);
-  border-radius: 10px;
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1;
+  min-width: 0;
+  border-radius: 50%;
+  background: #29221f;
+  border: 2px solid #887467;
+  box-shadow: inset 0 0 20px #0008;
 }
-
+#joyControls {
+  display: grid;
+  gap: 10px;
+  align-content: center;
+}
+.joy-setting {
+  display: grid;
+  gap: 3px;
+  text-align: center;
+  color: #42362f;
+  font-size: 10px;
+  line-height: 1.2;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+#joyControls .button {
+  width: 100%;
+  height: 44px;
+  font-size: 12px;
+  background: #6d4f44;
+}
 #joyButtonsCanvas {
-  position: absolute;
-  top: 50%;
-  right: 0;
-  width: 20%;
-  height: 100%;
-  transform: translateY(-50%);
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1 / 2;
+  min-width: 0;
+}
+@media (orientation: landscape) {
+  #joyStick {
+    grid-template-columns: min(28vh, 180px) 1fr min(16vh, 100px);
+    align-items: end;
+    pointer-events: none;
+  }
+  #joyStick canvas, #joyControls { pointer-events: auto; }
+  #joyControls {
+    grid-template-columns: repeat(4, 56px);
+    justify-content: center;
+    gap: 6px;
+  }
+  .joy-setting { color: #fff; text-shadow: 0 1px 2px #000; }
 }
 
 /* Portrait touch layout */
@@ -271,63 +248,11 @@ button,
   }
 
   #joyStick {
-    top: calc(max(4px, env(safe-area-inset-top)) + 42px + (100vw * var(--screen-ratio))) !important;
-    bottom: max(8px, env(safe-area-inset-bottom));
-    left: 0 !important;
-    right: 0;
-    z-index: 3;
-    width: 100% !important;
-    height: auto !important;
-    min-height: 280px;
-    transform: none !important;
-    opacity: 1 !important;
+    top: calc(max(4px, env(safe-area-inset-top)) + 42px + (100vw * var(--screen-ratio)) + 12px);
   }
+  #joyPadCanvas { max-width: 300px; justify-self: start; }
+  #joyButtonsCanvas { max-width: 145px; justify-self: end; }
 
-  #joyPadCanvas {
-    position: absolute;
-    left: 3%;
-    top: 50%;
-    width: 46vw;
-    height: 46vw;
-    max-width: 300px;
-    max-height: 300px;
-    transform: translateY(-50%);
-  }
-
-  #joyControls {
-    position: absolute;
-    left: 61%;
-    top: 50%;
-    width: 25%;
-    height: 48%;
-    transform: translate(-50%, -50%);
-  }
-
-  #buttonMode,
-  #buttonCenter,
-  #buttonGrid,
-  #buttonDebug {
-    position: absolute;
-    width: 58px;
-    height: 38px;
-    transform: translate(-50%, -50%);
-    font-size: 10px;
-  }
-  #buttonMode { left: 25%; top: 25%; }
-  #buttonCenter { left: 75%; top: 25%; }
-  #buttonGrid { left: 25%; top: 75%; }
-  #buttonDebug { left: 75%; top: 75%; }
-
-  #joyButtonsCanvas {
-    position: absolute;
-    right: 2%;
-    top: 50%;
-    width: 18vw;
-    height: 46vw;
-    max-width: 125px;
-    max-height: 300px;
-    transform: translateY(-50%);
-  }
 }
 
 @media (max-width: 390px) and (orientation: portrait) {
@@ -341,7 +266,7 @@ button,
 @media (orientation: portrait) {
   #joyStick,
   #joyControls {
-    display: block !important;
+    display: grid !important;
   }
 
   #keyboard0,
@@ -368,4 +293,10 @@ button,
   body.keyboard-mode.symbols-mode #keyboard2 {
     display: block !important;
   }
+}
+
+@media (orientation: portrait) and (max-height: 660px) {
+  #joyControls { gap: 4px; }
+  #joyControls .button { height: 38px; }
+  #joyStick { align-items: center; gap: 8px; }
 }

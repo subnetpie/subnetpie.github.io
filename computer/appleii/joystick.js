@@ -84,13 +84,28 @@ var joyRender = {
     ctx.stroke();
     ctx.closePath();
   },
-  buttons(ctx) {
-    ctx.beginPath();
-    ctx.fillStyle = "#f44";
-    ctx.ellipse(128, 64, 100, 50, 0, 0, 2 * Math.PI);
-    ctx.ellipse(128, 192, 100, 50, 0, 0, 2 * Math.PI);
-    ctx.fill();
-    ctx.closePath();
+  buttons(ctx, fire1 = false, fire2 = false) {
+    ctx.clearRect(0, 0, 256, 256);
+    [fire1, fire2].forEach((pressed, index) => {
+      const y = 64 + index * 128;
+      ctx.beginPath();
+      ctx.fillStyle = pressed ? "#ffb36b" : "#ad3028";
+      ctx.strokeStyle = pressed ? "#fff0cb" : "#66201b";
+      ctx.lineWidth = 5;
+      // The canvas is displayed at 1:2, making these ellipses circular.
+      ctx.ellipse(128, y, 113, 56.5, 0, 0, 2 * Math.PI);
+      ctx.fill();
+      ctx.stroke();
+      ctx.save();
+      ctx.translate(128, y);
+      ctx.scale(2, 1);
+      ctx.fillStyle = "#fff";
+      ctx.font = "bold 19px Arial";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(`FIRE ${index + 1}`, 0, 0);
+      ctx.restore();
+    });
   },
   up(ctx) { ctx.fillStyle = "rgba(255,0,0,.25)"; ctx.fillRect(0, 0, ctx.joyWidth, ctx.joyHeight / Z); },
   down(ctx) { ctx.fillStyle = "rgba(0,0,255,.25)"; ctx.fillRect(0, ctx.joyHeight / Z * (Z - 1), ctx.joyWidth, ctx.joyHeight / Z); },
