@@ -123,6 +123,8 @@ export class W65C816 {
       case 0x8a:v=this.r.x&this.maskM();this.r.a=(this.r.a&~this.maskM())|v;this.setNZ(v,mb);break;
       case 0x98:v=this.r.y&this.maskM();this.r.a=(this.r.a&~this.maskM())|v;this.setNZ(v,mb);break;
       case 0x9a:this.r.s=this.r.e?(0x100|(this.r.x&0xff)):(this.r.x&0xffff);break;
+      case 0x9b:this.r.y=this.r.x&this.maskX();this.setNZ(this.r.y,xb);break; // TXY
+      case 0xbb:this.r.x=this.r.y&this.maskX();this.setNZ(this.r.x,xb);break; // TYX
       case 0xba:this.r.x=this.r.s&this.maskX();this.setNZ(this.r.x,xb);break;
       case 0x5b:this.r.d=this.r.a&0xffff;this.setNZ(this.r.d,16);break; // TCD
       case 0x7b:this.r.a=this.r.d;this.setNZ(this.r.a,16);break; // TDC
