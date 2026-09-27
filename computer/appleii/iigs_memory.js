@@ -137,8 +137,12 @@ export class IIgsMemory {
     // CnXX firmware. Our external slot devices are read hooks, so suppress
     // those hooks across C100-C7FF while the internal-ROM latch is set.
     const lowAddr=addr&0xffff;
-    const internalSlotRom=(addr>>>16)===0 && this.intCxRom &&
-      lowAddr>=0xc100 && lowAddr<=0xc7ff;
+    const slotNum=(lowAddr>>>8)&0x0f;
+    const slotWindow=(addr>>>16)===0 && lowAddr>=0xc100 && lowAddr<=0xc7ff;
+    // MAME c100_r/c400_r: internal ROM wins if INTCXROM is set or the
+    // corresponding SLOTROMSEL bit is clear.
+    const internalSlotRom=slotWindow &&
+      (this.intCxRom || !(this.slotRom & (1<<slotNum)));
     if(!internalSlotRom) {
       for(const fn of this.readHooks) {
         const v=fn(addr);
@@ -223,7 +227,7 @@ export class IIgsMemory {
       if(io===0xc027){this.adb.writeStatus(val);return;}
       if(io===0xc029){if(this.video)this.video.writeNewVideo(val);return;}
       if(io===0xc02b){this.langSel=val;return;}
-      if(io===0xc02d){this.slotRom=val;return;}
+      if(io===0xc02d){this.slotRom=val&0xf6;return;}
       if(io===0xc031){this.diskReg=val;return;}
       if(io===0xc034){this.clockCtl=val&0x7f;return;}
       if(io===0xc035){this.shadow=val;return;}
@@ -237,8 +241,10 @@ export class IIgsMemory {
     }
     if(addr >= 0xc0e0 && addr <= 0xc0ef) {this.iwmAccess(addr,val);return;}
     const lowAddr=addr&0xffff;
-    const internalSlotRom=(addr>>>16)===0 && this.intCxRom &&
-      lowAddr>=0xc100 && lowAddr<=0xc7ff;
+    const slotNum=(lowAddr>>>8)&0x0f;
+    const slotWindow=(addr>>>16)===0 && lowAddr>=0xc100 && lowAddr<=0xc7ff;
+    const internalSlotRom=slotWindow &&
+      (this.intCxRom || !(this.slotRom & (1<<slotNum)));
     if(!internalSlotRom) {
       for(const fn of this.writeHooks) {
         const r=fn(addr,val);
