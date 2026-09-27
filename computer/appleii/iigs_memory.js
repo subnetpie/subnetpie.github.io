@@ -28,7 +28,6 @@ export class IIgsMemory {
     this.trace = null;
     this.shadow = 0x00;
     this.speed = 0x80;
-    this.dmaBank = 0x00;
     this.slotRom = 0x00;
     this.langSel = 0x00;
     this.diskReg = 0x00;
