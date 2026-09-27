@@ -36,6 +36,21 @@ test('IIgs reset restores ROM vectors after a native program banks in RAM', () =
 });
 
 
+test('ROM03 GLU DATA_FULL clears only after KMSTATUS then DATA', () => {
+  const {board:m}=createMachine();
+  const b=m.memory, adb=b.adb;
+  adb.writeStatus(0x10);
+  adb.queue.push(0x5a); adb.updateIrq();
+  assert.equal(b.intFlag&1,1);
+  assert.equal(b.read(0xc026),0x5a);
+  assert.equal(adb.queue.length,1,'DATA read alone must not clear DATA_FULL');
+  assert.equal(b.intFlag&1,1);
+  assert.equal(b.read(0xc027)&0x20,0x20);
+  assert.equal(b.read(0xc026),0x5a);
+  assert.equal(adb.queue.length,0,'KMSTATUS followed by DATA clears DATA_FULL');
+  assert.equal(b.intFlag&1,0);
+});
+
 test('ROM03 keyboard latch spans C000-C00F and C010 clears strobe', () => {
   const {board:m}=createMachine();
   const b=m.memory, adb=b.adb;
