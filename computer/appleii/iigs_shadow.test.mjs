@@ -126,3 +126,39 @@ test('SPEED register preserves power-on status and masks reserved bit 5', () => 
   m.reset(true);
   assert.equal(m.read(0xc036), 0x40);
 });
+
+
+test('IIgs SCC register window is visible through fast and slow I/O mirrors', () => {
+  const m = bus();
+  m.write(0xc038, 0x11);
+  m.write(0xe0c039, 0x22);
+  m.write(0xe1c03a, 0x33);
+  m.write(0xc03b, 0x44);
+  assert.equal(m.read(0xe0c038), 0x11);
+  assert.equal(m.read(0xc039), 0x22);
+  assert.equal(m.read(0xe1c03a), 0x33);
+  assert.equal(m.read(0xc03b), 0x44);
+});
+
+test('IIgs sound glue exposes control, data and 16-bit DOC address', () => {
+  const m = bus();
+  m.write(0xc03c, 0x9a);
+  m.write(0xc03d, 0xbc);
+  m.write(0xc03e, 0x34);
+  m.write(0xc03f, 0x12);
+  assert.equal(m.read(0xe0c03c), 0x9a);
+  assert.equal(m.read(0xe0c03d), 0xbc);
+  assert.equal(m.read(0xe0c03e), 0x34);
+  assert.equal(m.read(0xe0c03f), 0x12);
+});
+
+test('IIgs SCC and sound glue reset to their hardware-visible idle state', () => {
+  const m = bus();
+  m.write(0xc038, 0xff);
+  m.write(0xc03c, 0xff);
+  m.write(0xc03d, 0xff);
+  m.write(0xc03e, 0xff);
+  m.write(0xc03f, 0xff);
+  m.reset(false);
+  for(let a=0xc038; a<=0xc03f; a++) assert.equal(m.read(a), 0);
+});
