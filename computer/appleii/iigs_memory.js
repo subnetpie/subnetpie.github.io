@@ -29,6 +29,8 @@ export class IIgsMemory {
     this.romBank = false;
     this.intCxRom = false;
     this.clockCtl = 0x00;
+    this.intEnable = 0x00;
+    this.intFlag = 0x00;
     this.adb = new IIgsADB();
     // IIgs SCC/DOC glue state. Serial transport and DOC synthesis are separate
     // device concerns; these registers provide the machine-visible bus contract.
@@ -134,6 +136,8 @@ export class IIgsMemory {
       if(io===0xc03d) return this.doc.readData();
       if(io===0xc03e) return this.doc.addressLow();
       if(io===0xc03f) return this.doc.addressHigh();
+      if(io===0xc041) return this.intEnable;
+      if(io===0xc046) return this.intFlag;
     }
     if(addr >= 0xc0e0 && addr <= 0xc0ef) return this.iwmAccess(addr);
     // MAME c100_r/c400_r: INTCXROM forces the internal ROM over slot
@@ -242,6 +246,7 @@ export class IIgsMemory {
       if(io===0xc03d){this.doc.writeData(val);return;}
       if(io===0xc03e){this.doc.setAddressLow(val);return;}
       if(io===0xc03f){this.doc.setAddressHigh(val);return;}
+      if(io===0xc041){this.intEnable=val&0x1f;return;}
     }
     if(addr >= 0xc0e0 && addr <= 0xc0ef) {this.iwmAccess(addr,val);return;}
     const lowAddr=addr&0xffff;
@@ -345,7 +350,8 @@ export class IIgsMemory {
     m.bsr_read = false; m.bsr_bank2 = true; m.bsr_write = true;
     this.shadow = 0; this.speed = 0x80; this.dmaBank = 0;
     this.slotRom = 0; this.langSel = 0; this.diskReg = 0;
-    this.clockCtl = 0; this.romBank = false; this.intCxRom = false;
+    this.clockCtl = 0; this.intEnable = 0; this.intFlag = 0;
+    this.romBank = false; this.intCxRom = false;
     this.scc.reset(); this.doc.reset();
     this.adb.reset();
     this.iwmMode = 0; this.iwmQ6 = this.iwmQ7 = this.iwmMotor = false;
