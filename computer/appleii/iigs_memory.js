@@ -547,7 +547,12 @@ export class IIgsMemory {
           (!(bank&1) ? true : !(this.shadow&0x10));
         const shr = (bank&1) && off>=0x2000 && off<0xa000 && !(this.shadow&0x08);
         if(text1 || text2 || hires1 || hires2 || shr) {
-          slow[off]=val;
+          if((bank&1) && off>=0x2000 && off<0xa000 && this.video)
+            // MAME bank1_0000_sh_w routes HGR/SHR shadow writes through
+            // auxram0000_w(), so NEWVIDEO $40/$80 address swizzling applies.
+            this.video.writeBankE1(off,val);
+          else
+            slow[off]=val;
           if((bank&1) && this.video) this.video.dirty=true;
         }
       }
