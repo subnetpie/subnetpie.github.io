@@ -24,7 +24,7 @@ export class IIgsDOC {
   setAddressLow(v){this.address=(this.address&0xff00)|(v&255);}
   setAddressHigh(v){this.address=(this.address&255)|((v&255)<<8);}
   addressLow(){return this.address&255;} addressHigh(){return this.address>>>8;}
-  setControl(v){this.control=v&0xff;this.systemVolume=v&0x0f;}
+  setControl(v){this.control=v&0x7f;this.systemVolume=v&0x0f;if(!(this.control&0x40))this.address&=0x00ff;}
   getControl(){return this.control;}
   getVolume(){return this.systemVolume;}
   // SOUNDCTL bit 5 selects automatic address increment after DOC data access.
