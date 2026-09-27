@@ -78,10 +78,12 @@ export class IIgsMemory {
     m.bsr_read = !(value & 8);
     m.bsr_bank2 = value & 4;
     this.romBank = !!(value & 2);
-    // STATE is the IIgs master mapping register. Update the underlying
-    // compatibility latches directly: issuing legacy soft-switch accesses
-    // here causes extra side effects while GS/OS is configuring memory.
-    m.dms_page2 = value & 0x40;
+    // MAME $C068 routes bit 6 through video scr_w(), so PAGE2 changes
+    // affect both memory selection and the compatibility renderer.
+    const oldPage2=!!m.dms_page2;
+    m.dms_page2 = !!(value & 0x40);
+    if(oldPage2!==m.dms_page2 && this.video && this.video.legacy &&
+       this.video.legacy.refresh) this.video.legacy.refresh();
     this.intCxRom = !!(value & 1);
   }
 
