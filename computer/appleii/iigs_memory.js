@@ -430,16 +430,25 @@ export class IIgsMemory {
       this.ram[(this.legacy.aux_write ? 0x01c000 : 0x00c000)+lcOff]=val;
     } else if(bank===0x01 && off<0xc000) {
       this.ram[addr]=val;
-      const textPage2Shadow = off>=0x0800 && off<0x0c00 && !(this.shadow & 0x20);
-      const shrShadow = !(this.shadow & 0x08);
-      const hiresPage1Shadow = off>=0x2000 && off<0x4000 &&
-        !(this.shadow & 0x02) && !(this.shadow & 0x10);
-      const hiresPage2Shadow = off>=0x4000 && off<0x6000 &&
-        !(this.shadow & 0x04) && !(this.shadow & 0x10);
-      if(textPage2Shadow || (off>=0x2000 && off<0xa000 &&
-         (shrShadow || hiresPage1Shadow || hiresPage2Shadow))) {
+      // MAME b1ram*_w shadow rules. Text shadowing is a direct Mega II
+      // auxiliary write; HGR/SHR shadowing goes through auxram0000_w so the
+      // NEWVIDEO address transform is applied when SHR mapping is active.
+      if(off>=0x0400 && off<0x0800 && !(this.shadow&0x01)) {
         this.slowE1[off]=val;
-        if(this.video) this.video.dirty=true;
+      } else if(off>=0x0800 && off<0x0c00 && !(this.shadow&0x20)) {
+        this.slowE1[off]=val;
+      } else if(off>=0x2000 && off<0xa000) {
+        let shadow=false;
+        if(off<0x4000)
+          shadow=(!(this.shadow&0x02) && !(this.shadow&0x10)) || !(this.shadow&0x08);
+        else if(off<0x6000)
+          shadow=(!(this.shadow&0x04) && !(this.shadow&0x10)) || !(this.shadow&0x08);
+        else
+          shadow=!(this.shadow&0x08);
+        if(shadow) {
+          if(this.video) this.video.writeBankE1(off,val);
+          else this.slowE1[off]=val;
+        }
       }
     } else if(addr < this.ram.length) {
       this.ram[addr]=val;
