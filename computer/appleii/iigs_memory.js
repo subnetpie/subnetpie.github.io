@@ -260,6 +260,8 @@ export class IIgsMemory {
       if(io===0xc027) return this.adb.readStatus();
       if(io===0xc022) return this.video ? this.video.getTextColor() : 0xf2;
       if(io===0xc023) return this.video ? this.video.readVGCINT() : 0;
+      if(io===0xc024) return this.adb.readMouseData();
+      if(io===0xc025) return this.adb.readKeyModifiers();
       if(io===0xc029) return this.video ? this.video.readNewVideo() : 0;
       if(io===0xc02b) return this.langSel;
       if(io===0xc02d) return this.slotRom;
