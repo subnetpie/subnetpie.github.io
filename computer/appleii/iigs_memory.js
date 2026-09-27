@@ -110,7 +110,7 @@ export class IIgsMemory {
     // Banks $E0/$E1 always retain Mega II I/O/LC decoding.
     const iolcEnabled = !(this.shadow & 0x40);
     if(originalBank === 0xe0 || originalBank === 0xe1 ||
-       (iolcEnabled && (originalBank === 0 || originalBank === 1))) {
+       (iolcEnabled && originalBank === 0x00)) {
       if(originalOff >= 0xc000) addr = originalOff;
     }
     if((addr>>>16)===0 && (addr&0xffff)>=0xc000 && (addr&0xffff)<=0xc0ff) {
@@ -178,7 +178,7 @@ export class IIgsMemory {
     const originalBank = addr >>> 16, originalOff = addr & 0xffff;
     const iolcEnabled = !(this.shadow & 0x40);
     if(originalBank===0xe0 || originalBank===0xe1 ||
-       (iolcEnabled && (originalBank===0 || originalBank===1))) {
+       (iolcEnabled && originalBank===0x00)) {
       if(originalOff>=0xc000) addr=originalOff;
     }
     if((addr>>>16)===0 && (addr&0xffff)>=0xc000 && (addr&0xffff)<=0xc0ff) {
