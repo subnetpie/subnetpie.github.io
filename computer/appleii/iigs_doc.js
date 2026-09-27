@@ -11,7 +11,8 @@ export class IIgsDOC {
 
   reset() {
     this.address=0; this.control=0; this.irqPending=false; this.irqOsc=-1;
-    this.enabledOscillators=1; this.cycleAccum=0; this.lastSample=0;
+    this.enabledOscillators=1; this.masterAccum=0; this.lastSample=0;
+    this.cpuHz=2800000; this.masterHz=7159090;
     for(const o of this.osc) {
       o.freq=0; o.volume=0; o.wave=0; o.control=1; o.size=0; o.accumulator=0;
     }
@@ -73,13 +74,11 @@ export class IIgsDOC {
     }
   }
 
-  tick(cycles) {
-    // DOC master is approximately 7 MHz; use CPU-cycle proportional stepping
-    // here and keep the accumulator deterministic for machine tests.
+  renderSample() {
     let mix=0, active=0;
     for(let n=0;n<this.enabledOscillators;n++) {
       const o=this.osc[n]; if(o.control&1) continue;
-      o.accumulator=(o.accumulator + o.freq*cycles)>>>0;
+      o.accumulator=(o.accumulator + o.freq)>>>0;
       const shift=9-(o.size&7);
       const index=(o.accumulator>>>Math.max(0,shift))&0xff;
       const sample=this.ram[((o.wave<<8)+index)&0xffff];
@@ -88,5 +87,20 @@ export class IIgsDOC {
     }
     this.lastSample=active ? mix/active : 0;
     return this.lastSample;
+  }
+
+  tick(cycles, cpuHz=this.cpuHz) {
+    // One DOC output update consumes 8 master clocks per enabled oscillator.
+    // Preserve fractional master clocks across 65C816 instructions so timing
+    // does not depend on instruction boundaries.
+    this.masterAccum += cycles*this.masterHz;
+    const threshold = cpuHz*8*this.enabledOscillators;
+    let samples=0;
+    while(this.masterAccum >= threshold) {
+      this.masterAccum -= threshold;
+      this.renderSample();
+      samples++;
+    }
+    return samples;
   }
 }
