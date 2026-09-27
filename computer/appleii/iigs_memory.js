@@ -618,7 +618,7 @@ export class IIgsMemory {
     // enabled but no prewrite sequence in progress.
     m.bsr_read = false; m.bsr_bank2 = true; m.bsr_write = true;
     if(this.legacy.io_manager) this.legacy.io_manager._bsr_write_count = 0;
-    this.shadow = 0; this.speed = 0x80; this.dmaBank = 0;
+    this.shadow = 0; this.speed = 0x80;
     this.slotRom = 0; this.langSel = 0; this.diskReg = 0;
     this.clockCtl = 0; this.clockData = 0; this.intEnable = 0; this.intFlag = 0;
     this.vblIrq = this.quarterIrq = false;
