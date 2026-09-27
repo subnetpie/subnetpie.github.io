@@ -296,6 +296,12 @@ export class IIgsMemory {
       // probes these during machine detection/startup.
       if(io===0xc044 || io===0xc045) return 0;
       if(io===0xc046) return this.intFlag;
+      // MAME exposes ROM03's IRQ-vector helper bytes directly at
+      // C071-C07D/C07F from ROM offset $3C000. C070 remains floating bus
+      // and C07E is the Zip delay soft switch.
+      if((io>=0xc071 && io<=0xc07d) || io===0xc07f)
+        return this.rom ? this.rom[0x3c000+(io&0xff)] : 0xff;
+
       // Compatibility status registers are already implemented by the
       // Mega II/IIe I/O hooks attached to legacy memory.
       if((io>=0xc011 && io<=0xc01f) ||
