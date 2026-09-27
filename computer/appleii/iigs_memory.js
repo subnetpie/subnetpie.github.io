@@ -170,8 +170,13 @@ export class IIgsMemory {
       } else {
         v=this.ram[0x010000 | off];
       }
-    } else if((bank===0x00 || bank===0x01) && off>=0xc000 && (this.shadow&0x40)) {
-      // IOLC inhibited: $C000-$FFFF is ordinary contiguous fast RAM.
+    } else if(bank===0x01 && off>=0xc000 && (this.shadow&0x40)) {
+      // MAME bank1_c000_r: with IOLC inhibited, bank-1 C000-FFFF is
+      // fast RAM with the hardware E000-FFFF address transform.
+      let lcOff=off-0xc000;
+      if(lcOff&0x2000) lcOff^=0x1000;
+      v=this.ram[0x01c000+lcOff];
+    } else if(bank===0x00 && off>=0xc000 && (this.shadow&0x40)) {
       v=this.ram[addr];
     } else if(addr < this.ram.length) {
       v=this.ram[addr];
@@ -238,8 +243,12 @@ export class IIgsMemory {
         else
           this.ram[0x010000 | off]=val;
       }
-    } else if((bank===0x00 || bank===0x01) && off>=0xc000 && (this.shadow&0x40)) {
-      // IOLC inhibited: writes stay in the fast contiguous RAM banks.
+    } else if(bank===0x01 && off>=0xc000 && (this.shadow&0x40)) {
+      // MAME bank1_c000_w: same transformed backing as reads.
+      let lcOff=off-0xc000;
+      if(lcOff&0x2000) lcOff^=0x1000;
+      this.ram[0x01c000+lcOff]=val;
+    } else if(bank===0x00 && off>=0xc000 && (this.shadow&0x40)) {
       this.ram[addr]=val;
     } else if(bank===0x01 && off<0xc000) {
       this.ram[addr]=val;
