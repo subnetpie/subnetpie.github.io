@@ -95,3 +95,34 @@ test('slow banks retain I/O decoding while IOLC is inhibited', () => {
   m.write(0xe0c035, 0x20);
   assert.equal(m.read(0xe0c035) & 0x60, 0x20);
 });
+
+
+test('SPEED bit 4 extends display shadowing to all fast RAM banks', () => {
+  const m = bus();
+  m.write(0xc036, 0x10);
+  m.write(0x020400, 0x12);
+  m.write(0x032000, 0x34);
+  assert.equal(m.read(0xe00400), 0x12);
+  assert.equal(m.read(0xe12000), 0x34);
+});
+
+test('SPEED all-bank shadowing still obeys SHADOW inhibit bits', () => {
+  const m = bus();
+  m.write(0xc035, 0x09); // inhibit text page 1 and SHR
+  m.write(0xc036, 0x10);
+  m.write(0x020400, 0x56);
+  m.write(0x032000, 0x78);
+  assert.equal(m.read(0xe00400), 0);
+  assert.equal(m.read(0xe12000), 0);
+});
+
+test('SPEED register preserves power-on status and masks reserved bit 5', () => {
+  const m = bus();
+  assert.equal(m.read(0xc036), 0x40);
+  m.write(0xc036, 0xff);
+  assert.equal(m.read(0xc036), 0xdf);
+  m.reset(false);
+  assert.equal(m.read(0xc036), 0x00);
+  m.reset(true);
+  assert.equal(m.read(0xc036), 0x40);
+});
