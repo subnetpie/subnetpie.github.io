@@ -76,6 +76,23 @@ test('ROM03 expansion RAM mirrors only above the power-of-two ghost boundary', (
   assert.equal(b.read(0x800000),0x80,'banks outside the expansion ghost window float');
 });
 
+test('ROM03 non-power-of-two expansion leaves holes at ff before ghost mirrors', async () => {
+  const {IIgsMemory}=await import('./iigs_memory.js');
+  const legacy={
+    _main:new Uint8Array(65536), _aux:new Uint8Array(65536),
+    read:()=>0, write(){}, reset(){},
+    aux_zp:false, aux_read:false, aux_write:false,
+    dms_80store:false, dms_page2:false, dms_hires:false,
+    bsr_read:false, bsr_bank2:true, bsr_write:true
+  };
+  const b=new IIgsMemory(legacy,null,0x280000); // 1 MB motherboard + 1.5 MB expansion
+  assert.equal(b.ghostMask,0x1fffff);
+  assert.equal(b.ghostStart,0x300000);
+  b.write(0x100321,0x66);
+  assert.equal(b.read(0x280000),0xff,'non-power-of-two expansion hole must read ff');
+  assert.equal(b.read(0x300321),0x66,'ghost range mirrors installed expansion');
+});
+
 test('IIgs INTEN gates IRQ without clearing VBL and quarter status', () => {
   const {board:m}=createMachine();
   const b=m.memory;
