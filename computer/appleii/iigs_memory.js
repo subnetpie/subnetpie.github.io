@@ -285,6 +285,9 @@ export class IIgsMemory {
       if(io===0xc03e) return this.doc.addressLow();
       if(io===0xc03f) return this.doc.addressHigh();
       if(io===0xc041) return this.intEnable;
+      // MAME returns zero for the SCC activity delta registers; AppleTalk
+      // probes these during machine detection/startup.
+      if(io===0xc044 || io===0xc045) return 0;
       if(io===0xc046) return this.intFlag;
       // Compatibility status registers are already implemented by the
       // Mega II/IIe I/O hooks attached to legacy memory.
