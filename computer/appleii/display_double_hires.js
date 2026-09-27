@@ -191,20 +191,19 @@ export class DoubleHiresDisplay
   }
 
     refresh() {
-      if (this._id == this._id1) {
-        this._id = undefined; // suspend rendering
-        for (let a=0x2000; a<0x6000; a++) this.draw(a);
-  //      for (let b=0x4000; b<0x6000; b++) this.draw(b);
-        this._id = this._id1;
-      } else if (this._id == this._id2) {
-        this._id = undefined; // suspend rendering
-        for (let a=0x2000; a<0x6000; a++) this.draw(a);
-  //      for (let b=0x4000; b<0x6000; b++) this.draw(b);
-        this._id = this._id2;
+      // Reset and mode changes can leave DHGR inactive. Never hand an
+      // undefined page to the browser's strict putImageData API.
+      const page = this._id;
+      if(page !== this._id1 && page !== this._id2) return;
+      this._id = undefined; // suspend incremental rendering during rebuild
+      try {
+        for(let a=0x2000; a<0x6000; a++) this.draw(a);
+      } finally {
+        this._id = page;
       }
-      this._context.putImageData(this._id, 0, 0);
+      this._context.putImageData(page, 0, 0);
     }
-    
+
     set_active_page(page) {
       if (page != 2) {
         // select page 1

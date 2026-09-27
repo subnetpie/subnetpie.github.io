@@ -54,7 +54,7 @@ function chooseArchiveImage(name, entries) {
   });
 }
 
-import { Motherboard } from "https://subnetpie.github.io/computer/appleii/motherboard.js?v=20260927-boot";
+import { Motherboard } from "https://subnetpie.github.io/computer/appleii/motherboard.js?v=20260927-display";
 
 class Drive {
   constructor(num, display, led, dialog) {
@@ -115,23 +115,25 @@ function on_interval(now_ms) {
   last_ms = now_ms;
   try {
     motherboard.clock(cycles);
+    const io = motherboard.io_manager;
+    if(motherboard.iigsEnabled && motherboard.video_iigs && motherboard.video_iigs.isSuperHires()) {
+      motherboard.video_iigs.refresh();
+    } else if(!io._text_mode && motherboard.legacyMemory.dms_hires && io._double_hires) {
+      // The DHGR switch can be set while text or low-res still owns video.
+      motherboard.display_double_hires.refresh();
+      if(io._mixed_mode) io.draw_mixed_text();
+    }
   } catch(err) {
     window.appleBootError = err;
-    console.error("[Apple IIgs boot]", err);
+    console.error('[Apple IIgs emulation]', err);
     interval = undefined;
-    buttonRunStop.innerText = "run";
+    buttonRunStop.innerText = 'run';
     const msg = String(err && err.message ? err.message : err);
-    showBootStatus("IIgs BOOT ERROR\n" + msg);
+    showBootStatus('EMULATION ERROR\n' + msg);
     motherboard.message(msg.slice(0, 38));
     return;
   }
   interval = window.requestAnimationFrame(on_interval);
-
-    if (motherboard.iigsEnabled && motherboard.video_iigs && motherboard.video_iigs.isSuperHires()) {
-      motherboard.video_iigs.refresh();
-    } else if (motherboard.io_manager._double_hires) {
-      motherboard.display_double_hires.refresh();
-    };
 }
 
 function init() {
