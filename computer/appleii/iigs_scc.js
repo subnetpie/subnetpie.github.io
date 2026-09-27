@@ -32,7 +32,7 @@ class SCCChannel {
     if(this.txByte<0)this.startTransmit();
     this.parent.updateIRQ();
   }
-  baudDivisor(){return ((((this.reg[13]<<8)|this.reg[12])+2)*2)||4);}
+  baudDivisor(){return (((this.reg[13]<<8)|this.reg[12])+2)*2)||4;}
   bitsPerCharacter(){
     const bits=[5,7,6,8][(this.reg[5]>>>5)&3];
     return 1+bits+((this.reg[4]&0x0c)?1:0)+((this.reg[4]&3)===3?2:1);
