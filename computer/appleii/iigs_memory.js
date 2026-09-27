@@ -161,6 +161,15 @@ export class IIgsMemory {
       // MAME 0.289 apple2gs_map: $01:0000-$BFFF is fast-side bank-1
       // motherboard RAM. Shadowing to slow $E1 is handled on writes.
       v=this.ram[addr];
+    } else if(bank===0x01 && off>=0xd000 && !(this.shadow&0x40)) {
+      // Bank $01 has an independent fast-side language card.
+      if(!this.legacy.bsr_read && this.rom) {
+        v=this.romRead(0xff0000|off);
+      } else if(off<0xe000) {
+        v=this.ram[0x010000 | (this.legacy.bsr_bank2 ? 0xc000 : 0xd000) | (off&0x0fff)];
+      } else {
+        v=this.ram[0x010000 | off];
+      }
     } else if((bank===0x00 || bank===0x01) && off>=0xc000 && (this.shadow&0x40)) {
       // IOLC inhibited: $C000-$FFFF is ordinary contiguous fast RAM.
       v=this.ram[addr];
@@ -220,6 +229,15 @@ export class IIgsMemory {
       else if(off>=0x0800 && off<0x0c00 && !(this.shadow&0x20)) this.slowE0[off]=val;
       else if(off>=0x2000 && off<0x4000 && !(this.shadow&0x02)) this.slowE0[off]=val;
       else if(off>=0x4000 && off<0x6000 && !(this.shadow&0x04)) this.slowE0[off]=val;
+    } else if(bank===0x01 && off>=0xd000 && !(this.shadow&0x40)) {
+      // MAME lc_01_w: bank-1 LC writes use private fast RAM and honor
+      // the shared LC write-enable latch.
+      if(this.legacy.bsr_write) {
+        if(off<0xe000)
+          this.ram[0x010000 | (this.legacy.bsr_bank2 ? 0xc000 : 0xd000) | (off&0x0fff)]=val;
+        else
+          this.ram[0x010000 | off]=val;
+      }
     } else if((bank===0x00 || bank===0x01) && off>=0xc000 && (this.shadow&0x40)) {
       // IOLC inhibited: writes stay in the fast contiguous RAM banks.
       this.ram[addr]=val;
