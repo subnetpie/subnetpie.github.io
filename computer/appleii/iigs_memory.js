@@ -29,6 +29,7 @@ export class IIgsMemory {
     this.romBank = false;
     this.intCxRom = false;
     this.clockCtl = 0x00;
+    this.clockData = 0x00;
     this.intEnable = 0x00;
     this.intFlag = 0x00;
     this.irq = null;
@@ -154,7 +155,8 @@ export class IIgsMemory {
         return 0;
       }
       if(io===0xc031) return this.diskReg;
-      if(io===0xc034) return this.clockCtl;
+      if(io===0xc033) return this.clockData;
+      if(io===0xc034) return (this.clockCtl&0xf0)|(this.video?this.video.getBorderColor():0x02);
       if(io===0xc035) return this.shadow;
       if(io===0xc036) return this.speed;
       if(io===0xc037) return this.dmaBank;
@@ -265,7 +267,8 @@ export class IIgsMemory {
       if(io===0xc02d){this.slotRom=val&0xf6;return;}
       if(io===0xc031){this.diskReg=val&0xc0;return;}
       if(io===0xc032){if(this.video)this.video.writeSCANINT(val);return;}
-      if(io===0xc034){this.clockCtl=val&0x7f;return;}
+      if(io===0xc033){this.clockData=val;return;}
+      if(io===0xc034){this.clockCtl=val&0x6f;if(this.video)this.video.setBorderColor(val);return;}
       if(io===0xc035){this.shadow=val;return;}
       if(io===0xc036){this.speed=val;return;}
       if(io===0xc037){this.dmaBank=val;return;}
@@ -390,7 +393,7 @@ export class IIgsMemory {
     m.bsr_read = false; m.bsr_bank2 = true; m.bsr_write = true;
     this.shadow = 0; this.speed = 0x80; this.dmaBank = 0;
     this.slotRom = 0; this.langSel = 0; this.diskReg = 0;
-    this.clockCtl = 0; this.intEnable = 0; this.intFlag = 0;
+    this.clockCtl = 0; this.clockData = 0; this.intEnable = 0; this.intFlag = 0;
     this.vblIrq = this.quarterIrq = false; this.updateMegaIrq();
     this.romBank = false; this.intCxRom = false;
     this.scc.reset(); this.doc.reset();
