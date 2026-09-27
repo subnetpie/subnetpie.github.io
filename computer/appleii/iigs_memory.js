@@ -210,7 +210,7 @@ export class IIgsMemory {
       if(io===0xc031){this.diskReg=val;return;}
       if(io===0xc034){this.clockCtl=val&0x7f;return;}
       if(io===0xc035){this.shadow=val;return;}
-      if(io===0xc036){this.speed=val&0xdf;return;}
+      if(io===0xc036){this.speed=val;return;}
       if(io===0xc037){this.dmaBank=val;return;}
       if(io>=0xc038 && io<=0xc03b){this.scc.write(io-0xc038,val);return;}
       if(io===0xc03c){this.doc.setControl(val);return;}
