@@ -90,3 +90,29 @@ test('DOC loop mode restarts accumulator when a zero terminator is reached',()=>
   assert.equal(d.osc[0].control&1,0);
   assert.equal(d.osc[0].accumulator,0);
 });
+
+
+test('DOC queues simultaneous oscillator IRQs until each is acknowledged',()=>{
+  let irq=false; const d=new IIgsDOC(v=>irq=v); d.enabledOscillators=2;
+  d.ram[0x101]=0; d.ram[0x201]=0;
+  Object.assign(d.osc[0],{freq:0x100,volume:255,wave:1,control:0x08,size:0,accumulator:0});
+  Object.assign(d.osc[1],{freq:0x100,volume:255,wave:2,control:0x08,size:0,accumulator:0});
+  d.renderSample();
+  assert.equal(irq,true);
+  assert.equal(d.readRegister(0xe1),0);
+  assert.equal(irq,true);
+  assert.equal(d.readRegister(0xe1),2);
+  assert.equal(irq,false);
+  assert.equal(d.readRegister(0xe1),0xff);
+});
+
+test('DOC routes even and odd oscillators to separate output buses',()=>{
+  const d=new IIgsDOC(); d.enabledOscillators=2;
+  d.ram[0x101]=0xc0; d.ram[0x201]=0xa0;
+  Object.assign(d.osc[0],{freq:0x100,volume:255,wave:1,control:0,size:0,accumulator:0});
+  Object.assign(d.osc[1],{freq:0x100,volume:255,wave:2,control:0,size:0,accumulator:0});
+  d.renderSample();
+  assert.equal(d.lastLeft,64);
+  assert.equal(d.lastRight,32);
+  assert.equal(d.lastSample,48);
+});
