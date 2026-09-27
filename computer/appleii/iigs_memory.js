@@ -217,11 +217,11 @@ export class IIgsMemory {
       if(io===0xc02d) return this.slotRom;
       if(io===0xc02e){
         if(this.video) this.video.clearScanlineInterrupt();
-        return (this.video ? this.video.currentScanline : 0) >>> 1;
+        return this.video ? this.video.readVertCounter() : 0;
       }
       if(io===0xc02f){
         if(this.video) this.video.clearScanlineInterrupt();
-        return 0;
+        return this.video ? this.video.readHorizCounter() : 0;
       }
       if(io===0xc031) return this.diskReg;
       if(io===0xc033) return this.clockData;
