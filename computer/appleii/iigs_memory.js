@@ -68,12 +68,12 @@ export class IIgsMemory {
     this.legacy._rom_ef = this.rom.subarray(last + 0xe000, last + 0x10000);
   }
 
-  // IIgs ROM is visible at the top of the 24-bit space. 128K ROM03 maps
-  // into $FE/$FF; larger development images may occupy $FC-$FF.
+  // MAME ROM03 installs the 256K firmware at $FC0000-$FFFFFF.
+  // The ROM03 chip pair is assembled into a 256K image by the loader.
   romRead(addr) {
     if(!this.rom) return undefined;
-    const base = 0x1000000 - this.rom.length;
-    if(addr >= base) return this.rom[addr - base];
+    const base = 0xfc0000;
+    if(addr >= base && addr < base + this.rom.length) return this.rom[addr - base];
     return undefined;
   }
 
