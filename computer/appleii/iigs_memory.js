@@ -280,6 +280,7 @@ export class IIgsMemory {
         return this.video ? this.video.readHorizCounter() : 0;
       }
       if(io===0xc031) return this.diskReg;
+      // MAME VGCINTCLEAR ($C032) is write-only; reads are floating bus.
       if(io===0xc033) return this.clockData;
       if(io===0xc034) return (this.clockCtl&0xf0)|(this.video?this.video.getBorderColor():0x02);
       if(io===0xc035) return this.shadow;
