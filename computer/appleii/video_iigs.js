@@ -1,14 +1,14 @@
 // Apple IIgs-capable video subsystem.
 // Legacy Apple II/IIe modes remain owned by IOManager (Mega II-compatible path).
-// Super Hi-Res uses the IIgs linear bank-$E1 video layout.
-// Unlike Apple II text/HGR memory there is no scan-line address interleave:
-//   $2000-$9CFF  200 scan lines x 160 consecutive bytes
-//   $9D00-$9DC7  200 scan-line control bytes (one byte per line)
-//   $9E00-$9FFF  16 palettes x 16 12-bit RGB entries (2 bytes/entry)
+// Super Hi-Res uses two 80-byte banks per scanline, matching MAME:
+// $2000 + y*80 supplies the first four pixels of each 8-pixel group;
+// $6000 + y*80 supplies the second four.
 const SHR_PIXEL_BASE = 0x2000;
+const SHR_PIXEL_PLANE2 = 0x6000;
+const SHR_BYTES_PER_PLANE_LINE = 80;
 const SHR_BYTES_PER_LINE = 160;
 const SHR_LINES = 200;
-const SHR_PIXEL_END = SHR_PIXEL_BASE + SHR_BYTES_PER_LINE * SHR_LINES; // $9D00
+const SHR_PIXEL_END = 0x9d00;
 const SHR_SCB_BASE = 0x9d00;
 const SHR_SCB_END = SHR_SCB_BASE + SHR_LINES;                         // $9DC8
 const SHR_PALETTE_BASE = 0x9e00;
@@ -190,37 +190,43 @@ export class IIgsVideo {
   render320Line(y, scb, data) {
     const palette = scb.palette;
     const fill = scb.fill;
-    const base = SHR_PIXEL_BASE + y * SHR_BYTES_PER_LINE;
+    const base = SHR_PIXEL_BASE + y * SHR_BYTES_PER_PLANE_LINE;
+    const base2 = SHR_PIXEL_PLANE2 + y * SHR_BYTES_PER_PLANE_LINE;
     // MAME 0.289 fillmode_init[scb & 0x1f]: palette nibble, except
     // SCB $00 seeds color 2 and SCB $10 seeds color 0.
     let last = (scb.raw & 0x0f) || ((scb.raw & 0x10) ? 0 : 2);
-    for (let i=0; i<SHR_BYTES_PER_LINE; i++) {
-      const b=this.bankE1[base+i];
-      let a=(b>>4)&15, c=b&15;
-      if (fill) {
-        if (a===0) a=last; else last=a;
-        if (c===0) c=last; else last=c;
+    for (let i=0; i<SHR_BYTES_PER_PLANE_LINE; i++) {
+      for (let plane=0; plane<2; plane++) {
+        const b=this.bankE1[(plane ? base2 : base)+i];
+        let a=(b>>4)&15, c=b&15;
+        if (fill) {
+          if (a===0) a=last; else last=a;
+          if (c===0) c=last; else last=c;
+        }
+        const x=i*8+plane*4;
+        const ca=this.paletteColor(palette,a), cc=this.paletteColor(palette,c);
+        this.putPixel(data,x,y,ca); this.putPixel(data,x+1,y,ca);
+        this.putPixel(data,x+2,y,cc); this.putPixel(data,x+3,y,cc);
       }
-      const x=i*4;
-      const ca=this.paletteColor(palette,a), cc=this.paletteColor(palette,c);
-      this.putPixel(data,x,y,ca); this.putPixel(data,x+1,y,ca);
-      this.putPixel(data,x+2,y,cc); this.putPixel(data,x+3,y,cc);
     }
   }
 
   render640Line(y, scb, data) {
-    const base = SHR_PIXEL_BASE + y * SHR_BYTES_PER_LINE;
+    const base = SHR_PIXEL_BASE + y * SHR_BYTES_PER_PLANE_LINE;
+    const base2 = SHR_PIXEL_PLANE2 + y * SHR_BYTES_PER_PLANE_LINE;
     const palette = scb.palette;
     // MAME 0.289 screen_update_GS: each pixel position selects from
     // consecutive groups 0-3, 4-7, 8-11 and 12-15 of the SCB palette.
-    for(let i=0;i<160;i++) {
-      const b=this.bankE1[base+i];
-      const x=i*4;
-      const p0=(b>>6)&3, p1=(b>>4)&3, p2=(b>>2)&3, p3=b&3;
-      this.putPixel(data,x,y,this.paletteColor(palette,p0));
-      this.putPixel(data,x+1,y,this.paletteColor(palette,4+p1));
-      this.putPixel(data,x+2,y,this.paletteColor(palette,8+p2));
-      this.putPixel(data,x+3,y,this.paletteColor(palette,12+p3));
+    for(let i=0;i<SHR_BYTES_PER_PLANE_LINE;i++) {
+      for(let plane=0;plane<2;plane++) {
+        const b=this.bankE1[(plane ? base2 : base)+i];
+        const x=i*8+plane*4;
+        const p0=(b>>6)&3, p1=(b>>4)&3, p2=(b>>2)&3, p3=b&3;
+        this.putPixel(data,x,y,this.paletteColor(palette,p0));
+        this.putPixel(data,x+1,y,this.paletteColor(palette,4+p1));
+        this.putPixel(data,x+2,y,this.paletteColor(palette,8+p2));
+        this.putPixel(data,x+3,y,this.paletteColor(palette,12+p3));
+      }
     }
   }
 
