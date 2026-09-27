@@ -154,8 +154,10 @@ export class IIgsMemory {
       else
         v=this.legacy.read(off);
     } else if(bank===0x01 && off<0xc000) {
-      // Bank $01 exposes the auxiliary 64K used by Mega II double/80-column modes.
-      v=this.legacy._aux[off];
+      // Bank $01 is IIgs fast RAM. Mega II display compatibility is maintained
+      // by the explicit shadow copies below; it must not alias the auxiliary
+      // 64K or GS/OS sees a hole while probing contiguous fast memory.
+      v=this.ram[addr];
     } else if((bank===0x00 || bank===0x01) && off>=0xc000 && (this.shadow&0x40)) {
       // IOLC inhibited: $C000-$FFFF is ordinary contiguous fast RAM.
       v=this.ram[addr];
@@ -219,6 +221,7 @@ export class IIgsMemory {
       // IOLC inhibited: writes stay in the fast contiguous RAM banks.
       this.ram[addr]=val;
     } else if(bank===0x01 && off<0xc000) {
+      this.ram[addr]=val;
       this.legacy._aux[off]=val;
       const textPage2Shadow = off>=0x0800 && off<0x0c00 && !(this.shadow & 0x20);
       const shrShadow = !(this.shadow & 0x08);
