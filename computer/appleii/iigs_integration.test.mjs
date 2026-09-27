@@ -74,6 +74,7 @@ test('IIgs INTFLAG reports AN3 in bit 5', () => {
 test('IIgs C037 DMAREG/CYAREG access is a no-op', () => {
   const {board:m}=createMachine();
   const b=m.memory;
+  assert.equal('dmaBank' in b,false,'reset must not create obsolete DMAREG latch state');
   b.write(0xc037,0x5a);
   assert.equal('dmaBank' in b,false,'C037 must not create DMAREG latch state');
   assert.notEqual(b.read(0xc037),0x5a,'C037 read must not expose written data');
