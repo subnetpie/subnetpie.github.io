@@ -36,6 +36,17 @@ test('IIgs reset restores ROM vectors after a native program banks in RAM', () =
 });
 
 
+test('IIgs beam counter reads clear scanline VGC interrupt status', () => {
+  const {board:m}=createMachine();
+  const b=m.memory, v=m.video;
+  v.vgcIntStatus|=0x20;
+  b.read(0xc02e);
+  assert.equal(v.vgcIntStatus&0x20,0,'VERTCNT clears scanline status');
+  v.vgcIntStatus|=0x20;
+  b.read(0xc02f);
+  assert.equal(v.vgcIntStatus&0x20,0,'HORIZCNT clears scanline status');
+});
+
 test('IIgs C021 MONOCHROME is write-only', () => {
   const {board:m}=createMachine();
   const b=m.memory;
