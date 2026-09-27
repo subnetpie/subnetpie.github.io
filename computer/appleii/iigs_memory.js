@@ -19,7 +19,7 @@ export class IIgsMemory {
     this.writeHooks = [];
     this.trace = null;
     this.shadow = 0x00;
-    this.speed = 0x80;
+    this.speed = 0x40;
     this.dmaBank = 0x00;
     this.slotRom = 0x00;
     this.langSel = 0x00;
@@ -174,7 +174,7 @@ export class IIgsMemory {
       if(io===0xc031){this.diskReg=val;return;}
       if(io===0xc034){this.clockCtl=val&0x7f;return;}
       if(io===0xc035){this.shadow=val;return;}
-      if(io===0xc036){this.speed=val&0x9f;return;}
+      if(io===0xc036){this.speed=val&0xdf;return;}
       if(io===0xc037){this.dmaBank=val;return;}
     }
     if(addr >= 0xc0e0 && addr <= 0xc0ef) {this.iwmAccess(addr,val);return;}
@@ -215,6 +215,22 @@ export class IIgsMemory {
       }
     } else if(addr < this.ram.length) {
       this.ram[addr]=val;
+      // SPEED bit 4 extends the selected display shadow ranges to every
+      // fast RAM bank. Even banks shadow to $E0, odd banks to $E1.
+      if((this.speed & 0x10) && bank<=0x7f) {
+        const slow = (bank & 1) ? this.slowE1 : this.slowE0;
+        const text1 = off>=0x0400 && off<0x0800 && !(this.shadow&0x01);
+        const text2 = off>=0x0800 && off<0x0c00 && !(this.shadow&0x20);
+        const hires1 = off>=0x2000 && off<0x4000 && !(this.shadow&0x02) &&
+          (!(bank&1) ? true : !(this.shadow&0x10));
+        const hires2 = off>=0x4000 && off<0x6000 && !(this.shadow&0x04) &&
+          (!(bank&1) ? true : !(this.shadow&0x10));
+        const shr = (bank&1) && off>=0x2000 && off<0xa000 && !(this.shadow&0x08);
+        if(text1 || text2 || hires1 || hires2 || shr) {
+          slow[off]=val;
+          if((bank&1) && this.video) this.video.dirty=true;
+        }
+      }
     }
     if(this.trace) this.trace("W",addr,val);
   }
@@ -234,7 +250,7 @@ export class IIgsMemory {
     m.aux_zp = m.aux_read = m.aux_write = false;
     m.dms_80store = m.dms_page2 = m.dms_hires = false;
     m.bsr_read = false; m.bsr_bank2 = true; m.bsr_write = true;
-    this.shadow = 0; this.speed = 0x80; this.dmaBank = 0;
+    this.shadow = 0; this.speed = cold ? 0x40 : 0x00; this.dmaBank = 0;
     this.slotRom = 0; this.langSel = 0; this.diskReg = 0;
     this.clockCtl = 0; this.romBank = false;
     this.adb.reset();
