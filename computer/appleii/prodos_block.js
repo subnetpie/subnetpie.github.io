@@ -13,6 +13,7 @@ export class ProDOSBlockDevice {
         this.dirty = false;
         this.writeProtected = false;
         this.blockCount = 0;
+        this.trace = null;
 
         this.romBase = 0xc000 | (this.slot << 8);
         this.ioBase = 0xc080 | (this.slot << 4);
@@ -97,6 +98,8 @@ export class ProDOSBlockDevice {
         // Media remains mounted across reset, like a physical hard drive.
     }
 
+    setTrace(fn) { this.trace = fn; }
+
     read(addr) {
         if (addr >= this.romBase && addr <= this.romBase + 0xff) {
             // The system ROM scans slot 7 before Disk II in slot 6. An empty
@@ -134,6 +137,7 @@ export class ProDOSBlockDevice {
 
         // Unit bits 4-6 select the slot; bit 7 is the drive number and must
         // not participate in slot validation.
+        if (this.trace) this.trace({command, unit, buffer, block, blocks:this.blockCount});
         if ((unit & 0x70) !== ((this.slot & 7) << 4)) return 0x28;
 
         if (command === 0) return 0; // STATUS
