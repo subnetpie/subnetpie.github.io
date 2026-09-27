@@ -40,6 +40,7 @@ export class ProDOSBlockDevice {
             0x20,0x80,0xc0|this.slot,   // JSR Cn80
             0xb0,0x05,                  // error -> RTS
             0xa2,this.slot<<4,          // boot convention: X = slot * 16
+            0x86,0x43,                  // ProDOS boot sector expects unit/slot in $43
             0x4c,0x01,0x08,             // JMP $0801
             0x60
         ], 0x08);
