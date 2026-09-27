@@ -21,7 +21,7 @@ export class IIgsMemory {
     this.writeHooks = [];
     this.trace = null;
     this.shadow = 0x00;
-    this.speed = 0x40;
+    this.speed = 0x80;
     this.dmaBank = 0x00;
     this.slotRom = 0x00;
     this.langSel = 0x00;
