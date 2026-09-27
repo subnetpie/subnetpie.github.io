@@ -6,7 +6,7 @@ export class IIgsADB {
   // MAME key GLU state visible to the 65816 at C024/C025. Mouse data is
   // returned X then Y on alternating reads.
   this.mouseX=0;this.mouseY=0;this.mouseReadY=false;this.mouseFull=false;this.keyModifiers=0;
-  this.keyData=0;this.keyStrobe=false;this.anyKeyDown=false;
+  this.keyData=0;this.keyStrobe=false;this.anyKeyDown=false;this.dataStatusRead=false;
   this.updateIrq();
  }
  updateIrq(){if(this.onIrq)this.onIrq(!!(((this.control&0x10)&&this.queue.length)||((this.control&0x40)&&this.mouseFull)||((this.control&0x04)&&this.keyStrobe)));}
@@ -18,8 +18,8 @@ export class IIgsADB {
  setKeyData(value,down=true){this.keyData=value&0x7f;this.anyKeyDown=!!down;if(down)this.keyStrobe=true;this.updateIrq();}
  setMouseData(x,y){this.mouseX=x&0xff;this.mouseY=y&0xff;this.mouseReadY=false;this.mouseFull=true;this.updateIrq();}
  setKeyModifiers(value){this.keyModifiers=value&0xff;}
- readStatus(){return this.control|(this.mouseReadY?0x02:0)|(this.keyStrobe?0x08:0)|(this.queue.length?0x20:0)|(this.mouseFull?0x80:0);}
- readData(){const v=this.queue.shift()??0;this.updateIrq();return v;}
+ readStatus(){this.dataStatusRead=true;return this.control|(this.mouseReadY?0x02:0)|(this.keyStrobe?0x08:0)|(this.queue.length?0x20:0)|(this.mouseFull?0x80:0);}
+ readData(){const v=this.queue[0]??0;if(this.dataStatusRead){this.dataStatusRead=false;if(this.queue.length)this.queue.shift();this.updateIrq();}return v;}
  writeStatus(value){this.control=(this.control&0xab)|(value&0x54);this.updateIrq();}
  writeData(value){
   if(this.remaining){this.args.push(value);if(--this.remaining===0)this.execute();return;}
