@@ -124,12 +124,17 @@ export class ProDOSBlockDevice {
     execute() {
         if (!this.image) return 0x28; // no device
 
+        // ProDOS block-device entry uses the zero-page parameter list at
+        // $42-$47. Some boot loaders (including the Arkanoid 800K 2MG)
+        // preserve the slot in the high nibble but set the drive bit as well.
         const command = this.memory.read(0x42);
         const unit = this.memory.read(0x43);
         const buffer = this.memory.read(0x44) | (this.memory.read(0x45) << 8);
         const block = this.memory.read(0x46) | (this.memory.read(0x47) << 8);
 
-        if ((unit & 0x70) !== (this.slot << 4)) return 0x28;
+        // Unit bits 4-6 select the slot; bit 7 is the drive number and must
+        // not participate in slot validation.
+        if ((unit & 0x70) !== ((this.slot & 7) << 4)) return 0x28;
 
         if (command === 0) return 0; // STATUS
         if (command !== 1 && command !== 2) return 0x27;
