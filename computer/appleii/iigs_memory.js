@@ -27,6 +27,12 @@ export class IIgsMemory {
     this.romBank = false;
     this.clockCtl = 0x00;
     this.adb = new IIgsADB();
+    // IIgs SCC/DOC glue state. Serial transport and DOC synthesis are separate
+    // device concerns; these registers provide the machine-visible bus contract.
+    this.scc = new Uint8Array(4);
+    this.soundControl = 0;
+    this.soundData = 0;
+    this.soundAddress = 0;
     this.iwmMode = 0; this.iwmQ6 = false; this.iwmQ7 = false; this.iwmMotor = false;
   }
 
@@ -115,6 +121,11 @@ export class IIgsMemory {
       if(io===0xc035) return this.shadow;
       if(io===0xc036) return this.speed;
       if(io===0xc037) return this.dmaBank;
+      if(io>=0xc038 && io<=0xc03b) return this.scc[io-0xc038];
+      if(io===0xc03c) return this.soundControl;
+      if(io===0xc03d) return this.soundData;
+      if(io===0xc03e) return this.soundAddress&0xff;
+      if(io===0xc03f) return (this.soundAddress>>>8)&0xff;
     }
     if(addr >= 0xc0e0 && addr <= 0xc0ef) return this.iwmAccess(addr);
     for(const fn of this.readHooks) {
@@ -176,6 +187,11 @@ export class IIgsMemory {
       if(io===0xc035){this.shadow=val;return;}
       if(io===0xc036){this.speed=val&0xdf;return;}
       if(io===0xc037){this.dmaBank=val;return;}
+      if(io>=0xc038 && io<=0xc03b){this.scc[io-0xc038]=val;return;}
+      if(io===0xc03c){this.soundControl=val;return;}
+      if(io===0xc03d){this.soundData=val;return;}
+      if(io===0xc03e){this.soundAddress=(this.soundAddress&0xff00)|val;return;}
+      if(io===0xc03f){this.soundAddress=(this.soundAddress&0x00ff)|(val<<8);return;}
     }
     if(addr >= 0xc0e0 && addr <= 0xc0ef) {this.iwmAccess(addr,val);return;}
     for(const fn of this.writeHooks) {
@@ -253,6 +269,7 @@ export class IIgsMemory {
     this.shadow = 0; this.speed = cold ? 0x40 : 0x00; this.dmaBank = 0;
     this.slotRom = 0; this.langSel = 0; this.diskReg = 0;
     this.clockCtl = 0; this.romBank = false;
+    this.scc.fill(0); this.soundControl = this.soundData = this.soundAddress = 0;
     this.adb.reset();
     this.iwmMode = 0; this.iwmQ6 = this.iwmQ7 = this.iwmMotor = false;
   }
