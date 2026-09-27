@@ -145,6 +145,14 @@ export class IIgsMemory {
       if(io===0xc029) return this.video ? this.video.readNewVideo() : 0;
       if(io===0xc02b) return this.langSel;
       if(io===0xc02d) return this.slotRom;
+      if(io===0xc02e){
+        if(this.video) this.video.clearScanlineInterrupt();
+        return (this.video ? this.video.currentScanline : 0) >>> 1;
+      }
+      if(io===0xc02f){
+        if(this.video) this.video.clearScanlineInterrupt();
+        return 0;
+      }
       if(io===0xc031) return this.diskReg;
       if(io===0xc034) return this.clockCtl;
       if(io===0xc035) return this.shadow;
@@ -256,6 +264,7 @@ export class IIgsMemory {
       if(io===0xc02b){this.langSel=val&0xf8;return;}
       if(io===0xc02d){this.slotRom=val&0xf6;return;}
       if(io===0xc031){this.diskReg=val&0xc0;return;}
+      if(io===0xc032){if(this.video)this.video.writeSCANINT(val);return;}
       if(io===0xc034){this.clockCtl=val&0x7f;return;}
       if(io===0xc035){this.shadow=val;return;}
       if(io===0xc036){this.speed=val;return;}
