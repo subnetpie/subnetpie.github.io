@@ -370,6 +370,8 @@ export class IIgsMemory {
       if(io===0xc005){this.legacy.aux_write=true;return;}
       if(io===0xc006){this.intCxRom=false;return;}
       if(io===0xc007){this.intCxRom=true;return;}
+      if(io===0xc008){this.legacy.aux_zp=false;return;}
+      if(io===0xc009){this.legacy.aux_zp=true;return;}
       if(io===0xc00a){this.slotC3Rom=false;return;}
       if(io===0xc00b){this.slotC3Rom=true;return;}
       if(io===0xc068){this.writeState(val);return;}
