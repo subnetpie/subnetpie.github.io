@@ -149,7 +149,7 @@ export class IIgsVideo {
   // bit 7: 640 mode, bit 6: scan-line interrupt, bit 5: 320 fill mode,
   // bits 3-0: palette number. Fill is ignored by 640 mode.
   decodeSCB(y) {
-    const raw = this.bankE1[SHR_SCB_BASE + (y % SHR_LINES)];
+    const raw = this.readBankE1(SHR_SCB_BASE + (y % SHR_LINES));
     return {
       raw,
       mode640: (raw & 0x80) !== 0,
@@ -227,7 +227,7 @@ export class IIgsVideo {
 
   paletteColor(palette, index) {
     const a = SHR_PALETTE_BASE + ((palette & 0x0f) << 5) + ((index & 0x0f) << 1);
-    const word = this.bankE1[a] | (this.bankE1[a + 1] << 8);
+    const word = this.readBankE1(a) | (this.readBankE1(a + 1) << 8);
     // IIgs color is 0RGB, four bits per component.
     return [
       ((word >> 8) & 0x0f) * 17,
