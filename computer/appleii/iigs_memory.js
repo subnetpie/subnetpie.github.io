@@ -129,6 +129,44 @@ export class IIgsMemory {
     return data;
   }
 
+  b0FastRead(off) {
+    const m=this.legacy;
+    if(off<0x0200) return this.ram[(m.aux_zp?0x010000:0)+off];
+    let aux=!!m.aux_read;
+    if(off>=0x0400 && off<0x0800 && m.dms_80store) aux=!!m.dms_page2;
+    else if(off>=0x2000 && off<0x4000 && m.dms_80store && m.dms_hires) aux=!!m.dms_page2;
+    return this.ram[(aux?0x010000:0)+off];
+  }
+
+  b0FastWrite(off,val) {
+    const m=this.legacy;
+    let aux;
+    if(off<0x0200) aux=!!m.aux_zp;
+    else {
+      aux=!!m.aux_write;
+      if(off>=0x0400 && off<0x0800 && m.dms_80store) aux=!!m.dms_page2;
+      else if(off>=0x2000 && off<0x4000 && m.dms_80store && m.dms_hires) aux=!!m.dms_page2;
+    }
+    const base=aux?0x010000:0;
+    this.ram[base+off]=val;
+    if(aux) {
+      const text1=off>=0x0400&&off<0x0800&&!(this.shadow&0x01);
+      const text2=off>=0x0800&&off<0x0c00&&!(this.shadow&0x20);
+      const hires1=off>=0x2000&&off<0x4000&&
+        ((!(this.shadow&0x02)&&!(this.shadow&0x10)) || !(this.shadow&0x08));
+      const hires2=off>=0x4000&&off<0x6000&&
+        ((!(this.shadow&0x04)&&!(this.shadow&0x10)) || !(this.shadow&0x08));
+      const shr=off>=0x6000&&off<0xa000&&!(this.shadow&0x08);
+      if(text1||text2||hires1||hires2||shr) this.slowE1[off]=val;
+    } else {
+      if(off>=0x0400&&off<0x0800&&!(this.shadow&0x01)) this.slowE0[off]=val;
+      else if(off>=0x0800&&off<0x0c00&&!(this.shadow&0x20)) this.slowE0[off]=val;
+      else if(off>=0x2000&&off<0x4000&&!(this.shadow&0x02)) this.slowE0[off]=val;
+      else if(off>=0x4000&&off<0x6000&&!(this.shadow&0x04)) this.slowE0[off]=val;
+    }
+    if(this.video && off>=0x0400 && off<0xa000) this.video.dirty=true;
+  }
+
   e0ReadBank(off) {
     const m=this.legacy;
     if(off<0x0200) return (m.aux_zp ? this.slowE1 : this.slowE0)[off];
@@ -231,10 +269,11 @@ export class IIgsMemory {
       else
         v=(bank===0xe0 ? this.slowE0 : this.slowE1)[off];
     } else if(bank===0x00) {
-      // Bank $00 is the Mega II compatibility window. The IIgs ROM mirrors
-      // into $D000-$FFFF while the language-card RAM read switch is off.
-      // Leave all other reads (including RAM-selected reads) to Mega II.
-      if(off>=0xd000 && this.rom && !this.legacy.bsr_read)
+      // Fast-side bank 0 uses the same auxiliary selectors as the Mega II,
+      // but its backing store is IIgs motherboard RAM.
+      if(off<0xc000)
+        v=this.b0FastRead(off);
+      else if(off>=0xd000 && this.rom && !this.legacy.bsr_read)
         v=this.romRead(0xff0000|off);
       else
         v=this.legacy.read(off);
@@ -355,13 +394,10 @@ export class IIgsMemory {
       else
         (bank===0xe0 ? this.slowE0 : this.slowE1)[off]=val;
     } else if(bank===0x00) {
-      this.legacy.write(off,val);
-      // IIgs display shadowing: classic display writes in bank $00 are copied
-      // to the corresponding slow-memory bank unless inhibited by $C035.
-      if(off>=0x0400 && off<0x0800 && !(this.shadow&0x01)) this.slowE0[off]=val;
-      else if(off>=0x0800 && off<0x0c00 && !(this.shadow&0x20)) this.slowE0[off]=val;
-      else if(off>=0x2000 && off<0x4000 && !(this.shadow&0x02)) this.slowE0[off]=val;
-      else if(off>=0x4000 && off<0x6000 && !(this.shadow&0x04)) this.slowE0[off]=val;
+      if(off<0xc000)
+        this.b0FastWrite(off,val);
+      else
+        this.legacy.write(off,val);
     } else if(bank===0x01 && off>=0xd000 && !(this.shadow&0x40)) {
       // MAME lc_01_w: bank-1 LC writes use private fast RAM and honor
       // the shared LC write-enable latch.
