@@ -125,6 +125,22 @@ test('Total Replay boots on IIgs, accepts a search, and launches Battlezone',
     assert.ok(pixels.some((v,i)=>i%4!==3&&v>100),'game title must render');
   });
 
+test('IIgs reset matches MAME ROM03 power-on register defaults', () => {
+  const {board:m}=createMachine();
+  const b=m.memory;
+  assert.equal(b.shadow,0x00);
+  assert.equal(b.speed,0x80);
+  assert.equal(b.readState(),0x0c);
+  assert.equal(m.video_iigs.readNewVideo(),0x01);
+  assert.equal(b.intEnable,0x00);
+  assert.equal(b.intFlag,0x00);
+  assert.equal(b.adb.readStatus(),0x00);
+  assert.equal(m.legacyMemory.bsr_read,false);
+  assert.equal(m.legacyMemory.bsr_bank2,true);
+  assert.equal(m.legacyMemory.bsr_write,true);
+  assert.equal(m.legacyMemory._bsr_write_count,0);
+});
+
 test('ROM03 leaves its power-on delay loop during headless execution', () => {
   const {board:m}=createMachine();
   let sawDelay=false, leftDelay=false;
