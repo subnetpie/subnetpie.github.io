@@ -380,7 +380,9 @@ export class IIgsMemory {
     } else if(addr < this.ram.length) {
       v=this.ram[addr];
     } else {
-      v=0xff;
+      // MAME floatingbank_r: on a ROM03 machine with no expansion RAM at
+      // this address, the 65816 sees its current bank number on the bus.
+      v=(addr>>>16)&0xff;
     }
     if(this.trace) this.trace("R",addr,v);
     return v;
