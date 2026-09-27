@@ -77,8 +77,11 @@ export class IIgsMemory {
     m.bsr_read = !(value & 8);
     m.bsr_bank2 = value & 4;
     this.romBank = !!(value & 2);
-    m.write(value & 0x40 ? 0xc055 : 0xc054, 0);
-    m.write(value & 1 ? 0xc007 : 0xc006, 0);
+    // STATE is the IIgs master mapping register. Update the underlying
+    // compatibility latches directly: issuing legacy soft-switch accesses
+    // here causes extra side effects while GS/OS is configuring memory.
+    m.dms_page2 = value & 0x40;
+    m.intcxrom = value & 1;
   }
 
   iwmAccess(addr, value) {
