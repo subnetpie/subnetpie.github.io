@@ -50,3 +50,22 @@ test('bank 01 hires page 2 does not shadow when both paths are inhibited', () =>
   assert.equal(m.read(0x014000), 0x6c);
   assert.equal(m.read(0xe14000), 0);
 });
+
+
+test('text page 2 shadows independently in main and auxiliary banks', () => {
+  const m = bus();
+  m.write(0xc035, 0x00);
+  m.write(0x000800, 0x42);
+  m.write(0x010800, 0x24);
+  assert.equal(m.read(0xe00800), 0x42);
+  assert.equal(m.read(0xe10800), 0x24);
+});
+
+test('SHADOW bit 5 inhibits text page 2 in both shadow banks', () => {
+  const m = bus();
+  m.write(0xc035, 0x20);
+  m.write(0x000800, 0x42);
+  m.write(0x010800, 0x24);
+  assert.equal(m.read(0xe00800), 0);
+  assert.equal(m.read(0xe10800), 0);
+});
