@@ -175,7 +175,9 @@ export class IIgsVideo {
     const palette = scb.palette;
     const fill = scb.fill;
     const base = SHR_PIXEL_BASE + y * SHR_BYTES_PER_LINE;
-    let last = 0;
+    // MAME 0.289 fillmode_init[scb & 0x1f]: palette nibble, except
+    // SCB $00 seeds color 2 and SCB $10 seeds color 0.
+    let last = (scb.raw & 0x0f) || ((scb.raw & 0x10) ? 0 : 2);
     for (let i=0; i<SHR_BYTES_PER_LINE; i++) {
       const b=this.bankE1[base+i];
       let a=(b>>4)&15, c=b&15;
@@ -193,24 +195,16 @@ export class IIgsVideo {
   render640Line(y, scb, data) {
     const base = SHR_PIXEL_BASE + y * SHR_BYTES_PER_LINE;
     const palette = scb.palette;
-    // In 640 mode each 2-bit pixel selects one of four colors from a
-    // position-dependent group inside the scan line's selected 16-color palette.
-    // Pixel positions 0..3 use entries {0,4,8,12}, {0,1,2,3},
-    // {0,5,10,15}, and {0,2,4,6}, respectively.
-    const maps = [
-      [0,4,8,12],
-      [0,1,2,3],
-      [0,5,10,15],
-      [0,2,4,6]
-    ];
+    // MAME 0.289 screen_update_GS: each pixel position selects from
+    // consecutive groups 0-3, 4-7, 8-11 and 12-15 of the SCB palette.
     for(let i=0;i<160;i++) {
       const b=this.bankE1[base+i];
       const x=i*4;
       const p0=(b>>6)&3, p1=(b>>4)&3, p2=(b>>2)&3, p3=b&3;
-      this.putPixel(data,x,y,this.paletteColor(palette,maps[0][p0]));
-      this.putPixel(data,x+1,y,this.paletteColor(palette,maps[1][p1]));
-      this.putPixel(data,x+2,y,this.paletteColor(palette,maps[2][p2]));
-      this.putPixel(data,x+3,y,this.paletteColor(palette,maps[3][p3]));
+      this.putPixel(data,x,y,this.paletteColor(palette,p0));
+      this.putPixel(data,x+1,y,this.paletteColor(palette,4+p1));
+      this.putPixel(data,x+2,y,this.paletteColor(palette,8+p2));
+      this.putPixel(data,x+3,y,this.paletteColor(palette,12+p3));
     }
   }
 
