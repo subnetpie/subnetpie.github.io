@@ -57,7 +57,7 @@ export class IIgsVideo {
   readVGCINT() {
     const active = ((this.vgcIntStatus & 0x20) && (this.vgcIntEnable & 0x02)) ||
                    ((this.vgcIntStatus & 0x40) && (this.vgcIntEnable & 0x04));
-    return (active ? 0x80 : 0) | (this.vgcIntStatus & 0x60) | (this.vgcIntEnable & 0x06);
+    return (active ? 0x80 : 0) | (this.vgcIntStatus & 0x60) | (this.vgcIntEnable & 0x07);
   }
 
   updateIRQ() {
@@ -68,7 +68,9 @@ export class IIgsVideo {
   }
 
   writeVGCINT(value) {
-    this.vgcIntEnable = value & 0x06;
+    // MAME preserves status bits and replaces only the three enable/control
+    // bits. Disabling a source does not clear its latched status.
+    this.vgcIntEnable = value & 0x07;
     this.updateIRQ();
   }
 
