@@ -283,7 +283,9 @@ export class IIgsMemory {
       if(io===0xc046) return this.intFlag;
       // Compatibility status registers are already implemented by the
       // Mega II/IIe I/O hooks attached to legacy memory.
-      if(io>=0xc011 && io<=0xc01f) {
+      if((io>=0xc011 && io<=0xc01f) ||
+         (io>=0xc050 && io<=0xc05f) || io===0xc070 ||
+         (io>=0xc07e && io<=0xc08f)) {
         for(const fn of this.legacy._read_hooks || []) {
           const v=fn(io);
           if(v!==undefined) return v&0xff;
@@ -436,6 +438,13 @@ export class IIgsMemory {
         this.vblIrq=this.quarterIrq=false;
         this.updateMegaIrq();
         return;
+      }
+      if((io>=0xc050 && io<=0xc05f) || io===0xc070 ||
+         (io>=0xc07e && io<=0xc08f)) {
+        for(const fn of this.legacy._write_hooks || []) {
+          const v=fn(io,val);
+          if(v!==undefined) return;
+        }
       }
     }
     if(addr >= 0xc0e0 && addr <= 0xc0ef) {this.iwmAccess(addr,val);return;}
