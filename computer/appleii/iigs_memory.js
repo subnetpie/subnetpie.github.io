@@ -1,5 +1,6 @@
 import {IIgsADB} from "./iigs_adb.js";
 import {IIgsDOC} from "./iigs_doc.js";
+import {IIgsSCC} from "./iigs_scc.js";
 // Apple IIgs 24-bit memory/bus.
 //
 // This is deliberately separate from memory.js: the IIe keeps its exact
@@ -30,7 +31,7 @@ export class IIgsMemory {
     this.adb = new IIgsADB();
     // IIgs SCC/DOC glue state. Serial transport and DOC synthesis are separate
     // device concerns; these registers provide the machine-visible bus contract.
-    this.scc = new Uint8Array(4);
+    this.scc = new IIgsSCC();
     this.doc = new IIgsDOC();
     this.iwmMode = 0; this.iwmQ6 = false; this.iwmQ7 = false; this.iwmMotor = false;
   }
@@ -120,7 +121,7 @@ export class IIgsMemory {
       if(io===0xc035) return this.shadow;
       if(io===0xc036) return this.speed;
       if(io===0xc037) return this.dmaBank;
-      if(io>=0xc038 && io<=0xc03b) return this.scc[io-0xc038];
+      if(io>=0xc038 && io<=0xc03b) return this.scc.read(io-0xc038);
       if(io===0xc03c) return this.doc.getControl();
       if(io===0xc03d) return this.doc.readData();
       if(io===0xc03e) return this.doc.addressLow();
@@ -186,7 +187,7 @@ export class IIgsMemory {
       if(io===0xc035){this.shadow=val;return;}
       if(io===0xc036){this.speed=val&0xdf;return;}
       if(io===0xc037){this.dmaBank=val;return;}
-      if(io>=0xc038 && io<=0xc03b){this.scc[io-0xc038]=val;return;}
+      if(io>=0xc038 && io<=0xc03b){this.scc.write(io-0xc038,val);return;}
       if(io===0xc03c){this.doc.setControl(val);return;}
       if(io===0xc03d){this.doc.writeData(val);return;}
       if(io===0xc03e){this.doc.setAddressLow(val);return;}
@@ -268,7 +269,7 @@ export class IIgsMemory {
     this.shadow = 0; this.speed = cold ? 0x40 : 0x00; this.dmaBank = 0;
     this.slotRom = 0; this.langSel = 0; this.diskReg = 0;
     this.clockCtl = 0; this.romBank = false;
-    this.scc.fill(0); this.doc.reset();
+    this.scc.reset(); this.doc.reset();
     this.adb.reset();
     this.iwmMode = 0; this.iwmQ6 = this.iwmQ7 = this.iwmMotor = false;
   }
