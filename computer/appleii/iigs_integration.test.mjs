@@ -36,6 +36,13 @@ test('IIgs reset restores ROM vectors after a native program banks in RAM', () =
 });
 
 
+test('IIgs C032 VGCINTCLEAR read is not a readable latch', () => {
+  const {board:m}=createMachine();
+  const b=m.memory;
+  b.write(0xc032,0xff);
+  assert.notEqual(b.read(0xc032),0xff,'C032 read must fall through to floating bus');
+});
+
 test('IIgs INTFLAG reports AN3 in bit 5', () => {
   const {board:m}=createMachine();
   const b=m.memory;
