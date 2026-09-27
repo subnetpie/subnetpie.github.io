@@ -83,7 +83,18 @@ export class Motherboard
         while(this.cycles < total) {
             const used=this.cpu.step();
             this.cycles += used;
-            if(this.iigsEnabled && this.video_iigs) this.video_iigs.tick(used, 2800000);
+            if(this.iigsEnabled && this.video_iigs) {
+                const oldLine=this.video_iigs.currentScanline;
+                const oldFrame=this.video_iigs.frameCount;
+                this.video_iigs.tick(used, 2800000);
+                // MAME Mega II status: VBL is latched every frame; quarter
+                // second status is latched every 16 frames regardless of INTEN.
+                if(oldLine < 192 && this.video_iigs.currentScanline >= 192)
+                    this.memory.setVblFlag();
+                if(this.video_iigs.frameCount !== oldFrame &&
+                   (this.video_iigs.frameCount & 0x0f) === 0)
+                    this.memory.setQuarterFlag();
+            }
             if(this.iigsEnabled && this.memory.scc) this.memory.scc.tick(used);
             if(this.iigsEnabled && this.memory.doc) {
                 const docSamples=this.memory.doc.tick(used, 2800000);
