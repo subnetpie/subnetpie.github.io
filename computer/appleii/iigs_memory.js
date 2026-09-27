@@ -185,7 +185,10 @@ export class IIgsMemory {
       else if(off>=0x4000 && off<0x6000 && !(this.shadow&0x04)) this.slowE0[off]=val;
     } else if(bank===0x01 && off<0xc000) {
       this.legacy._aux[off]=val;
-      if(off>=0x2000 && off<0xa000 && !(this.shadow&0x08)) {
+      const shrShadow = !(this.shadow & 0x08);
+      const hiresPage1Shadow = off>=0x2000 && off<0x4000 &&
+        !(this.shadow & 0x02) && !(this.shadow & 0x10);
+      if(off>=0x2000 && off<0xa000 && (shrShadow || hiresPage1Shadow)) {
         this.slowE1[off]=val;
         if(this.video) this.video.dirty=true;
       }
