@@ -36,6 +36,14 @@ test('IIgs reset restores ROM vectors after a native program banks in RAM', () =
 });
 
 
+test('IIgs C021 MONOCHROME is write-only', () => {
+  const {board:m}=createMachine();
+  const b=m.memory;
+  b.write(0xc021,0x5a);
+  assert.equal(m.video.monochrome,0x5a);
+  assert.notEqual(b.read(0xc021),0x5a,'C021 read must fall through to floating bus');
+});
+
 test('IIgs C032 VGCINTCLEAR read is not a readable latch', () => {
   const {board:m}=createMachine();
   const b=m.memory;
