@@ -2,7 +2,15 @@
 // synchronously; the response FIFO drives DATA_VALID in KMSTATUS.
 export class IIgsADB {
  constructor(){this.ram=new Uint8Array(256);this.reset();}
- reset(){this.mode=0;this.config=[0x32,0,0x23];this.queue=[];this.command=0;this.args=[];this.remaining=0;this.control=0;}
+ reset(){this.mode=0;this.config=[0x32,0,0x23];this.queue=[];this.command=0;this.args=[];this.remaining=0;this.control=0;
+  // MAME key GLU state visible to the 65816 at C024/C025. Mouse data is
+  // returned X then Y on alternating reads.
+  this.mouseX=0;this.mouseY=0;this.mouseReadY=false;this.keyModifiers=0;
+ }
+ readMouseData(){const v=this.mouseReadY?this.mouseY:this.mouseX;this.mouseReadY=!this.mouseReadY;return v&0xff;}
+ readKeyModifiers(){return this.keyModifiers&0xff;}
+ setMouseData(x,y){this.mouseX=x&0xff;this.mouseY=y&0xff;this.mouseReadY=false;}
+ setKeyModifiers(value){this.keyModifiers=value&0xff;}
  readStatus(){return this.control|(this.queue.length?0x20:0);}
  readData(){return this.queue.shift()??0;}
  writeStatus(value){this.control=value&0x54;}
