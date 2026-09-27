@@ -25,7 +25,7 @@ export class IIgsVideo {
     this.scanlineIrqPending = false;
     this.currentScanline = 0;
     this.bankE1 = new Uint8Array(0x10000); // replaced by bus backing store on IIgs
-    this.newVideo = 0;
+    this.newVideo = 0x01;
     this.superHires = false;
     this.dirty = true;
     this.image = this.context.createImageData(640, 200);
