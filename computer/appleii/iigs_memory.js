@@ -334,6 +334,10 @@ export class IIgsMemory {
     const m = this.legacy;
     m.aux_zp = m.aux_read = m.aux_write = false;
     m.dms_80store = m.dms_page2 = m.dms_hires = false;
+    // MAME machine_reset calls scr_w(0): keep the compatibility renderer in
+    // sync with the PAGE2 latch instead of only resetting memory selection.
+    if(this.video && this.video.legacy && this.video.legacy.refresh)
+      this.video.legacy.refresh();
     m.bsr_read = false; m.bsr_bank2 = true; m.bsr_write = true;
     this.shadow = 0; this.speed = 0x80; this.dmaBank = 0;
     this.slotRom = 0; this.langSel = 0; this.diskReg = 0;
