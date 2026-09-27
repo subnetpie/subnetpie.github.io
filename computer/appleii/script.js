@@ -177,17 +177,34 @@ async function loadBuiltInIIgsROM() {
       showBootStatus("");
       run();
       clearTimeout(bootWatchdog);
+      // ROM03 can execute normally and then stall polling an unimplemented
+      // device, so "cycles > 0" is not a useful boot-health test. Sample the
+      // live CPU after three seconds and expose enough machine state to locate
+      // the exact firmware loop.
       bootWatchdog = setTimeout(() => {
-        if(!motherboard || !motherboard.cpu || motherboard.cycles > 0 || !interval) return;
+        if(!motherboard || !motherboard.cpu || !interval) return;
         const r = motherboard.cpu.register;
-        const pc = (((r.pb || 0) << 16) | (r.pc || 0)) >>> 0;
-        showBootStatus("IIgs BOOT WATCHDOG\nPC=$" +
+        const pc = ((((r.pb || 0)&0xff)<<16) | ((r.pc || 0)&0xffff)) >>> 0;
+        const mem = motherboard.memory;
+        const bytes=[];
+        for(let i=0;i<8;i++) {
+          try { bytes.push(mem.read((pc+i)&0xffffff).toString(16).padStart(2,"0").toUpperCase()); }
+          catch(e) { bytes.push("??"); }
+        }
+        const line = motherboard.video_iigs ? motherboard.video_iigs.currentScanline : -1;
+        showBootStatus("IIgs BOOT TRACE\nPC=$" +
           pc.toString(16).padStart(6,"0").toUpperCase() +
-          " A=$" + (r.a>>>0).toString(16).padStart(4,"0").toUpperCase() +
+          "  bytes=" + bytes.join(" ") +
+          "\nA=$" + (r.a>>>0).toString(16).padStart(4,"0").toUpperCase() +
           " X=$" + (r.x>>>0).toString(16).padStart(4,"0").toUpperCase() +
           " Y=$" + (r.y>>>0).toString(16).padStart(4,"0").toUpperCase() +
+          " S=$" + ((r.s===undefined?r.sp:r.s)>>>0).toString(16).padStart(4,"0").toUpperCase() +
           " P=$" + (r.p>>>0).toString(16).padStart(2,"0").toUpperCase() +
-          " E=" + (r.e ? "1" : "0") + "\ncycles=" + motherboard.cycles);
+          " E=" + (r.e ? "1" : "0") +
+          "\ncycles=" + motherboard.cycles + " scanline=" + line +
+          "\nSHADOW=$" + (mem.shadow>>>0).toString(16).padStart(2,"0").toUpperCase() +
+          " STATE=$" + mem.readState().toString(16).padStart(2,"0").toUpperCase() +
+          " NEWVIDEO=$" + (motherboard.video_iigs ? motherboard.video_iigs.readNewVideo() : 0).toString(16).padStart(2,"0").toUpperCase());
       }, 3000);
     }).catch(err => {
       console.error(err);
