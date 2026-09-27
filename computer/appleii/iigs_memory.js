@@ -129,6 +129,27 @@ export class IIgsMemory {
     return data;
   }
 
+  e0ReadBank(off) {
+    const m=this.legacy;
+    if(off<0x0200) return (m.aux_zp ? this.slowE1 : this.slowE0)[off];
+    let aux=!!m.aux_read;
+    if(off>=0x0400 && off<0x0800 && m.dms_80store) aux=!!m.dms_page2;
+    else if(off>=0x2000 && off<0x4000 && m.dms_80store && m.dms_hires) aux=!!m.dms_page2;
+    return (aux ? this.slowE1 : this.slowE0)[off];
+  }
+
+  e0WriteBank(off,val) {
+    const m=this.legacy;
+    if(off<0x0200) {
+      (m.aux_zp ? this.slowE1 : this.slowE0)[off]=val;
+      return;
+    }
+    let aux=!!m.aux_write;
+    if(off>=0x0400 && off<0x0800 && m.dms_80store) aux=!!m.dms_page2;
+    else if(off>=0x2000 && off<0x4000 && m.dms_80store && m.dms_hires) aux=!!m.dms_page2;
+    (aux ? this.slowE1 : this.slowE0)[off]=val;
+  }
+
   read(addr) {
     addr &= 0xffffff;
     const originalBank = addr >>> 16, originalOff = addr & 0xffff;
@@ -201,8 +222,11 @@ export class IIgsMemory {
     const bank=addr>>>16, off=addr&0xffff;
     let v;
     if(bank===0xe0 || bank===0xe1) {
-      // Slow RAM banks. $E1 SHR storage is shared directly with the VGC.
-      if(bank===0xe1 && off>=0x2000 && off<0xa000 && this.video)
+      // Mega II slow RAM. Bank E0 follows the Apple II auxiliary-memory
+      // selectors; bank E1 is always the auxiliary side.
+      if(bank===0xe0 && off<0xc000)
+        v=this.e0ReadBank(off);
+      else if(bank===0xe1 && off>=0x2000 && off<0xa000 && this.video)
         v=this.video.readBankE1(off);
       else
         v=(bank===0xe0 ? this.slowE0 : this.slowE1)[off];
@@ -324,7 +348,9 @@ export class IIgsMemory {
 
     const bank=addr>>>16, off=addr&0xffff;
     if(bank===0xe0 || bank===0xe1) {
-      if(bank===0xe1 && off>=0x2000 && off<0xa000 && this.video)
+      if(bank===0xe0 && off<0xc000)
+        this.e0WriteBank(off,val);
+      else if(bank===0xe1 && off>=0x2000 && off<0xa000 && this.video)
         this.video.writeBankE1(off,val);
       else
         (bank===0xe0 ? this.slowE0 : this.slowE1)[off]=val;
