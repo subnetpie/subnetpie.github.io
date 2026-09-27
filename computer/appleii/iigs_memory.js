@@ -14,8 +14,10 @@ export class IIgsMemory {
     this.video = video;
     this.ram = new Uint8Array(Math.max(0x20000, Math.min(ramBytes, 0x800000)));
     this.rom = null;
-    this.slowE0 = new Uint8Array(0x10000);
-    this.slowE1 = new Uint8Array(0x10000);
+    // Mega II displays and the slow bus must share the same video RAM.
+    // Fast bank 00/01 RAM remains independent in this.ram.
+    this.slowE0 = legacyMemory._main;
+    this.slowE1 = legacyMemory._aux;
     if(this.video) this.video.attachBankE1(this.slowE1);
     this.readHooks = [];
     this.writeHooks = [];
@@ -557,6 +559,11 @@ export class IIgsMemory {
         }
       }
     }
+    // IIgs RAM writes bypass Memory.write(), where the IIe normally
+    // notifies the display. Draw the actual slow-bank byte so inhibited
+    // shadow writes cannot leak fast RAM onto the screen.
+    if(off>=0x0400 && off<0x6000 && this.legacy.io_manager)
+      this.legacy.io_manager.draw_display(off,this.slowE0[off]);
     if(this.trace) this.trace("W",addr,val);
   }
 

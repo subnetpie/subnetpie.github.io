@@ -54,7 +54,7 @@ function chooseArchiveImage(name, entries) {
   });
 }
 
-import { Motherboard } from "https://subnetpie.github.io/computer/appleii/motherboard.js?v=20260927-display";
+import { Motherboard } from "https://subnetpie.github.io/computer/appleii/motherboard.js?v=20260927-bootstatus";
 
 class Drive {
   constructor(num, display, led, dialog) {
@@ -181,14 +181,14 @@ async function loadBuiltInIIgsROM() {
   if(machineType === "iigs") {
     motherboard.message("loading IIgs ROM 03...");
     loadBuiltInIIgsROM().then(() => {
-      motherboard.message("IIgs ROM 03 loaded");
+      motherboard.message("No disk - press load");
       showBootStatus("");
       run();
       clearTimeout(bootWatchdog);
-      // ROM03 can execute normally and then stall polling an unimplemented
-      // device, so "cycles > 0" is not a useful boot-health test. Sample the
-      // live CPU after three seconds and expose enough machine state to locate
-      // the exact firmware loop.
+      // An empty slot-6 drive normally polls forever at $C65E. A timed
+      // register snapshot is diagnostic information, not a boot failure.
+      // Keep it opt-in so ordinary startup does not show an error panel.
+      if(new URLSearchParams(location.search).get("bootTrace") === "1")
       bootWatchdog = setTimeout(() => {
         if(!motherboard || !motherboard.cpu || !interval) return;
         const r = motherboard.cpu.register;

@@ -114,6 +114,23 @@ for(const format of ['dsk','woz1','woz2']) {
     m.cpu.setTrace(e=>{if(e.pc===0x801)booted=true;});
     for(let i=0;i<20&&!booted;i++)m.clock(500000);
     assert.ok(booted,'system ROM must reach the loaded boot sector');
-    assert.deepEqual(m.legacyMemory._main.slice(0x800,0x900),disk.slice(0,256));
+    assert.deepEqual(Uint8Array.from({length:256},(_,i)=>m.memory.read(0x800+i)),disk.slice(0,256));
   });
 }
+
+test('IIgs legacy video reads slow RAM and follows shadow and direct writes', () => {
+  const {board:m,pixels}=createMachine();
+  assert.equal(m.memory.slowE0,m.legacyMemory._main);
+  assert.equal(m.memory.slowE1,m.legacyMemory._aux);
+  m.memory.write(0xc050,0); m.memory.write(0xc057,0);
+  m.memory.write(0x2000,0x7f);
+  const visible=digest(pixels);
+  assert.equal(m.memory.slowE0[0x2000],0x7f);
+  m.memory.write(0xc035,0x02); // Inhibit main HGR page 1 shadowing.
+  m.memory.write(0x2000,0);
+  assert.equal(m.memory.read(0x2000),0);
+  assert.equal(m.memory.slowE0[0x2000],0x7f);
+  assert.equal(digest(pixels),visible,'fast-only write must not change video');
+  m.memory.write(0xe02000,0);
+  assert.notEqual(digest(pixels),visible,'direct slow-bank write must redraw video');
+});

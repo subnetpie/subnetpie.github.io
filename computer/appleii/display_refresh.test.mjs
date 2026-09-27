@@ -30,7 +30,7 @@ const source=readFileSync(new URL('./script.js',import.meta.url),'utf8');
 const frameLoop=source.slice(source.indexOf('function on_interval('),source.indexOf('\nfunction init()'));
 function runFrame({text=true,hires=false,double=true,shr=false,mixed=false,fail=false}={}) {
   const calls=[];
-  const context={last_ms:0,khz:2800,interval:123,buttonRunStop:{innerText:'stop'},
+  const context={cycle_fraction:0,last_ms:0,khz:2800,interval:123,buttonRunStop:{innerText:'stop'},
     console:{error(){}},showBootStatus:s=>calls.push(s),
     window:{requestAnimationFrame(){calls.push('scheduled');return 1;}},
     motherboard:{iigsEnabled:true,clock(){},legacyMemory:{dms_hires:hires},
