@@ -36,6 +36,26 @@ test('IIgs reset restores ROM vectors after a native program banks in RAM', () =
 });
 
 
+test('IIgs SOUNDCTL and SOUNDDATA match MAME GLU semantics', () => {
+  const {board:m}=createMachine();
+  const b=m.memory, doc=b.doc;
+  doc.setAddressLow(0x34); doc.setAddressHigh(0x12);
+  doc.setControl(0xff);
+  assert.equal(doc.getControl(),0x7f,'SOUNDCTL bit 7 is forced clear');
+  assert.equal(doc.addressHigh(),0x12);
+  doc.setControl(0x20);
+  assert.equal(doc.addressHigh(),0,'DOC-register mode clears address high byte');
+  assert.equal(b.read(0xc03c),0x3f,'write-only SOUNDCTL bits read as ones');
+
+  doc.setAddressLow(0x40); doc.setControl(0x40);
+  doc.ram[0x40]=0x5a; doc.ram[0x41]=0xa5;
+  assert.equal(b.read(0xc03d),0,'first SOUNDDATA read returns dummy latch');
+  assert.equal(b.read(0xc03d),0x5a,'second read returns previously fetched byte');
+  doc.setControl(0x60);
+  assert.equal(b.read(0xc03d),0x5a);
+  assert.equal(doc.addressLow(),0x41,'auto-increment advances after fetch');
+});
+
 test('ROM03 C071-C07F IRQ helper window comes from firmware', () => {
   const {board:m}=createMachine();
   const b=m.memory;
