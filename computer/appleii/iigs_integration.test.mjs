@@ -62,6 +62,19 @@ test('IIgs key GLU exposes mouse, modifiers, status, and IRQs', () => {
   assert.equal(b.intFlag&1,0);
 });
 
+test('IIgs INTEN gates IRQ without clearing VBL and quarter status', () => {
+  const {board:m}=createMachine();
+  const b=m.memory;
+  b.write(0xc041,0x18);
+  b.setVblFlag(); b.setQuarterFlag();
+  assert.equal(b.read(0xc046)&0x19,0x19);
+  b.write(0xc041,0x00);
+  assert.equal(b.read(0xc046)&0x18,0x18,'INTEN must preserve pending status');
+  assert.equal(b.read(0xc046)&0x01,0,'disabled sources must deassert IRQ');
+  b.write(0xc047,0);
+  assert.equal(b.read(0xc046)&0x18,0,'CLRVBLINT clears both status bits');
+});
+
 test('IIgs VBL follows the video clock with active-high polarity', () => {
   const {board:m}=createMachine();
   assert.equal(m.memory.read(0xc019),0);
