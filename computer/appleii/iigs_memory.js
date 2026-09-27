@@ -27,6 +27,7 @@ export class IIgsMemory {
     this.langSel = 0x00;
     this.diskReg = 0x00;
     this.romBank = false;
+    this.intCxRom = false;
     this.clockCtl = 0x00;
     this.adb = new IIgsADB();
     // IIgs SCC/DOC glue state. Serial transport and DOC synthesis are separate
@@ -66,7 +67,7 @@ export class IIgsMemory {
     return (m.aux_zp ? 0x80 : 0) | (m.dms_page2 ? 0x40 : 0) |
       (m.aux_read ? 0x20 : 0) | (m.aux_write ? 0x10 : 0) |
       (m.bsr_read ? 0 : 8) | (m.bsr_bank2 ? 4 : 0) |
-      (this.romBank ? 2 : 0) | (m.read(0xc015) & 0x80 ? 1 : 0);
+      (this.romBank ? 2 : 0) | (this.intCxRom ? 1 : 0);
   }
 
   writeState(value) {
@@ -81,7 +82,7 @@ export class IIgsMemory {
     // compatibility latches directly: issuing legacy soft-switch accesses
     // here causes extra side effects while GS/OS is configuring memory.
     m.dms_page2 = value & 0x40;
-    m.intcxrom = value & 1;
+    this.intCxRom = !!(value & 1);
   }
 
   iwmAccess(addr, value) {
@@ -276,7 +277,7 @@ export class IIgsMemory {
     m.bsr_read = false; m.bsr_bank2 = true; m.bsr_write = true;
     this.shadow = 0; this.speed = cold ? 0x40 : 0x00; this.dmaBank = 0;
     this.slotRom = 0; this.langSel = 0; this.diskReg = 0;
-    this.clockCtl = 0; this.romBank = false;
+    this.clockCtl = 0; this.romBank = false; this.intCxRom = false;
     this.scc.reset(); this.doc.reset();
     this.adb.reset();
     this.iwmMode = 0; this.iwmQ6 = this.iwmQ7 = this.iwmMotor = false;
