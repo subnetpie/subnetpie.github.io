@@ -177,7 +177,11 @@ export class IIgsMemory {
       if(lcOff&0x2000) lcOff^=0x1000;
       v=this.ram[0x01c000+lcOff];
     } else if(bank===0x00 && off>=0xc000 && (this.shadow&0x40)) {
-      v=this.ram[addr];
+      // MAME bank0_c000_r: IOLC-inhibited bank 0 uses the same E000-FFFF
+      // transform, with RAMRD selecting bank-1 (aux) versus bank-0 backing.
+      let lcOff=off-0xc000;
+      if(lcOff&0x2000) lcOff^=0x1000;
+      v=this.ram[(this.legacy.aux_read ? 0x01c000 : 0x00c000)+lcOff];
     } else if(addr < this.ram.length) {
       v=this.ram[addr];
     } else {
@@ -249,7 +253,10 @@ export class IIgsMemory {
       if(lcOff&0x2000) lcOff^=0x1000;
       this.ram[0x01c000+lcOff]=val;
     } else if(bank===0x00 && off>=0xc000 && (this.shadow&0x40)) {
-      this.ram[addr]=val;
+      // MAME bank0_c000_w: RAMWRT independently selects aux/main backing.
+      let lcOff=off-0xc000;
+      if(lcOff&0x2000) lcOff^=0x1000;
+      this.ram[(this.legacy.aux_write ? 0x01c000 : 0x00c000)+lcOff]=val;
     } else if(bank===0x01 && off<0xc000) {
       this.ram[addr]=val;
       const textPage2Shadow = off>=0x0800 && off<0x0c00 && !(this.shadow & 0x20);
