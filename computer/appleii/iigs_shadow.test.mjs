@@ -69,3 +69,29 @@ test('SHADOW bit 5 inhibits text page 2 in both shadow banks', () => {
   assert.equal(m.read(0xe00800), 0);
   assert.equal(m.read(0xe10800), 0);
 });
+
+
+test('SHADOW IOLC inhibit exposes contiguous fast RAM in bank 00', () => {
+  const m = bus();
+  m.write(0xc035, 0x40);
+  m.write(0x00c000, 0x5a);
+  m.write(0x00d000, 0xa5);
+  assert.equal(m.read(0x00c000), 0x5a);
+  assert.equal(m.read(0x00d000), 0xa5);
+});
+
+test('SHADOW IOLC inhibit exposes contiguous fast RAM in bank 01', () => {
+  const m = bus();
+  m.write(0xc035, 0x40);
+  m.write(0x01c000, 0x36);
+  m.write(0x01d000, 0x63);
+  assert.equal(m.read(0x01c000), 0x36);
+  assert.equal(m.read(0x01d000), 0x63);
+});
+
+test('slow banks retain I/O decoding while IOLC is inhibited', () => {
+  const m = bus();
+  m.write(0xc035, 0x40);
+  m.write(0xe0c035, 0x20);
+  assert.equal(m.read(0xe0c035) & 0x60, 0x20);
+});
