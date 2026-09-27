@@ -50,17 +50,17 @@ export class Motherboard
             ? new IIgsMemory(this.legacyMemory, this.video_iigs)
             : this.legacyMemory;
         this.cpu = this.iigsEnabled ? new W65C816(this.memory) : new W65C02S(this.memory);
-        this.iigsIrq = {vgc:false, doc:false, scc:false, mega:false};
-        this.updateIIgsIRQ = () => this.cpu.irq(this.iigsIrq.vgc || this.iigsIrq.doc || this.iigsIrq.scc || this.iigsIrq.mega);
+        this.iigsIrq = {mega:false};
+        this.updateIIgsIRQ = () => this.cpu.irq(this.iigsIrq.mega);
         if(this.video_iigs) {
-            this.video_iigs.scanlineIrq = state => { this.iigsIrq.vgc=!!state; this.updateIIgsIRQ(); };
+            this.video_iigs.scanlineIrq = state => this.memory.setExternalIrq("vgc",state);
         }
         if(this.iigsEnabled) this.memory.irq = state => { this.iigsIrq.mega=!!state; this.updateIIgsIRQ(); };
         if(this.iigsEnabled && this.memory.doc) {
-            this.memory.doc.irq = state => { this.iigsIrq.doc=!!state; this.updateIIgsIRQ(); };
+            this.memory.doc.irq = state => this.memory.setExternalIrq("doc",state);
         }
         if(this.iigsEnabled && this.memory.scc) {
-            this.memory.scc.irq = state => { this.iigsIrq.scc=!!state; this.updateIIgsIRQ(); };
+            this.memory.scc.irq = state => this.memory.setExternalIrq("scc",state);
         }
         this.cycles = 0;
 
