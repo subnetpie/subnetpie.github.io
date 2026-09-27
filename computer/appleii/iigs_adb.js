@@ -14,6 +14,7 @@ export class IIgsADB {
  readKeyModifiers(){return this.keyModifiers&0xff;}
  readKeyData(){return (this.keyData&0x7f)|(this.keyStrobe?0x80:0);}
  readAnyKeyAndClearStrobe(){const v=(this.anyKeyDown?0x80:0)|(this.keyData&0x7f);this.keyStrobe=false;this.updateIrq();return v;}
+ clearKeyStrobe(){this.keyStrobe=false;this.updateIrq();}
  setKeyData(value,down=true){this.keyData=value&0x7f;this.anyKeyDown=!!down;if(down)this.keyStrobe=true;this.updateIrq();}
  setMouseData(x,y){this.mouseX=x&0xff;this.mouseY=y&0xff;this.mouseReadY=false;this.mouseFull=true;this.updateIrq();}
  setKeyModifiers(value){this.keyModifiers=value&0xff;}
