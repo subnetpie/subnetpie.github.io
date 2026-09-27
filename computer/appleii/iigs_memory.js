@@ -107,7 +107,7 @@ export class IIgsMemory {
     const iolcEnabled = !(this.shadow & 0x40);
     if(originalBank === 0xe0 || originalBank === 0xe1 ||
        (iolcEnabled && (originalBank === 0 || originalBank === 1))) {
-      if(originalOff >= 0xc000 && originalOff < 0xc100) addr = originalOff;
+      if(originalOff >= 0xc000) addr = originalOff;
     }
     if((addr>>>16)===0 && (addr&0xffff)>=0xc000 && (addr&0xffff)<=0xc0ff) {
       const io=addr&0xffff;
@@ -173,7 +173,7 @@ export class IIgsMemory {
     const iolcEnabled = !(this.shadow & 0x40);
     if(originalBank===0xe0 || originalBank===0xe1 ||
        (iolcEnabled && (originalBank===0 || originalBank===1))) {
-      if(originalOff>=0xc000 && originalOff<0xc100) addr=originalOff;
+      if(originalOff>=0xc000) addr=originalOff;
     }
     if((addr>>>16)===0 && (addr&0xffff)>=0xc000 && (addr&0xffff)<=0xc0ff) {
       const io=addr&0xffff;
