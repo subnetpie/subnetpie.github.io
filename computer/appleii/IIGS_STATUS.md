@@ -19,13 +19,16 @@ boot path now exercised end to end.
 
 ## Verified
 
-55 tests pass with the supplied Total Replay v6.1 HDV image enabled:
+Regression coverage includes the supplied Total Replay v6.1 HDV image:
 
 - IIgs ROM 3 boots that image after the machine has already run without media.
 - The rendered menu shows 519 games. Keyboard search selects Battlezone;
   Return loads it and renders its title screen.
 - IIgs ROM 3 cold-boots synthetic DSK, WOZ1 and WOZ2 boot sectors and transfers
   control to the loaded program. Existing IIe disk-boot tests still pass.
+- Official ProDOS 2.4.2 reaches its file menu on the slot-7 block device in
+  IIe and IIgs modes. Firmware passes the boot slot in X and preserves X/Y
+  on block reads/writes; STATUS alone returns the block count.
 - STATEREG, reset vectors, VBL polarity, analog paddle timing, and hidden-page
   rendering have targeted regression coverage.
 
@@ -35,6 +38,9 @@ Run from the repository root:
 node --test computer/appleii/*.test.mjs
 TOTAL_REPLAY_IMAGE='/path/to/Total Replay v6.1.hdv' node --test computer/appleii/*.test.mjs
 ```
+
+To run the optional official ProDOS boot checks, also set `PRODOS_242_DSK` to
+the DOS-order ProDOS 2.4.2 release image.
 
 The Total Replay test is skipped unless its image path is supplied. The test
 harness uses the repository ROMs, a local module resolver, and a CPU-rendered

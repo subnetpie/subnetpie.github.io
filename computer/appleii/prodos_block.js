@@ -37,7 +37,8 @@ export class ProDOSBlockDevice {
             0xa9,0x08,0x85,0x45,
             0xa9,0x00,0x85,0x46,0x85,0x47, // block = 0
             0x20,0x80,0xc0|this.slot,   // JSR Cn80
-            0xb0,0x03,                  // error -> RTS
+            0xb0,0x05,                  // error -> RTS
+            0xa2,this.slot<<4,          // boot convention: X = slot * 16
             0x4c,0x01,0x08,             // JMP $0801
             0x60
         ], 0x08);
@@ -47,9 +48,12 @@ export class ProDOSBlockDevice {
         // On success STATUS returns block count through $C0F1/$C0F2 -> X/Y.
         this.rom.set([
             0xad,0xf0,0xc0,             // LDA $C0F0
-            0xd0,0x08,                  // BNE error
+            0xd0,0x0e,                  // BNE error
+            0xa5,0x42,                  // STATUS alone returns block count
+            0xd0,0x06,                  // read/write preserve X and Y
             0xae,0xf1,0xc0,             // LDX $C0F1
             0xac,0xf2,0xc0,             // LDY $C0F2
+            0xa9,0x00,                  // successful command returns A = 0
             0x18,                        // CLC
             0x60,                        // RTS
             0x38,                        // error: SEC

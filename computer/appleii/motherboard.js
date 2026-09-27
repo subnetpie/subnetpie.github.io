@@ -22,7 +22,7 @@ import {DoubleHiresDisplay} from "https://subnetpie.github.io/computer/appleii/d
 import {Keyboard} from "https://subnetpie.github.io/computer/appleii/keyboard.js";
 import {Floppy525} from "https://subnetpie.github.io/computer/appleii/FloppyWoz525.js";
 import {AppleAudio} from "https://subnetpie.github.io/computer/appleii/apple_audio.js";
-import {ProDOSBlockDevice} from "https://subnetpie.github.io/computer/appleii/prodos_block.js";
+import {ProDOSBlockDevice} from "https://subnetpie.github.io/computer/appleii/prodos_block.js?v=20260927-boot";
 import {IIgsVideo} from "https://subnetpie.github.io/computer/appleii/video_iigs.js";
 import {MachineTrace} from "https://subnetpie.github.io/computer/appleii/machine_trace.js";
 import {rom_342_0304_cd} from "https://subnetpie.github.io/computer/appleii/rom/342-0304-cd.js";
