@@ -201,10 +201,22 @@ export class IIgsVideo {
   setMonochrome(value) { this.monochrome=value&0xff; this.dirty=true; }
   isSuperHires() { return this.superHires; }
 
-  readBankE1(addr) { return this.bankE1[addr & 0xffff]; }
+  mapAuxAddress(addr) {
+    addr &= 0xffff;
+    // MAME auxram0000_r/w: NEWVIDEO bits 6/7 enable the IIgs SHR bus
+    // address transform across E1:2000-9FFF.
+    if(addr>=0x2000 && addr<0xa000 && (this.newVideo&0xc0)) {
+      if(addr&1) return (((addr-0x2000)>>>1)+0x6000)&0xffff;
+      return (((addr-0x2000)>>>1)+0x2000)&0xffff;
+    }
+    return addr;
+  }
+
+  readBankE1(addr) { return this.bankE1[this.mapAuxAddress(addr)]; }
 
   writeBankE1(addr, value) {
-    addr &= 0xffff;
+    const logical=addr&0xffff;
+    addr=this.mapAuxAddress(logical);
     this.bankE1[addr] = value & 0xff;
     if ((addr >= SHR_PIXEL_BASE && addr < SHR_PIXEL_END) ||
         (addr >= SHR_SCB_BASE && addr < SHR_SCB_END) ||
