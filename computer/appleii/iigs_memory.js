@@ -24,6 +24,7 @@ export class IIgsMemory {
     this.slotRom = 0x00;
     this.langSel = 0x00;
     this.diskReg = 0x00;
+    this.romBank = false;
     this.clockCtl = 0x00;
     this.adb = new IIgsADB();
     this.iwmMode = 0; this.iwmQ6 = false; this.iwmQ7 = false; this.iwmMotor = false;
@@ -54,6 +55,26 @@ export class IIgsMemory {
     return undefined;
   }
 
+  readState() {
+    const m = this.legacy;
+    return (m.aux_zp ? 0x80 : 0) | (m.dms_page2 ? 0x40 : 0) |
+      (m.aux_read ? 0x20 : 0) | (m.aux_write ? 0x10 : 0) |
+      (m.bsr_read ? 0 : 8) | (m.bsr_bank2 ? 4 : 0) |
+      (this.romBank ? 2 : 0) | (m.read(0xc015) & 0x80 ? 1 : 0);
+  }
+
+  writeState(value) {
+    const m = this.legacy;
+    m.aux_zp = value & 0x80;
+    m.aux_read = value & 0x20;
+    m.aux_write = value & 0x10;
+    m.bsr_read = !(value & 8);
+    m.bsr_bank2 = value & 4;
+    this.romBank = !!(value & 2);
+    m.write(value & 0x40 ? 0xc055 : 0xc054, 0);
+    m.write(value & 1 ? 0xc007 : 0xc006, 0);
+  }
+
   iwmAccess(addr, value) {
     const op = addr & 15;
     if(op === 8) this.iwmMotor = false;
@@ -79,6 +100,7 @@ export class IIgsMemory {
     }
     if((addr>>>16)===0 && (addr&0xffff)>=0xc000 && (addr&0xffff)<=0xc0ff) {
       const io=addr&0xffff;
+      if(io===0xc068) return this.readState();
       if(io===0xc026) return this.adb.readData();
       if(io===0xc027) return this.adb.readStatus();
       if(io===0xc02b) return this.langSel;
@@ -131,6 +153,7 @@ export class IIgsMemory {
     if([1,0xe0,0xe1].includes(addr >>> 16) && (addr & 0xffff) >= 0xc000 && (addr & 0xffff) < 0xc100) addr &= 0xffff;
     if((addr>>>16)===0 && (addr&0xffff)>=0xc000 && (addr&0xffff)<=0xc0ff) {
       const io=addr&0xffff;
+      if(io===0xc068){this.writeState(val);return;}
       if(io===0xc026){this.adb.writeData(val);return;}
       if(io===0xc027){this.adb.writeStatus(val);return;}
       if(io===0xc02b){this.langSel=val;return;}
@@ -179,6 +202,18 @@ export class IIgsMemory {
     return this.read_word(addr) | (this.read((addr+2)&0xffffff)<<16);
   }
   reset(cold=false) {
-    if(cold) { this.ram.fill(0); this.slowE0.fill(0); this.slowE1.fill(0); }
+    if(cold) {
+      this.ram.fill(0); this.slowE0.fill(0); this.slowE1.fill(0);
+      this.legacy.reset();
+    }
+    const m = this.legacy;
+    m.aux_zp = m.aux_read = m.aux_write = false;
+    m.dms_80store = m.dms_page2 = m.dms_hires = false;
+    m.bsr_read = false; m.bsr_bank2 = true; m.bsr_write = true;
+    this.shadow = 0; this.speed = 0x80; this.dmaBank = 0;
+    this.slotRom = 0; this.langSel = 0; this.diskReg = 0;
+    this.clockCtl = 0; this.romBank = false;
+    this.adb.reset();
+    this.iwmMode = 0; this.iwmQ6 = this.iwmQ7 = this.iwmMotor = false;
   }
 }

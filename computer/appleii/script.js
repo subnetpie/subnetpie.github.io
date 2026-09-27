@@ -9,7 +9,7 @@ function showBootStatus(text) {
   const el = document.getElementById("bootStatus");
   if(!el) return;
   el.textContent = text;
-  el.style.display = "block";
+  el.style.display = text ? "block" : "none";
 }
 window.addEventListener("error", e => {
   showBootStatus("JS STARTUP ERROR\n" + (e.message || "unknown error") +
@@ -55,7 +55,9 @@ class Drive {
        (bytes === 0x20000 || bytes === 0x40000)) {
       motherboard.loadIIgsROM(buffer);
       stop();
-      motherboard.reset();
+      // A new image needs a cold IIgs boot; warm reset can resume the prior
+      // monitor/program instead of scanning the newly mounted disk.
+      motherboard.reset(machineType === "iigs");
       run();
       return true;
     }
@@ -69,7 +71,11 @@ class Drive {
 
     if(ok) {
       stop();
-      motherboard.reset();
+      clearTimeout(bootWatchdog);
+      showBootStatus("");
+      // A new image needs a cold IIgs boot; warm reset can resume the prior
+      // monitor/program instead of scanning the newly mounted disk.
+      motherboard.reset(machineType === "iigs");
       run();
     }
     return ok;
@@ -177,10 +183,11 @@ async function loadBuiltInIIgsROM() {
     motherboard.message("loading IIgs ROM 03...");
     loadBuiltInIIgsROM().then(() => {
       motherboard.message("IIgs ROM 03 loaded");
+      showBootStatus("");
       run();
       clearTimeout(bootWatchdog);
       bootWatchdog = setTimeout(() => {
-        if(!motherboard || !motherboard.cpu) return;
+        if(!motherboard || !motherboard.cpu || motherboard.cycles > 0 || !interval) return;
         const r = motherboard.cpu.register;
         const pc = (((r.pb || 0) << 16) | (r.pc || 0)) >>> 0;
         showBootStatus("IIgs BOOT WATCHDOG\nPC=$" +

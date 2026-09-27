@@ -73,9 +73,7 @@ export class IOManager
         this._display_lores = display_lores;
         this._audio_cb = audio_cb;
         this._get_cycles = get_cycles;
-        this._cycles = 0;
-        this._delta = 0;
-        this._trigger = 0;
+        this._paddleDeadlines = [0, 0, 0, 0];
         this._joystick = joystick;
         this._video_iigs = video_iigs;
         this._iigsEnabled = !!iigsEnabled;
@@ -99,9 +97,6 @@ export class IOManager
 
     ////////////////////////////////////////////
     read(addr) {
-        this._cycles++
-        this._delta = (this._cycles - this._trigger);
-
         if((addr & 0xf000) != 0xc000) return undefined; // default read
 
         // c000-c0ff: read switches
@@ -137,7 +132,9 @@ export class IOManager
                 case 0xc018: // 80store (0: 80store off, 0x80: 80store on)
                     //console.log("80 store: " + this._mem.dms_80store);
                     return this._mem.dms_80store ? 0x80 : 0;
-                case 0xc019: // RDVBLBAR: IIe bit 7 is low during vertical blank
+                case 0xc019: // IIgs VBL has the opposite polarity to IIe RDVBLBAR.
+                    if(this._iigsEnabled && this._video_iigs)
+                        return this._video_iigs.currentScanline >= 192 ? 0x80 : 0;
                     // NTSC: 65 CPU cycles/line, 192 visible + 70 blank lines.
                     return (this._get_cycles() % (65 * 262)) < (65 * 192) ? 0x80 : 0;
                 case 0xc01a: // text (0: graphics mode, 0x80: text mode)
@@ -162,16 +159,16 @@ export class IOManager
                 case 0xc063: // js pb2
                     return this._joystick.button2 ? 0x80 : 0;
                 case 0xc064: // js pdl-0
-                    return this._delta < this._joystick.axis0 ? 0x80 : 0x00;
+                    return this._get_cycles() < this._paddleDeadlines[0] ? 0x80 : 0;
                 case 0xc065: // js pdl-1
-                    return this._delta < this._joystick.axis1 ? 0x80 : 0x00;
+                    return this._get_cycles() < this._paddleDeadlines[1] ? 0x80 : 0;
                 case 0xc066: // js pdl-2
-                    return this._delta < this._joystick.axis2 ? 0x80 : 0x00;
+                    return this._get_cycles() < this._paddleDeadlines[2] ? 0x80 : 0;
                 case 0xc067: // js pdl-3
-                    return this._delta < this._joystick.axis3 ? 0x80 : 0x00;
+                    return this._get_cycles() < this._paddleDeadlines[3] ? 0x80 : 0;
                 case 0xc070: // trigger paddle read
-                    this._trigger = this._cycles;
-                    return this._trigger;
+                    this.triggerPaddles();
+                    return 0;
                 case 0xc07e: // iou disable (0: iou is enabled, 0x80: iou is disabled)
                     //console.log("iou disable: " + this._iou_disable);
                     return this._iou_disable ? 0x80 : 0;
@@ -218,6 +215,19 @@ export class IOManager
         }
     }
 
+
+    triggerPaddles() {
+        // 558 one-shots: about 10.8 microseconds per paddle unit. Polling
+        // memory must not advance time, and active timers cannot retrigger.
+        const now = this._get_cycles();
+        const cyclesPerUnit = 10.8 * (this._iigsEnabled ? 2.8 : 1.0205);
+        for(let i=0; i<4; i++) {
+            if(now >= this._paddleDeadlines[i]) {
+                const value = Math.max(0, Math.min(255, this._joystick['axis'+i] ?? 127));
+                this._paddleDeadlines[i] = now + value * cyclesPerUnit;
+            }
+        }
+    }
 
     ////////////////////////////////////////////
     write(addr, val) {
@@ -326,6 +336,9 @@ export class IOManager
                 //case 0xc010: // keyboard strobe (handled above)
                 //    this._kbd.strobe();
                 //    return 0; // write handled
+                case 0xc070: // PTRIG also responds to writes
+                    this.triggerPaddles();
+                    return 0;
                 case 0xc07e: // iou disable on
                     this._iou_disable = true;
                     return 0; // write handled
@@ -465,7 +478,7 @@ export class IOManager
         const textWrite = addr >= textPage && addr < textPage + 0x400;
         const mixedText = !this._text_mode && this._mixed_mode;
 
-        if(textWrite && (this._text_mode || mixedText)) {
+        if(addr >= 0x0400 && addr < 0x0c00 && (this._text_mode || mixedText)) {
             if(this._80col_mode) this._display_text_80.draw_text(addr, val);
             else this._display_text.draw_text(addr, val);
             if(mixedText) this.draw_mixed_text();
@@ -474,8 +487,9 @@ export class IOManager
         if(this._text_mode) return;
 
         if(this._mem.dms_hires) {
-            const page = this._mem.dms_page2 && !this._mem.dms_80store ? 0x4000 : 0x2000;
-            if(addr >= page && addr < page + 0x2000) {
+            // Both page buffers must track writes. Games draw the hidden page
+            // before flipping PAGE2; filtering to the visible page loses it.
+            if(addr >= 0x2000 && addr < 0x6000) {
                 if(this._double_hires) this._display_double_hires.draw(addr);
                 else this._display_hires.draw(addr, val);
                 if(this._mixed_mode) this.draw_mixed_text();
@@ -524,6 +538,7 @@ export class IOManager
     }
 
     reset() {
+        this._paddleDeadlines.fill(0);
         this._c3_rom = false;
         this._c8_rom = false;
         this._cx_rom = false;

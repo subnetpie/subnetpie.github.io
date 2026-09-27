@@ -96,7 +96,7 @@ export class Motherboard
     }
 
     reset(cold) {
-     //   if(cold) this.memory.reset();
+        if(this.iigsEnabled) this.memory.reset(!!cold);
         this.cpu.reset();
         this.display_text.reset();
         this.display_text_80.reset();

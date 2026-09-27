@@ -1,34 +1,53 @@
 # Apple IIgs support status
 
-Updated 2026-09-27. IIgs support is experimental and incomplete.
+Updated 2026-09-27. IIgs support remains experimental, with the compatibility
+boot path now exercised end to end.
 
-## Implemented in this update
+## Implemented
 
 - Instruction-level 65C816 decoding for all 256 opcodes, native/emulation
   modes, register widths, decimal arithmetic, interrupts, and block moves.
-- IIgs ROM reset/compatibility mapping, preserving language-card RAM reads.
-- Slow-bank peripheral mirrors, basic ADB command responses and FIFO,
-  and IWM mode/status handling for startup.
-- Regression tests for CPU modes, arithmetic, block moves, stack boundaries,
-  ROM reset vectors, ADB initialization, and IWM empty-drive status.
+- IIgs ROM reset/compatibility mapping and STATEREG bank-state restoration.
+- Slow-bank peripheral mirrors, basic ADB command responses/FIFO, and IWM
+  startup status handling.
+- Hardware-state reset before CPU reset; loading an IIgs disk uses a cold boot
+  so a prior monitor/program cannot bypass the newly mounted image.
+- Active-high IIgs VBL from the video clock and elapsed-time analog paddles.
+- Hidden graphics-page updates, fixing stale/black output on page flips.
+- Startup diagnostics clear after success; the watchdog no longer appears
+  unconditionally during a healthy boot.
 
-## Validation and limits
+## Verified
 
-The repository tests cover representative CPU semantics plus existing IIe,
-WOZ, VBL polling, and touch-layout regressions. The opcode sweep checks decode
-coverage; it does not establish full CPU correctness or bus-cycle accuracy.
-Earlier headless ROM testing reached the Apple IIgs ROM 3 startup display.
-The latest IWM changes have not been verified through a complete IIgs disk boot.
+35 tests pass with the supplied Total Replay v6.1 HDV image enabled:
 
-Total Replay previously reached its game menu in IIe mode. Total Replay boot
-and gameplay in IIgs mode remain unverified. Automated touch-layout tests do
-not replace testing file selection, joystick input, and zoom on iOS Safari.
+- IIgs ROM 3 boots that image after the machine has already run without media.
+- The rendered menu shows 519 games. Keyboard search selects Battlezone;
+  Return loads it and renders its title screen.
+- IIgs ROM 3 cold-boots synthetic DSK, WOZ1 and WOZ2 boot sectors and transfers
+  control to the loaded program. Existing IIe disk-boot tests still pass.
+- STATEREG, reset vectors, VBL polarity, analog paddle timing, and hidden-page
+  rendering have targeted regression coverage.
+
+Run from the repository root:
+
+```sh
+node --test computer/appleii/*.test.mjs
+TOTAL_REPLAY_IMAGE='/path/to/Total Replay v6.1.hdv' node --test computer/appleii/*.test.mjs
+```
+
+The Total Replay test is skipped unless its image path is supplied. The test
+harness uses the repository ROMs, a local module resolver, and a CPU-rendered
+legacy canvas. It does not verify browser input, native SHR rendering, or audio.
+Floppies are exposed as read-only because their write sequencer is absent.
 
 ## Remaining work
 
 - Complete native memory/ROM-bank switching and shadow behavior.
-- Complete RTC/PRAM, ADB input/interrupt behavior, native video timing and VBL.
-- Complete and validate IIgs disk-controller/SmartPort boot paths.
-- Implement native Ensoniq DOC audio and other missing peripherals.
-- Validate real ROM startup, disk loading, Total Replay, and mobile input
-  end to end before declaring IIgs support complete.
+- Complete RTC/PRAM and ADB input/interrupt behavior.
+- Implement native Ensoniq DOC audio and missing peripherals.
+- Complete 3.5-inch/SmartPort hardware and floppy writes; validate controller
+  timing beyond the boot fixtures.
+- Verify sustained gameplay, native IIgs applications, and touch/file-picker
+  behavior on iOS Safari. Reaching a game's title does not establish gameplay
+  or full software compatibility.

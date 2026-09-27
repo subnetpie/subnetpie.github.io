@@ -315,7 +315,9 @@ class Disk
         this.led_cb = led_cb;
 
         this.name          = "";
-        this.write_protect = false;
+        // The current nibble/WOZ engine has no write sequencer. Advertise
+        // read-only media instead of allowing firmware to attempt writes.
+        this.write_protect = true;
         this.motor_on      = false;
         this.medium        = null;
 
@@ -352,7 +354,7 @@ class Disk
     mount_medium(name, medium) {
         this.name          = name;
         this.medium        = medium;
-        this.write_protect = (medium && medium.info) ? !!medium.info.write_protected : false;
+        this.write_protect = true; // write sequencing is not implemented for either format
         if(this.medium) {
             this.medium.set_head_pos(this.head_pos);
             this.medium.reset_rotation();
