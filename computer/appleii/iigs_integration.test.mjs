@@ -62,6 +62,20 @@ test('IIgs key GLU exposes mouse, modifiers, status, and IRQs', () => {
   assert.equal(b.intFlag&1,0);
 });
 
+test('ROM03 expansion RAM mirrors only above the power-of-two ghost boundary', () => {
+  const {board:m}=createMachine();
+  const b=m.memory;
+  assert.equal(b.ram.length,0x200000);
+  assert.equal(b.motherboardRam,0x100000);
+  assert.equal(b.ghostMask,0x0fffff);
+  assert.equal(b.ghostStart,0x200000);
+  b.write(0x100123,0x5a);
+  assert.equal(b.read(0x200123),0x5a);
+  b.write(0x300456,0xa5);
+  assert.equal(b.read(0x100456),0xa5);
+  assert.equal(b.read(0x800000),0x80,'banks outside the expansion ghost window float');
+});
+
 test('IIgs INTEN gates IRQ without clearing VBL and quarter status', () => {
   const {board:m}=createMachine();
   const b=m.memory;
