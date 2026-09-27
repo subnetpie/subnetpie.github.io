@@ -55,6 +55,7 @@ export class IIgsVideo {
     this.currentScanline = 0;
     this.vgcIntEnable = 0;
     this.vgcIntStatus = 0;
+    this.vgcIrqRaised = 0;
     this.scanCycleAccum = 0;
     this.frameCount = 0;
     this.secondFrameCount = 0;
@@ -62,28 +63,33 @@ export class IIgsVideo {
   }
 
   readVGCINT() {
-    const active = ((this.vgcIntStatus & 0x20) && (this.vgcIntEnable & 0x02)) ||
-                   ((this.vgcIntStatus & 0x40) && (this.vgcIntEnable & 0x04));
-    return (active ? 0x80 : 0) | (this.vgcIntStatus & 0x60) | (this.vgcIntEnable & 0x07);
+    return (this.vgcIntStatus & 0xe0) | (this.vgcIntEnable & 0x07);
   }
 
   updateIRQ() {
-    const active = ((this.vgcIntStatus & 0x20) && (this.vgcIntEnable & 0x02)) ||
-                   ((this.vgcIntStatus & 0x40) && (this.vgcIntEnable & 0x04));
-    this.scanlineIrqPending = !!active;
-    if(this.scanlineIrq) this.scanlineIrq(!!active);
+    const active = this.vgcIrqRaised !== 0;
+    this.scanlineIrqPending = active;
+    if(this.scanlineIrq) this.scanlineIrq(active);
   }
 
   writeVGCINT(value) {
-    // MAME preserves status bits and replaces only the three enable/control
-    // bits. Disabling a source does not clear its latched status.
+    // MAME: replacing enable bits may clear ANYVGCINT, but never clears
+    // source status or lowers an IRQ that was already raised.
+    if(!((this.vgcIntStatus & 0x60) & (value & 0x06)))
+      this.vgcIntStatus &= ~0x80;
     this.vgcIntEnable = value & 0x07;
-    this.updateIRQ();
   }
 
   writeSCANINT(value) {
-    if((value & 0x20) === 0) this.vgcIntStatus &= ~0x20;
-    if((value & 0x40) === 0) this.vgcIntStatus &= ~0x40;
+    if((value & 0x40) === 0) {
+      this.vgcIntStatus &= ~0x40;
+      this.vgcIrqRaised &= ~0x40;
+    }
+    if((value & 0x20) === 0) {
+      this.vgcIntStatus &= ~0x20;
+      this.vgcIrqRaised &= ~0x20;
+    }
+    if(!(this.vgcIntStatus & 0x60)) this.vgcIntStatus &= ~0x80;
     this.updateIRQ();
   }
 
@@ -101,7 +107,11 @@ export class IIgsVideo {
         if(++this.secondFrameCount >= 60) {
           this.secondFrameCount=0;
           this.vgcIntStatus |= 0x40;
-          this.updateIRQ();
+          if(this.vgcIntEnable & 0x04) {
+            this.vgcIntStatus |= 0x80;
+            this.vgcIrqRaised |= 0x40;
+            this.updateIRQ();
+          }
         }
       }
     }
@@ -126,12 +136,16 @@ export class IIgsVideo {
     const scb = this.decodeSCB(this.currentScanline);
     if (scb.interrupt) {
       this.vgcIntStatus |= 0x20;
-      this.updateIRQ();
+      if(this.vgcIntEnable & 0x02) {
+        this.vgcIntStatus |= 0x80;
+        this.vgcIrqRaised |= 0x20;
+        this.updateIRQ();
+      }
     }
     return scb;
   }
 
-  clearScanlineInterrupt() { this.vgcIntStatus &= ~0x20; this.updateIRQ(); }
+  clearScanlineInterrupt() { this.writeSCANINT(~0x20); }
   isScanlineInterruptPending() { return this.scanlineIrqPending; }
 
   // $C029 NEWVIDEO is the hardware source of truth for IIgs video selection.
