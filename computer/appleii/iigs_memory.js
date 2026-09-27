@@ -158,9 +158,9 @@ export class IIgsMemory {
       else
         v=this.legacy.read(off);
     } else if(bank===0x01 && off<0xc000) {
-      // MAME 0.289: bank $01 is the Mega II auxiliary RAM side of the
-      // motherboard $00/$01 pair, not ordinary expansion fast RAM.
-      v=this.legacy._aux[off];
+      // MAME 0.289 apple2gs_map: $01:0000-$BFFF is fast-side bank-1
+      // motherboard RAM. Shadowing to slow $E1 is handled on writes.
+      v=this.ram[addr];
     } else if((bank===0x00 || bank===0x01) && off>=0xc000 && (this.shadow&0x40)) {
       // IOLC inhibited: $C000-$FFFF is ordinary contiguous fast RAM.
       v=this.ram[addr];
@@ -224,7 +224,7 @@ export class IIgsMemory {
       // IOLC inhibited: writes stay in the fast contiguous RAM banks.
       this.ram[addr]=val;
     } else if(bank===0x01 && off<0xc000) {
-      this.legacy._aux[off]=val;
+      this.ram[addr]=val;
       const textPage2Shadow = off>=0x0800 && off<0x0c00 && !(this.shadow & 0x20);
       const shrShadow = !(this.shadow & 0x08);
       const hiresPage1Shadow = off>=0x2000 && off<0x4000 &&
