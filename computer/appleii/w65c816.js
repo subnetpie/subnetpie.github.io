@@ -4,11 +4,14 @@
 // are always masked to 24 bits; PB and DB are real bank registers. The core
 // starts in emulation mode exactly as the hardware does.
 
+import {W65C816Addressing} from './w65c816_addressing.js';
+
 const N=0x80,V=0x40,M=0x20,X=0x10,D=0x08,I=0x04,Z=0x02,C=0x01;
 
 export class W65C816 {
   constructor(memory) {
     this.mem=memory;
+    this.addressing=new W65C816Addressing(this);
     this.trace=null;
     this.reset();
   }
@@ -30,15 +33,17 @@ export class W65C816 {
   maskM(){return this.m8()?0xff:0xffff;}
   maskX(){return this.x8()?0xff:0xffff;}
   setNZ(v,bits){const mask=bits===8?0xff:0xffff,sign=bits===8?0x80:0x8000;v&=mask;this.r.p=(this.r.p&~(N|Z))|(v===0?Z:0)|(v&sign?N:0);}
-  readM(a){let v=this.mem.read(a);if(!this.m8())v|=this.mem.read((a+1)&0xffffff)<<8;return v;}
-  writeM(a,v){this.mem.write(a,v);if(!this.m8())this.mem.write((a+1)&0xffffff,v>>8);}
-  readX(a){let v=this.mem.read(a);if(!this.x8())v|=this.mem.read((a+1)&0xffffff)<<8;return v;}
+  readM(a){return this.m8()?this.addressing.read8(a):this.addressing.read16(a);}
+  writeM(a,v){if(this.m8())this.addressing.write8(a,v);else this.addressing.write16(a,v);}
+  readX(a){return this.x8()?this.addressing.read8(a):this.addressing.read16(a);}
+  readDirectM(a){return this.m8()?this.addressing.read8Direct(a):this.addressing.read16Direct(a);}
+  writeDirectM(a,v){if(this.m8())this.addressing.write8Direct(a,v);else this.addressing.write16Direct(a,v);}
   push8(v){this.mem.write(this.r.s&0xffff,v);this.r.s=this.r.e?(0x100|((this.r.s-1)&0xff)):((this.r.s-1)&0xffff);}
   pull8(){this.r.s=this.r.e?(0x100|((this.r.s+1)&0xff)):((this.r.s+1)&0xffff);return this.mem.read(this.r.s);}
   push16(v){this.push8(v>>8);this.push8(v);}
   pull16(){const l=this.pull8();return l|(this.pull8()<<8);}
-  dpAddr(){return (this.r.d+this.fetch8())&0xffff;}
-  absAddr(){return ((this.r.db<<16)|this.fetch16())&0xffffff;}
+  dpAddr(){return this.addressing.D();}
+  absAddr(){return this.addressing.A();}
   branch(test){const d=this.fetch8();if(test)this.r.pc=(this.r.pc+(d&0x80?d-256:d))&0xffff;return test?3:2;}
 
   irq(state=true){this.irqLine=!!state;if(state)this.waiting=false;}
@@ -52,6 +57,7 @@ export class W65C816 {
   }
 
   step(){
+    this.addressing.begin();
     if(this.stopped)return 1;
     const irq=this.serviceIRQ();if(irq)return irq;
     if(this.waiting)return 1;
@@ -65,16 +71,18 @@ export class W65C816 {
       case 0x04: // TSB dp
       case 0x0c: { // TSB abs
         a=op===0x04?this.dpAddr():((this.r.db<<16)|this.fetch16())&0xffffff;
-        v=this.readM(a); t=this.r.a&this.maskM();
+        v=op===0x04?this.readDirectM(a):this.readM(a); t=this.r.a&this.maskM();
         this.r.p=(this.r.p&~Z)|((v&t)===0?Z:0);
-        this.writeM(a,v|t); cy=op===0x04?5:6; break;
+        if(op===0x04)this.writeDirectM(a,v|t);else this.writeM(a,v|t);
+        cy=op===0x04?5:6; break;
       }
       case 0x14: // TRB dp
       case 0x1c: { // TRB abs
         a=op===0x14?this.dpAddr():((this.r.db<<16)|this.fetch16())&0xffffff;
-        v=this.readM(a); t=this.r.a&this.maskM();
+        v=op===0x14?this.readDirectM(a):this.readM(a); t=this.r.a&this.maskM();
         this.r.p=(this.r.p&~Z)|((v&t)===0?Z:0);
-        this.writeM(a,v&~t); cy=op===0x14?5:6; break;
+        if(op===0x14)this.writeDirectM(a,v&~t);else this.writeM(a,v&~t);
+        cy=op===0x14?5:6; break;
       }
       case 0x09:v=m8?this.fetch8():this.fetch16();this.r.a=(this.r.a&~this.maskM())|((this.r.a|v)&this.maskM());this.setNZ(this.r.a,mb);cy=m8?2:3;break;
       case 0x29:v=m8?this.fetch8():this.fetch16();this.r.a=(this.r.a&~this.maskM())|((this.r.a&v)&this.maskM());this.setNZ(this.r.a,mb);cy=m8?2:3;break;
@@ -112,13 +120,13 @@ export class W65C816 {
       case 0xad:a=this.absAddr();v=this.readM(a);this.r.a=(this.r.a&(~this.maskM()))|v;this.setNZ(v,mb);cy=4;break;
       case 0xaf:a=this.fetch24();v=this.readM(a);this.r.a=(this.r.a&(~this.maskM()))|v;this.setNZ(v,mb);cy=5;break;
       case 0xbf: // LDA absolute long,X
-        a=(this.fetch24()+(this.r.x&this.maskX()))&0xffffff;
+        a=this.addressing.ALX();
         v=this.readM(a);this.r.a=(this.r.a&~this.maskM())|(v&this.maskM());
         this.setNZ(v,mb);cy=m8?5:6;break;
-      case 0xa5:a=this.dpAddr();v=this.readM(a);this.r.a=(this.r.a&(~this.maskM()))|v;this.setNZ(v,mb);cy=3;break;
+      case 0xa5:a=this.dpAddr();v=this.readDirectM(a);this.r.a=(this.r.a&(~this.maskM()))|v;this.setNZ(v,mb);cy=3;break;
       case 0x8d:a=this.absAddr();this.writeM(a,this.r.a);cy=4;break;
       case 0x8f:a=this.fetch24();this.writeM(a,this.r.a);cy=5;break;
-      case 0x85:a=this.dpAddr();this.writeM(a,this.r.a);cy=3;break;
+      case 0x85:a=this.dpAddr();this.writeDirectM(a,this.r.a);cy=3;break;
       case 0x8e:a=this.absAddr();this.mem.write(a,this.r.x);if(!x8)this.mem.write(a+1,this.r.x>>8);cy=4;break;
       case 0x8c:a=this.absAddr();this.mem.write(a,this.r.y);if(!x8)this.mem.write(a+1,this.r.y>>8);cy=4;break;
       case 0x9c:a=this.absAddr();this.writeM(a,0);cy=4;break;
@@ -164,6 +172,6 @@ export class W65C816 {
       default:
         throw new Error("W65C816 unimplemented opcode $"+op.toString(16).padStart(2,"0")+" at $"+pc.toString(16).padStart(6,"0"));
     }
-    return cy;
+    return cy+this.addressing.extraCycles;
   }
 }
