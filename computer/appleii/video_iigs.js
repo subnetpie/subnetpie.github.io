@@ -27,6 +27,8 @@ export class IIgsVideo {
     this.bankE1 = new Uint8Array(0x10000); // replaced by bus backing store on IIgs
     this.newVideo = 0x01;
     this.borderColor = 0x02;
+    this.textColor = 0xf2;
+    this.monochrome = 0x00;
     this.superHires = false;
     this.dirty = true;
     this.image = this.context.createImageData(640, 200);
@@ -44,6 +46,8 @@ export class IIgsVideo {
     // ROM 03 hardware reset value, matching MAME 0.289 machine_reset().
     this.newVideo = 0x01;
     this.borderColor = 0x02;
+    this.textColor = 0xf2;
+    this.monochrome = 0x00;
     this.superHires = false;
     // RAM clearing is owned by the IIgs memory bus, not the VGC.
     this.dirty = true;
@@ -150,6 +154,9 @@ export class IIgsVideo {
   readNewVideo() { return this.newVideo; }
   setBorderColor(value) { this.borderColor=value&0x0f; this.dirty=true; }
   getBorderColor() { return this.borderColor&0x0f; }
+  setTextColor(value) { this.textColor=value&0xff; this.dirty=true; }
+  getTextColor() { return this.textColor&0xff; }
+  setMonochrome(value) { this.monochrome=value&0xff; this.dirty=true; }
   isSuperHires() { return this.superHires; }
 
   readBankE1(addr) { return this.bankE1[addr & 0xffff]; }
