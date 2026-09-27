@@ -20,7 +20,7 @@ export class IIgsADB {
  setKeyModifiers(value){this.keyModifiers=value&0xff;}
  readStatus(){this.dataStatusRead=true;return (this.control&0x54)|(this.mouseReadY?0x02:0)|(this.keyStrobe?0x08:0)|(this.queue.length?0x20:0)|(this.mouseFull?0x80:0);}
  readData(){const v=this.queue[0]??0;if(this.dataStatusRead){this.dataStatusRead=false;if(this.queue.length)this.queue.shift();this.updateIrq();}return v;}
- writeStatus(value){this.control=(this.control&0xab)|(value&0x54);this.updateIrq();}
+ writeStatus(value){this.control=value&0x54;this.updateIrq();}
  writeData(value){
   if(this.remaining){this.args.push(value);if(--this.remaining===0)this.execute();return;}
   this.command=value;this.args=[];
