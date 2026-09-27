@@ -66,8 +66,9 @@ export class IIgsDOC {
     if(o.control&0x08) {
       this.irqPending=true; this.irqOsc=n; this.updateIRQ();
     }
-    if(mode===0 || mode===3) o.control|=1; // free-run/one-shot halt at terminator
-    else if(mode===1) o.accumulator=0;     // loop
+    if(mode===0) o.control|=1;                // free: zero terminator halts
+    else if(mode===1) o.accumulator=0;     // one-shot: restart at wave base
+    else if(mode===3) o.control|=1;        // sync/AM partner terminates
     else {                                 // swap: halt this, start paired oscillator
       o.control|=1;
       const p=n^1; if(p<this.enabledOscillators){this.osc[p].control&=~1;this.osc[p].accumulator=0;}
@@ -79,9 +80,14 @@ export class IIgsDOC {
     for(let n=0;n<this.enabledOscillators;n++) {
       const o=this.osc[n]; if(o.control&1) continue;
       o.accumulator=(o.accumulator + o.freq)>>>0;
-      const shift=9-(o.size&7);
-      const index=(o.accumulator>>>Math.max(0,shift))&0xff;
-      const sample=this.ram[((o.wave<<8)+index)&0xffff];
+      // Resolution bits select 256/512/1K/2K/4K/8K/16K/32K-byte
+      // wave tables. Wave pointer supplies the high byte; mask the base so
+      // larger tables remain naturally aligned.
+      const resolution=o.size&7;
+      const length=0x100<<resolution;
+      const base=((o.wave<<8)&~(length-1))&0xffff;
+      const index=(o.accumulator>>>8)&(length-1);
+      const sample=this.ram[(base+index)&0xffff];
       if(sample===0){this.finish(n,o);continue;}
       mix += ((sample-128)*o.volume)/255; active++;
     }
