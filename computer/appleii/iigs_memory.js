@@ -429,6 +429,7 @@ export class IIgsMemory {
           if(v!==undefined) return;
         }
       }
+      if(io===0xc010){this.adb.clearKeyStrobe();return;}
       if(io===0xc068){this.writeState(val);return;}
       if(io===0xc026){this.adb.writeData(val);return;}
       if(io===0xc027){this.adb.writeStatus(val);return;}
