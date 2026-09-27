@@ -114,6 +114,7 @@ export class IIgsMemory {
       if(io===0xc068) return this.readState();
       if(io===0xc026) return this.adb.readData();
       if(io===0xc027) return this.adb.readStatus();
+      if(io===0xc029) return this.video ? this.video.readNewVideo() : 0;
       if(io===0xc02b) return this.langSel;
       if(io===0xc02d) return this.slotRom;
       if(io===0xc031) return this.diskReg;
@@ -180,6 +181,7 @@ export class IIgsMemory {
       if(io===0xc068){this.writeState(val);return;}
       if(io===0xc026){this.adb.writeData(val);return;}
       if(io===0xc027){this.adb.writeStatus(val);return;}
+      if(io===0xc029){if(this.video)this.video.writeNewVideo(val);return;}
       if(io===0xc02b){this.langSel=val;return;}
       if(io===0xc02d){this.slotRom=val;return;}
       if(io===0xc031){this.diskReg=val;return;}
