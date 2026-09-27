@@ -89,6 +89,9 @@ export class IIgsMemory {
     this.intCxRom = !!(value & 1);
   }
 
+  setVblFlag() { this.intFlag |= 0x08; }
+  setQuarterFlag() { this.intFlag |= 0x10; }
+
   iwmAccess(addr, value) {
     const op = addr & 15;
     if(op === 8) this.iwmMotor = false;
@@ -247,6 +250,7 @@ export class IIgsMemory {
       if(io===0xc03e){this.doc.setAddressLow(val);return;}
       if(io===0xc03f){this.doc.setAddressHigh(val);return;}
       if(io===0xc041){this.intEnable=val&0x1f;return;}
+      if(io===0xc047){this.intFlag&=~0x18;return;}
     }
     if(addr >= 0xc0e0 && addr <= 0xc0ef) {this.iwmAccess(addr,val);return;}
     const lowAddr=addr&0xffff;
