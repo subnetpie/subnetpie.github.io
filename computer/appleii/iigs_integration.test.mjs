@@ -125,6 +125,19 @@ test('Total Replay boots on IIgs, accepts a search, and launches Battlezone',
     assert.ok(pixels.some((v,i)=>i%4!==3&&v>100),'game title must render');
   });
 
+test('ROM03 leaves its power-on delay loop during headless execution', () => {
+  const {board:m}=createMachine();
+  let sawDelay=false, leftDelay=false;
+  m.cpu.setTrace(e=>{
+    const pc=e.pc&0xffff;
+    if(pc>=0xfcd9 && pc<=0xfce5) sawDelay=true;
+    else if(sawDelay) leftDelay=true;
+  });
+  for(let i=0;i<20&&!leftDelay;i++)m.clock(250000);
+  assert.ok(sawDelay,'ROM03 must execute the FCD9-FCE5 power-on delay');
+  assert.ok(leftDelay,'ROM03 delay loop must complete rather than stall permanently');
+});
+
 for(const format of ['dsk','woz1','woz2']) {
   test(`IIgs ROM cold-boots a ${format} floppy`, () => {
     const {board:m}=createMachine();
