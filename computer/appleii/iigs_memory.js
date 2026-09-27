@@ -31,6 +31,9 @@ export class IIgsMemory {
     this.clockCtl = 0x00;
     this.intEnable = 0x00;
     this.intFlag = 0x00;
+    this.irq = null;
+    this.vblIrq = false;
+    this.quarterIrq = false;
     this.adb = new IIgsADB();
     // IIgs SCC/DOC glue state. Serial transport and DOC synthesis are separate
     // device concerns; these registers provide the machine-visible bus contract.
@@ -89,8 +92,21 @@ export class IIgsMemory {
     this.intCxRom = !!(value & 1);
   }
 
-  setVblFlag() { this.intFlag |= 0x08; }
-  setQuarterFlag() { this.intFlag |= 0x10; }
+  updateMegaIrq() {
+    const active=this.vblIrq||this.quarterIrq;
+    if(active) this.intFlag|=0x01; else this.intFlag&=~0x01;
+    if(this.irq) this.irq(active);
+  }
+  setVblFlag() {
+    this.intFlag |= 0x08;
+    if(this.intEnable&0x08) this.vblIrq=true;
+    this.updateMegaIrq();
+  }
+  setQuarterFlag() {
+    this.intFlag |= 0x10;
+    if(this.intEnable&0x10) this.quarterIrq=true;
+    this.updateMegaIrq();
+  }
 
   iwmAccess(addr, value) {
     const op = addr & 15;
@@ -249,8 +265,19 @@ export class IIgsMemory {
       if(io===0xc03d){this.doc.writeData(val);return;}
       if(io===0xc03e){this.doc.setAddressLow(val);return;}
       if(io===0xc03f){this.doc.setAddressHigh(val);return;}
-      if(io===0xc041){this.intEnable=val&0x1f;return;}
-      if(io===0xc047){this.intFlag&=~0x18;return;}
+      if(io===0xc041){
+        this.intEnable=val&0x1f;
+        if(!(this.intEnable&0x08)) this.vblIrq=false;
+        if(!(this.intEnable&0x10)) this.quarterIrq=false;
+        this.updateMegaIrq();
+        return;
+      }
+      if(io===0xc047){
+        this.intFlag&=~0x18;
+        this.vblIrq=this.quarterIrq=false;
+        this.updateMegaIrq();
+        return;
+      }
     }
     if(addr >= 0xc0e0 && addr <= 0xc0ef) {this.iwmAccess(addr,val);return;}
     const lowAddr=addr&0xffff;
@@ -355,6 +382,7 @@ export class IIgsMemory {
     this.shadow = 0; this.speed = 0x80; this.dmaBank = 0;
     this.slotRom = 0; this.langSel = 0; this.diskReg = 0;
     this.clockCtl = 0; this.intEnable = 0; this.intFlag = 0;
+    this.vblIrq = this.quarterIrq = false; this.updateMegaIrq();
     this.romBank = false; this.intCxRom = false;
     this.scc.reset(); this.doc.reset();
     this.adb.reset();
