@@ -82,8 +82,8 @@ export class Motherboard
             this.cycles += used;
             if(this.iigsEnabled && this.video_iigs) this.video_iigs.tick(used, 2800000);
             if(this.iigsEnabled && this.memory.doc) {
-                const sample=this.memory.doc.tick(used);
-                this.audio.doc_sample(this.cycles, sample);
+                const docSamples=this.memory.doc.tick(used, 2800000);
+                if(docSamples) this.audio.doc_sample(this.cycles, this.memory.doc.lastSample);
             }
         }
     }
