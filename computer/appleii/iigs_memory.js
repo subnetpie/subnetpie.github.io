@@ -39,8 +39,8 @@ export class IIgsMemory {
     this.irq = null;
     this.vblIrq = false;
     this.quarterIrq = false;
-    this.externalIrq = {vgc:false, doc:false, scc:false};
-    this.adb = new IIgsADB();
+    this.externalIrq = {vgc:false, doc:false, scc:false, adb:false};
+    this.adb = new IIgsADB(state => this.setExternalIrq("adb",state));
     // IIgs SCC/DOC glue state. Serial transport and DOC synthesis are separate
     // device concerns; these registers provide the machine-visible bus contract.
     this.scc = new IIgsSCC();
@@ -105,7 +105,7 @@ export class IIgsMemory {
   }
   updateMegaIrq() {
     const active=this.vblIrq||this.quarterIrq||
-      this.externalIrq.vgc||this.externalIrq.doc||this.externalIrq.scc;
+      this.externalIrq.vgc||this.externalIrq.doc||this.externalIrq.scc||this.externalIrq.adb;
     if(active) this.intFlag|=0x01; else this.intFlag&=~0x01;
     if(this.irq) this.irq(active);
   }
@@ -595,7 +595,7 @@ export class IIgsMemory {
     this.slotRom = 0; this.langSel = 0; this.diskReg = 0;
     this.clockCtl = 0; this.clockData = 0; this.intEnable = 0; this.intFlag = 0;
     this.vblIrq = this.quarterIrq = false;
-    this.externalIrq.vgc=this.externalIrq.doc=this.externalIrq.scc=false;
+    this.externalIrq.vgc=this.externalIrq.doc=this.externalIrq.scc=this.externalIrq.adb=false;
     this.updateMegaIrq();
     this.romBank = false; this.intCxRom = false; this.slotC3Rom = false; this.intC8Rom = false;
     this.scc.reset(); this.doc.reset();
