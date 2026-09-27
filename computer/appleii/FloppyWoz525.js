@@ -92,6 +92,21 @@ class DskMedium extends BaseMedium
     }
 }
 
+// Raw .nib and nibble-format 2IMG contain 35 fixed-size track streams.
+class NibMedium extends BaseMedium {
+    constructor(name, src) {
+        super();
+        this.name = name;
+        this.track_bytes = Array.from({length:35}, (_,t) => src.slice(t*6656,(t+1)*6656));
+    }
+    read_byte() {
+        const track = this.track_bytes[this.head_pos >> 2];
+        if(!track) return 0;
+        if(this.byte_pos >= track.length) this.byte_pos = 0;
+        return track[this.byte_pos++];
+    }
+}
+
 // ---------------------------------------------------------------------------
 // WozTrack – raw bitstream for one physical track
 // ---------------------------------------------------------------------------
@@ -484,14 +499,14 @@ export class Floppy525
     // Disk image loaders
     // -----------------------------------------------------------------------
 
-    load_disk(num, name, bin) {
+    load_disk(num, name, bin, options = {}) {
         console.log(`loading disk ${num + 1}: ${name}`);
         if(bin.byteLength !== 143360) {
             console.log(`error: invalid disk image size ${bin.byteLength} (expected 143360)`);
             return false;
         }
         const src    = new Uint8Array(bin);
-        const medium = new DskMedium(name, src, this.sector_62encode.bind(this));
+        const medium = new DskMedium(name, src, (data,t,s) => this.sector_62encode(data,t,s,options.volume ?? 254));
         this._disks[num].mount_medium(name, medium);
         return true;
     }
@@ -509,23 +524,28 @@ export class Floppy525
     }
 
     // Auto-detect format from the file signature.
-    load_image(num, name, bin) {
+    load_image(num, name, bin, options = {}) {
         const sigBytes = (bin instanceof Uint8Array) ? bin : new Uint8Array(bin);
         if(sigBytes.length < 4) return false;
         const sig = u32le(sigBytes, 0);
         if(sig === WOZ_SIG1 || sig === WOZ_SIG2)
             return this.load_woz(num, name, bin);
-        return this.load_disk(num, name, bin);
+        if(options.format === 'nib' || /\.nib$/i.test(name)) {
+            if(sigBytes.length !== 35*6656) return false;
+            this._disks[num].mount_medium(name, new NibMedium(name, sigBytes));
+            return true;
+        }
+        return this.load_disk(num, name, bin, options);
     }
 
     // -----------------------------------------------------------------------
     // 6-and-2 sector encoder for DSK images
     // -----------------------------------------------------------------------
-    sector_62encode(src, trk, sec_ni) {
+    sector_62encode(src, trk, sec_ni, volume = 254) {
         let res = [0xff,0x3f,0xcf,0xf3,0xfc, 0xff,0x3f,0xcf,0xf3,0xfc,
                    0xff,0x3f,0xcf,0xf3,0xfc, 0xff,0x3f,0xcf,0xf3,0xfc];
 
-        const vol  = 0xfe;
+        const vol  = volume & 255;
         const sec  = sec_int[sec_ni];
         const csum = vol ^ trk ^ sec;
 

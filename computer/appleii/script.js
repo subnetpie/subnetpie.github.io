@@ -36,6 +36,24 @@ var joyButtons = document.getElementById("joyButtonsCanvas");
 var joyButtonsCtx = joyButtons.getContext("2d");
 document.oncontextmenu = new Function("return false;");
 
+import {decodeMedia, isZip, readZipEntries, mountMedia} from './media.js';
+
+function chooseArchiveImage(name, entries) {
+  const dialog = document.getElementById('archiveDialog');
+  const select = document.getElementById('archiveImages');
+  document.getElementById('archiveName').textContent = name;
+  select.replaceChildren();
+  entries.forEach((entry, index) => {
+    const option = document.createElement('option');
+    option.value = index; option.textContent = entry.name; select.append(option);
+  });
+  dialog.returnValue = '';
+  return new Promise(resolve => {
+    dialog.addEventListener('close', () => resolve(dialog.returnValue === 'load' ? entries[Number(select.value)] : null), {once:true});
+    dialog.showModal();
+  });
+}
+
 import { Motherboard } from "https://subnetpie.github.io/computer/appleii/motherboard.js";
 
 class Drive {
@@ -48,53 +66,22 @@ class Drive {
   }
 
   load_media(name, buffer) {
-    const lower = name.toLowerCase();
-    const bytes = buffer.byteLength;
-
-    if(machineType === "iigs" && (lower.endsWith(".rom") || lower.endsWith(".bin")) &&
-       (bytes === 0x20000 || bytes === 0x40000)) {
-      motherboard.loadIIgsROM(buffer);
-      stop();
-      // A new image needs a cold IIgs boot; warm reset can resume the prior
-      // monitor/program instead of scanning the newly mounted disk.
-      motherboard.reset(machineType === "iigs");
-      run();
-      return true;
-    }
-
-    const hardDrive = lower.endsWith(".hdv") ||
-                      lower.endsWith(".2mg") ||
-                      (lower.endsWith(".po") && bytes > 143360);
-    const ok = hardDrive
-      ? motherboard.prodosBlock.load_image(name, buffer)
-      : motherboard.floppy525.load_image(this.num, name, buffer);
-
-    if(ok) {
-      stop();
-      clearTimeout(bootWatchdog);
-      showBootStatus("");
-      // A new image needs a cold IIgs boot; warm reset can resume the prior
-      // monitor/program instead of scanning the newly mounted disk.
-      motherboard.reset(machineType === "iigs");
-      run();
-    }
-    return ok;
+    const media = decodeMedia(name, buffer);
+    mountMedia(motherboard, media, this.num);
+    stop();
+    clearTimeout(bootWatchdog);
+    showBootStatus('');
+    // Boot the chosen image instead of resuming the previous program.
+    motherboard.reset(machineType === 'iigs');
+    run();
+    return true;
   }
 
   async load_zip(name, buffer) {
-    if(!window.fflate) throw new Error("ZIP decompressor is not available");
-    const files = window.fflate.unzipSync(new Uint8Array(buffer));
-    const supported = Object.keys(files).filter(path =>
-      !path.endsWith("/") && /\.(2mg|po|hdv|dsk|do|woz|nib|rom|bin)$/i.test(path)
-    );
-    if(!supported.length)
-      throw new Error("ZIP contains no supported Apple II disk image");
-    if(supported.length > 1)
-      console.warn("ZIP contains multiple images; loading first:", supported);
-    const path = supported[0];
-    const data = files[path];
-    const raw = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength);
-    return this.load_media(path.split("/").pop(), raw);
+    const entries = readZipEntries(buffer);
+    const selected = entries.length === 1 ? entries[0] : await chooseArchiveImage(name, entries);
+    if(!selected) return false;
+    return this.load_media(selected.name, selected.data);
   }
 
   on_file_select(e) {
@@ -103,15 +90,17 @@ class Drive {
     const fr = new FileReader();
     fr.onload = async () => {
       try {
-        if(file.name.toLowerCase().endsWith(".zip"))
+        if(isZip(file.name, fr.result))
           await this.load_zip(file.name, fr.result);
         else
           this.load_media(file.name, fr.result);
       } catch(err) {
         console.error(err);
-        motherboard.message(err.message || "media load failed");
+        showBootStatus('LOAD ERROR\n' + (err.message || 'Media load failed'));
+        motherboard.message(err.message || 'media load failed');
       }
     };
+    fr.onerror = () => showBootStatus('LOAD ERROR\nUnable to read ' + file.name);
     fr.readAsArrayBuffer(file);
     e.target.value = "";
   }

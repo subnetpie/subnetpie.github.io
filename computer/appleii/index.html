@@ -149,7 +149,19 @@
     <div class="KBbutton" id="buttonQuot">&quot;</div>
   </div>
 </div>
-<input type="file" id="filedialog1" style="display:none"/>
+<input type="file" id="filedialog1" accept=".zip,.2mg,.2img,.po,.hdv,.dsk,.do,.woz,.nib,.rom,.bin" style="display:none"/>
+<dialog id="archiveDialog" aria-labelledby="archiveTitle">
+  <form method="dialog">
+    <h2 id="archiveTitle">Choose a disk image</h2>
+    <p id="archiveName"></p>
+    <label for="archiveImages">Disk image</label>
+    <select id="archiveImages" autofocus></select>
+    <div class="archiveActions">
+      <button value="cancel">Cancel</button>
+      <button value="load">Load</button>
+    </div>
+  </form>
+</dialog>
 
 <div id="controls">
   <div class="button" id="buttonInput">keyboard</div>
@@ -171,7 +183,7 @@
   <canvas id="joyButtonsCanvas" aria-label="Fire 1 above, Fire 2 below" width="256" height="256"></canvas>
 </div>
     <script src='https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js'></script>
-<script src="https://cdn.jsdelivr.net/npm/fflate@0.8.2/umd/index.js"></script>
+
 <script>
 (function () {
   var status = document.getElementById("bootStatus");
@@ -191,7 +203,7 @@
   }, 1500);
 })();
 </script>
-<script src="./joystick.js"></script><script type="module" src="./script.js?v=20260926-1224"></script>
+<script src="./joystick.js"></script><script type="module" src="./script.js?v=20260927-media"></script>
 
   </body>
   

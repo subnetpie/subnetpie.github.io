@@ -11,6 +11,7 @@ export class ProDOSBlockDevice {
         this.image = null;
         this.name = "";
         this.dirty = false;
+        this.writeProtected = false;
         this.blockCount = 0;
 
         this.romBase = 0xc000 | (this.slot << 8);
@@ -60,7 +61,7 @@ export class ProDOSBlockDevice {
         this.rom[0xff] = 0x80; // driver entry Cn80
     }
 
-    load_image(name, bin) {
+    load_image(name, bin, options = {}) {
         const src = bin instanceof Uint8Array ? bin : new Uint8Array(bin);
         if (!src.length || (src.length & 0x1ff)) {
             console.error("ProDOS block image must be a multiple of 512 bytes");
@@ -72,11 +73,20 @@ export class ProDOSBlockDevice {
             return false;
         }
         this.image = new Uint8Array(src);
+        this.writeProtected = !!options.writeProtected;
         this.name = name;
         this.blockCount = blocks;
         this.dirty = false;
         console.log("mounted ProDOS block device:", name, blocks, "blocks");
         return true;
+    }
+
+    eject() {
+        this.image = null;
+        this.name = '';
+        this.blockCount = 0;
+        this.dirty = false;
+        this.writeProtected = false;
     }
 
     reset() {
@@ -119,6 +129,7 @@ export class ProDOSBlockDevice {
 
         if (command === 0) return 0; // STATUS
         if (command !== 1 && command !== 2) return 0x27;
+        if (command === 2 && this.writeProtected) return 0x2b;
         if (block >= this.blockCount) return 0x27;
 
         const offset = block << 9;

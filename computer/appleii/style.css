@@ -324,3 +324,23 @@ button,
   #joyControls .button { height: 38px; }
   #joyStick { align-items: center; gap: 8px; }
 }
+
+/* Native ZIP image selection, including iOS select and dialog buttons. */
+#archiveDialog {
+  width: min(92vw, 34rem);
+  max-height: 85dvh;
+  overflow: auto;
+  border: 2px solid var(--key-border);
+  border-radius: 12px;
+  background: var(--apple-beige);
+  color: #211b17;
+  padding: 1.25rem;
+  font: 1rem system-ui, sans-serif;
+}
+#archiveDialog::backdrop { background: #0009; }
+#archiveDialog, #archiveDialog * { touch-action: manipulation; }
+#archiveDialog h2 { margin: 0 0 .75rem; font-size: 1.25rem; }
+#archiveName { overflow-wrap: anywhere; }
+#archiveImages { display: block; width: 100%; min-height: 44px; margin-top: .5rem; font-size: 1rem; }
+.archiveActions { display: flex; justify-content: flex-end; gap: .75rem; margin-top: 1rem; }
+.archiveActions button { min-height: 44px; padding: .5rem 1rem; font-size: 1rem; }

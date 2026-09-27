@@ -19,7 +19,7 @@ boot path now exercised end to end.
 
 ## Verified
 
-35 tests pass with the supplied Total Replay v6.1 HDV image enabled:
+55 tests pass with the supplied Total Replay v6.1 HDV image enabled:
 
 - IIgs ROM 3 boots that image after the machine has already run without media.
 - The rendered menu shows 519 games. Keyboard search selects Battlezone;
@@ -40,6 +40,23 @@ The Total Replay test is skipped unless its image path is supplied. The test
 harness uses the repository ROMs, a local module resolver, and a CPU-rendered
 legacy canvas. It does not verify browser input, native SHR rendering, or audio.
 Floppies are exposed as read-only because their write sequencer is absent.
+
+## Disk image loading
+
+ZIP files are decompressed with a bundled fflate 0.8.2 build. A single image
+loads directly; an archive with multiple supported images presents a chooser.
+Mac resource-fork files and unrelated archive entries are ignored.
+
+`.2mg` / `.2img` headers are parsed and checked before mounting. DOS-order and
+ProDOS-order 140K payloads mount as 5.25-inch disks, with sector conversion for
+ProDOS order. Nibble-format 2MG and raw `.nib` images use 35 fixed-size tracks.
+Larger ProDOS payloads mount on the existing slot-7 block device (up to 65535
+blocks); this does not emulate physical 3.5-inch hardware. Block-image write
+protection is honored. Disk comments/creator data are excluded from the payload.
+
+The tests also boot all three 2MG formats from ZIP and load the supplied Total
+Replay image through a ZIP/2MG wrapper. Archive-picker logic is tested, but the
+native iOS picker still needs device verification.
 
 ## Remaining work
 
