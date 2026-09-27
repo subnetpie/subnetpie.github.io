@@ -324,7 +324,9 @@ export class IIgsMemory {
     let v;
     if(bank===0xe0 || bank===0xe1) {
       if(off>=0xd000)
-        v=this.slowLcRead(bank===0xe1 || !!this.legacy.aux_zp,off);
+        // MAME has independent E0 (main) and E1 (aux) LC views. ALTZP
+        // selects the fast bank-$00 LC backing, but does not redirect E0 LC.
+        v=this.slowLcRead(bank===0xe1,off);
       // Mega II slow RAM. Bank E0 follows the Apple II auxiliary-memory
       // selectors; bank E1 is always the auxiliary side.
       else if(bank===0xe0 && off<0xc000)
@@ -474,7 +476,9 @@ export class IIgsMemory {
     const bank=addr>>>16, off=addr&0xffff;
     if(bank===0xe0 || bank===0xe1) {
       if(off>=0xd000)
-        this.slowLcWrite(bank===0xe1 || !!this.legacy.aux_zp,off,val);
+        // E0/E1 language-card windows remain main/aux respectively;
+        // ALTZP must not redirect the E0 slow LC window.
+        this.slowLcWrite(bank===0xe1,off,val);
       else if(bank===0xe0 && off<0xc000)
         this.e0WriteBank(off,val);
       else if(bank===0xe1 && off>=0x2000 && off<0xa000 && this.video)
