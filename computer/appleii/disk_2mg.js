@@ -18,7 +18,9 @@ export function parse2MG(input) {
   let length = view.getUint32(0x1c, true);
   if (headerLength < 0x30 || headerLength > src.byteLength)
     throw new Error('2MG header length is invalid');
-  if (version !== 1) throw new Error('Unsupported 2MG version');
+  // Older writers use version 0 with the same header layout. CiderPress
+  // accepts both 0 and 1; future versions still require explicit support.
+  if (version > 1) throw new Error(`Unsupported 2MG version ${version} (supported: 0 and 1)`);
   if (format > 2) throw new Error('Unsupported 2MG data format');
   if (format === 1 && length === 0 && blocks) length = blocks * 512;
   if (!length || offset < headerLength || offset > src.byteLength ||

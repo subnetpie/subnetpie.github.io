@@ -68,3 +68,19 @@ test('respects Uint8Array byteOffset', () => {
   wrapped.set(source, 4);
   assert.equal(parse2MG(wrapped.subarray(4)).data[0], 0xa5);
 });
+
+for (const format of [0, 1, 2]) {
+  test(`legacy version-0 2MG accepts format ${format} and still checks bounds`, () => {
+    const image = fixture(format, 512);
+    new DataView(image.buffer).setUint16(0x0a, 0, true);
+    assert.equal(parse2MG(image).format, format);
+    assert.equal(parse2MG(image).data.length, 512);
+    assert.throws(() => parse2MG(image.subarray(0, 100)), /range/);
+  });
+}
+
+test('unsupported version error reports the actual header value', () => {
+  const image = fixture(1, 512);
+  new DataView(image.buffer).setUint16(0x0a, 256, true);
+  assert.throws(() => parse2MG(image), /version 256/);
+});

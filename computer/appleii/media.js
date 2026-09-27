@@ -1,7 +1,7 @@
 // 2IMG format: https://ciderpress2.com/formatdoc/TwoIMG-notes.html
 import {unzipSync} from './vendor/fflate.js';
-import {parse2MG} from './disk_2mg.js';
-export {parse2MG as parse2IMG} from './disk_2mg.js';
+import {parse2MG} from './disk_2mg.js?v=20260927-v0';
+export {parse2MG as parse2IMG} from './disk_2mg.js?v=20260927-v0';
 
 const supported = /\.(2mg|2img|po|hdv|dsk|do|woz|nib|rom|bin)$/i;
 const bytesOf = value => value instanceof Uint8Array ? value : new Uint8Array(value);

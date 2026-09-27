@@ -74,7 +74,7 @@ test('ZIP-contained 2IMG mounts a block image and honors write protection', () =
 });
 
 for(const format of [0,1,2]) {
-  test(`IIgs boots ZIP-contained 2IMG format ${format}`, () => {
+  test(`IIgs boots ZIP-contained legacy version-0 2IMG format ${format}`, () => {
     const {board:m}=createMachine();
     const disk=new Uint8Array(143360);disk.set([1,0x4c,1,8]);
     let payload=disk;
@@ -86,7 +86,9 @@ for(const format of [0,1,2]) {
         payload.set(track,t*6656);
       }
     }
-    const [entry]=readZipEntries(zipSync({'Boot.2mg':wrap(payload,format)}));
+    const container=wrap(payload,format);
+    new DataView(container.buffer).setUint16(10,0,true);
+    const [entry]=readZipEntries(zipSync({'Boot.2mg':container}));
     m.prodosBlock.load_image('old.po',new Uint8Array(512));
     mountMedia(m,decodeMedia(entry.name,entry.data));m.reset(true);
     assert.equal(m.prodosBlock.image,null,'the new floppy must replace boot priority');
