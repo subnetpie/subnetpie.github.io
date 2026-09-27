@@ -266,7 +266,9 @@ export class IIgsMemory {
       if(off<0xc000)
         v=this.b0FastRead(off);
       else if(off>=0xd000 && this.rom && !this.legacy.bsr_read)
-        v=this.romRead(0xff0000|off);
+        // MAME lc00 ROM view starts at maincpu region $3D000. For ROM03
+        // (128K loaded at region $20000) this is the $FD:D000 mirror.
+        v=this.romRead(0xfd0000|off);
       else
         v=this.legacy.read(off);
     } else if(bank===0x01 && off<0xc000) {
@@ -276,7 +278,8 @@ export class IIgsMemory {
     } else if(bank===0x01 && off>=0xd000 && !(this.shadow&0x40)) {
       // Bank $01 has an independent fast-side language card.
       if(!this.legacy.bsr_read && this.rom) {
-        v=this.romRead(0xff0000|off);
+        // Bank 1 LC uses the same internal ROM view as MAME lc01.
+        v=this.romRead(0xfd0000|off);
       } else if(off<0xe000) {
         v=this.ram[0x010000 | (this.legacy.bsr_bank2 ? 0xc000 : 0xd000) | (off&0x0fff)];
       } else {
