@@ -88,6 +88,12 @@ test('IIgs key GLU exposes mouse, modifiers, status, and IRQs', () => {
   assert.equal(b.intFlag&1,1);
   assert.equal(b.read(0xc026),0x5a);
   assert.equal(b.intFlag&1,0);
+
+  // Only IRQ-enable bits are writable; live status bits cannot be latched
+  // into KMSTATUS by software.
+  adb.writeStatus(0xff);
+  assert.equal(adb.control,0x54);
+  assert.equal(b.read(0xc027)&0x01,0);
 });
 
 test('ROM03 expansion RAM mirrors only above the power-of-two ghost boundary', () => {
