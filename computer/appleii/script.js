@@ -210,9 +210,13 @@ async function loadBuiltInIIgsROM() {
           " P=$" + (r.p>>>0).toString(16).padStart(2,"0").toUpperCase() +
           " E=" + (r.e ? "1" : "0") +
           "\ncycles=" + motherboard.cycles + " scanline=" + line +
+          " SPEED=$" + (mem.speed>>>0).toString(16).padStart(2,"0").toUpperCase() +
           "\nSHADOW=$" + (mem.shadow>>>0).toString(16).padStart(2,"0").toUpperCase() +
           " STATE=$" + mem.readState().toString(16).padStart(2,"0").toUpperCase() +
-          " NEWVIDEO=$" + (motherboard.video_iigs ? motherboard.video_iigs.readNewVideo() : 0).toString(16).padStart(2,"0").toUpperCase());
+          " NEWVIDEO=$" + (motherboard.video_iigs ? motherboard.video_iigs.readNewVideo() : 0).toString(16).padStart(2,"0").toUpperCase() +
+          "\nADBSTAT=$" + mem.adb.readStatus().toString(16).padStart(2,"0").toUpperCase() +
+          " INTFLAG=$" + (mem.intFlag>>>0).toString(16).padStart(2,"0").toUpperCase() +
+          " INTEN=$" + (mem.intEnable>>>0).toString(16).padStart(2,"0").toUpperCase());
       }, 3000);
     }).catch(err => {
       console.error(err);
