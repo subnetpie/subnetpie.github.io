@@ -78,11 +78,9 @@ export function mountMedia(board, media, drive=0) {
     ok=board.prodosBlock.load_image(media.name,media.data,media);
     // A newly mounted block image owns the boot path. Do not leave a prior
     // Disk II image selected/active across the reset that follows loading.
-    if(ok && board.floppy525) {
-      if(board.floppy525._active_disk) board.floppy525._active_disk.medium = null;
-      if(board.floppy525._disk) {
-        for(const d of board.floppy525._disk) if(d) d.medium = null;
-      }
+    if(ok && board.floppy525?._disks) {
+      for(const d of board.floppy525._disks) if(d) d.medium = null;
+      board.floppy525._active_disk = board.floppy525._disks[0];
     }
   } else ok=board.floppy525.load_image(drive,media.name,media.data,media);
   if(!ok)throw new Error('Unable to mount '+media.name);
