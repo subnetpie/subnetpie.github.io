@@ -35,6 +35,33 @@ test('IIgs reset restores ROM vectors after a native program banks in RAM', () =
   assert.equal(m.memory.shadow,0); assert.equal(m.memory.adb.readStatus()&0x20,0);
 });
 
+
+test('IIgs key GLU exposes mouse, modifiers, status, and IRQs', () => {
+  const {board:m}=createMachine();
+  const b=m.memory, adb=b.adb;
+  adb.setKeyModifiers(0x42);
+  assert.equal(b.read(0xc025),0x42);
+
+  // MAME keyglu_816_read returns X then Y and clears mouse-full/IRQ on Y.
+  adb.writeStatus(0x40);
+  adb.setMouseData(0x12,0x34);
+  assert.equal(b.read(0xc027)&0x80,0x80);
+  assert.equal(b.intFlag&1,1);
+  assert.equal(b.read(0xc024),0x12);
+  assert.equal(b.read(0xc027)&0x02,0x02);
+  assert.equal(b.read(0xc024),0x34);
+  assert.equal(b.read(0xc027)&0x82,0);
+  assert.equal(b.intFlag&1,0);
+
+  // DATA-full is reflected in SYSSTAT and participates in the ADB IRQ.
+  adb.writeStatus(0x10);
+  adb.queue.push(0x5a); adb.updateIrq();
+  assert.equal(b.read(0xc027)&0x20,0x20);
+  assert.equal(b.intFlag&1,1);
+  assert.equal(b.read(0xc026),0x5a);
+  assert.equal(b.intFlag&1,0);
+});
+
 test('IIgs VBL follows the video clock with active-high polarity', () => {
   const {board:m}=createMachine();
   assert.equal(m.memory.read(0xc019),0);
