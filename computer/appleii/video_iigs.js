@@ -51,6 +51,7 @@ export class IIgsVideo {
     this.vgcIntStatus = 0;
     this.scanCycleAccum = 0;
     this.frameCount = 0;
+    this.secondFrameCount = 0;
     this.updateIRQ();
   }
 
@@ -86,12 +87,13 @@ export class IIgsVideo {
     while(this.scanCycleAccum >= perLine) {
       this.scanCycleAccum -= perLine;
       const y=this.currentScanline;
-      if(y < SHR_LINES) this.beginScanline(y);
+      if(this.superHires && y < SHR_LINES) this.beginScanline(y);
       this.currentScanline++;
       if(this.currentScanline >= 262) {
         this.currentScanline=0;
-        if(++this.frameCount >= 60) {
-          this.frameCount=0;
+        this.frameCount++;
+        if(++this.secondFrameCount >= 60) {
+          this.secondFrameCount=0;
           this.vgcIntStatus |= 0x40;
           this.updateIRQ();
         }
