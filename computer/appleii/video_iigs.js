@@ -40,7 +40,8 @@ export class IIgsVideo {
   }
 
   reset() {
-    this.newVideo = 0;
+    // ROM 03 hardware reset value, matching MAME 0.289 machine_reset().
+    this.newVideo = 0x01;
     this.superHires = false;
     // RAM clearing is owned by the IIgs memory bus, not the VGC.
     this.dirty = true;
