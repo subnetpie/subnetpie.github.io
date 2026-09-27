@@ -76,6 +76,7 @@ export class Motherboard
             const used=this.cpu.step();
             this.cycles += used;
             if(this.iigsEnabled && this.video_iigs) this.video_iigs.tick(used, 2800000);
+            if(this.iigsEnabled && this.memory.doc) this.memory.doc.tick(used);
         }
     }
 
