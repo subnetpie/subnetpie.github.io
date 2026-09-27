@@ -188,7 +188,10 @@ export class IIgsMemory {
       const shrShadow = !(this.shadow & 0x08);
       const hiresPage1Shadow = off>=0x2000 && off<0x4000 &&
         !(this.shadow & 0x02) && !(this.shadow & 0x10);
-      if(off>=0x2000 && off<0xa000 && (shrShadow || hiresPage1Shadow)) {
+      const hiresPage2Shadow = off>=0x4000 && off<0x6000 &&
+        !(this.shadow & 0x04) && !(this.shadow & 0x10);
+      if(off>=0x2000 && off<0xa000 &&
+         (shrShadow || hiresPage1Shadow || hiresPage2Shadow)) {
         this.slowE1[off]=val;
         if(this.video) this.video.dirty=true;
       }
