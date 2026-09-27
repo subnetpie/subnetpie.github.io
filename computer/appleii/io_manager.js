@@ -182,7 +182,7 @@ export class IOManager
             // slots begin at 0xc090
             if(addr > 0xc08f) return undefined;
 
-            return this.rw_switches(addr);
+            return this.rw_switches(addr, false);
         }
 
         // c100-cfff: rom handling
@@ -352,12 +352,12 @@ export class IOManager
             // slots begin at 0xc090
             if(addr > 0xc08f) return undefined;
 
-            return this.rw_switches(addr);
+            return this.rw_switches(addr, true);
         }
     }
 
     ////////////////////////////////////////////
-    rw_switches(addr) {
+    rw_switches(addr, writing = false) {
         switch(addr)
         {
             case 0xc030: // speaker toggle
@@ -446,13 +446,20 @@ export class IOManager
                 // bank select switches
                 // apple tech ref p.82
                 if((addr >= 0xc080) && (addr <= 0xc08f)) {
-                    // bit 0: ram read/write, (0: read only, 1: write)
-                    if((addr & 0x01) != 0) {
-                        this._bsr_write_count++;
-                    } else {
+                    // MAME lc_update(): any even access disables prewrite
+                    // and LC writing. A write clears prewrite but does not
+                    // disable an already-enabled write latch. Only odd reads
+                    // advance prewrite; the second consecutive odd read
+                    // enables LC writes.
+                    if((addr & 1) === 0) {
                         this._bsr_write_count = 0;
+                        this._mem.bsr_write = false;
+                    } else if(writing) {
+                        this._bsr_write_count = 0;
+                    } else {
+                        if(this._bsr_write_count === 0) this._bsr_write_count = 1;
+                        else this._mem.bsr_write = true;
                     }
-                    this._mem.bsr_write = (this._bsr_write_count > 1); // requires two reads to activate write mode
 
                     // bit 3: d000 bank select, (0: bank 2, 8: bank 1)
                     this._mem.bsr_bank2 = (addr & 0x08) == 0;
