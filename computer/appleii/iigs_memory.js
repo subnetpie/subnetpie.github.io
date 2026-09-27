@@ -136,27 +136,50 @@ export class IIgsMemory {
     return data;
   }
 
-  b0FastRead(off) {
-    // MAME b0ram*_r handlers always address bank-0 fast RAM. Auxiliary
-    // softswitch selection is performed by the address-map view itself.
-    return this.ram[off&0xffff];
+  fastBank0Read(off) {
+    const m=this.legacy;
+    let aux;
+    if(off<0x0200) aux=!!m.aux_zp;
+    else {
+      aux=!!m.aux_read;
+      if(off>=0x0400&&off<0x0800&&m.dms_80store) aux=!!m.dms_page2;
+      else if(off>=0x2000&&off<0x4000&&m.dms_80store&&m.dms_hires) aux=!!m.dms_page2;
+    }
+    return this.ram[(aux?0x10000:0)+(off&0xffff)];
   }
 
-  b0FastWrite(off,val) {
-    off&=0xffff; val&=0xff;
-    this.ram[off]=val;
-
-    // Exact MAME ROM03 bank-0 display shadow rules.
-    if(off>=0x0400 && off<0x0800 && !(this.shadow&0x01)) {
-      this.slowE0[off]=val;
-    } else if(off>=0x0800 && off<0x0c00 && !(this.shadow&0x20)) {
-      this.slowE0[off]=val;
-    } else if(off>=0x2000 && off<0x4000 && !(this.shadow&0x02)) {
-      this.slowE0[off]=val;
-    } else if(off>=0x4000 && off<0x6000 && !(this.shadow&0x04)) {
-      this.slowE0[off]=val;
+  fastBank0Write(off,val) {
+    const m=this.legacy;
+    let aux;
+    if(off<0x0200) aux=!!m.aux_zp;
+    else {
+      aux=!!m.aux_write;
+      if(off>=0x0400&&off<0x0800&&m.dms_80store) aux=!!m.dms_page2;
+      else if(off>=0x2000&&off<0x4000&&m.dms_80store&&m.dms_hires) aux=!!m.dms_page2;
     }
-    if(this.video && off>=0x0400 && off<0x6000) this.video.dirty=true;
+    off&=0xffff; val&=0xff;
+    this.ram[(aux?0x10000:0)+off]=val;
+
+    if(!aux) {
+      if(off>=0x0400&&off<0x0800&&!(this.shadow&0x01)) this.slowE0[off]=val;
+      else if(off>=0x0800&&off<0x0c00&&!(this.shadow&0x20)) this.slowE0[off]=val;
+      else if(off>=0x2000&&off<0x4000&&!(this.shadow&0x02)) this.slowE0[off]=val;
+      else if(off>=0x4000&&off<0x6000&&!(this.shadow&0x04)) this.slowE0[off]=val;
+    } else {
+      if(off>=0x0400&&off<0x0800&&!(this.shadow&0x01)) this.slowE1[off]=val;
+      else if(off>=0x0800&&off<0x0c00&&!(this.shadow&0x20)) this.slowE1[off]=val;
+      else if(off>=0x2000&&off<0xa000) {
+        let shadow=false;
+        if(off<0x4000) shadow=(!(this.shadow&0x02)&&!(this.shadow&0x10))||!(this.shadow&0x08);
+        else if(off<0x6000) shadow=(!(this.shadow&0x04)&&!(this.shadow&0x10))||!(this.shadow&0x08);
+        else shadow=!(this.shadow&0x08);
+        if(shadow) {
+          if(this.video) this.video.writeBankE1(off,val);
+          else this.slowE1[off]=val;
+        }
+      }
+    }
+    if(this.video&&off>=0x0400&&off<0xa000) this.video.dirty=true;
   }
 
   e0ReadBank(off) {
@@ -264,7 +287,7 @@ export class IIgsMemory {
       // Fast-side bank 0 uses the same auxiliary selectors as the Mega II,
       // but its backing store is IIgs motherboard RAM.
       if(off<0xc000)
-        v=this.b0FastRead(off);
+        v=this.fastBank0Read(off);
       else if(off>=0xd000 && this.rom && !this.legacy.bsr_read)
         // MAME lc00 ROM view uses region offset $3D000; with the 128K
         // ROM03 image loaded at region $20000 this is image offset $1D000,
@@ -395,7 +418,7 @@ export class IIgsMemory {
         (bank===0xe0 ? this.slowE0 : this.slowE1)[off]=val;
     } else if(bank===0x00) {
       if(off<0xc000)
-        this.b0FastWrite(off,val);
+        this.fastBank0Write(off,val);
       else
         this.legacy.write(off,val);
     } else if(bank===0x01 && off>=0xd000 && !(this.shadow&0x40)) {
