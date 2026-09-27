@@ -18,7 +18,7 @@ export class IIgsADB {
  setKeyData(value,down=true){this.keyData=value&0x7f;this.anyKeyDown=!!down;if(down)this.keyStrobe=true;this.updateIrq();}
  setMouseData(x,y){this.mouseX=x&0xff;this.mouseY=y&0xff;this.mouseReadY=false;this.mouseFull=true;this.updateIrq();}
  setKeyModifiers(value){this.keyModifiers=value&0xff;}
- readStatus(){this.dataStatusRead=true;return this.control|(this.mouseReadY?0x02:0)|(this.keyStrobe?0x08:0)|(this.queue.length?0x20:0)|(this.mouseFull?0x80:0);}
+ readStatus(){this.dataStatusRead=true;return (this.control&0x54)|(this.mouseReadY?0x02:0)|(this.keyStrobe?0x08:0)|(this.queue.length?0x20:0)|(this.mouseFull?0x80:0);}
  readData(){const v=this.queue[0]??0;if(this.dataStatusRead){this.dataStatusRead=false;if(this.queue.length)this.queue.shift();this.updateIrq();}return v;}
  writeStatus(value){this.control=(this.control&0xab)|(value&0x54);this.updateIrq();}
  writeData(value){
