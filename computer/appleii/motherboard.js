@@ -84,6 +84,7 @@ export class Motherboard
             const used=this.cpu.step();
             this.cycles += used;
             if(this.iigsEnabled && this.video_iigs) this.video_iigs.tick(used, 2800000);
+            if(this.iigsEnabled && this.memory.scc) this.memory.scc.tick(used);
             if(this.iigsEnabled && this.memory.doc) {
                 const docSamples=this.memory.doc.tick(used, 2800000);
                 if(docSamples) this.audio.doc_sample(this.cycles, this.memory.doc.lastLeft, this.memory.doc.lastRight, this.memory.doc.getVolume());
