@@ -295,6 +295,20 @@ export class IIgsMemory {
       // probes these during machine detection/startup.
       if(io===0xc044 || io===0xc045) return 0;
       if(io===0xc046) return this.intFlag|(this.legacy.dms_dhires?0:0x20);
+      // IIgs game-I/O reads preserve the floating-bus low seven bits.
+      // Reuse the existing Mega II joystick/paddle hook for bit 7.
+      if(io>=0xc060 && io<=0xc067) {
+        let state=0;
+        for(const fn of this.legacy._read_hooks || []) {
+          const x=fn(io);
+          if(x!==undefined){state=x&0x80;break;}
+        }
+        // MAME's IIgs C060 (button 3) is active-low. The shared IIe hook
+        // has no C060 game-button register, so its disconnected state is high.
+        if(io===0xc060) state=0x80;
+        const floating=this.video && this.video.readFloatingBus ? this.video.readFloatingBus() : 0;
+        return state|(floating&0x7f);
+      }
       // MAME exposes ROM03's IRQ-vector helper bytes directly at
       // C071-C07D/C07F from ROM offset $3C000. C070 remains floating bus
       // and C07E is the Zip delay soft switch.
