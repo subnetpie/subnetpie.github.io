@@ -108,3 +108,23 @@ test('Total Replay loads from a ZIP containing a 2MG wrapper',
     assert.ok(m.cpu.register.pc>=0xff5c && m.cpu.register.pc<=0xff69,'menu waits for input');
     assert.ok(pixels.some((v,i)=>i%4!==3&&v>100),'menu is visible');
   });
+
+
+test('IIgs cold-boots a ProDOS block 2MG extracted from ZIP',()=>{
+  const {board:m}=createMachine();
+  const disk=new Uint8Array(4096);
+  // Slot-7 firmware copies block zero to $0800 then enters $0801.
+  disk.set([0x01,0x4c,0x01,0x08]);
+  const archive=zipSync({'games/Boot HD.2mg':wrap(disk,1)});
+  const [entry]=readZipEntries(archive);
+  const media=decodeMedia(entry.name,entry.data);
+  assert.equal(media.kind,'block');
+  mountMedia(m,media);
+  m.reset(true);
+  let entered=false;
+  m.cpu.setTrace(e=>{if(e.pc===0x0801)entered=true;});
+  for(let i=0;i<20&&!entered;i++)m.clock(500000);
+  assert.ok(entered,'ZIP-contained 2MG block image must enter its boot block');
+  assert.equal(m.prodosBlock.blockCount,8);
+  assert.deepEqual(m.legacyMemory._main.slice(0x800,0x804),disk.slice(0,4));
+});
