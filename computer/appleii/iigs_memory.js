@@ -201,6 +201,15 @@ export class IIgsMemory {
     }
     if((addr>>>16)===0 && (addr&0xffff)>=0xc000 && (addr&0xffff)<=0xc0ff) {
       const io=addr&0xffff;
+      // IIgs FPI compatibility soft switches (MAME c000_w).
+      if(io===0xc000){this.legacy.dms_80store=false;return;}
+      if(io===0xc001){this.legacy.dms_80store=true;return;}
+      if(io===0xc002){this.legacy.aux_read=false;return;}
+      if(io===0xc003){this.legacy.aux_read=true;return;}
+      if(io===0xc004){this.legacy.aux_write=false;return;}
+      if(io===0xc005){this.legacy.aux_write=true;return;}
+      if(io===0xc006){this.intCxRom=false;return;}
+      if(io===0xc007){this.intCxRom=true;return;}
       if(io===0xc068){this.writeState(val);return;}
       if(io===0xc026){this.adb.writeData(val);return;}
       if(io===0xc027){this.adb.writeStatus(val);return;}
