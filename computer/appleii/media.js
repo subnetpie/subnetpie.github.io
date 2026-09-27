@@ -74,8 +74,17 @@ export function mountMedia(board, media, drive=0) {
     board.loadIIgsROM(media.data);
     return true;
   }
-  if(media.kind==='block')ok=board.prodosBlock.load_image(media.name,media.data,media);
-  else ok=board.floppy525.load_image(drive,media.name,media.data,media);
+  if(media.kind==='block') {
+    ok=board.prodosBlock.load_image(media.name,media.data,media);
+    // A newly mounted block image owns the boot path. Do not leave a prior
+    // Disk II image selected/active across the reset that follows loading.
+    if(ok && board.floppy525) {
+      if(board.floppy525._active_disk) board.floppy525._active_disk.medium = null;
+      if(board.floppy525._disk) {
+        for(const d of board.floppy525._disk) if(d) d.medium = null;
+      }
+    }
+  } else ok=board.floppy525.load_image(drive,media.name,media.data,media);
   if(!ok)throw new Error('Unable to mount '+media.name);
   // Otherwise slot 7 keeps booting the previously selected hard disk.
   if(media.kind==='floppy')board.prodosBlock.eject();
