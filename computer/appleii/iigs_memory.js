@@ -95,8 +95,13 @@ export class IIgsMemory {
 
   read(addr) {
     addr &= 0xffffff;
-    if((addr >>> 16) === 0xe0 || (addr >>> 16) === 0xe1 || (addr >>> 16) === 1) {
-      if((addr & 0xffff) >= 0xc000 && (addr & 0xffff) < 0xc100) addr &= 0xffff;
+    const originalBank = addr >>> 16, originalOff = addr & 0xffff;
+    // $C035 bit 6 inhibits the bank-$00/$01 I/O and language-card window.
+    // Banks $E0/$E1 always retain Mega II I/O/LC decoding.
+    const iolcEnabled = !(this.shadow & 0x40);
+    if(originalBank === 0xe0 || originalBank === 0xe1 ||
+       (iolcEnabled && (originalBank === 0 || originalBank === 1))) {
+      if(originalOff >= 0xc000 && originalOff < 0xc100) addr = originalOff;
     }
     if((addr>>>16)===0 && (addr&0xffff)>=0xc000 && (addr&0xffff)<=0xc0ff) {
       const io=addr&0xffff;
@@ -139,6 +144,9 @@ export class IIgsMemory {
     } else if(bank===0x01 && off<0xc000) {
       // Bank $01 exposes the auxiliary 64K used by Mega II double/80-column modes.
       v=this.legacy._aux[off];
+    } else if((bank===0x00 || bank===0x01) && off>=0xc000 && (this.shadow&0x40)) {
+      // IOLC inhibited: $C000-$FFFF is ordinary contiguous fast RAM.
+      v=this.ram[addr];
     } else if(addr < this.ram.length) {
       v=this.ram[addr];
     } else {
@@ -150,7 +158,12 @@ export class IIgsMemory {
 
   write(addr,val) {
     addr &= 0xffffff; val &= 0xff;
-    if([1,0xe0,0xe1].includes(addr >>> 16) && (addr & 0xffff) >= 0xc000 && (addr & 0xffff) < 0xc100) addr &= 0xffff;
+    const originalBank = addr >>> 16, originalOff = addr & 0xffff;
+    const iolcEnabled = !(this.shadow & 0x40);
+    if(originalBank===0xe0 || originalBank===0xe1 ||
+       (iolcEnabled && (originalBank===0 || originalBank===1))) {
+      if(originalOff>=0xc000 && originalOff<0xc100) addr=originalOff;
+    }
     if((addr>>>16)===0 && (addr&0xffff)>=0xc000 && (addr&0xffff)<=0xc0ff) {
       const io=addr&0xffff;
       if(io===0xc068){this.writeState(val);return;}
@@ -184,6 +197,9 @@ export class IIgsMemory {
       else if(off>=0x0800 && off<0x0c00 && !(this.shadow&0x20)) this.slowE0[off]=val;
       else if(off>=0x2000 && off<0x4000 && !(this.shadow&0x02)) this.slowE0[off]=val;
       else if(off>=0x4000 && off<0x6000 && !(this.shadow&0x04)) this.slowE0[off]=val;
+    } else if((bank===0x00 || bank===0x01) && off>=0xc000 && (this.shadow&0x40)) {
+      // IOLC inhibited: writes stay in the fast contiguous RAM banks.
+      this.ram[addr]=val;
     } else if(bank===0x01 && off<0xc000) {
       this.legacy._aux[off]=val;
       const textPage2Shadow = off>=0x0800 && off<0x0c00 && !(this.shadow & 0x20);
