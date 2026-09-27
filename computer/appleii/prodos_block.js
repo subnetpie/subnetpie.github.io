@@ -110,10 +110,10 @@ export class ProDOSBlockDevice {
     execute() {
         if (!this.image) return 0x28; // no device
 
-        const command = this.memory._main[0x42];
-        const unit = this.memory._main[0x43];
-        const buffer = this.memory._main[0x44] | (this.memory._main[0x45] << 8);
-        const block = this.memory._main[0x46] | (this.memory._main[0x47] << 8);
+        const command = this.memory.read(0x42);
+        const unit = this.memory.read(0x43);
+        const buffer = this.memory.read(0x44) | (this.memory.read(0x45) << 8);
+        const block = this.memory.read(0x46) | (this.memory.read(0x47) << 8);
 
         if ((unit & 0x70) !== (this.slot << 4)) return 0x28;
 
