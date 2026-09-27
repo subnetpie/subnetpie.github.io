@@ -306,8 +306,10 @@ export class IIgsMemory {
         // MAME's IIgs C060 (button 3) is active-low. The shared IIe hook
         // has no C060 game-button register, so its disconnected state is high.
         if(io===0xc060) state=0x80;
-        const floating=this.video && this.video.readFloatingBus ? this.video.readFloatingBus() : 0;
-        return state|(floating&0x7f);
+        // The current renderer has no cycle-exact floating-bus sampler yet;
+        // keep the low seven bits isolated here so adding one won't disturb
+        // the IIgs-specific button/paddle bit-7 semantics.
+        return state;
       }
       // MAME exposes ROM03's IRQ-vector helper bytes directly at
       // C071-C07D/C07F from ROM offset $3C000. C070 remains floating bus
