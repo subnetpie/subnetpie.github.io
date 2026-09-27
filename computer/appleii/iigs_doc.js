@@ -65,7 +65,7 @@ export class IIgsDOC {
     else o.size=v;
   }
   readData(){const v=this.dummyRead;this.dummyRead=(this.control&0x40)?this.ram[this.address]:this.readRegister(this.address);this.advance();return v;}
-  writeData(v){this.writeRegister(this.address,v);this.advance();}
+  writeData(v){if(this.control&0x40)this.ram[this.address]=v&0xff;else this.writeRegister(this.address,v);this.advance();}
 
   finish(n,o) {
     const mode=(o.control>>>1)&3;
