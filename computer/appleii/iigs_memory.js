@@ -203,16 +203,34 @@ export class IIgsMemory {
     (aux ? this.slowE1 : this.slowE0)[off]=val;
   }
 
+  slowLcAddress(aux,off) {
+    if(off<0xe000)
+      return (aux?0x10000:0) | (this.legacy.bsr_bank2?0xc000:0xd000) | (off&0x0fff);
+    return (aux?0x10000:0) | 0xe000 | (off&0x1fff);
+  }
+
+  slowLcRead(aux,off) {
+    if(!this.legacy.bsr_read) return this.romRead(0xff0000|off);
+    const a=this.slowLcAddress(aux,off);
+    return a&0x10000 ? this.slowE1[a&0xffff] : this.slowE0[a&0xffff];
+  }
+
+  slowLcWrite(aux,off,val) {
+    if(!this.legacy.bsr_write) return;
+    const a=this.slowLcAddress(aux,off);
+    (a&0x10000 ? this.slowE1 : this.slowE0)[a&0xffff]=val&0xff;
+  }
+
   read(addr) {
     addr &= 0xffffff;
     const originalBank = addr >>> 16, originalOff = addr & 0xffff;
     // $C035 bit 6 inhibits the bank-$00/$01 I/O and language-card window.
     // Banks $E0/$E1 always retain Mega II I/O/LC decoding.
     const iolcEnabled = !(this.shadow & 0x40);
-    if(originalBank === 0xe0 || originalBank === 0xe1 ||
-       (iolcEnabled && originalBank === 0x00) ||
-       (iolcEnabled && originalBank === 0x01 && originalOff < 0xd000)) {
-      if(originalOff >= 0xc000) addr = originalOff;
+    if(((originalBank===0xe0 || originalBank===0xe1) && originalOff<0xd000) ||
+       (iolcEnabled && originalBank===0x00) ||
+       (iolcEnabled && originalBank===0x01 && originalOff<0xd000)) {
+      if(originalOff>=0xc000) addr=originalOff;
     }
     if((addr>>>16)===0 && (addr&0xffff)>=0xc000 && (addr&0xffff)<=0xc0ff) {
       const io=addr&0xffff;
@@ -275,9 +293,11 @@ export class IIgsMemory {
     const bank=addr>>>16, off=addr&0xffff;
     let v;
     if(bank===0xe0 || bank===0xe1) {
+      if(off>=0xd000)
+        v=this.slowLcRead(bank===0xe1 || !!this.legacy.aux_zp,off);
       // Mega II slow RAM. Bank E0 follows the Apple II auxiliary-memory
       // selectors; bank E1 is always the auxiliary side.
-      if(bank===0xe0 && off<0xc000)
+      else if(bank===0xe0 && off<0xc000)
         v=this.e0ReadBank(off);
       else if(bank===0xe1 && off>=0x2000 && off<0xa000 && this.video)
         v=this.video.readBankE1(off);
@@ -334,7 +354,7 @@ export class IIgsMemory {
     addr &= 0xffffff; val &= 0xff;
     const originalBank = addr >>> 16, originalOff = addr & 0xffff;
     const iolcEnabled = !(this.shadow & 0x40);
-    if(originalBank===0xe0 || originalBank===0xe1 ||
+    if(((originalBank===0xe0 || originalBank===0xe1) && originalOff<0xd000) ||
        (iolcEnabled && originalBank===0x00) ||
        (iolcEnabled && originalBank===0x01 && originalOff<0xd000)) {
       if(originalOff>=0xc000) addr=originalOff;
@@ -410,7 +430,9 @@ export class IIgsMemory {
 
     const bank=addr>>>16, off=addr&0xffff;
     if(bank===0xe0 || bank===0xe1) {
-      if(bank===0xe0 && off<0xc000)
+      if(off>=0xd000)
+        this.slowLcWrite(bank===0xe1 || !!this.legacy.aux_zp,off,val);
+      else if(bank===0xe0 && off<0xc000)
         this.e0WriteBank(off,val);
       else if(bank===0xe1 && off>=0x2000 && off<0xa000 && this.video)
         this.video.writeBankE1(off,val);
