@@ -181,17 +181,19 @@ export class IIgsMemory {
       // IIgs display shadowing: classic display writes in bank $00 are copied
       // to the corresponding slow-memory bank unless inhibited by $C035.
       if(off>=0x0400 && off<0x0800 && !(this.shadow&0x01)) this.slowE0[off]=val;
+      else if(off>=0x0800 && off<0x0c00 && !(this.shadow&0x20)) this.slowE0[off]=val;
       else if(off>=0x2000 && off<0x4000 && !(this.shadow&0x02)) this.slowE0[off]=val;
       else if(off>=0x4000 && off<0x6000 && !(this.shadow&0x04)) this.slowE0[off]=val;
     } else if(bank===0x01 && off<0xc000) {
       this.legacy._aux[off]=val;
+      const textPage2Shadow = off>=0x0800 && off<0x0c00 && !(this.shadow & 0x20);
       const shrShadow = !(this.shadow & 0x08);
       const hiresPage1Shadow = off>=0x2000 && off<0x4000 &&
         !(this.shadow & 0x02) && !(this.shadow & 0x10);
       const hiresPage2Shadow = off>=0x4000 && off<0x6000 &&
         !(this.shadow & 0x04) && !(this.shadow & 0x10);
-      if(off>=0x2000 && off<0xa000 &&
-         (shrShadow || hiresPage1Shadow || hiresPage2Shadow)) {
+      if(textPage2Shadow || (off>=0x2000 && off<0xa000 &&
+         (shrShadow || hiresPage1Shadow || hiresPage2Shadow))) {
         this.slowE1[off]=val;
         if(this.video) this.video.dirty=true;
       }
