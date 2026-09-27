@@ -221,7 +221,12 @@ export class IIgsVideo {
     const logical=addr&0xffff;
     addr=this.mapAuxAddress(logical);
     this.bankE1[addr] = value & 0xff;
-    if ((addr >= SHR_PIXEL_BASE && addr < SHR_PIXEL_END) ||
+    // NEWVIDEO $C0/$40 swizzles logical $2000-$9fff across the two
+    // physical SHR planes. Test the CPU-visible address as well as the
+    // mapped destination; otherwise logical SCB/palette writes can land
+    // outside the physical SCB/palette ranges without invalidating video.
+    if ((logical >= 0x2000 && logical < 0xa000) ||
+        (addr >= SHR_PIXEL_BASE && addr < SHR_PIXEL_END) ||
         (addr >= SHR_SCB_BASE && addr < SHR_SCB_END) ||
         (addr >= SHR_PALETTE_BASE && addr < SHR_PALETTE_END)) {
       this.dirty = true;
