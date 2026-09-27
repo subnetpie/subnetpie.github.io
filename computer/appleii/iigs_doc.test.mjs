@@ -116,3 +116,20 @@ test('DOC routes even and odd oscillators to separate output buses',()=>{
   assert.equal(d.lastRight,32);
   assert.equal(d.lastSample,48);
 });
+
+
+test('IIgs SOUNDCTL exposes four-bit system volume independently of DOC access flags',()=>{
+  const d=new IIgsDOC();
+  d.setControl(0x2b);
+  assert.equal(d.getVolume(),0x0b);
+  assert.equal(d.getControl(),0x2b);
+});
+
+test('IIgs SOUNDCTL auto-increment advances only when bit 5 is enabled',()=>{
+  const d=new IIgsDOC();
+  d.setAddressLow(0x10); d.setAddressHigh(0x12);
+  d.setControl(0x0f); d.writeData(0xaa);
+  assert.equal(d.address,0x1210);
+  d.setControl(0x2f); d.writeData(0xbb);
+  assert.equal(d.address,0x1211);
+});
