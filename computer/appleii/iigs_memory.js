@@ -203,6 +203,25 @@ export class IIgsMemory {
     (aux ? this.slowE1 : this.slowE0)[off]=val;
   }
 
+  fastLc00Address(off) {
+    // MAME lc_00_r/lc_00_w: bank-$00 language-card RAM is fast
+    // motherboard RAM. ALTZP independently selects its main/aux half.
+    const aux=!!this.legacy.aux_zp;
+    if(off<0xe000)
+      return (aux?0x10000:0) | (this.legacy.bsr_bank2?0xc000:0xd000) | (off&0x0fff);
+    return (aux?0x10000:0) | 0xe000 | (off&0x1fff);
+  }
+
+  fastLc00Read(off) {
+    if(!this.legacy.bsr_read) return this.romRead(0xff0000|off);
+    return this.ram[this.fastLc00Address(off)];
+  }
+
+  fastLc00Write(off,val) {
+    if(this.legacy.bsr_write)
+      this.ram[this.fastLc00Address(off)]=val&0xff;
+  }
+
   slowLcAddress(aux,off) {
     if(off<0xe000)
       return (aux?0x10000:0) | (this.legacy.bsr_bank2?0xc000:0xd000) | (off&0x0fff);
@@ -316,11 +335,8 @@ export class IIgsMemory {
       // but its backing store is IIgs motherboard RAM.
       if(off<0xc000)
         v=this.fastBank0Read(off);
-      else if(off>=0xd000 && this.rom && !this.legacy.bsr_read)
-        // MAME lc00 ROM view uses region offset $3D000; with the 128K
-        // ROM03 image loaded at region $20000 this is image offset $1D000,
-        // i.e. native $FF:D000-$FFFF.
-        v=this.romRead(0xff0000|off);
+      else if(off>=0xd000)
+        v=this.fastLc00Read(off);
       else
         v=this.legacy.read(off);
     } else if(bank===0x01 && off<0xc000) {
@@ -457,6 +473,8 @@ export class IIgsMemory {
     } else if(bank===0x00) {
       if(off<0xc000)
         this.fastBank0Write(off,val);
+      else if(off>=0xd000)
+        this.fastLc00Write(off,val);
       else
         this.legacy.write(off,val);
     } else if(bank===0x01 && off>=0xd000 && !(this.shadow&0x40)) {
