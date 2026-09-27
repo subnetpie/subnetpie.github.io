@@ -133,9 +133,17 @@ export class IIgsMemory {
       if(io===0xc03f) return this.doc.addressHigh();
     }
     if(addr >= 0xc0e0 && addr <= 0xc0ef) return this.iwmAccess(addr);
-    for(const fn of this.readHooks) {
-      const v=fn(addr);
-      if(v !== undefined) return v & 0xff;
+    // MAME c100_r/c400_r: INTCXROM forces the internal ROM over slot
+    // CnXX firmware. Our external slot devices are read hooks, so suppress
+    // those hooks across C100-C7FF while the internal-ROM latch is set.
+    const lowAddr=addr&0xffff;
+    const internalSlotRom=(addr>>>16)===0 && this.intCxRom &&
+      lowAddr>=0xc100 && lowAddr<=0xc7ff;
+    if(!internalSlotRom) {
+      for(const fn of this.readHooks) {
+        const v=fn(addr);
+        if(v !== undefined) return v & 0xff;
+      }
     }
 
     const rv=this.romRead(addr);
@@ -228,9 +236,14 @@ export class IIgsMemory {
       if(io===0xc03f){this.doc.setAddressHigh(val);return;}
     }
     if(addr >= 0xc0e0 && addr <= 0xc0ef) {this.iwmAccess(addr,val);return;}
-    for(const fn of this.writeHooks) {
-      const r=fn(addr,val);
-      if(r !== undefined) return;
+    const lowAddr=addr&0xffff;
+    const internalSlotRom=(addr>>>16)===0 && this.intCxRom &&
+      lowAddr>=0xc100 && lowAddr<=0xc7ff;
+    if(!internalSlotRom) {
+      for(const fn of this.writeHooks) {
+        const r=fn(addr,val);
+        if(r !== undefined) return;
+      }
     }
 
     const bank=addr>>>16, off=addr&0xffff;
