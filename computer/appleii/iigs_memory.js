@@ -143,6 +143,7 @@ export class IIgsMemory {
       if(io===0xc068) return this.readState();
       if(io===0xc026) return this.adb.readData();
       if(io===0xc027) return this.adb.readStatus();
+      if(io===0xc022) return this.video ? this.video.getTextColor() : 0xf2;
       if(io===0xc029) return this.video ? this.video.readNewVideo() : 0;
       if(io===0xc02b) return this.langSel;
       if(io===0xc02d) return this.slotRom;
@@ -262,6 +263,8 @@ export class IIgsMemory {
       if(io===0xc068){this.writeState(val);return;}
       if(io===0xc026){this.adb.writeData(val);return;}
       if(io===0xc027){this.adb.writeStatus(val);return;}
+      if(io===0xc021){if(this.video)this.video.setMonochrome(val);return;}
+      if(io===0xc022){if(this.video)this.video.setTextColor(val);return;}
       if(io===0xc029){if(this.video)this.video.writeNewVideo(val&0xe1);return;}
       if(io===0xc02b){this.langSel=val&0xf8;return;}
       if(io===0xc02d){this.slotRom=val&0xf6;return;}
