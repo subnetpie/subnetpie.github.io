@@ -36,6 +36,14 @@ test('IIgs reset restores ROM vectors after a native program banks in RAM', () =
 });
 
 
+test('IIgs C037 DMABANK is write-only', () => {
+  const {board:m}=createMachine();
+  const b=m.memory;
+  b.write(0xc037,0x5a);
+  assert.equal(b.dmaBank,0x5a);
+  assert.notEqual(b.read(0xc037),0x5a,'C037 reads must not expose DMABANK');
+});
+
 test('IIgs SOUNDCTL and SOUNDDATA match MAME GLU semantics', () => {
   const {board:m}=createMachine();
   const b=m.memory, doc=b.doc;
