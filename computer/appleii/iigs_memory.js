@@ -13,6 +13,10 @@ export class IIgsMemory {
     this.legacy = legacyMemory;
     this.video = video;
     this.ram = new Uint8Array(Math.max(0x20000, Math.min(ramBytes, 0x800000)));
+    this.motherboardRam = 0x100000;
+    const expansion = Math.max(0, this.ram.length - this.motherboardRam);
+    this.ghostMask = expansion ? (2 ** Math.ceil(Math.log2(expansion)) - 1) : 0;
+    this.ghostStart = expansion ? this.motherboardRam + this.ghostMask + 1 : 0x800000;
     this.rom = null;
     // Mega II displays and the slow bus must share the same video RAM.
     // Fast bank 00/01 RAM remains independent in this.ram.
@@ -379,9 +383,14 @@ export class IIgsMemory {
       v=this.ram[(this.legacy.aux_read ? 0x01c000 : 0x00c000)+lcOff];
     } else if(addr < this.ram.length) {
       v=this.ram[addr];
+    } else if(addr>=this.ghostStart && addr<0x800000) {
+      // MAME ghostram_r: expansion RAM mirrors to the next power-of-two
+      // boundary above the fixed 1 MB ROM03 motherboard RAM.
+      const ghost=(addr&this.ghostMask)+this.motherboardRam;
+      v=ghost<this.ram.length ? this.ram[ghost] : 0xff;
     } else {
-      // MAME floatingbank_r: on a ROM03 machine with no expansion RAM at
-      // this address, the 65816 sees its current bank number on the bus.
+      // MAME floatingbank_r: with no mapped RAM at this address, the
+      // 65816 bank register is left on the bus.
       v=(addr>>>16)&0xff;
     }
     if(this.trace) this.trace("R",addr,v);
@@ -565,6 +574,9 @@ export class IIgsMemory {
           if((bank&1) && this.video) this.video.dirty=true;
         }
       }
+    } else if(addr>=this.ghostStart && addr<0x800000) {
+      const ghost=(addr&this.ghostMask)+this.motherboardRam;
+      if(ghost<this.ram.length) this.ram[ghost]=val;
     }
     // IIgs RAM writes bypass Memory.write(), where the IIe normally
     // notifies the display. Draw the actual slow-bank byte so inhibited
