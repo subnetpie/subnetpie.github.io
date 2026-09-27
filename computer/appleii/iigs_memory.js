@@ -225,10 +225,10 @@ export class IIgsMemory {
       if(io===0xc068){this.writeState(val);return;}
       if(io===0xc026){this.adb.writeData(val);return;}
       if(io===0xc027){this.adb.writeStatus(val);return;}
-      if(io===0xc029){if(this.video)this.video.writeNewVideo(val);return;}
-      if(io===0xc02b){this.langSel=val;return;}
+      if(io===0xc029){if(this.video)this.video.writeNewVideo(val&0xe1);return;}
+      if(io===0xc02b){this.langSel=val&0xf8;return;}
       if(io===0xc02d){this.slotRom=val&0xf6;return;}
-      if(io===0xc031){this.diskReg=val;return;}
+      if(io===0xc031){this.diskReg=val&0xc0;return;}
       if(io===0xc034){this.clockCtl=val&0x7f;return;}
       if(io===0xc035){this.shadow=val;return;}
       if(io===0xc036){this.speed=val;return;}
