@@ -275,7 +275,7 @@ export class IIgsMemory {
     m.aux_zp = m.aux_read = m.aux_write = false;
     m.dms_80store = m.dms_page2 = m.dms_hires = false;
     m.bsr_read = false; m.bsr_bank2 = true; m.bsr_write = true;
-    this.shadow = 0; this.speed = cold ? 0x40 : 0x00; this.dmaBank = 0;
+    this.shadow = 0; this.speed = 0x80; this.dmaBank = 0;
     this.slotRom = 0; this.langSel = 0; this.diskReg = 0;
     this.clockCtl = 0; this.romBank = false; this.intCxRom = false;
     this.scc.reset(); this.doc.reset();
