@@ -262,6 +262,14 @@ export class IIgsMemory {
       if(io===0xc03f) return this.doc.addressHigh();
       if(io===0xc041) return this.intEnable;
       if(io===0xc046) return this.intFlag;
+      // Compatibility status registers are already implemented by the
+      // Mega II/IIe I/O hooks attached to legacy memory.
+      if(io>=0xc011 && io<=0xc01f) {
+        for(const fn of this.legacy._read_hooks || []) {
+          const v=fn(io);
+          if(v!==undefined) return v&0xff;
+        }
+      }
     }
     if(addr >= 0xc0e0 && addr <= 0xc0ef) return this.iwmAccess(addr);
     // MAME c100_r/c400_r: INTCXROM forces the internal ROM over slot
@@ -374,6 +382,12 @@ export class IIgsMemory {
       if(io===0xc009){this.legacy.aux_zp=true;return;}
       if(io===0xc00a){this.slotC3Rom=false;return;}
       if(io===0xc00b){this.slotC3Rom=true;return;}
+      if(io>=0xc00c && io<=0xc00f) {
+        for(const fn of this.legacy._write_hooks || []) {
+          const v=fn(io,val);
+          if(v!==undefined) return;
+        }
+      }
       if(io===0xc068){this.writeState(val);return;}
       if(io===0xc026){this.adb.writeData(val);return;}
       if(io===0xc027){this.adb.writeStatus(val);return;}
