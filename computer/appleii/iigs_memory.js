@@ -295,7 +295,7 @@ export class IIgsMemory {
       // MAME returns zero for the SCC activity delta registers; AppleTalk
       // probes these during machine detection/startup.
       if(io===0xc044 || io===0xc045) return 0;
-      if(io===0xc046) return this.intFlag;
+      if(io===0xc046) return this.intFlag|(this.legacy.dms_dhires?0:0x20);
       // MAME exposes ROM03's IRQ-vector helper bytes directly at
       // C071-C07D/C07F from ROM offset $3C000. C070 remains floating bus
       // and C07E is the Zip delay soft switch.
