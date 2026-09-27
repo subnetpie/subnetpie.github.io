@@ -10,7 +10,7 @@ export class IIgsDOC {
   }
 
   reset() {
-    this.address=0; this.control=0; this.irqPending=false; this.irqQueue=[];
+    this.address=0; this.control=0; this.dummyRead=0; this.irqPending=false; this.irqQueue=[];
     this.systemVolume=0;
     this.enabledOscillators=1; this.masterAccum=0; this.lastSample=0;
     this.lastLeft=0; this.lastRight=0;
@@ -64,7 +64,7 @@ export class IIgsDOC {
     else if(r.page===4){o.control=v;if(!(v&1))o.accumulator=0;}
     else o.size=v;
   }
-  readData(){const v=this.readRegister(this.address);this.advance();return v;}
+  readData(){const v=this.dummyRead;this.dummyRead=(this.control&0x40)?this.ram[this.address]:this.readRegister(this.address);this.advance();return v;}
   writeData(v){this.writeRegister(this.address,v);this.advance();}
 
   finish(n,o) {
