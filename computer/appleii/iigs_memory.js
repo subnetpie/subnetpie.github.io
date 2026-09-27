@@ -29,6 +29,7 @@ export class IIgsMemory {
     this.romBank = false;
     this.intCxRom = false;
     this.slotC3Rom = false;
+    this.intC8Rom = false;
     this.clockCtl = 0x00;
     this.clockData = 0x00;
     this.intEnable = 0x00;
@@ -183,7 +184,11 @@ export class IIgsMemory {
       (slotNum===3
         ? (this.intCxRom || !this.slotC3Rom)
         : (this.intCxRom || !(this.slotRom & (1<<slotNum))));
-    if(!internalSlotRom) {
+    if(slotWindow && slotNum===3 && !this.slotC3Rom) this.intC8Rom=true;
+    const c8Window=(addr>>>16)===0 && lowAddr>=0xc800 && lowAddr<=0xcfff;
+    const internalC8=c8Window && (this.intCxRom || this.intC8Rom);
+    if(c8Window && lowAddr===0xcfff) this.intC8Rom=false;
+    if(!internalSlotRom && !internalC8) {
       for(const fn of this.readHooks) {
         const v=fn(addr);
         if(v !== undefined) return v & 0xff;
@@ -307,7 +312,10 @@ export class IIgsMemory {
       (slotNum===3
         ? (this.intCxRom || !this.slotC3Rom)
         : (this.intCxRom || !(this.slotRom & (1<<slotNum))));
-    if(!internalSlotRom) {
+    const c8Window=(addr>>>16)===0 && lowAddr>=0xc800 && lowAddr<=0xcfff;
+    const internalC8=c8Window && (this.intCxRom || this.intC8Rom);
+    if(c8Window && lowAddr===0xcfff) this.intC8Rom=false;
+    if(!internalSlotRom && !internalC8) {
       for(const fn of this.writeHooks) {
         const r=fn(addr,val);
         if(r !== undefined) return;
@@ -405,7 +413,7 @@ export class IIgsMemory {
     this.slotRom = 0; this.langSel = 0; this.diskReg = 0;
     this.clockCtl = 0; this.clockData = 0; this.intEnable = 0; this.intFlag = 0;
     this.vblIrq = this.quarterIrq = false; this.updateMegaIrq();
-    this.romBank = false; this.intCxRom = false; this.slotC3Rom = false;
+    this.romBank = false; this.intCxRom = false; this.slotC3Rom = false; this.intC8Rom = false;
     this.scc.reset(); this.doc.reset();
     this.adb.reset();
     this.iwmMode = 0; this.iwmQ6 = this.iwmQ7 = this.iwmMotor = false;
