@@ -64,10 +64,12 @@ export class IIgsVideo {
 
   beamVPos() {
     // MAME get_vpos(), adapted to the 262-line NTSC timing used here.
-    // BORDER_TOP is 16. The end-of-line carry occurs at horizontal count 38.
+    // BORDER_TOP is 16. MAME carries V at hpos >=
+    // BORDER_LEFT + (40-ALIGN_CNT)*16. With BORDER_LEFT=32 and
+    // ALIGN_CNT=2 this is count 40 in our 65-count scanline.
     let v=this.currentScanline;
     const frac=this.scanCycleAccum/(2800000/(60*262));
-    if(frac >= 38/65) v++;
+    if(frac >= 40/65) v++;
     if(v < 16) v += 262;
     v += 240;
     if(v > 511) v -= 262;
@@ -82,9 +84,10 @@ export class IIgsVideo {
     // MAME: ((hpos-BORDER_LEFT)/16)+(25+ALIGN_CNT), modulo 65.
     // The emulator tracks one 65-count scanline as scanCycleAccum.
     const perLine=2800000/(60*262);
-    let count=Math.floor((this.scanCycleAccum/perLine)*65)+25;
-    count=(count+27)%65;
-    let ret=count;
+    // hpos/16 maps to our 0..64 count. MAME's
+    // (hpos-BORDER_LEFT)/16 + (25+ALIGN_CNT), with BORDER_LEFT/16=2
+    // and ALIGN_CNT=2, reduces to hpos/16 + 25.
+    let ret=(Math.floor((this.scanCycleAccum/perLine)*65)+25)%65;
     if(ret>0) ret+=0x3f;
     if(this.beamVPos()&1) ret|=0x80;
     return ret&0xff;
