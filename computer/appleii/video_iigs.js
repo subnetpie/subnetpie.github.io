@@ -62,6 +62,34 @@ export class IIgsVideo {
     this.updateIRQ();
   }
 
+  beamVPos() {
+    // MAME get_vpos(), adapted to the 262-line NTSC timing used here.
+    // BORDER_TOP is 16. The end-of-line carry occurs at horizontal count 38.
+    let v=this.currentScanline;
+    const frac=this.scanCycleAccum/(2800000/(60*262));
+    if(frac >= 38/65) v++;
+    if(v < 16) v += 262;
+    v += 240;
+    if(v > 511) v -= 262;
+    return v & 0x1ff;
+  }
+
+  readVertCounter() {
+    return (this.beamVPos() >>> 1) & 0xff;
+  }
+
+  readHorizCounter() {
+    // MAME: ((hpos-BORDER_LEFT)/16)+(25+ALIGN_CNT), modulo 65.
+    // The emulator tracks one 65-count scanline as scanCycleAccum.
+    const perLine=2800000/(60*262);
+    let count=Math.floor((this.scanCycleAccum/perLine)*65)+25;
+    count=(count+27)%65;
+    let ret=count;
+    if(ret>0) ret+=0x3f;
+    if(this.beamVPos()&1) ret|=0x80;
+    return ret&0xff;
+  }
+
   readVGCINT() {
     return (this.vgcIntStatus & 0xe0) | (this.vgcIntEnable & 0x07);
   }
