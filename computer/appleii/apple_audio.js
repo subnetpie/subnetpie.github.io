@@ -64,10 +64,11 @@ export class AppleAudio
         this.gn.gain.setValueAtTime(this.state ? this.level : 0, time + this.seg_time);
     }
 
-    doc_sample(clock, left, right = left) {
+    doc_sample(clock, left, right = left, systemVolume = 15) {
         if(!this.docLeftGn || !this.docRightGn || !this.ac) return;
-        const l = Math.max(-1, Math.min(1, left / 128)) * this.level;
-        const r = Math.max(-1, Math.min(1, right / 128)) * this.level;
+        const master = (systemVolume & 15) / 15;
+        const l = Math.max(-1, Math.min(1, left / 128)) * this.level * master;
+        const r = Math.max(-1, Math.min(1, right / 128)) * this.level * master;
         const time = (clock - this.seg_clock) / this.cpu_hz + this.seg_time;
         if(Math.abs(l - this.docLastLeft) >= 0.002) {
             this.docLeftGn.gain.setValueAtTime(l, time); this.docLastLeft = l;
