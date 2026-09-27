@@ -383,14 +383,18 @@ export class IIgsMemory {
         ? (this.intCxRom || !this.slotC3Rom)
         : (this.intCxRom || !(this.slotRom & (1<<slotNum))));
     const c8Window=(addr>>>16)===0 && lowAddr>=0xc800 && lowAddr<=0xcfff;
-    const internalC8=c8Window && (this.intCxRom || this.intC8Rom);
-    if(c8Window && lowAddr===0xcfff) this.intC8Rom=false;
-    if(!internalSlotRom && !internalC8) {
+    // MAME c800_w forwards writes to a claimed external slot regardless of
+    // INTCXROM/INTC8ROM. CFFF releases the C800 claim/latch after the access.
+    if(!internalSlotRom) {
       for(const fn of this.writeHooks) {
         const r=fn(addr,val);
-        if(r !== undefined) return;
+        if(r !== undefined) {
+          if(c8Window && lowAddr===0xcfff) this.intC8Rom=false;
+          return;
+        }
       }
     }
+    if(c8Window && lowAddr===0xcfff) this.intC8Rom=false;
 
     const bank=addr>>>16, off=addr&0xffff;
     if(bank===0xe0 || bank===0xe1) {
