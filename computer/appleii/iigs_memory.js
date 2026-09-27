@@ -1,3 +1,4 @@
+import {IIgsADB} from "./iigs_adb.js";
 // Apple IIgs 24-bit memory/bus.
 //
 // This is deliberately separate from memory.js: the IIe keeps its exact
@@ -24,6 +25,8 @@ export class IIgsMemory {
     this.langSel = 0x00;
     this.diskReg = 0x00;
     this.clockCtl = 0x00;
+    this.adb = new IIgsADB();
+    this.iwmMode = 0; this.iwmQ6 = false; this.iwmQ7 = false; this.iwmMotor = false;
   }
 
   setTrace(fn) { this.trace = fn; }
@@ -35,6 +38,11 @@ export class IIgsMemory {
     if(src.length !== 0x20000 && src.length !== 0x40000)
       throw new Error("IIgs ROM must be 128K or 256K");
     this.rom = new Uint8Array(src);
+    // The bank-$00 reset and compatibility vectors map the final ROM bank.
+    // Keep the existing language-card RAM switching, replacing only its ROM.
+    const last = this.rom.length - 0x10000;
+    this.legacy._rom_cd = this.rom.subarray(last + 0xc000, last + 0xe000);
+    this.legacy._rom_ef = this.rom.subarray(last + 0xe000, last + 0x10000);
   }
 
   // IIgs ROM is visible at the top of the 24-bit space. 128K ROM03 maps
@@ -46,10 +54,33 @@ export class IIgsMemory {
     return undefined;
   }
 
+  iwmAccess(addr, value) {
+    const op = addr & 15;
+    if(op === 8) this.iwmMotor = false;
+    if(op === 9) this.iwmMotor = true;
+    if(op === 12 || op === 13) this.iwmQ6 = !!(op & 1);
+    if(op === 14 || op === 15) this.iwmQ7 = !!(op & 1);
+    if(value !== undefined) {
+      if(this.iwmQ6 && this.iwmQ7 && !this.iwmMotor) this.iwmMode = value & 31;
+      this.legacy.write(addr, value);
+      return 0;
+    }
+    const data = this.legacy.read(addr);
+    if(addr & 1) return 0;
+    if(this.iwmQ6 && !this.iwmQ7) return this.iwmMode | (this.iwmMotor ? 32 : 0) | ((!this.floppy?._active_disk.medium || this.floppy._active_disk.write_protect) ? 128 : 0);
+    if(!this.iwmQ6 && this.iwmQ7) return 0x80; // write handshake ready
+    return data;
+  }
+
   read(addr) {
     addr &= 0xffffff;
+    if((addr >>> 16) === 0xe0 || (addr >>> 16) === 0xe1 || (addr >>> 16) === 1) {
+      if((addr & 0xffff) >= 0xc000 && (addr & 0xffff) < 0xc100) addr &= 0xffff;
+    }
     if((addr>>>16)===0 && (addr&0xffff)>=0xc000 && (addr&0xffff)<=0xc0ff) {
       const io=addr&0xffff;
+      if(io===0xc026) return this.adb.readData();
+      if(io===0xc027) return this.adb.readStatus();
       if(io===0xc02b) return this.langSel;
       if(io===0xc02d) return this.slotRom;
       if(io===0xc031) return this.diskReg;
@@ -58,6 +89,7 @@ export class IIgsMemory {
       if(io===0xc036) return this.speed;
       if(io===0xc037) return this.dmaBank;
     }
+    if(addr >= 0xc0e0 && addr <= 0xc0ef) return this.iwmAccess(addr);
     for(const fn of this.readHooks) {
       const v=fn(addr);
       if(v !== undefined) return v & 0xff;
@@ -96,16 +128,20 @@ export class IIgsMemory {
 
   write(addr,val) {
     addr &= 0xffffff; val &= 0xff;
+    if([1,0xe0,0xe1].includes(addr >>> 16) && (addr & 0xffff) >= 0xc000 && (addr & 0xffff) < 0xc100) addr &= 0xffff;
     if((addr>>>16)===0 && (addr&0xffff)>=0xc000 && (addr&0xffff)<=0xc0ff) {
       const io=addr&0xffff;
+      if(io===0xc026){this.adb.writeData(val);return;}
+      if(io===0xc027){this.adb.writeStatus(val);return;}
       if(io===0xc02b){this.langSel=val;return;}
       if(io===0xc02d){this.slotRom=val;return;}
       if(io===0xc031){this.diskReg=val;return;}
-      if(io===0xc034){this.clockCtl=val;return;}
+      if(io===0xc034){this.clockCtl=val&0x7f;return;}
       if(io===0xc035){this.shadow=val;return;}
       if(io===0xc036){this.speed=val&0x9f;return;}
       if(io===0xc037){this.dmaBank=val;return;}
     }
+    if(addr >= 0xc0e0 && addr <= 0xc0ef) {this.iwmAccess(addr,val);return;}
     for(const fn of this.writeHooks) {
       const r=fn(addr,val);
       if(r !== undefined) return;

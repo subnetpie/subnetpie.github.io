@@ -9,7 +9,7 @@ function machine(start = 0) {
   const memory = new Memory(new Uint8Array(8192), new Uint8Array(8192));
   const display = new Proxy({}, {get: () => () => {}});
   new IOManager(memory, {key: 0, strobe() {}}, display, display,
-    display, display, () => {}, {}, () => cycles);
+    display, display, display, () => {}, {}, () => cycles);
   const cpu = new W65C02S(memory);
   return {memory, cpu, at(n) {cycles = n;}, cycles: () => cycles,
     step() {cycles += cpu.step();}};

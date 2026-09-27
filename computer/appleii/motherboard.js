@@ -58,6 +58,7 @@ export class Motherboard
         // Pass a cycle-count getter into Floppy525 so the WOZ latch emulation
         // can advance the bitstream by the correct number of bits on each read.
         this.floppy525 = new Floppy525(6, this.legacyMemory, floppy_led_cb, () => this.cycles);
+        if(this.iigsEnabled) this.memory.floppy = this.floppy525;
         this.prodosBlock = new ProDOSBlockDevice(7, this.legacyMemory);
 
         this.audio = new AppleAudio(khz);

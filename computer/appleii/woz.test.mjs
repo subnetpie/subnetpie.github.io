@@ -96,7 +96,7 @@ for(const version of [1, 2]) {
     const hardDrive = new ProDOSBlockDevice(7, m.mem);
     const display = new Proxy({}, {get: () => () => {}});
     const io = new IOManager(m.mem, {key: 0, strobe() {}}, display, display,
-      display, display, () => {}, {});
+      display, display, display, () => {}, {});
     io.reset();
     const disk = new Uint8Array(143360);
     for(let i = 0; i < 256; i++) disk[i] = (i * 73 + 19) & 255;
