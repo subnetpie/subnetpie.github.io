@@ -36,6 +36,15 @@ test('IIgs reset restores ROM vectors after a native program banks in RAM', () =
 });
 
 
+test('ROM03 C071-C07F IRQ helper window comes from firmware', () => {
+  const {board:m}=createMachine();
+  const b=m.memory;
+  for(let off=0x71;off<=0x7f;off++) {
+    if(off===0x7e) continue;
+    assert.equal(b.read(0xc000|off),b.rom[0x3c000+off]);
+  }
+});
+
 test('ROM03 GLU DATA_FULL clears only after KMSTATUS then DATA', () => {
   const {board:m}=createMachine();
   const b=m.memory, adb=b.adb;
