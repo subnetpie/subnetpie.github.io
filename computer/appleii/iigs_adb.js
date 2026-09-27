@@ -1,19 +1,22 @@
 // Apple IIgs keyboard/mouse GLU command interface. Commands are processed
 // synchronously; the response FIFO drives DATA_VALID in KMSTATUS.
 export class IIgsADB {
- constructor(){this.ram=new Uint8Array(256);this.reset();}
+ constructor(onIrq=null){this.ram=new Uint8Array(256);this.onIrq=onIrq;this.reset();}
  reset(){this.mode=0;this.config=[0x32,0,0x23];this.queue=[];this.command=0;this.args=[];this.remaining=0;this.control=0;
   // MAME key GLU state visible to the 65816 at C024/C025. Mouse data is
   // returned X then Y on alternating reads.
-  this.mouseX=0;this.mouseY=0;this.mouseReadY=false;this.keyModifiers=0;
+  this.mouseX=0;this.mouseY=0;this.mouseReadY=false;this.mouseFull=false;this.keyModifiers=0;
+  this.keyStrobe=false;
+  this.updateIrq();
  }
- readMouseData(){const v=this.mouseReadY?this.mouseY:this.mouseX;this.mouseReadY=!this.mouseReadY;return v&0xff;}
+ updateIrq(){if(this.onIrq)this.onIrq(!!(((this.control&0x10)&&this.queue.length)||((this.control&0x40)&&this.mouseFull)||((this.control&0x04)&&this.keyStrobe)));}
+ readMouseData(){const v=this.mouseReadY?this.mouseY:this.mouseX;if(this.mouseReadY)this.mouseFull=false;this.mouseReadY=!this.mouseReadY;this.updateIrq();return v&0xff;}
  readKeyModifiers(){return this.keyModifiers&0xff;}
- setMouseData(x,y){this.mouseX=x&0xff;this.mouseY=y&0xff;this.mouseReadY=false;}
+ setMouseData(x,y){this.mouseX=x&0xff;this.mouseY=y&0xff;this.mouseReadY=false;this.mouseFull=true;this.updateIrq();}
  setKeyModifiers(value){this.keyModifiers=value&0xff;}
- readStatus(){return this.control|(this.queue.length?0x20:0);}
- readData(){return this.queue.shift()??0;}
- writeStatus(value){this.control=value&0x54;}
+ readStatus(){return this.control|(this.mouseReadY?0x02:0)|(this.keyStrobe?0x08:0)|(this.queue.length?0x20:0)|(this.mouseFull?0x80:0);}
+ readData(){const v=this.queue.shift()??0;this.updateIrq();return v;}
+ writeStatus(value){this.control=(this.control&0xab)|(value&0x54);this.updateIrq();}
  writeData(value){
   if(this.remaining){this.args.push(value);if(--this.remaining===0)this.execute();return;}
   this.command=value;this.args=[];
