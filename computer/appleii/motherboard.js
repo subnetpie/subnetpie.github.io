@@ -50,8 +50,13 @@ export class Motherboard
             ? new IIgsMemory(this.legacyMemory, this.video_iigs)
             : this.legacyMemory;
         this.cpu = this.iigsEnabled ? new W65C816(this.memory) : new W65C02S(this.memory);
+        this.iigsIrq = {vgc:false, doc:false};
+        this.updateIIgsIRQ = () => this.cpu.irq(this.iigsIrq.vgc || this.iigsIrq.doc);
         if(this.video_iigs) {
-            this.video_iigs.scanlineIrq = state => this.cpu.irq(state);
+            this.video_iigs.scanlineIrq = state => { this.iigsIrq.vgc=!!state; this.updateIIgsIRQ(); };
+        }
+        if(this.iigsEnabled && this.memory.doc) {
+            this.memory.doc.irq = state => { this.iigsIrq.doc=!!state; this.updateIIgsIRQ(); };
         }
         this.cycles = 0;
 
@@ -76,7 +81,10 @@ export class Motherboard
             const used=this.cpu.step();
             this.cycles += used;
             if(this.iigsEnabled && this.video_iigs) this.video_iigs.tick(used, 2800000);
-            if(this.iigsEnabled && this.memory.doc) this.memory.doc.tick(used);
+            if(this.iigsEnabled && this.memory.doc) {
+                const sample=this.memory.doc.tick(used);
+                this.audio.doc_sample(this.cycles, sample);
+            }
         }
     }
 
@@ -97,7 +105,10 @@ export class Motherboard
     }
 
     reset(cold) {
-        if(this.iigsEnabled) this.memory.reset(!!cold);
+        if(this.iigsEnabled) {
+            this.iigsIrq.vgc=this.iigsIrq.doc=false;
+            this.memory.reset(!!cold);
+        }
         this.cpu.reset();
         this.display_text.reset();
         this.display_text_80.reset();
