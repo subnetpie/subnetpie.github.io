@@ -10,8 +10,9 @@ export class IIgsDOC {
   }
 
   reset() {
-    this.address=0; this.control=0; this.irqPending=false; this.irqOsc=-1;
+    this.address=0; this.control=0; this.irqPending=false; this.irqQueue=[];
     this.enabledOscillators=1; this.masterAccum=0; this.lastSample=0;
+    this.lastLeft=0; this.lastRight=0;
     this.cpuHz=2800000; this.masterHz=7159090;
     for(const o of this.osc) {
       o.freq=0; o.volume=0; o.wave=0; o.control=1; o.size=0; o.accumulator=0;
@@ -36,8 +37,9 @@ export class IIgsDOC {
     if(!r) {
       if((a&0xffff)===0xe0) return ((this.enabledOscillators-1)<<1)&0x3e;
       if((a&0xffff)===0xe1) {
-        const v=this.irqOsc<0 ? 0xff : ((this.irqOsc<<1)&0x3e);
-        this.irqPending=false; this.irqOsc=-1; this.updateIRQ(); return v;
+        const n=this.irqQueue.length ? this.irqQueue.shift() : -1;
+        this.irqPending=this.irqQueue.length>0; this.updateIRQ();
+        return n<0 ? 0xff : ((n<<1)&0x3e);
       }
       return this.ram[a&0xffff];
     }
@@ -64,7 +66,8 @@ export class IIgsDOC {
   finish(n,o) {
     const mode=(o.control>>>1)&3;
     if(o.control&0x08) {
-      this.irqPending=true; this.irqOsc=n; this.updateIRQ();
+      if(!this.irqQueue.includes(n)) this.irqQueue.push(n);
+      this.irqPending=true; this.updateIRQ();
     }
     if(mode===0) o.control|=1;                // free: zero terminator halts
     else if(mode===1) o.accumulator=0;     // one-shot: restart at wave base
@@ -76,7 +79,7 @@ export class IIgsDOC {
   }
 
   renderSample() {
-    let mix=0, active=0;
+    let left=0, right=0, leftCount=0, rightCount=0;
     for(let n=0;n<this.enabledOscillators;n++) {
       const o=this.osc[n]; if(o.control&1) continue;
       o.accumulator=(o.accumulator + o.freq)>>>0;
@@ -89,9 +92,14 @@ export class IIgsDOC {
       const index=(o.accumulator>>>8)&(length-1);
       const sample=this.ram[(base+index)&0xffff];
       if(sample===0){this.finish(n,o);continue;}
-      mix += ((sample-128)*o.volume)/255; active++;
+      const value=((sample-128)*o.volume)/255;
+      // IIgs DOC channels are selected by oscillator number: even voices feed
+      // the left bus and odd voices the right bus.
+      if(n&1){right+=value;rightCount++;}else{left+=value;leftCount++;}
     }
-    this.lastSample=active ? mix/active : 0;
+    this.lastLeft=leftCount ? left/leftCount : 0;
+    this.lastRight=rightCount ? right/rightCount : 0;
+    this.lastSample=(this.lastLeft+this.lastRight)/2;
     return this.lastSample;
   }
 
