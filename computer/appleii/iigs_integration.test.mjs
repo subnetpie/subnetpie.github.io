@@ -36,6 +36,19 @@ test('IIgs reset restores ROM vectors after a native program banks in RAM', () =
 });
 
 
+test('ROM03 keyboard latch spans C000-C00F and C010 clears strobe', () => {
+  const {board:m}=createMachine();
+  const b=m.memory, adb=b.adb;
+  adb.writeStatus(0x04);
+  adb.setKeyData(0x41,true);
+  for(let a=0xc000;a<=0xc00f;a++) assert.equal(b.read(a),0xc1);
+  assert.equal(b.intFlag&1,1,'key strobe IRQ must assert when enabled');
+  assert.equal(b.read(0xc010),0xc1);
+  assert.equal(adb.keyStrobe,false);
+  assert.equal(b.intFlag&1,0,'C010 read must clear key strobe IRQ');
+  assert.equal(b.read(0xc000),0x41);
+});
+
 test('IIgs key GLU exposes mouse, modifiers, status, and IRQs', () => {
   const {board:m}=createMachine();
   const b=m.memory, adb=b.adb;
