@@ -71,6 +71,12 @@ test('IIgs SOUNDCTL and SOUNDDATA match MAME GLU semantics', () => {
   assert.equal(doc.addressHigh(),0,'DOC-register mode clears address high byte');
   assert.equal(b.read(0xc03c),0x3f,'write-only SOUNDCTL bits read as ones');
 
+  // RAM mode must bypass DOC register decoding even at a register address.
+  doc.osc[0].freq=0x1234;
+  doc.setAddressLow(0x00); doc.setControl(0x40); doc.writeData(0xa5);
+  assert.equal(doc.ram[0],0xa5);
+  assert.equal(doc.osc[0].freq,0x1234,'DOC RAM write must not alter oscillator register');
+
   doc.setAddressLow(0x40); doc.setControl(0x40);
   doc.ram[0x40]=0x5a; doc.ram[0x41]=0xa5;
   assert.equal(b.read(0xc03d),0,'first SOUNDDATA read returns dummy latch');
