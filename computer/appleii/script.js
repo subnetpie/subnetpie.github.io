@@ -110,8 +110,16 @@ class Drive {
 // starts two asynchronous loads and resets the machine twice.
 const drives = [new Drive(0, "drivetitle1", "led1", "filedialog1")];
 
+let cycle_fraction = 0;
 function on_interval(now_ms) {
-  const cycles = ((now_ms - last_ms) * khz) & 0x7fff;
+  // Do not mask the frame budget to 15 bits. At IIgs speed a normal
+  // 60 Hz frame is ~46,667 cycles, so "& 0x7fff" wrapped it to ~13,899
+  // and starved ROM03 to about 30% speed. Preserve fractional cycles and
+  // cap only unusually long browser stalls.
+  const elapsed = Math.max(0, Math.min(now_ms - last_ms, 100));
+  const budget = elapsed * khz + cycle_fraction;
+  const cycles = Math.floor(budget);
+  cycle_fraction = budget - cycles;
   last_ms = now_ms;
   try {
     motherboard.clock(cycles);
