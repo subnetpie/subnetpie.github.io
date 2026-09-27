@@ -111,6 +111,10 @@ export class W65C816 {
       case 0xa0:v=x8?this.fetch8():this.fetch16();this.r.y=v&this.maskX();this.setNZ(v,xb);cy=x8?2:3;break;
       case 0xad:a=this.absAddr();v=this.readM(a);this.r.a=(this.r.a&(~this.maskM()))|v;this.setNZ(v,mb);cy=4;break;
       case 0xaf:a=this.fetch24();v=this.readM(a);this.r.a=(this.r.a&(~this.maskM()))|v;this.setNZ(v,mb);cy=5;break;
+      case 0xbf: // LDA absolute long,X
+        a=(this.fetch24()+(this.r.x&this.maskX()))&0xffffff;
+        v=this.readM(a);this.r.a=(this.r.a&~this.maskM())|(v&this.maskM());
+        this.setNZ(v,mb);cy=m8?5:6;break;
       case 0xa5:a=this.dpAddr();v=this.readM(a);this.r.a=(this.r.a&(~this.maskM()))|v;this.setNZ(v,mb);cy=3;break;
       case 0x8d:a=this.absAddr();this.writeM(a,this.r.a);cy=4;break;
       case 0x8f:a=this.fetch24();this.writeM(a,this.r.a);cy=5;break;
