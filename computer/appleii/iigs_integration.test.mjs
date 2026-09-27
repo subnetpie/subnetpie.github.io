@@ -36,6 +36,15 @@ test('IIgs reset restores ROM vectors after a native program banks in RAM', () =
 });
 
 
+test('IIgs INTFLAG reports AN3 in bit 5', () => {
+  const {board:m}=createMachine();
+  const b=m.memory;
+  b.write(0xc05e,0);
+  assert.equal(b.read(0xc046)&0x20,0,'AN3 off / DHIRES on');
+  b.write(0xc05f,0);
+  assert.equal(b.read(0xc046)&0x20,0x20,'AN3 on / DHIRES off');
+});
+
 test('IIgs C037 DMABANK is write-only', () => {
   const {board:m}=createMachine();
   const b=m.memory;
