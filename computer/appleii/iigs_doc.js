@@ -11,6 +11,7 @@ export class IIgsDOC {
 
   reset() {
     this.address=0; this.control=0; this.irqPending=false; this.irqQueue=[];
+    this.systemVolume=0;
     this.enabledOscillators=1; this.masterAccum=0; this.lastSample=0;
     this.lastLeft=0; this.lastRight=0;
     this.cpuHz=2800000; this.masterHz=7159090;
@@ -23,7 +24,10 @@ export class IIgsDOC {
   setAddressLow(v){this.address=(this.address&0xff00)|(v&255);}
   setAddressHigh(v){this.address=(this.address&255)|((v&255)<<8);}
   addressLow(){return this.address&255;} addressHigh(){return this.address>>>8;}
-  setControl(v){this.control=v&255;} getControl(){return this.control;}
+  setControl(v){this.control=v&0xff;this.systemVolume=v&0x0f;}
+  getControl(){return this.control;}
+  getVolume(){return this.systemVolume;}
+  // SOUNDCTL bit 5 selects automatic address increment after DOC data access.
   advance(){if(this.control&0x20)this.address=(this.address+1)&0xffff;}
 
   decodeRegister(a) {
