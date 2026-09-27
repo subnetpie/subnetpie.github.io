@@ -137,41 +137,26 @@ export class IIgsMemory {
   }
 
   b0FastRead(off) {
-    const m=this.legacy;
-    if(off<0x0200) return this.ram[(m.aux_zp?0x010000:0)+off];
-    let aux=!!m.aux_read;
-    if(off>=0x0400 && off<0x0800 && m.dms_80store) aux=!!m.dms_page2;
-    else if(off>=0x2000 && off<0x4000 && m.dms_80store && m.dms_hires) aux=!!m.dms_page2;
-    return this.ram[(aux?0x010000:0)+off];
+    // MAME b0ram*_r handlers always address bank-0 fast RAM. Auxiliary
+    // softswitch selection is performed by the address-map view itself.
+    return this.ram[off&0xffff];
   }
 
   b0FastWrite(off,val) {
-    const m=this.legacy;
-    let aux;
-    if(off<0x0200) aux=!!m.aux_zp;
-    else {
-      aux=!!m.aux_write;
-      if(off>=0x0400 && off<0x0800 && m.dms_80store) aux=!!m.dms_page2;
-      else if(off>=0x2000 && off<0x4000 && m.dms_80store && m.dms_hires) aux=!!m.dms_page2;
+    off&=0xffff; val&=0xff;
+    this.ram[off]=val;
+
+    // Exact MAME ROM03 bank-0 display shadow rules.
+    if(off>=0x0400 && off<0x0800 && !(this.shadow&0x01)) {
+      this.slowE0[off]=val;
+    } else if(off>=0x0800 && off<0x0c00 && !(this.shadow&0x20)) {
+      this.slowE0[off]=val;
+    } else if(off>=0x2000 && off<0x4000 && !(this.shadow&0x02)) {
+      this.slowE0[off]=val;
+    } else if(off>=0x4000 && off<0x6000 && !(this.shadow&0x04)) {
+      this.slowE0[off]=val;
     }
-    const base=aux?0x010000:0;
-    this.ram[base+off]=val;
-    if(aux) {
-      const text1=off>=0x0400&&off<0x0800&&!(this.shadow&0x01);
-      const text2=off>=0x0800&&off<0x0c00&&!(this.shadow&0x20);
-      const hires1=off>=0x2000&&off<0x4000&&
-        ((!(this.shadow&0x02)&&!(this.shadow&0x10)) || !(this.shadow&0x08));
-      const hires2=off>=0x4000&&off<0x6000&&
-        ((!(this.shadow&0x04)&&!(this.shadow&0x10)) || !(this.shadow&0x08));
-      const shr=off>=0x6000&&off<0xa000&&!(this.shadow&0x08);
-      if(text1||text2||hires1||hires2||shr) this.slowE1[off]=val;
-    } else {
-      if(off>=0x0400&&off<0x0800&&!(this.shadow&0x01)) this.slowE0[off]=val;
-      else if(off>=0x0800&&off<0x0c00&&!(this.shadow&0x20)) this.slowE0[off]=val;
-      else if(off>=0x2000&&off<0x4000&&!(this.shadow&0x02)) this.slowE0[off]=val;
-      else if(off>=0x4000&&off<0x6000&&!(this.shadow&0x04)) this.slowE0[off]=val;
-    }
-    if(this.video && off>=0x0400 && off<0xa000) this.video.dirty=true;
+    if(this.video && off>=0x0400 && off<0x6000) this.video.dirty=true;
   }
 
   e0ReadBank(off) {
