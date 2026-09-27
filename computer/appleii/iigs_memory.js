@@ -453,7 +453,8 @@ export class IIgsMemory {
       if(io===0xc034){this.clockCtl=val&0x6f;if(this.video)this.video.setBorderColor(val);return;}
       if(io===0xc035){this.shadow=val;return;}
       if(io===0xc036){this.speed=val;return;}
-      if(io===0xc037){this.dmaBank=val;return;}
+      // MAME ROM03: DMAREG/CYAREG ($C037) is a no-op in this machine implementation.
+      if(io===0xc037)return;
       if(io>=0xc038 && io<=0xc03b){this.scc.write(io-0xc038,val);return;}
       if(io===0xc03c){this.doc.setControl(val);return;}
       if(io===0xc03d){this.doc.writeData(val);return;}
