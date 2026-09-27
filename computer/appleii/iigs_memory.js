@@ -287,7 +287,7 @@ export class IIgsMemory {
       // MAME has no C037 read register. DMABANK is write-only; reads
       // fall through to the Mega II floating bus.
       if(io>=0xc038 && io<=0xc03b) return this.scc.read(io-0xc038);
-      if(io===0xc03c) return this.doc.getControl();
+      if(io===0xc03c) return (this.doc.getControl()|0x1f)&0x7f;
       if(io===0xc03d) return this.doc.readData();
       if(io===0xc03e) return this.doc.addressLow();
       if(io===0xc03f) return this.doc.addressHigh();
