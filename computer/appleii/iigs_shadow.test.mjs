@@ -162,3 +162,44 @@ test('IIgs SCC and sound glue reset to their hardware-visible idle state', () =>
   m.reset(false);
   for(let a=0xc038; a<=0xc03f; a++) assert.equal(m.read(a), 0);
 });
+
+
+test('DOC data port reads and writes addressed DOC RAM', () => {
+  const m = bus();
+  m.write(0xc03e, 0x34);
+  m.write(0xc03f, 0x12);
+  m.write(0xc03d, 0xab);
+  m.write(0xc03e, 0x34);
+  m.write(0xc03f, 0x12);
+  assert.equal(m.read(0xc03d), 0xab);
+});
+
+test('DOC sound glue auto-increments the 16-bit address when enabled', () => {
+  const m = bus();
+  m.write(0xc03c, 0x20);
+  m.write(0xc03e, 0xfe);
+  m.write(0xc03f, 0x12);
+  m.write(0xc03d, 0x11);
+  m.write(0xc03d, 0x22);
+  assert.equal(m.read(0xc03e), 0x00);
+  assert.equal(m.read(0xc03f), 0x13);
+  m.write(0xc03e, 0xfe);
+  m.write(0xc03f, 0x12);
+  assert.equal(m.read(0xc03d), 0x11);
+  assert.equal(m.read(0xc03d), 0x22);
+});
+
+test('DOC reset preserves wave RAM but resets its bus address and control', () => {
+  const m = bus();
+  m.write(0xc03e, 0x78);
+  m.write(0xc03f, 0x56);
+  m.write(0xc03d, 0xcd);
+  m.write(0xc03c, 0x20);
+  m.reset(false);
+  assert.equal(m.read(0xc03c), 0);
+  assert.equal(m.read(0xc03e), 0);
+  assert.equal(m.read(0xc03f), 0);
+  m.write(0xc03e, 0x78);
+  m.write(0xc03f, 0x56);
+  assert.equal(m.read(0xc03d), 0xcd);
+});
