@@ -28,6 +28,7 @@ export class IIgsMemory {
     this.diskReg = 0x00;
     this.romBank = false;
     this.intCxRom = false;
+    this.slotC3Rom = false;
     this.clockCtl = 0x00;
     this.clockData = 0x00;
     this.intEnable = 0x00;
@@ -179,7 +180,9 @@ export class IIgsMemory {
     // MAME c100_r/c400_r: internal ROM wins if INTCXROM is set or the
     // corresponding SLOTROMSEL bit is clear.
     const internalSlotRom=slotWindow &&
-      (this.intCxRom || !(this.slotRom & (1<<slotNum)));
+      (slotNum===3
+        ? (this.intCxRom || !this.slotC3Rom)
+        : (this.intCxRom || !(this.slotRom & (1<<slotNum))));
     if(!internalSlotRom) {
       for(const fn of this.readHooks) {
         const v=fn(addr);
@@ -260,6 +263,8 @@ export class IIgsMemory {
       if(io===0xc005){this.legacy.aux_write=true;return;}
       if(io===0xc006){this.intCxRom=false;return;}
       if(io===0xc007){this.intCxRom=true;return;}
+      if(io===0xc00a){this.slotC3Rom=false;return;}
+      if(io===0xc00b){this.slotC3Rom=true;return;}
       if(io===0xc068){this.writeState(val);return;}
       if(io===0xc026){this.adb.writeData(val);return;}
       if(io===0xc027){this.adb.writeStatus(val);return;}
@@ -299,7 +304,9 @@ export class IIgsMemory {
     const slotNum=(lowAddr>>>8)&0x0f;
     const slotWindow=(addr>>>16)===0 && lowAddr>=0xc100 && lowAddr<=0xc7ff;
     const internalSlotRom=slotWindow &&
-      (this.intCxRom || !(this.slotRom & (1<<slotNum)));
+      (slotNum===3
+        ? (this.intCxRom || !this.slotC3Rom)
+        : (this.intCxRom || !(this.slotRom & (1<<slotNum))));
     if(!internalSlotRom) {
       for(const fn of this.writeHooks) {
         const r=fn(addr,val);
@@ -398,7 +405,7 @@ export class IIgsMemory {
     this.slotRom = 0; this.langSel = 0; this.diskReg = 0;
     this.clockCtl = 0; this.clockData = 0; this.intEnable = 0; this.intFlag = 0;
     this.vblIrq = this.quarterIrq = false; this.updateMegaIrq();
-    this.romBank = false; this.intCxRom = false;
+    this.romBank = false; this.intCxRom = false; this.slotC3Rom = false;
     this.scc.reset(); this.doc.reset();
     this.adb.reset();
     this.iwmMode = 0; this.iwmQ6 = this.iwmQ7 = this.iwmMotor = false;
