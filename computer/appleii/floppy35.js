@@ -18,12 +18,12 @@ export class Floppy35 {
   constructor() { this.eject(); }
   eject() {
     this.media=null; this.track=0; this.subtrack=0; this.head=0; this.phases=0;
-    this.pos=0; this.cacheKey=''; this.cache=null;
+    this.pos=0; this.rotation=0; this.cacheKey=''; this.cache=null;
   }
   mount(media) {
     if(!media?.data || media.data.length!==1600*512) return false;
     this.media=media; this.track=0; this.subtrack=0; this.head=0; this.phases=0;
-    this.pos=0; this.cacheKey=''; this.cache=null; return true;
+    this.pos=0; this.rotation=0; this.cacheKey=''; this.cache=null; return true;
   }
   get writeProtected() { return !this.media || !!this.media.writeProtected; }
   setHead(head) { head=head?1:0; if(head!==this.head){this.head=head;this.pos=0;this.cacheKey='';} }
@@ -81,7 +81,19 @@ export class Floppy35 {
     }
     this.cacheKey=key; this.cache=Uint8Array.from(out); return this.cache;
   }
+  rpm(track=this.track) { return [394,429,472,525,590][Math.min(4,track>>>4)]; }
+  tick(seconds) {
+    if(!this.media || seconds<=0)return;
+    const t=this.buildTrack();
+    // Advance by physical-sector byte time. MAME documents 800 physical
+    // bytes/sector; the Sony drive changes RPM by zone to keep transfer rate
+    // approximately constant across 12..8 sector tracks.
+    const bytesPerRev=this.sectorCount()*800;
+    this.rotation += seconds*(this.rpm()/60)*bytesPerRev;
+    const n=this.rotation|0;
+    if(n){this.rotation-=n;this.pos=(this.pos+n)%t.length;}
+  }
   read() {
-    const t=this.buildTrack(), v=t[this.pos%t.length]; this.pos=(this.pos+1)%t.length; return v;
+    const t=this.buildTrack(); return t[this.pos%t.length];
   }
 }
