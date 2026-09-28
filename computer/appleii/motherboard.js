@@ -49,6 +49,7 @@ export class Motherboard
         this.memory = this.iigsEnabled
             ? new IIgsMemory(this.legacyMemory, this.video_iigs)
             : this.legacyMemory;
+        if(this.iigsEnabled) this.memory.initRtcFromHost();
         this.cpu = this.iigsEnabled ? new W65C816(this.memory) : new W65C02S(this.memory);
         this.iigsIrq = {mega:false};
         this.updateIIgsIRQ = () => this.cpu.irq(this.iigsIrq.mega);
