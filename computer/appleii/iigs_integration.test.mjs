@@ -442,12 +442,14 @@ test('IIgs INTEN gates IRQ without clearing VBL and quarter status', () => {
   assert.equal(b.read(0xc046)&0x18,0,'CLRVBLINT clears both status bits');
 });
 
-test('IIgs VBL follows the video clock with active-high polarity', () => {
+test('IIgs VBL follows MAME border-adjusted scanlines with active-high polarity', () => {
   const {board:m}=createMachine();
   assert.equal(m.memory.read(0xc019),0);
-  m.video_iigs.tick(2800000*192/(60*262)+1);
+  m.video_iigs.tick(2800000*208/(60*262)+1);
+  assert.equal(m.video_iigs.currentScanline,208);
   assert.equal(m.memory.read(0xe1c019),0x80);
   m.video_iigs.tick(2800000*70/(60*262));
+  assert.equal(m.video_iigs.currentScanline,16);
   assert.equal(m.memory.read(0xc019),0);
 });
 
