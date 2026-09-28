@@ -55,6 +55,7 @@ test('ZIP-contained Arkanoid 2MG reaches the playfield and continues rendering a
   m.clock(44000000);
   const frame=()=>{
     const v=m.video_iigs;
+    v.rebuildPaletteCache();
     for(let y=0;y<200;y++){
       const scb=v.decodeSCB(y);
       v[scb.mode640?'render640Line':'render320Line'](y,scb,v.image.data);
@@ -66,4 +67,22 @@ test('ZIP-contained Arkanoid 2MG reaches the playfield and continues rendering a
   const before=frame();m.clock(10000000);
   assert.notEqual(frame(),before,'game graphics must continue animating');
   assert.ok(m.cpu.addr()>0x10000,'native program must still be executing');
+});
+
+const thexder=process.env.THEXDER_ZIP;
+test('Thexder ZIP passes ProDOS 16 device initialization and enters native graphics', {skip:!thexder},()=>{
+  const {board:m}=createMachine();
+  const [entry]=readZipEntries(readFileSync(thexder));
+  mountMedia(m,decodeMedia(entry.name,entry.data));m.reset(true);
+  let reads=0, badReturn=false;
+  m.prodosBlock.setTrace(()=>reads++);
+  m.cpu.setTrace(e=>{if(e.pc===0x99e1&&e.op===0)badReturn=true;});
+  m.clock(20000000);
+  m.cpu.setTrace(null);
+  assert.equal(badReturn,false,'ProDOS must preserve its return stack');
+  assert.ok(reads>600,'program blocks must load beyond the ProDOS splash');
+  assert.equal(m.cpu.register.e,false);
+  assert.equal(m.video_iigs.isSuperHires(),true);
+  m.video_iigs.refresh(true);
+  assert.ok(m.video_iigs.image.data.some((c,i)=>i%4!==3&&c>32), 'native graphics must be visible');
 });

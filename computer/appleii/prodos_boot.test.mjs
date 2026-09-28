@@ -19,8 +19,8 @@ for(const machine of ['iie','iigs']) {
     test(`${machine} block firmware register contract for command ${command}`, () => {
       const {board:m}=createMachine(machine);
       m.prodosBlock.load_image('test.hdv',new Uint8Array(1600*512));
-      m.legacyMemory._main.set([0x20,0x80,0xc7,0xea],0x200);
-      m.legacyMemory._main.set([command,0x70,0,8,0,0],0x42);
+      [0x20,0x80,0xc7,0xea].forEach((v,i)=>m.memory.write(0x200+i,v));
+      [command,0x70,0,8,0,0].forEach((v,i)=>m.memory.write(0x42+i,v));
       Object.assign(m.cpu.register,{pc:0x200,x:0x39,y:0x5a});
       for(let i=0;i<100 && m.cpu.register.pc!==0x203;i++)m.cpu.step();
       assert.equal(m.cpu.register.pc,0x203);
@@ -47,4 +47,16 @@ for(const machine of ['iie','iigs']) {
       assert.match(rows,/BASIC\.SYSTEM/);
       assert.match(rows,/RETURN:SELECT/);
     });
+}
+
+for(const machine of ['iie','iigs']) {
+  test(`${machine} failed block boot returns to its caller`,()=>{
+    const {board:m}=createMachine(machine);
+    m.prodosBlock.load_image('boot.hdv',new Uint8Array(512));
+    m.prodosBlock.execute=()=>0x27;
+    [0x20,0x08,0xc7,0xea].forEach((v,i)=>m.memory.write(0x200+i,v));
+    m.cpu.register.pc=0x200;
+    for(let i=0;i<100&&m.cpu.register.pc!==0x203;i++)m.cpu.step();
+    assert.equal(m.cpu.register.pc,0x203);
+  });
 }

@@ -1,6 +1,6 @@
 # Apple IIgs support status
 
-Updated 2026-09-27. IIgs support remains experimental, with the compatibility
+Updated 2026-09-28. IIgs support remains experimental, with the compatibility
 boot path now exercised end to end.
 
 ## Implemented
@@ -17,7 +17,23 @@ boot path now exercised end to end.
 - Startup diagnostics clear after success; the watchdog no longer appears
   unconditionally during a healthy boot.
 
+## Current test limitation
+
+The Total Replay regression currently reaches its menu and loads Battlezone,
+but its final visible-title assertion fails on both the current upstream
+build and this fix. Do not interpret the earlier verification below as a
+fresh pass for the current rendering changes. iPhone frame rate and gameplay
+have not been measured by the headless tests.
+
 ## Verified
+
+- The supplied Thexder ZIP/2MG now passes ProDOS 16 v1.3 initialization
+  and reaches its native Sierra graphics. The slot-7 ROM advertises the
+  legacy drive pair already accepted by the block interface, preventing
+  the device-list reorder from leaving a byte on the return stack and
+  returning to `$0099E1`. This verifies startup, not full game compatibility.
+- Failed slot-7 boot reads branch to the firmware return instruction.
+
 
 Regression coverage includes the supplied Total Replay v6.1 HDV image:
 
@@ -74,3 +90,9 @@ native iOS picker still needs device verification.
 - Verify sustained gameplay, native IIgs applications, and touch/file-picker
   behavior on iOS Safari. Reaching a game's title does not establish gameplay
   or full software compatibility.
+
+Optional native startup regressions (images are not bundled):
+
+```sh
+THEXDER_ZIP='/path/to/Thexder.zip' ARKANOID_IMAGE='/path/to/Arkanoid.2mg' node --test computer/appleii/iigs_interrupt_boot.test.mjs
+```

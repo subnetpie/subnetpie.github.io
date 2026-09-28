@@ -38,7 +38,7 @@ export class ProDOSBlockDevice {
             0xa9,0x08,0x85,0x45,
             0xa9,0x00,0x85,0x46,0x85,0x47, // block = 0
             0x20,0x80,0xc0|this.slot,   // JSR Cn80
-            0xb0,0x05,                  // error -> RTS
+            0xb0,0x07,                  // error -> RTS
             0xa2,this.slot<<4,          // boot convention: X = slot * 16
             0x86,0x43,                  // ProDOS boot sector expects unit/slot in $43
             0x4c,0x01,0x08,             // JMP $0801
@@ -63,7 +63,11 @@ export class ProDOSBlockDevice {
         ], 0x80);
 
         // ProDOS device metadata. FC/FD are supplied dynamically.
-        this.rom[0xfe] = 0x07; // status + read + write
+        // Keep the legacy second-drive flag consistent with execute(), which
+        // accepts both $70 and $F0 for the mounted image. ProDOS 16 v1.3
+        // assumes the boot slot has a pair when reordering its device list;
+        // advertising only one entry leaves a byte on its return stack.
+        this.rom[0xfe] = 0x17; // legacy drive pair + status/read/write
         this.rom[0xff] = 0x80; // driver entry Cn80
     }
 
