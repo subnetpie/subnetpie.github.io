@@ -58,6 +58,9 @@ export function decodeMedia(name,value) {
   else if(/\.(po|hdv)$/.test(lower) || data.length!==143360)format=1;
   else format=0;
 
+  if(physical==='35') {
+    return {kind:'floppy35',format:'prodos',name,data,writeProtected,physical:'35'};
+  }
   if(format===2) {
     if(data.length!==35*6656)throw new Error('NIB image must contain 35 tracks of 6656 bytes');
     return {kind:'floppy',format:'nib',name,data,writeProtected:true};
@@ -79,7 +82,16 @@ export function mountMedia(board, media, drive=0) {
     board.loadIIgsROM(media.data);
     return true;
   }
-  if(media.kind==='block') {
+  if(media.kind==='floppy35') {
+    if(!board.iigsEnabled || !board.memory) throw new Error('3.5-inch media requires IIgs mode');
+    board.memory.floppy35Media=media;
+    ok=board.memory.floppy35.mount(media);
+    board.prodosBlock.eject();
+    if(board.floppy525?._disks) {
+      for(const d of board.floppy525._disks) if(d) d.medium=null;
+      board.floppy525._active_disk=board.floppy525._disks[0];
+    }
+  } else if(media.kind==='block') {
     ok=board.prodosBlock.load_image(media.name,media.data,media);
     if(board.iigsEnabled && board.memory)
       board.memory.floppy35Media=media.physical==='35' ? media : null;
@@ -95,6 +107,6 @@ export function mountMedia(board, media, drive=0) {
   }
   if(!ok)throw new Error('Unable to mount '+media.name);
   // Otherwise slot 7 keeps booting the previously selected hard disk.
-  if(media.kind==='floppy')board.prodosBlock.eject();
+  if(media.kind==='floppy' || media.kind==='floppy35')board.prodosBlock.eject();
   return true;
 }
