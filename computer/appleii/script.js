@@ -56,7 +56,7 @@ function chooseArchiveImage(name, entries) {
   });
 }
 
-import { Motherboard } from "https://subnetpie.github.io/computer/appleii/motherboard.js?v=20260928-framelatch1";
+import { Motherboard } from "https://subnetpie.github.io/computer/appleii/motherboard.js?v=20260928-perfbatch1";
 
 class Drive {
   constructor(num, display, led, dialog) {
@@ -112,6 +112,20 @@ class Drive {
 // starts two asynchronous loads and resets the machine twice.
 const drives = [new Drive(0, "drivetitle1", "led1", "filedialog1")];
 
+const perfMode = new URLSearchParams(location.search).get("perf") === "1";
+let perfHud=null, perfFrames=0, perfDropped=0, perfWindowStart=performance.now();
+let perfAccum={cpu:0,video:0,disk:0,audio:0,peripheral:0,render:0};
+if(perfMode) {
+  perfHud=document.createElement("pre");
+  perfHud.id="perfHud";
+  Object.assign(perfHud.style,{
+    position:"fixed",left:"6px",top:"6px",zIndex:"10000",margin:"0",
+    padding:"6px 8px",background:"rgba(0,0,0,.78)",color:"#7fff7f",
+    font:"11px/1.25 monospace",pointerEvents:"none"
+  });
+  document.body.appendChild(perfHud);
+}
+
 let cycle_fraction = 0;
 function on_interval(now_ms) {
   // Do not mask the frame budget to 15 bits. At IIgs speed a normal
@@ -127,10 +141,14 @@ function on_interval(now_ms) {
   const budget = elapsed * khz + cycle_fraction;
   const cycles = Math.floor(budget);
   cycle_fraction = budget - cycles;
+  if(perfMode && elapsed > 1000/45)
+    perfDropped += Math.max(1,Math.round(elapsed/(1000/60))-1);
   last_ms = now_ms;
   try {
+    if(perfMode) motherboard.setPerfEnabled(true);
     motherboard.clock(cycles);
     const io = motherboard.io_manager;
+    const renderStart=perfMode ? performance.now() : 0;
     if(motherboard.iigsEnabled && motherboard.video_iigs && motherboard.video_iigs.isSuperHires()) {
       motherboard.video_iigs.refresh();
     } else if(motherboard.iigsEnabled && io.present_latched_display) {
@@ -141,6 +159,26 @@ function on_interval(now_ms) {
     } else if(!io._text_mode && motherboard.legacyMemory.dms_hires && io._double_hires) {
       motherboard.display_double_hires.refresh();
       if(io._mixed_mode) io.draw_mixed_text();
+    }
+    if(perfMode) {
+      perfAccum.render += performance.now()-renderStart;
+      const p=motherboard.consumePerf();
+      perfAccum.cpu+=p.cpu; perfAccum.video+=p.video; perfAccum.disk+=p.disk;
+      perfAccum.audio+=p.audio; perfAccum.peripheral+=p.peripheral;
+      perfFrames++;
+      const span=now_ms-perfWindowStart;
+      if(span>=500) {
+        const d=Math.max(1,perfFrames), fps=perfFrames*1000/span;
+        perfHud.textContent=
+          `FPS ${fps.toFixed(1)}  dropped ${perfDropped}\n`+
+          `CPU   ${(perfAccum.cpu/d).toFixed(2)} ms\n`+
+          `video ${((perfAccum.video+perfAccum.render)/d).toFixed(2)} ms\n`+
+          `disk  ${(perfAccum.disk/d).toFixed(2)} ms\n`+
+          `audio ${(perfAccum.audio/d).toFixed(2)} ms\n`+
+          `other ${(perfAccum.peripheral/d).toFixed(2)} ms`;
+        perfFrames=0; perfDropped=0; perfWindowStart=now_ms;
+        perfAccum={cpu:0,video:0,disk:0,audio:0,peripheral:0,render:0};
+      }
     }
   } catch(err) {
     window.appleBootError = err;
