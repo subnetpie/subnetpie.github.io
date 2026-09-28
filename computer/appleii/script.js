@@ -36,7 +36,7 @@ var joyButtons = document.getElementById("joyButtonsCanvas");
 var joyButtonsCtx = joyButtons.getContext("2d");
 document.oncontextmenu = new Function("return false;");
 
-import {decodeMedia, isZip, readZipEntries, mountMedia} from './media.js?v=20260927-bootrepair1';
+import {decodeMedia, isZip, readZipEntries, mountMedia} from './media.js?v=20260928-2mg800k1';
 
 function chooseArchiveImage(name, entries) {
   const dialog = document.getElementById('archiveDialog');
