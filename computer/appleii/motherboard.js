@@ -136,8 +136,15 @@ export class Motherboard
             const usedCpu = this.cpu.step();
             if(this.perfEnabled) this.perf.cpu += performance.now()-timed;
 
+            // MAME apple2gs_state::slow_cycle() charges extra 2.8 MHz CPU
+            // cycles for accesses that actually traverse the ~1 MHz Mega II
+            // bus while SPEED is fast. IIgsMemory accumulates those penalties
+            // during the instruction so the machine clock can advance every
+            // timed device by the same elapsed master time.
+            const slowWait = this.iigsEnabled && this.memory.consumeSlowCycles
+                ? this.memory.consumeSlowCycles() : 0;
             const usedMaster = this.iigsEnabled
-                ? usedCpu * (IIGS_FAST_HZ / cpuHz)
+                ? usedCpu * (IIGS_FAST_HZ / cpuHz) + slowWait
                 : usedCpu;
             this.cycles += usedMaster;
 
