@@ -247,6 +247,14 @@ export class IIgsMemory {
     }
     const data = this.legacy.read(addr);
     if(addr & 1) return 0;
+    // DISKREG bit 7 selects the IIgs 3.5-inch path. Do not feed 5.25-inch
+    // Disk II latch bytes into firmware while that path is selected.
+    if(this.diskReg&0x80) {
+      if(this.iwmQ6 && !this.iwmQ7)
+        return this.iwmMode | (this.iwmMotor ? 32 : 0) | 0x80;
+      if(!this.iwmQ6 && this.iwmQ7) return 0x80;
+      return 0;
+    }
     if(this.iwmQ6 && !this.iwmQ7) return this.iwmMode | (this.iwmMotor ? 32 : 0) | ((!this.floppy?._active_disk.medium || this.floppy._active_disk.write_protect) ? 128 : 0);
     if(!this.iwmQ6 && this.iwmQ7) return 0x80; // write handshake ready
     return data;
@@ -572,7 +580,14 @@ export class IIgsMemory {
       if(io===0xc029){if(this.video)this.video.writeNewVideo(val&0xe1);return;}
       if(io===0xc02b){this.langSel=val&0xf8;return;}
       if(io===0xc02d){this.slotRom=val&0xf6;return;}
-      if(io===0xc031){this.diskReg=val&0xc0;return;}
+      if(io===0xc031){
+        // MAME DISKREG: bit 7 selects 3.5-inch SmartPort/IWM operation and
+        // bit 6 is the 3.5-inch head-select line. The current JS drive is
+        // 5.25-inch only, so preserve both hardware-visible bits without
+        // incorrectly changing Disk II drive/head state.
+        this.diskReg=val&0xc0;
+        return;
+      }
       if(io===0xc032){if(this.video)this.video.writeSCANINT(val);return;}
       if(io===0xc033){this.clockData=val;return;}
       if(io===0xc034){
