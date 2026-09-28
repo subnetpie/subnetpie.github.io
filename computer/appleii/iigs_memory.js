@@ -360,22 +360,36 @@ export class IIgsMemory {
     const iwmHz=28636363/4;
     const clocks=cycles * (iwmHz / cpuHz);
     if((this.diskReg&0x40) && this.iwmActive) {
-      this.floppy35.tick(cycles/cpuHz);
-      if(!this.iwmQ7) {
-        const flux=this.floppy35.takeTransitions();
-        // Convert 1.979 us media cells to IWM clocks, then run the same
-        // edge-window rule as MAME SR_WINDOW_EDGE_0/1.
+      // Consume flux cells directly. The previous path created rawBits,
+      // transition, and mapped-transition arrays on virtually every CPU
+      // instruction while the 3.5-inch motor was active, causing steadily
+      // increasing GC stalls in Safari.
+      const flux=this.floppy35.advanceCells(cycles/cpuHz);
+      if(flux && !this.iwmQ7) {
         const clocksPerCell=iwmHz*1.979e-6;
-        const transitions=flux.transitions.map(x=>this.iwmReadClock+x*clocksPerCell);
-        const endClock=this.iwmReadClock+flux.cells*clocksPerCell;
-        let ti=0, now=this.iwmReadClock;
+        const endClock=this.iwmReadClock+flux.count*clocksPerCell;
+        const cells=flux.cells, cellLen=cells.length;
+        let scan=0, nextEdge=Infinity, now=this.iwmReadClock;
+
+        const findNextEdge = (from) => {
+          for(let k=from;k<flux.count;k++)
+            if(cells[(flux.start+k)%cellLen]) return k;
+          return -1;
+        };
+
+        let edgeIndex=findNextEdge(0);
+        if(edgeIndex>=0) nextEdge=this.iwmReadClock+edgeIndex*clocksPerCell;
         if(!this.iwmNextWindow)this.iwmNextWindow=now;
+
         while(this.iwmNextWindow<=endClock) {
           const win=this.iwmWindowClocks(), half=win/2;
-          const edge=transitions[ti];
           const endw=this.iwmNextWindow+(this.iwmReadState===0?win:half);
-          if(this.iwmReadState===0 && edge!==undefined && edge<=endw && edge<=endClock) {
-            this.iwmNextWindow=edge; this.iwmReadState=1; ti++; continue;
+          if(this.iwmReadState===0 && nextEdge<=endw && nextEdge<=endClock) {
+            this.iwmNextWindow=nextEdge; this.iwmReadState=1;
+            scan=edgeIndex+1;
+            edgeIndex=findNextEdge(scan);
+            nextEdge=edgeIndex>=0 ? this.iwmReadClock+edgeIndex*clocksPerCell : Infinity;
+            continue;
           }
           if(endw>endClock)break;
           const bit=this.iwmReadState?1:0;
@@ -384,8 +398,6 @@ export class IIgsMemory {
           now=endw;
           this.iwmNextWindow=endw; this.iwmReadState=0;
           if(!(this.iwmMode&0x02)) {
-            // MAME sync mode exposes partial shift values while searching for
-            // a high-bit byte, with an 8/4-clock delayed update near sync.
             if(this.iwmReadShift>=0x80) {
               this.iwmData=this.iwmReadShift; this.iwmReadShift=0; this.iwmReadBits=0;
               this.iwmSyncUpdate=0;
@@ -398,7 +410,11 @@ export class IIgsMemory {
             this.iwmData=this.iwmReadShift; this.iwmReadShift=0; this.iwmReadBits=0;
             this.iwmAsyncUpdate=0;
           }
-          while(ti<transitions.length && transitions[ti]<=now)ti++;
+          while(nextEdge<=now) {
+            scan=edgeIndex+1;
+            edgeIndex=findNextEdge(scan);
+            nextEdge=edgeIndex>=0 ? this.iwmReadClock+edgeIndex*clocksPerCell : Infinity;
+          }
         }
         this.iwmReadClock=endClock;
         if(this.iwmSyncUpdate && this.iwmSyncUpdate<=endClock) {
@@ -409,7 +425,7 @@ export class IIgsMemory {
           if(this.iwmMode&0x02) this.iwmData=0;
           this.iwmAsyncUpdate=0;
         }
-      } else this.floppy35.takeBits();
+      }
     }
     if(this.iwmWritePending) {
       this.iwmWritePending-=clocks;
