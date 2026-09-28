@@ -18,16 +18,16 @@ export class Floppy35 {
   constructor() { this.eject(); }
   eject() {
     this.media=null; this.track=0; this.subtrack=0; this.head=0; this.phases=0;
-    this.pos=0; this.cellPos=0; this.cellFrac=0; this.rawBits=[]; this.cacheKey=''; this.cache=null; this.cellCacheKey=''; this.cellCache=null; this.cellCacheKey=''; this.cellCache=null;
+    this.pos=0; this.cellPos=0; this.cellFrac=0; this.lastCellStart=0; this.rawBits=[]; this.cacheKey=''; this.cache=null; this.cellCacheKey=''; this.cellCache=null; this.cellCacheKey=''; this.cellCache=null;
   }
   mount(media) {
     if(!media?.data || media.data.length!==1600*512) return false;
     this.media=media; this.track=0; this.subtrack=0; this.head=0; this.phases=0;
-    this.pos=0; this.cellPos=0; this.cellFrac=0; this.rawBits=[]; this.cacheKey=''; this.cache=null; this.cellCacheKey=''; this.cellCache=null; return true;
+    this.pos=0; this.cellPos=0; this.cellFrac=0; this.lastCellStart=0; this.rawBits=[]; this.cacheKey=''; this.cache=null; this.cellCacheKey=''; this.cellCache=null; return true;
   }
   reset() {
     this.track=0; this.subtrack=0; this.head=0; this.phases=0;
-    this.pos=0; this.cellPos=0; this.cellFrac=0; this.rawBits=[];
+    this.pos=0; this.cellPos=0; this.cellFrac=0; this.lastCellStart=0; this.rawBits=[];
     this.cacheKey=''; this.cache=null;
   }
   get writeProtected() { return !this.media || !!this.media.writeProtected; }
@@ -166,26 +166,25 @@ export class Floppy35 {
   }
 
   advanceCells(seconds) {
-    if(!this.media || seconds<=0) return null;
+    if(!this.media || seconds<=0) return 0;
     const cells=this.trackCells();
     // MAME's 3.5 GCR cell time is 1.979 us. RPM changes the number of cells
     // per revolution rather than the cell cadence.
     this.cellFrac += seconds/1.979e-6;
     const n=this.cellFrac|0;
-    if(!n) return null;
+    if(!n) return 0;
     this.cellFrac-=n;
-    const start=this.cellPos;
-    this.cellPos=(start+n)%cells.length;
-    return {cells, start, count:n};
+    this.lastCellStart=this.cellPos;
+    this.cellPos=(this.cellPos+n)%cells.length;
+    return n;
   }
 
   tick(seconds) {
-    const span=this.advanceCells(seconds);
-    if(!span) return;
-    // Compatibility/debug path only. The live IWM consumes cells directly
-    // through advanceCells() to avoid allocating an array every instruction.
-    const cells=span.cells, len=cells.length;
-    for(let k=0;k<span.count;k++) this.rawBits.push(cells[(span.start+k)%len]);
+    const n=this.advanceCells(seconds);
+    if(!n) return;
+    // Compatibility/debug path only. The live IWM consumes cells directly.
+    const cells=this.trackCells(), len=cells.length, start=this.lastCellStart;
+    for(let k=0;k<n;k++) this.rawBits.push(cells[(start+k)%len]);
   }
   takeBits() { const b=this.rawBits; this.rawBits=[]; return b; }
   takeTransitions() {
