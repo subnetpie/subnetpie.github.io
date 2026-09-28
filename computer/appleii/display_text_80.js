@@ -67,7 +67,7 @@ export class TextDisplay80
         this.refresh();
     };
     
-    draw_text(addr, val) {
+    draw_text(addr, val, bank = "main") {
         // rows are 120 columns wide consuming 128 bytes (0-119)+8
         // every 40 columns rows wrap for a total of three wraps
         // 8 rows wrapping 3 times creates a total of 24 rows
@@ -76,14 +76,17 @@ export class TextDisplay80
         const col = (addr & 0x7f) % 40;  // column: 0-39
         const row = (((addr - col) >> 2) & 0x18) | ((addr >> 7) & 0x07);
         const id = (addr < 0x0800) ? this._id1 : this._id2;
-        this.draw_char80(id, row, col, val);
+        this.draw_char80(id, row, col, val, bank);
     }
 
     // draw 14x16 char
-    draw_char80(id, row, col, char) {
+    draw_char80(id, row, col, char, bank = "main") {
         if((row > 23) || (col > 39)) return;
 
-        const ox = (col * 14) + 2;
+        // Apple IIe/IIgs 80-column text interleaves AUX then MAIN for
+        // each 40-column memory position. Each bank contributes one 7-pixel
+        // character half of the 14-pixel cell.
+        const ox = (col * 14) + 2 + (bank === "main" ? 7 : 0);
         const oy = (row * 16) + 4;
         const lo = (ox + oy * 564) * 4;
         const data = id.data;
@@ -114,13 +117,19 @@ export class TextDisplay80
     refresh() {
         if(this._id == this._id1) {
             this._id = undefined; // suspend rendering
-            for(let a=0x0400; a<0x0800; a++) this.draw_text(a, this._mem.read(a));
+            for(let a=0x0400; a<0x0800; a++) {
+                this.draw_text(a, this._mem._aux[a], "aux");
+                this.draw_text(a, this._mem._main[a], "main");
+            }
             this._id = this._id1;
             this._context.putImageData(this._id, 0, 0);
         }
         else if(this._id == this._id2) {
             this._id = undefined; // suspend rendering
-            for(let a=0x0800; a<0x0c00; a++) this.draw_text(a, this._mem.read(a));
+            for(let a=0x0800; a<0x0c00; a++) {
+                this.draw_text(a, this._mem._aux[a], "aux");
+                this.draw_text(a, this._mem._main[a], "main");
+            }
             this._id = this._id2;
             this._context.putImageData(this._id, 0, 0);
         }
@@ -131,7 +140,10 @@ export class TextDisplay80
             // select page 1
             if(!this._page1_init) {
                 this._id = undefined; // suspend rendering
-                for(let a=0x0400; a<0x0800; a++) this.draw_text(a, this._mem.read(a));
+                for(let a=0x0400; a<0x0800; a++) {
+                    this.draw_text(a, this._mem._aux[a], "aux");
+                    this.draw_text(a, this._mem._main[a], "main");
+                }
                 this._page1_init = true;
             }
             this._id = this._id1;
@@ -139,7 +151,10 @@ export class TextDisplay80
             // select page 2
             if(!this._page2_init) {
                 this._id = undefined; // suspend rendering
-                for(let a=0x0800; a<0x0c00; a++) this.draw_text(a, this._mem.read(a));
+                for(let a=0x0800; a<0x0c00; a++) {
+                    this.draw_text(a, this._mem._aux[a], "aux");
+                    this.draw_text(a, this._mem._main[a], "main");
+                }
                 this._page2_init = true;
             }
             this._id = this._id2;
