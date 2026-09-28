@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import {IIgsVideo} from './video_iigs.js';
 function video(){return new IIgsVideo({getContext:()=>({createImageData:(w,h)=>({data:new Uint8ClampedArray(w*h*4)})})});}
-function pixel(v,x,y,rgb){v.putPixel(v.image.data,x,y,rgb);}
+function pixel(v,x,y,rgb){const o=(y*640+x)*4;const d=v.image.data;d[o]=rgb[0];d[o+1]=rgb[1];d[o+2]=rgb[2];d[o+3]=255;}
 function rgb(v,x,y=0){return [...v.image.data.slice((y*640+x)*4,(y*640+x)*4+3)];}
 test('640-mode blue/white dither becomes a uniform blended color, including row edges',()=>{
  const v=video();for(let x=0;x<640;x++)pixel(v,x,0,x%2?[255,255,255]:[0,0,255]);
@@ -29,4 +29,25 @@ test('mixed SHR frames blend only 640-mode scanlines and leave video RAM unchang
  assert.deepEqual(rgb(v,1,0),[128,128,255]);
  assert.deepEqual(rgb(v,0,1),[0,0,255]);
  assert.deepEqual(v.bankE1,ram);
+});
+
+
+test('640-mode blending decisions use only the original unfiltered row',()=>{
+ const v=video();
+ // Pair 0 and 1 are identical alternating blue/white and should blend.
+ // Pair 2 differs, so it must remain untouched even though pair 1 becomes
+ // a uniform blended pair during the second pass.
+ const colors=[
+  [0,0,255],[255,255,255],
+  [0,0,255],[255,255,255],
+  [0,0,255],[255,0,0]
+ ];
+ for(let x=0;x<colors.length;x++) pixel(v,x,0,colors[x]);
+ const before5=rgb(v,5);
+ v.blend640Line(0,v.image.data);
+ assert.deepEqual(rgb(v,0),[128,128,255]);
+ assert.deepEqual(rgb(v,1),[128,128,255]);
+ assert.deepEqual(rgb(v,2),[128,128,255]);
+ assert.deepEqual(rgb(v,3),[128,128,255]);
+ assert.deepEqual(rgb(v,5),before5);
 });
