@@ -146,12 +146,8 @@ export class IOManager
                     //console.log("80 store: " + this._mem.dms_80store);
                     return this._mem.dms_80store ? 0x80 : 0;
                 case 0xc019: // IIgs VBL has the opposite polarity to IIe RDVBLBAR.
-                    if(this._iigsEnabled && this._video_iigs) {
-                        // MAME: VBL asserts at 192+BORDER_TOP (208) and
-                        // remains asserted across frame wrap until line 16.
-                        const line=this._video_iigs.currentScanline;
-                        return (line >= 208 || line < 16) ? 0x80 : 0;
-                    }
+                    if(this._iigsEnabled && this._video_iigs)
+                        return this._video_iigs.vblActive ? 0x80 : 0;
                     // NTSC: 65 CPU cycles/line, 192 visible + 70 blank lines.
                     return (this._get_cycles() % (65 * 262)) < (65 * 192) ? 0x80 : 0;
                 case 0xc01a: // text (0: graphics mode, 0x80: text mode)
