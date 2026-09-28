@@ -36,7 +36,7 @@ var joyButtons = document.getElementById("joyButtonsCanvas");
 var joyButtonsCtx = joyButtons.getContext("2d");
 document.oncontextmenu = new Function("return false;");
 
-import {decodeMedia, isZip, readZipEntries, mountMedia} from './media.js?v=20260927-v0';
+import {decodeMedia, isZip, readZipEntries, mountMedia} from './media.js?v=20260927-bootrepair1';
 
 function chooseArchiveImage(name, entries) {
   const dialog = document.getElementById('archiveDialog');
@@ -54,7 +54,7 @@ function chooseArchiveImage(name, entries) {
   });
 }
 
-import { Motherboard } from "https://subnetpie.github.io/computer/appleii/motherboard.js?v=20260927-bootstatus";
+import { Motherboard } from "https://subnetpie.github.io/computer/appleii/motherboard.js?v=20260927-bootrepair1";
 
 class Drive {
   constructor(num, display, led, dialog) {
