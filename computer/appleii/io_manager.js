@@ -498,6 +498,19 @@ export class IOManager
 
     ////////////////////////////////////////////
     draw_display(addr, val, bank = undefined) {
+        // Resolve the physical RAM bank once. PAGE2 under 80STORE is a CPU
+        // bank selector for text page 1 and (when HIRES is on) HGR page 1;
+        // it is not a displayed-page selector.
+        if(bank !== "main" && bank !== "aux") {
+            if(addr >= 0x0400 && addr < 0x0800 && this._mem.dms_80store)
+                bank = this._mem.dms_page2 ? "aux" : "main";
+            else if(addr >= 0x2000 && addr < 0x4000 &&
+                    this._mem.dms_80store && this._mem.dms_hires)
+                bank = this._mem.dms_page2 ? "aux" : "main";
+            else
+                bank = this._mem.aux_write ? "aux" : "main";
+        }
+
         // When IIgs Super Hi-Res owns video output, Mega II memory writes still
         // update RAM/soft-switch state but must not paint over the SHR canvas.
         if(this._video_iigs && this._video_iigs.isSuperHires()) return;
@@ -506,8 +519,12 @@ export class IOManager
         const mixedText = !this._text_mode && this._mixed_mode;
 
         if(addr >= 0x0400 && addr < 0x0c00 && (this._text_mode || mixedText)) {
-            if(this._80col_mode) this._display_text_80.draw_text(addr, val);
-            else this._display_text.draw_text(addr, val);
+            if(this._80col_mode)
+                this._display_text_80.draw_text(addr, val, bank);
+            else if(bank === "main")
+                // 40-column text is sourced from main video RAM only. AUX
+                // writes made through PAGE2/80STORE must not repaint it.
+                this._display_text.draw_text(addr, val);
             if(mixedText) this.draw_mixed_text();
         }
 
@@ -522,7 +539,8 @@ export class IOManager
                 if(this._mixed_mode) this.draw_mixed_text();
             }
         } else if(textWrite) {
-            this._display_lores.draw(addr);
+            if((this._double_hires && this._80col_mode) || bank === "main")
+                this._display_lores.draw(addr);
             if(this._mixed_mode) this.draw_mixed_text();
         }
     }
@@ -535,7 +553,14 @@ export class IOManager
         for(let a=page;a<page+0x400;a++) {
             const col=(a&0x7f)%40;
             const row=(((a-col)>>2)&0x18)|((a>>7)&7);
-            if(row>=20 && row<24) d.draw_text(a, this._mem._main[a]);
+            if(row>=20 && row<24) {
+                if(this._80col_mode) {
+                    d.draw_text(a, this._mem._aux[a], "aux");
+                    d.draw_text(a, this._mem._main[a], "main");
+                } else {
+                    d.draw_text(a, this._mem._main[a]);
+                }
+            }
         }
         const src=d._id;
         if(src) d._context.putImageData(src,0,0,0,20*16+4,564,4*16);
