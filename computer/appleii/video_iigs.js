@@ -31,6 +31,11 @@ export class IIgsVideo {
     this.textColor = 0xf2;
     this.monochrome = 0x00;
     this.superHires = false;
+    // When SHR is disabled, the hardware register changes immediately, but
+    // browser presentation waits for the next emulated frame boundary. This
+    // mirrors MAME's screen().update_now() behavior without exposing a
+    // partially prepared compatibility frame.
+    this.compatRevealPending = false;
     this.dirty = true;
     this.dirtyLines = new Uint8Array(SHR_LINES);
     this.paletteDirtyMask = 0xffff;
@@ -73,6 +78,7 @@ export class IIgsVideo {
     this.textColor = 0xf2;
     this.monochrome = 0x00;
     this.superHires = false;
+    this.compatRevealPending = false;
     // RAM clearing is owned by the IIgs memory bus, not the VGC.
     this.markAllDirty(true);
     this.scanlineIrqPending = false;
@@ -267,9 +273,18 @@ export class IIgsVideo {
     // Changing NEWVIDEO changes the SHR address transform itself, so this is
     // one of the few cases that legitimately invalidates every scanline.
     this.markAllDirty(true);
-    if (previousShr && !this.superHires && this.legacy && this.legacy.refresh) {
-      this.legacy.refresh();
+    if (previousShr && !this.superHires) {
+      // Preserve the last completed SHR image until the emulated frame
+      // boundary. Compatibility RAM/cache state may continue changing in the
+      // meantime; presentation is switched atomically by Motherboard.clock().
+      this.compatRevealPending = true;
     }
+  }
+
+  consumeCompatRevealPending() {
+    const pending=this.compatRevealPending;
+    this.compatRevealPending=false;
+    return pending;
   }
 
   readNewVideo() { return this.newVideo; }
