@@ -839,7 +839,7 @@ export class W65C02S
     //
     sta(memfn) {
         memfn.write(this.reg.a);
-        return memfn.cycles;
+        return memfn.cycles + (memfn.store_extra_cycles || 0);
     }
 
     //                                            n v b d i z c
@@ -854,7 +854,7 @@ export class W65C02S
     //
     stx(memfn) {
         memfn.write(this.reg.x);
-        return memfn.cycles;
+        return memfn.cycles + (memfn.store_extra_cycles || 0);
     }
 
     //                                            n v b d i z c
@@ -862,7 +862,7 @@ export class W65C02S
     //
     sty(memfn) {
         memfn.write(this.reg.y);
-        return memfn.cycles;
+        return memfn.cycles + (memfn.store_extra_cycles || 0);
     }
 
     //                                            n v b d i z c
@@ -870,7 +870,7 @@ export class W65C02S
     //
     stz(memfn) {
         memfn.write(0x00);
-        return memfn.cycles;
+        return memfn.cycles + (memfn.store_extra_cycles || 0);
     }
 
     //                                            n v b d i z c
@@ -1014,6 +1014,7 @@ export class W65C02S
                 write: (val) => { this.mem.write(addr, val); },
                 bytes: 3,
                 cycles: 4,
+                store_extra_cycles: 1,
                 write_extra_cycles: 2
             } })(),
 
@@ -1060,6 +1061,7 @@ export class W65C02S
                 page_crossed: () => crossed,
                 bytes: 3,
                 cycles: 4,
+                store_extra_cycles: 1,
                 write_extra_cycles: 0
             } })(),
 
@@ -1218,6 +1220,7 @@ export class W65C02S
                 page_crossed: () => crossed,
                 bytes: 2,
                 cycles: 5,
+                store_extra_cycles: 1,
                 write_extra_cycles: 0
             } })()
         ];
