@@ -36,6 +36,10 @@ export class IIgsVideo {
     // mirrors MAME's screen().update_now() behavior without exposing a
     // partially prepared compatibility frame.
     this.compatRevealPending = false;
+    this.compatRevealAgeFrames = 0;
+    this.compatRevealWrites = 0;
+    this.compatRevealSawActivity = false;
+    this.compatRevealQuietFrames = 0;
     this.dirty = true;
     this.dirtyLines = new Uint8Array(SHR_LINES);
     this.paletteDirtyMask = 0xffff;
@@ -79,6 +83,10 @@ export class IIgsVideo {
     this.monochrome = 0x00;
     this.superHires = false;
     this.compatRevealPending = false;
+    this.compatRevealAgeFrames = 0;
+    this.compatRevealWrites = 0;
+    this.compatRevealSawActivity = false;
+    this.compatRevealQuietFrames = 0;
     // RAM clearing is owned by the IIgs memory bus, not the VGC.
     this.markAllDirty(true);
     this.scanlineIrqPending = false;
@@ -278,12 +286,46 @@ export class IIgsVideo {
       // boundary. Compatibility RAM/cache state may continue changing in the
       // meantime; presentation is switched atomically by Motherboard.clock().
       this.compatRevealPending = true;
+      this.compatRevealAgeFrames = 0;
+      this.compatRevealWrites = 0;
+      this.compatRevealSawActivity = false;
+      this.compatRevealQuietFrames = 0;
     }
+  }
+
+  noteCompatVideoWrite(addr) {
+    if(!this.compatRevealPending) return;
+    addr &= 0xffff;
+    if((addr>=0x0400 && addr<0x0c00) || (addr>=0x2000 && addr<0x6000))
+      this.compatRevealWrites++;
+  }
+
+  shouldRevealCompatibility() {
+    if(!this.compatRevealPending) return false;
+
+    this.compatRevealAgeFrames++;
+    if(this.compatRevealWrites >= 32) {
+      this.compatRevealSawActivity = true;
+      this.compatRevealQuietFrames = 0;
+    } else if(this.compatRevealSawActivity) {
+      this.compatRevealQuietFrames++;
+    }
+    this.compatRevealWrites = 0;
+
+    // Keep launch artwork over active compatibility redraws. Reveal after one
+    // quiet frame once a real redraw burst has occurred. The timeout prevents
+    // sparse/black-starting games from being hidden indefinitely.
+    return (this.compatRevealSawActivity && this.compatRevealQuietFrames >= 1) ||
+           this.compatRevealAgeFrames >= 300;
   }
 
   consumeCompatRevealPending() {
     const pending=this.compatRevealPending;
     this.compatRevealPending=false;
+    this.compatRevealAgeFrames = 0;
+    this.compatRevealWrites = 0;
+    this.compatRevealSawActivity = false;
+    this.compatRevealQuietFrames = 0;
     return pending;
   }
 
