@@ -43,9 +43,17 @@ export function decodeMedia(name,value) {
   if(hasMagic(data,'2IMG') || /\.(2mg|2img)$/.test(lower)) {
     const parsed=parse2MG(data);
     ({data,format,writeProtected,volume}=parsed);
-    // Keep 800K 2MG on the proven slot-7 block boot path, but retain its
-    // physical identity so software can hand off to the IIgs 3.5 IWM later.
-    if(format===1 && parsed.blocks===1600) physical='35';
+    // 800K IIgs 3.5 images are logical 512-byte block media. Most writers
+    // mark these as ProDOS-order (format 1), but several legacy publishers
+    // (including the Sierra Thexder 2MG) incorrectly use format 0 while still
+    // storing a straight 1600-block image. 143K format-0 images remain DOS
+    // sector-order floppies; only the unambiguous 800K size gets this repair.
+    if(data.length===1600*512) {
+      format=1;
+      physical='35';
+    } else if(format===1 && parsed.blocks===1600) {
+      physical='35';
+    }
   } else if(/\.(rom|bin)$/.test(lower) && [0x20000,0x40000].includes(data.length)) {
     return {kind:'rom',name,data};
   } else if(hasMagic(data,'WOZ1') || hasMagic(data,'WOZ2')) {
