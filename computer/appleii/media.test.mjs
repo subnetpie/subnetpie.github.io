@@ -424,3 +424,20 @@ test('IIgs cold-boots a ProDOS block 2MG extracted from ZIP',()=>{
   assert.equal(m.prodosBlock.blockCount,8);
   assert.deepEqual(m.legacyMemory._main.slice(0x800,0x804),disk.slice(0,4));
 });
+
+
+test('legacy format-0 800K 2MG is treated as IIgs 3.5 block media', () => {
+  const image=new Uint8Array(64+1600*512);
+  image.set([0x32,0x49,0x4d,0x47,0x54,0x45,0x53,0x54],0);
+  const v=new DataView(image.buffer);
+  v.setUint16(8,64,true);
+  v.setUint16(10,1,true);
+  v.setUint32(12,0,true);       // legacy/mislabelled DOS-order flag
+  v.setUint32(20,1600,true);
+  v.setUint32(24,64,true);
+  v.setUint32(28,1600*512,true);
+  const media=decodeMedia('legacy-800k.2mg',image);
+  assert.equal(media.kind,'block');
+  assert.equal(media.physical,'35');
+  assert.equal(media.data.length,1600*512);
+});
