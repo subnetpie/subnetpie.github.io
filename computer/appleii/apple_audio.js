@@ -33,8 +33,11 @@ export class AppleAudio
         this.docSignalRight = 0;
         this.docPcmLeft = new Float32Array(2048);
         this.docPcmRight = new Float32Array(2048);
+        this.docInterleaved = new Float32Array(4096);
         this.docPcmCount = 0;
         this.docQueueTime = 0;
+        this.docWorklet = null;
+        this.docWorkletStarting = false;
     }
 
     init() {
@@ -54,8 +57,27 @@ export class AppleAudio
         this.docOutput = this.ac.createGain({channelCount:2, channelCountMode:"explicit", gain:1});
         this.docOutput.connect(this.ac.destination);
         osc.start();
+        void this.initDocWorklet();
         if(this.ac.state === "suspended") void this.ac.resume();
         return this.ac;
+    }
+
+    async initDocWorklet() {
+        if(this.docWorklet || this.docWorkletStarting || !this.ac?.audioWorklet ||
+           typeof AudioWorkletNode === "undefined") return;
+        this.docWorkletStarting=true;
+        try {
+            await this.ac.audioWorklet.addModule(new URL('./doc_audio_worklet.js?v=20260928-ring1',import.meta.url));
+            const node=new AudioWorkletNode(this.ac,'iigs-doc-ring',{
+                numberOfInputs:0,numberOfOutputs:1,outputChannelCount:[2]
+            });
+            node.connect(this.ac.destination);
+            this.docWorklet=node;
+        } catch(err) {
+            console.warn('[IIgs audio] AudioWorklet unavailable; using buffer fallback',err);
+        } finally {
+            this.docWorkletStarting=false;
+        }
     }
 
     unlock() {
@@ -118,15 +140,29 @@ export class AppleAudio
 
     flushDocPcm() {
         const n=this.docPcmCount;
-        if(!n || !this.ac || !this.docOutput) return;
-        // A suspended AudioContext has a frozen currentTime. Never accumulate
-        // scheduled BufferSource nodes behind it; resume on the next gesture
-        // and start with a fresh bounded block.
+        if(!n || !this.ac) return;
         if(this.ac.state !== "running") {
             this.docPcmCount=0;
             this.docQueueTime=this.ac.currentTime;
             return;
         }
+
+        if(this.docWorklet) {
+            const samples=this.docInterleaved;
+            for(let i=0;i<n;i++) {
+                samples[i*2]=this.docPcmLeft[i];
+                samples[i*2+1]=this.docPcmRight[i];
+            }
+            // Structured clone copies into the audio thread immediately, so
+            // this fixed staging array can be reused without AudioBuffer or
+            // BufferSource allocation on every emulation slice.
+            this.docWorklet.port.postMessage({type:'samples',samples,count:n});
+            this.docPcmCount=0;
+            return;
+        }
+
+        // Startup/fallback path for browsers without AudioWorklet.
+        if(!this.docOutput) return;
         const buffer=this.ac.createBuffer(2,n,this.docRate);
         buffer.getChannelData(0).set(this.docPcmLeft.subarray(0,n));
         buffer.getChannelData(1).set(this.docPcmRight.subarray(0,n));
@@ -134,8 +170,6 @@ export class AppleAudio
         source.buffer=buffer;
         source.connect(this.docOutput);
         const now=this.ac.currentTime;
-        // Keep only a small lead. If the browser paused, drop obsolete queue
-        // debt rather than letting audio scheduling drift farther into future.
         if(this.docQueueTime < now + 0.025 || this.docQueueTime > now + 0.15)
             this.docQueueTime = now + 0.04;
         source.start(this.docQueueTime);
@@ -154,6 +188,7 @@ export class AppleAudio
         this.docNextClock=0;
         this.docPcmCount=0;
         this.docQueueTime=this.ac ? this.ac.currentTime : 0;
+        if(this.docWorklet) this.docWorklet.port.postMessage({type:'clear'});
     }
 }
 
