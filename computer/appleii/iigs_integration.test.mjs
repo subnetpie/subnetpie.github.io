@@ -471,6 +471,30 @@ for(const machine of ['iie','iigs']) {
   });
 }
 
+test('IIgs 80STORE changes immediately recompute the displayed HGR page', () => {
+  const {board:m}=createMachine();
+  m.memory.write(0xc050,0);
+  m.memory.write(0xc057,0);
+  m.memory.write(0xc055,0); // PAGE2, 80STORE off => display HGR page 2
+  assert.equal(m.display_hires._active_page,2);
+  m.memory.write(0xc001,0); // 80STORE on => PAGE2 becomes AUX bank selector, display page 1
+  assert.equal(m.display_hires._active_page,1);
+  m.memory.write(0xc000,0); // 80STORE off with PAGE2 still set => display page 2 again
+  assert.equal(m.display_hires._active_page,2);
+});
+
+test('IIgs STATEREG PAGE2 writes recompute the displayed HGR page', () => {
+  const {board:m}=createMachine();
+  m.memory.write(0xc050,0);
+  m.memory.write(0xc057,0);
+  m.memory.write(0xc000,0); // 80STORE off
+  const base=m.memory.readState()&~0x40;
+  m.memory.write(0xc068,base|0x40);
+  assert.equal(m.display_hires._active_page,2);
+  m.memory.write(0xc068,base);
+  assert.equal(m.display_hires._active_page,1);
+});
+
 test('IIgs 80STORE PAGE2 aux HGR writes do not replace the displayed main page', () => {
   const {board:m,pixels}=createMachine();
   m.memory.write(0xc050,0); // graphics
