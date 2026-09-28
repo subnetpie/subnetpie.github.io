@@ -34,7 +34,15 @@ export class IIgsVideo {
     this.dirtyLines = new Uint8Array(SHR_LINES);
     this.paletteDirtyMask = 0xffff;
     this.image = this.context.createImageData(640, 200);
-    this.blendRow = new Uint8ClampedArray(640 * 4);
+    // Presentation-only 640-mode dither filter scratch. One byte per
+    // two-pixel pair is enough to preserve all blend decisions before any
+    // pixels are modified.
+    this.blendMask = new Uint8Array(320);
+    this.image32 = new Uint32Array(
+      this.image.data.buffer,
+      this.image.data.byteOffset,
+      this.image.data.byteLength >>> 2
+    );
 
     // Reuse the SHR staging surface. Creating a canvas/context on every
     // refresh is particularly expensive in mobile Safari.
@@ -360,28 +368,42 @@ export class IIgsVideo {
   }
 
   blend640Line(y, data) {
-    // Presentation filter for repeating two-pixel color dithers. Use the
-    // unfiltered row for every comparison so blending cannot propagate.
-    // Keep grayscale detail (especially desktop text) and isolated edges raw.
-    const start = y * 640 * 4;
-    const row = this.blendRow;
-    row.set(data.subarray(start, start + row.length));
-    const samePair = (a,b) => {
-      for(let c=0;c<8;c++) if(row[a+c]!==row[b+c]) return false;
-      return true;
-    };
-    for(let x=0;x<640;x+=2) {
-      const a=x*4, b=a+4;
-      const colored = row[a]!==row[a+1] || row[a+1]!==row[a+2] ||
-                      row[b]!==row[b+1] || row[b+1]!==row[b+2];
+    // Presentation filter for repeating two-pixel color dithers. Determine
+    // every blend decision before modifying pixels so blending cannot
+    // propagate. Packed RGBA equality replaces eight byte comparisons per
+    // neighboring pair, and the old full 2560-byte row copy is unnecessary.
+    const pixelBase=y*640;
+    const byteBase=pixelBase*4;
+    const px=this.image32;
+    const mask=this.blendMask;
+    mask.fill(0);
+
+    for(let pair=0;pair<320;pair++) {
+      const p=pixelBase+(pair<<1);
+      const a=byteBase+(pair<<3), b=a+4;
+      const colored =
+        data[a]!==data[a+1] || data[a+1]!==data[a+2] ||
+        data[b]!==data[b+1] || data[b+1]!==data[b+2];
       if(!colored) continue;
-      const repeated = (x>=2 && samePair(a,a-8)) ||
-                       (x<638 && samePair(a,a+8));
-      if(!repeated) continue;
-      for(let c=0;c<3;c++) {
-        const value=Math.round((row[a+c]+row[b+c])/2);
-        data[start+a+c]=data[start+b+c]=value;
-      }
+
+      const p0=px[p], p1=px[p+1];
+      const prev=pair>0 &&
+        p0===px[p-2] && p1===px[p-1];
+      const next=pair<319 &&
+        p0===px[p+2] && p1===px[p+3];
+      if(prev || next) mask[pair]=1;
+    }
+
+    for(let pair=0;pair<320;pair++) {
+      if(!mask[pair]) continue;
+      const a=byteBase+(pair<<3), b=a+4;
+      // Values are 0..255, so (a+b+1)>>1 is exactly Math.round((a+b)/2).
+      const r=(data[a]+data[b]+1)>>1;
+      const g=(data[a+1]+data[b+1]+1)>>1;
+      const bl=(data[a+2]+data[b+2]+1)>>1;
+      data[a]=data[b]=r;
+      data[a+1]=data[b+1]=g;
+      data[a+2]=data[b+2]=bl;
     }
   }
 
