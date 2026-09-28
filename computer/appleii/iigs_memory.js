@@ -276,7 +276,8 @@ export class IIgsMemory {
       if(this.iwmMotor) {
         // MAME IWM: mode bit 2 disables the motor-off timer. Otherwise the
         // controller and selected drive remain active for 8,388,608 IWM clocks.
-        if(this.iwmMode & 0x04) {
+        if((this.iwmMode & 0x04) || (this.diskReg & 0x40)) {
+          // MAME IIgs clears its external motor-off delay for 3.5-inch drives.
           this.iwmMotor=false; this.iwmMotorDelay=0; this.iwmActive=false; this.iwmDevSel=0;
           this.iwmWhd &= ~0x40;
         } else {
