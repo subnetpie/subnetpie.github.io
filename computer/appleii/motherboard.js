@@ -11,7 +11,7 @@
 
 import {W65C02S} from "https://subnetpie.github.io/computer/appleii/w65c02s.js";
 import {Memory} from "https://subnetpie.github.io/computer/appleii/memory.js";
-import {IIgsMemory} from "https://subnetpie.github.io/computer/appleii/iigs_memory.js?v=20260928-speed1";
+import {IIgsMemory} from "https://subnetpie.github.io/computer/appleii/iigs_memory.js?v=20260928-perfbatch1";
 import {W65C816} from "https://subnetpie.github.io/computer/appleii/w65c816.js?v=20260928-blend";
 import {IOManager} from "https://subnetpie.github.io/computer/appleii/io_manager.js?v=20260928-framelatch1";
 import {TextDisplay} from "https://subnetpie.github.io/computer/appleii/display_text.js";
@@ -21,7 +21,7 @@ import {LoresDisplay} from "https://subnetpie.github.io/computer/appleii/display
 import {DoubleHiresDisplay} from "https://subnetpie.github.io/computer/appleii/display_double_hires.js?v=20260928-writeahead1";
 import {Keyboard} from "https://subnetpie.github.io/computer/appleii/keyboard.js?v=20260928-blend";
 import {Floppy525} from "https://subnetpie.github.io/computer/appleii/FloppyWoz525.js";
-import {AppleAudio} from "https://subnetpie.github.io/computer/appleii/apple_audio.js?v=20260928-pcm2";
+import {AppleAudio} from "https://subnetpie.github.io/computer/appleii/apple_audio.js?v=20260928-ring1";
 import {ProDOSBlockDevice} from "https://subnetpie.github.io/computer/appleii/prodos_block.js?v=20260927-boot";
 import {IIgsVideo} from "https://subnetpie.github.io/computer/appleii/video_iigs.js?v=20260928-blendopt1";
 import {MachineTrace} from "https://subnetpie.github.io/computer/appleii/machine_trace.js";
@@ -68,6 +68,9 @@ export class Motherboard
             this.memory.scc.irq = state => this.memory.setExternalIrq("scc",state);
         }
         this.cycles = 0;
+        this.deferredPeripheralCycles = 0;
+        this.perfEnabled = false;
+        this.perf = {cpu:0,video:0,disk:0,audio:0,peripheral:0};
 
         // Pass a cycle-count getter into Floppy525 so the WOZ latch emulation
         // can advance the bitstream by the correct number of bits on each read.
@@ -84,6 +87,9 @@ export class Motherboard
         this.legacyMemory.io_manager = this.io_manager;
         if(this.iigsEnabled) {
             this.memory.ioManager = this.io_manager;
+            // RTC/SCC may be advanced in batches, but reads/writes to their
+            // registers first synchronize all completed instruction time.
+            this.memory.syncPeripheralTime = () => this.flushDeferredPeripherals();
             this.memory.cpuFetchByte = () => {
                 const reg=this.cpu.register;
                 const pc=reg.pc&0xffff;
@@ -98,57 +104,93 @@ export class Motherboard
         }
     }
 
+    setPerfEnabled(enabled) {
+        this.perfEnabled=!!enabled;
+        this.perf.cpu=this.perf.video=this.perf.disk=this.perf.audio=this.perf.peripheral=0;
+    }
+
+    consumePerf() {
+        const out={...this.perf};
+        this.perf.cpu=this.perf.video=this.perf.disk=this.perf.audio=this.perf.peripheral=0;
+        return out;
+    }
+
+    flushDeferredPeripherals() {
+        if(!this.iigsEnabled || !this.deferredPeripheralCycles) return;
+        const cycles=this.deferredPeripheralCycles;
+        this.deferredPeripheralCycles=0;
+        const timed=this.perfEnabled ? performance.now() : 0;
+        this.memory.tickRtc(cycles,IIGS_FAST_HZ);
+        if(this.memory.scc) this.memory.scc.tick(cycles);
+        if(this.perfEnabled) this.perf.peripheral += performance.now()-timed;
+    }
+
     clock(count) {
         this.audio.begin_segment(this.cycles);
         const total = this.cycles + count;
         while(this.cycles < total) {
-            // MAME apple2gs_state::update_speed():
-            // SPEED bit 7 selects the 2.8 MHz 65816 when set and the Apple II
-            // ~1 MHz rate when clear. Keep this.cycles in 2.8 MHz master-time
-            // ticks so video, RTC, disk, paddles and audio continue advancing
-            // at real machine time while only CPU execution slows down.
             const cpuHz = this.iigsEnabled && !(this.memory.speed & 0x80)
                 ? IIGS_SLOW_HZ : (this.iigsEnabled ? IIGS_FAST_HZ : 1020500);
+
+            let timed=this.perfEnabled ? performance.now() : 0;
             const usedCpu = this.cpu.step();
+            if(this.perfEnabled) this.perf.cpu += performance.now()-timed;
+
             const usedMaster = this.iigsEnabled
                 ? usedCpu * (IIGS_FAST_HZ / cpuHz)
                 : usedCpu;
             this.cycles += usedMaster;
 
             if(this.iigsEnabled && this.video_iigs) {
+                timed=this.perfEnabled ? performance.now() : 0;
                 const oldLine=this.video_iigs.currentScanline;
                 const oldFrame=this.video_iigs.frameCount;
                 this.video_iigs.tick(usedMaster, IIGS_FAST_HZ);
-                // MAME Mega II status: VBL is latched every frame; quarter
-                // second status is latched every 16 frames regardless of INTEN.
+                if(this.perfEnabled) this.perf.video += performance.now()-timed;
                 if(oldLine < 192 && this.video_iigs.currentScanline >= 192)
                     this.memory.setVblFlag();
                 if(this.video_iigs.frameCount !== oldFrame) {
-                    // Snapshot Mega II compatibility-video latches at the
-                    // emulated frame boundary. This prevents temporary PAGE2
-                    // bank-access states from becoming full browser frames.
                     if(this.io_manager && this.io_manager.latch_display_state)
                         this.io_manager.latch_display_state();
                     if((this.video_iigs.frameCount & 0x0f) === 0)
                         this.memory.setQuarterFlag();
                 }
             }
+
             if(this.iigsEnabled) {
-                this.memory.tickRtc(usedMaster, IIGS_FAST_HZ);
-                this.memory.tickIwm(usedMaster, IIGS_FAST_HZ);
+                // RTC and SCC have explicit register-boundary synchronization,
+                // so accumulate them instead of paying two calls per opcode.
+                this.deferredPeripheralCycles += usedMaster;
+
+                // IWM flux/read-window state is observable at any I/O access,
+                // so keep it instruction-accurate while the controller has
+                // actual timed work. Completely idle IWM costs zero calls.
+                if(this.memory.iwmActive || this.memory.iwmMotorDelay ||
+                   this.memory.iwmWritePending) {
+                    timed=this.perfEnabled ? performance.now() : 0;
+                    this.memory.tickIwm(usedMaster,IIGS_FAST_HZ);
+                    if(this.perfEnabled) this.perf.disk += performance.now()-timed;
+                }
             }
-            if(this.iigsEnabled && this.memory.scc) this.memory.scc.tick(usedMaster);
+
             if(this.iigsEnabled && this.memory.doc) {
-                const docSamples=this.memory.doc.tick(usedMaster, IIGS_FAST_HZ);
+                timed=this.perfEnabled ? performance.now() : 0;
+                const docSamples=this.memory.doc.tick(usedMaster,IIGS_FAST_HZ);
                 if(docSamples) this.audio.doc_sample(
                     this.cycles,
                     this.memory.doc.lastLeft,
                     this.memory.doc.lastRight,
                     this.memory.doc.getVolume()
                 );
+                if(this.perfEnabled) this.perf.audio += performance.now()-timed;
             }
         }
-        if(this.iigsEnabled) this.audio.end_segment(this.cycles);
+        this.flushDeferredPeripherals();
+        if(this.iigsEnabled) {
+            const timed=this.perfEnabled ? performance.now() : 0;
+            this.audio.end_segment(this.cycles);
+            if(this.perfEnabled) this.perf.audio += performance.now()-timed;
+        }
     }
 
     startTrace() {
@@ -185,6 +227,7 @@ export class Motherboard
         this.io_manager.reset();
 
         this.cycles = 0;
+        this.deferredPeripheralCycles = 0;
 
         for(let a=0x0400; a<0x0800; a++) this.legacyMemory._main[a] = 0xa0;
         this.display_text.set_active_page(1);  // text page 1 is default
