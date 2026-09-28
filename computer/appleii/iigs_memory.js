@@ -426,8 +426,9 @@ export class IIgsMemory {
       if((io>=0xc071 && io<=0xc07d) || io===0xc07f)
         return this.rom ? this.rom[0x3c000+(io&0xff)] : 0xff;
 
-      // Compatibility status registers are already implemented by the
-      // Mega II/IIe I/O hooks attached to legacy memory.
+      // Compatibility status registers are implemented by the Mega II/IIe
+      // hooks. Soft-switch accesses that don't produce a value still return
+      // the IIgs floating bus, as MAME c000_r does.
       if((io>=0xc011 && io<=0xc01f) ||
          (io>=0xc050 && io<=0xc05f) || io===0xc070 ||
          (io>=0xc07e && io<=0xc08f)) {
@@ -435,6 +436,7 @@ export class IIgsMemory {
           const v=fn(io);
           if(v!==undefined) return v&0xff;
         }
+        return this.floatingBus();
       }
     }
     if(addr >= 0xc0e0 && addr <= 0xc0ef) return this.iwmAccess(addr);
