@@ -195,6 +195,17 @@ test('IIgs 800K native GCR fields round-trip payload across zones and heads',()=
   }
 });
 
+test('IIgs ROM03 can see mounted ProDOS slot-7 boot firmware after reset',()=>{
+  const {board:m}=createMachine(), b=m.memory;
+  const disk=new Uint8Array(1600*512), media=decodeMedia('Arkanoid.2mg',wrap(disk,1));
+  mountMedia(m,media); m.reset(true);
+  assert.equal(b.slotRom,0,'ROM03 reset default keeps SLOTROMSEL clear');
+  assert.equal(b.read(0xc700),0x24,'mounted external slot-7 signature must override internal ROM');
+  assert.equal(b.read(0xc708),0xa9,'slot-7 boot entry must be visible to firmware scanner');
+  m.prodosBlock.eject();
+  assert.notEqual(b.read(0xc708),0xa9,'ejected card must fall back to internal slot ROM');
+});
+
 test('IIgs reset clears native IWM decoder state but preserves mounted 800K media',()=>{
   const {board:m}=createMachine(), b=m.memory;
   const disk=new Uint8Array(1600*512), media=decodeMedia('Arkanoid.2mg',wrap(disk,1));
