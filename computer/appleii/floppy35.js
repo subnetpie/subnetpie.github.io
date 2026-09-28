@@ -62,8 +62,8 @@ export class Floppy35 {
     if(!this.media)return new Uint8Array([0xff]);
     const key=this.track+':'+this.head;
     if(key===this.cacheKey&&this.cache)return this.cache;
-    const out=[], ns=this.sectorCount(), order=[];
-    let si=0; for(let i=0;i<ns;i++){order.push(si);si=(si+2)%ns;if(si===0)si++;}
+    const out=[], ns=this.sectorCount(), physical=new Array(ns);
+    let si=0; for(let i=0;i<ns;i++){physical[si]=i;si=(si+2)%ns;if(si===0)si++;}
     const sync=()=>{for(let i=0;i<16;i++)out.push(0xff);};
     for(let oi=0;oi<ns;oi++) {
       const s=order[oi], side=this.head?0x20:0, fmt=0x22;
@@ -123,7 +123,7 @@ export class Floppy35 {
     // Build flux cells directly. Sync bytes are a physical 48-cell pattern;
     // ordinary encoded $FF bytes remain ordinary eight-cell data. Inferring
     // sync from byte value corrupts valid GCR fields.
-    const cells=[], ns=this.sectorCount(), order=[];
+    const cells=[], ns=this.sectorCount(), physical=new Array(ns);
     const syncPat=[1,1,1,1,1,1,1,1,0,0,1,1,1,1,1,1,0,0,1,1,1,1,0,0,
                    1,1,1,1,0,0,1,1,1,1,1,1,0,0,1,1,1,1,1,1,1,1,1,1];
     const byte=v=>{for(let b=7;b>=0;b--)cells.push((v>>>b)&1);};
@@ -138,7 +138,7 @@ export class Floppy35 {
     const partial=pregap%48;
     if(partial)cells.push(...syncPat.slice(48-partial));
     sync(Math.floor(pregap/48));
-    for(const s of order) {
+    for(let slot=0;slot<ns;slot++) {\n      const s=physical[slot];
       const side=this.head?0x20:0, fmt=0x22;
       sync(8);
       [0xd5,0xaa,0x96,GCR6[this.track&0x3f],GCR6[s&0x3f],
