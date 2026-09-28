@@ -40,6 +40,7 @@ export class HiresDisplay
         this._id = undefined;
         this._active_page = 1;
         this._active_bank = "main";
+        this.deferPresent = false;
         this._page1_init = false;
         this._page2_init = false;
         this._page1_aux_init = false;
@@ -275,7 +276,8 @@ export class HiresDisplay
             oe ^= 1;
         }
 
-        if(id == this._id) this._context.putImageData(this._id, 0, 0, ox, oy, 18, 2);
+        if(id == this._id && !this.deferPresent)
+            this._context.putImageData(this._id, 0, 0, ox, oy, 18, 2);
     }
 
     refresh() {
@@ -307,7 +309,11 @@ export class HiresDisplay
         this._active_page = page;
         this._active_bank = bank;
         this._id = id;
-        this._context.putImageData(id, 0, 0);
+        if(!this.deferPresent) this._context.putImageData(id, 0, 0);
+    }
+
+    present() {
+        if(this._id) this._context.putImageData(this._id, 0, 0);
     }
 
     reset() {
