@@ -155,6 +155,7 @@ export class Floppy35 {
         const suma=ca+va0+(cc&1);ca=suma&0xff;const va=va0^cc;
         const sumb=cb+vb0+(suma>>>8);cb=sumb&0xff;const vb=vb0^ca;
         if(i!==174)cc=(cc+vc0+(sumb>>>8))&0xff;
+        const vc=vc0^cb;
         const enc=gcr6(va,vb,vc);byte(enc[0]);byte(enc[1]);byte(enc[2]);if(i!==174)byte(enc[3]);
       }
       gcr6(ca,cb,cc).forEach(byte); byte(0xde);byte(0xaa);byte(0xff);byte(0xff);
