@@ -82,7 +82,8 @@ export class Motherboard
             this.memory.cpuFetchByte = () => {
                 const reg=this.cpu.register;
                 const pc=reg.pc&0xffff;
-                const bank=(reg.pbr===undefined?0:reg.pbr)&0xff;
+                // W65C816 exposes the program bank as register.pb.
+                const bank=reg.pb&0xff;
                 const addr=(bank<<16)|((pc-1)&0xffff);
                 // Avoid I/O recursion: MAME's approximation is the previous
                 // program fetch, which should normally be ROM/RAM.
