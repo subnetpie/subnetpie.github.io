@@ -748,6 +748,7 @@ export class IIgsMemory {
     // contents, but abort any partial command exactly as CE does in MAME.
     this.rtc.ce=1; this.rtc.clk=0; this.rtc.data=0; this.rtc.out=0;
     this.rtc.dir=0; this.rtc.byte=0; this.rtc.bits=0; this.rtc.state=0;
+    this.rtc.cmd=0; this.rtc.writeProtect=false;
     this.intEnable = 0; this.intFlag = 0;
     this.vblIrq = this.quarterIrq = false;
     this.externalIrq.vgc=this.externalIrq.doc=this.externalIrq.scc=this.externalIrq.adb=false;
