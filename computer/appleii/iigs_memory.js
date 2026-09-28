@@ -76,6 +76,35 @@ export class IIgsMemory {
     return undefined;
   }
 
+  floatingBus() {
+    if(!this.video) return 0;
+    const cyclesPerLine=2800000/(60*262);
+    let h=Math.floor((this.video.scanCycleAccum/cyclesPerLine)*65);
+    if(h<0)h=0; else if(h>64)h=64;
+    let v=this.video.currentScanline;
+    // MAME read_floatingbus remaps the 16-line top border to the end of VBL.
+    if(v<16)v+=262;
+    v-=16;
+    // During IIgs blanking MAME approximates the last CPU fetch. Until the
+    // CPU exposes that fetch byte, use the bank byte rather than inventing
+    // video data for cycles where the VGC does not drive the bus.
+    if(h<5 || v>199) return 0;
+
+    let a;
+    if(this.video.readNewVideo()&0x80) {
+      if(h>=25) a=0x16000-50+1+(v*80)+(h*2);
+      else if(h>=9 && h<=16) {
+        const scb=this.slowE1[0x9d00+v]&0x0f;
+        a=0x19f00-18+1+(scb*16)+(h*2);
+      } else a=0x19e80+(v>>1);
+      return a<0x10000 ? this.slowE0[a] : this.slowE1[a&0xffff];
+    }
+
+    // Legacy scanner_address() is implemented separately once IOManager's
+    // text/graphics/mixed state is exposed to this bus object.
+    return 0;
+  }
+
   readState() {
     const m = this.legacy;
     return (m.aux_zp ? 0x80 : 0) | (m.dms_page2 ? 0x40 : 0) |
@@ -306,10 +335,8 @@ export class IIgsMemory {
         // MAME's IIgs C060 (button 3) is active-low. The shared IIe hook
         // has no C060 game-button register, so its disconnected state is high.
         if(io===0xc060) state=0x80;
-        // The current renderer has no cycle-exact floating-bus sampler yet;
-        // keep the low seven bits isolated here so adding one won't disturb
-        // the IIgs-specific button/paddle bit-7 semantics.
-        return state;
+        // MAME preserves the current floating-bus byte in bits 0-6.
+        return state|(this.floatingBus()&0x7f);
       }
       // MAME exposes ROM03's IRQ-vector helper bytes directly at
       // C071-C07D/C07F from ROM offset $3C000. C070 remains floating bus
