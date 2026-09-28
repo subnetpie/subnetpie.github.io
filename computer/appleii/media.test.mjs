@@ -138,6 +138,22 @@ test('IIgs Arkanoid 2MG progresses beyond its boot block',
       ' PC='+m.cpu.register.pc.toString(16)+' recentIO='+JSON.stringify(recent));
   });
 
+test('IIgs IWM 3.5 read register is a timed shift-register latch',()=>{
+  const {board:m}=createMachine(), b=m.memory;
+  const disk=new Uint8Array(1600*512), media=decodeMedia('800k.2mg',wrap(disk,1));
+  mountMedia(m,media); b.floppy35.mount(media);
+  b.diskReg=0x40; b.iwmActive=true; b.iwmMotor=true; b.iwmQ6=false; b.iwmQ7=false;
+  b.iwmData=0;
+  assert.equal(b.iwmAccess(0xc0ec),0);
+  assert.equal(b.iwmAccess(0xc0ec),0,'polling without time must not consume media');
+  b.tickIwm(28000,2800000);
+  const latched=b.iwmAccess(0xc0ec);
+  assert.notEqual(latched,0,'elapsed rotation must feed the IWM read latch');
+  b.iwmQ6=true;
+  b.iwmAccess(0xc0ec);
+  assert.equal(b.iwmReadShift,0,'Q6H status access resets MAME read shift state');
+});
+
 test('IIgs 3.5-inch rotation uses MAME Sony speed zones',()=>{
   const {board:m}=createMachine(); const f=m.memory.floppy35;
   const disk=new Uint8Array(1600*512), media=decodeMedia('800k.2mg',wrap(disk,1)); f.mount(media);
