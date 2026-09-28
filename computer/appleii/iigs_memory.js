@@ -53,6 +53,7 @@ export class IIgsMemory {
     this.iwmMode = 0; this.iwmQ6 = false; this.iwmQ7 = false; this.iwmMotor = false;
     this.iwmMotorDelay = 0;
     this.iwmActive = false;
+    this.iwmRw = 0; // MAME MODE_IDLE / MODE_READ / MODE_WRITE
     this.iwmPhases = 0;
     this.iwmDevSel = 0;
     this.floppy35 = new Floppy35();
@@ -290,7 +291,7 @@ export class IIgsMemory {
         // controller and selected drive remain active for 8,388,608 IWM clocks.
         if((this.iwmMode & 0x04) || (this.diskReg & 0x40)) {
           // MAME IIgs clears its external motor-off delay for 3.5-inch drives.
-          this.iwmMotor=false; this.iwmMotorDelay=0; this.iwmActive=false; this.iwmDevSel=0;
+          this.iwmMotor=false; this.iwmMotorDelay=0; this.iwmActive=false; this.iwmRw=0; this.iwmDevSel=0;
           this.iwmWhd &= ~0x40;
         } else {
           this.iwmMotorDelay=8388608;
@@ -308,13 +309,19 @@ export class IIgsMemory {
     if(op === 12 || op === 13) this.iwmQ6 = !!(op & 1);
     if(op === 14 || op === 15) {
       this.iwmQ7 = !!(op & 1);
-      // Entering write mode while active starts MAME's write clock and sets
-      // WHD bit 6. Leaving it stops our controller-visible write handshake.
-      if(this.iwmActive && this.iwmQ7) this.iwmWhd |= 0x40;
-      else if(!this.iwmQ7) {
-        this.iwmReadShift=0; this.iwmReadBits=0; this.iwmReadState=0; this.iwmNextWindow=0; this.iwmData=0;
-        this.iwmWhd &= ~0x40;
-        this.iwmWritePending=0;
+      // MAME changes decoder state only when the controller changes between
+      // read and write modes. Repeated Q7L polling must not restart a read.
+      if(this.iwmActive && this.iwmQ7) {
+        if(this.iwmRw!==2) {
+          this.iwmRw=2;
+          this.iwmReadState=0; this.iwmNextWindow=0;
+          this.iwmWhd|=0x40;
+        }
+      } else if(this.iwmActive && this.iwmRw!==1) {
+        this.iwmRw=1;
+        this.iwmReadShift=0; this.iwmReadBits=0; this.iwmReadState=0;
+        this.iwmNextWindow=0; this.iwmSyncUpdate=0; this.iwmAsyncUpdate=0; this.iwmData=0;
+        this.iwmWhd&=~0x40; this.iwmWritePending=0;
       }
     }
     if(value !== undefined) {
@@ -355,7 +362,8 @@ export class IIgsMemory {
     const noMedia=select35 ? !media35 : !disk525?.medium;
     const writeProtected=select35 ? !!media35?.writeProtected : !!disk525?.write_protect;
     if(this.iwmQ6 && !this.iwmQ7) {
-      this.iwmReadShift=0; this.iwmReadBits=0; this.iwmReadState=0; this.iwmNextWindow=0;
+      // MAME status reads clear only RSH; they do not restart the flux window.
+      this.iwmReadShift=0; this.iwmReadBits=0;
       return (this.iwmMode&0x1f) | (this.iwmActive ? 0x20 : 0) |
         ((noMedia || writeProtected) ? 0x80 : 0);
     }
