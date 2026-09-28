@@ -139,6 +139,43 @@ test('IIgs Arkanoid 2MG progresses beyond its boot block',
       ' PC='+m.cpu.register.pc.toString(16)+' recentIO='+JSON.stringify(recent));
   });
 
+test('IIgs native 3.5 sector reaches CPU through flux and IWM $C0EC',()=>{
+  const {board:m}=createMachine(), b=m.memory;
+  const disk=new Uint8Array(1600*512);
+  for(let i=0;i<disk.length;i++)disk[i]=(i*29+(i>>>8)*7)&0xff;
+  const media=decodeMedia('iwm-e2e.2mg',wrap(disk,1));
+  mountMedia(m,media); b.floppy35.mount(media);
+  b.diskReg=0x40; b.iwmActive=true; b.iwmMotor=true;
+  b.iwmQ6=false; b.iwmQ7=false; b.iwmMode=0; b.iwmData=0;
+
+  const seen=[]; let last=-1;
+  // Sample like ROM code: wait for a high-bit value, consume it, then wait
+  // for the latch to change before accepting another byte.
+  for(let i=0;i<180000 && seen.length<1800;i++) {
+    b.tickIwm(3,2800000);
+    const v=b.iwmAccess(0xc0ec);
+    if((v&0x80) && v!==last) { seen.push(v); last=v; }
+    else if(!(v&0x80)) last=-1;
+  }
+  let ap=-1;
+  for(let i=0;i+8<seen.length;i++)
+    if(seen[i]===0xd5&&seen[i+1]===0xaa&&seen[i+2]===0x96){ap=i;break;}
+  assert.ok(ap>=0,'CPU-visible IWM bytes must contain an address prologue');
+  const track=Floppy35.decodeGcrByte(seen[ap+3]);
+  const sector=Floppy35.decodeGcrByte(seen[ap+4]);
+  assert.equal(track,0); assert.ok(sector>=0&&sector<12);
+
+  let dp=-1;
+  for(let i=ap+8;i+710<seen.length;i++)
+    if(seen[i]===0xd5&&seen[i+1]===0xaa&&seen[i+2]===0xad){dp=i;break;}
+  assert.ok(dp>=0,'CPU-visible IWM bytes must contain a data prologue');
+  assert.equal(Floppy35.decodeGcrByte(seen[dp+3]),sector);
+  const field=b.floppy35.decodeSectorField(Uint8Array.from(seen),dp+4);
+  assert.ok(field,'CPU-visible native GCR field must pass checksum');
+  const off=b.floppy35.sectorOffset(0,0,sector);
+  assert.deepEqual(field.subarray(12),disk.subarray(off,off+512));
+});
+
 test('IIgs 800K native GCR fields round-trip payload across zones and heads',()=>{
   const disk=new Uint8Array(1600*512);
   for(let i=0;i<disk.length;i++)disk[i]=(i*37+(i>>>9)*11)&0xff;
