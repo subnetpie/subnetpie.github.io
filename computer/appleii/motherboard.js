@@ -9,7 +9,7 @@
 //  ref: https://en.wikipedia.org/wiki/Apple_II_character_set
 //
 
-import {W65C02S} from "https://subnetpie.github.io/computer/appleii/w65c02s.js?v=20260928-cycletiming1";
+import {W65C02S} from "https://subnetpie.github.io/computer/appleii/w65c02s.js?v=20260928-stacktiming1";
 import {Memory} from "https://subnetpie.github.io/computer/appleii/memory.js";
 import {IIgsMemory} from "https://subnetpie.github.io/computer/appleii/iigs_memory.js?v=20260928-pagesync2";
 import {W65C816} from "https://subnetpie.github.io/computer/appleii/w65c816.js?v=20260928-blend";
