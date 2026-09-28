@@ -277,20 +277,72 @@ export class IIgsMemory {
 
   iwmAccess(addr, value) {
     const op = addr & 15;
-    if(op === 8) this.iwmMotor = false;
-    if(op === 9) this.iwmMotor = true;
-    if(op === 12 || op === 13) this.iwmQ6 = !!(op & 1);
-    if(op === 14 || op === 15) this.iwmQ7 = !!(op & 1);
-    if(value !== undefined) {
-      if(this.iwmQ6 && this.iwmQ7 && !this.iwmMotor) this.iwmMode = value & 31;
-      this.legacy.write(addr, value);
+    const select35 = !!(this.diskReg & 0x40);
+
+    // Preserve the boot-tested Disk II/WOZ path exactly while 35SEL is clear.
+    if(!select35) {
+      if(op === 8) this.iwmMotor = false;
+      if(op === 9) this.iwmMotor = true;
+      if(op === 12 || op === 13) this.iwmQ6 = !!(op & 1);
+      if(op === 14 || op === 15) this.iwmQ7 = !!(op & 1);
+      if(value !== undefined) {
+        if(this.iwmQ6 && this.iwmQ7 && !this.iwmMotor) this.iwmMode = value & 31;
+        this.legacy.write(addr, value);
+        return 0;
+      }
+      const data = this.legacy.read(addr);
+      if(addr & 1) return 0;
+      if(this.iwmQ6 && !this.iwmQ7) return this.iwmMode | (this.iwmMotor ? 32 : 0) |
+        ((!this.floppy?._active_disk.medium || this.floppy._active_disk.write_protect) ? 128 : 0);
+      if(!this.iwmQ6 && this.iwmQ7) return 0x80;
+      return data;
+    }
+
+    // IIgs 3.5 path. Arkanoid boots through slot 7, then selects 35SEL and
+    // talks directly to the built-in IWM. Do not pass these accesses through
+    // the Disk II latch implementation.
+    if(op < 8) {
+      const bit=1<<(op>>1);
+      this.iwmPhases = op&1 ? (this.iwmPhases|bit)&0x0f : (this.iwmPhases&~bit)&0x0f;
+      this.floppy35.setPhase(this.iwmPhases);
+    }
+    if(op===8) {
+      this.iwmMotor=false; this.iwmActive=false; this.iwmDevSel=0;
+      this.iwmMotorDelay=0; this.iwmRw=0;
+    }
+    if(op===9) {
+      this.iwmMotor=true; this.iwmActive=true; this.iwmMotorDelay=0;
+      this.iwmDevSel=this.iwmControlDrive2?2:1;
+    }
+    if(op===10){this.iwmControlDrive2=false;if(this.iwmMotor)this.iwmDevSel=1;}
+    if(op===11){this.iwmControlDrive2=true;if(this.iwmMotor)this.iwmDevSel=2;}
+    if(op===12 || op===13)this.iwmQ6=!!(op&1);
+    if(op===14 || op===15) {
+      this.iwmQ7=!!(op&1);
+      if(this.iwmActive && !this.iwmQ7 && this.iwmRw!==1) {
+        this.iwmRw=1; this.iwmReadShift=0; this.iwmReadBits=0;
+        this.iwmReadState=0; this.iwmNextWindow=0; this.iwmData=0;
+      } else if(this.iwmActive && this.iwmQ7 && this.iwmRw!==2) {
+        this.iwmRw=2; this.iwmWhd|=0x40;
+      }
+    }
+    if(value!==undefined) {
+      if(this.iwmQ6 && this.iwmQ7 && (addr&1) && !this.iwmActive)
+        this.iwmMode=value&0xff;
       return 0;
     }
-    const data = this.legacy.read(addr);
-    if(addr & 1) return 0;
-    if(this.iwmQ6 && !this.iwmQ7) return this.iwmMode | (this.iwmMotor ? 32 : 0) | ((!this.floppy?._active_disk.medium || this.floppy._active_disk.write_protect) ? 128 : 0);
-    if(!this.iwmQ6 && this.iwmQ7) return 0x80; // write handshake ready
-    return data;
+    if(addr&1)return this.floatingBus();
+    const media=this.floppy35Media;
+    const noMedia=!media;
+    if(media && this.floppy35.media!==media)this.floppy35.mount(media);
+    this.floppy35.setHead(!!(this.diskReg&0x80));
+    if(this.iwmQ6 && !this.iwmQ7)
+      return (this.iwmMode&0x1f)|(this.iwmActive?0x20:0)|
+        ((noMedia||media?.writeProtected)?0x80:0);
+    if(!this.iwmQ6 && this.iwmQ7)return this.iwmWhd;
+    if(this.iwmQ6 && this.iwmQ7)return 0xff;
+    if(!this.iwmActive || noMedia)return 0xff;
+    return this.iwmData&0xff;
   }
 
   iwmWindowClocks() {
