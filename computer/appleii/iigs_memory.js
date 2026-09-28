@@ -62,11 +62,28 @@ export class IIgsMemory {
     this.iwmSyncUpdate=0; this.iwmAsyncUpdate=0;
     this.iwmData = 0x00;
     this.iwmWritePending = 0;
+    // MAME apple2gs_state::slow_cycle(): each Mega II/slow-bus access while
+    // the 65816 is in fast mode consumes one ~1 MHz bus cycle. Keep the
+    // 16.16 remainder so repeated accesses alternate 2/3 added fast cycles
+    // exactly like MAME's 0x0002cccd accumulator.
+    this.slowCycleRemainder = 0;
+    this.pendingSlowCycles = 0;
     // MAME iwm_device reset value for the write-handshake register.
     this.iwmWhd = 0xbf;
   }
 
   setTrace(fn) { this.trace = fn; }
+  noteSlowCycle() {
+    if(!(this.speed & 0x80)) return;
+    this.slowCycleRemainder += 0x0002cccd;
+    this.pendingSlowCycles += (this.slowCycleRemainder >>> 16) & 0xffff;
+    this.slowCycleRemainder &= 0xffff;
+  }
+  consumeSlowCycles() {
+    const n=this.pendingSlowCycles;
+    this.pendingSlowCycles=0;
+    return n;
+  }
   add_read_hook(fn) { if(!this.readHooks.includes(fn)) this.readHooks.push(fn); }
   add_write_hook(fn) { if(!this.writeHooks.includes(fn)) this.writeHooks.push(fn); }
 
@@ -471,10 +488,12 @@ export class IIgsMemory {
     this.ram[(aux?0x10000:0)+off]=val;
 
     if(!aux) {
-      if(off>=0x0400&&off<0x0800&&!(this.shadow&0x01)) this.slowE0[off]=val;
-      else if(off>=0x0800&&off<0x0c00&&!(this.shadow&0x20)) this.slowE0[off]=val;
-      else if(off>=0x2000&&off<0x4000&&!(this.shadow&0x02)) this.slowE0[off]=val;
-      else if(off>=0x4000&&off<0x6000&&!(this.shadow&0x04)) this.slowE0[off]=val;
+      let shadowed=false;
+      if(off>=0x0400&&off<0x0800&&!(this.shadow&0x01)) { this.slowE0[off]=val; shadowed=true; }
+      else if(off>=0x0800&&off<0x0c00&&!(this.shadow&0x20)) { this.slowE0[off]=val; shadowed=true; }
+      else if(off>=0x2000&&off<0x4000&&!(this.shadow&0x02)) { this.slowE0[off]=val; shadowed=true; }
+      else if(off>=0x4000&&off<0x6000&&!(this.shadow&0x04)) { this.slowE0[off]=val; shadowed=true; }
+      if(shadowed) this.noteSlowCycle();
     } else {
       if(off>=0x0400&&off<0x0800&&!(this.shadow&0x01)) this.slowE1[off]=val;
       else if(off>=0x0800&&off<0x0c00&&!(this.shadow&0x20)) this.slowE1[off]=val;
@@ -484,6 +503,7 @@ export class IIgsMemory {
         else if(off<0x6000) shadow=(!(this.shadow&0x04)&&!(this.shadow&0x10))||!(this.shadow&0x08);
         else shadow=!(this.shadow&0x08);
         if(shadow) {
+          this.noteSlowCycle();
           if(this.video) this.video.writeBankE1(off,val);
           else this.slowE1[off]=val;
         }
@@ -562,6 +582,10 @@ export class IIgsMemory {
     }
     if((addr>>>16)===0 && (addr&0xffff)>=0xc000 && (addr&0xffff)<=0xc0ff) {
       const io=addr&0xffff;
+      // MAME c000_r: C02D, C035-C037 and C068 are FPI-fast reads; the
+      // remaining compatibility I/O below C071 runs at Mega II speed.
+      if(io<0xc071 && io!==0xc02d && io!==0xc035 && io!==0xc036 &&
+         io!==0xc037 && io!==0xc068) this.noteSlowCycle();
       if(this.trace) this.trace("R",io,undefined);
       if(io>=0xc000 && io<=0xc00f) return this.adb.readKeyData();
       if(io===0xc010) return this.adb.readAnyKeyAndClearStrobe();
@@ -653,6 +677,8 @@ export class IIgsMemory {
     const bank=addr>>>16, off=addr&0xffff;
     let v;
     if(bank===0xe0 || bank===0xe1) {
+      // MAME e0ram/e1ram and LC handlers always take a slow bus cycle.
+      this.noteSlowCycle();
       if(off>=0xd000)
         // MAME has independent E0 (main) and E1 (aux) LC views. ALTZP
         // selects the fast bank-$00 LC backing, but does not redirect E0 LC.
@@ -727,6 +753,8 @@ export class IIgsMemory {
     }
     if((addr>>>16)===0 && (addr&0xffff)>=0xc000 && (addr&0xffff)<=0xc0ff) {
       const io=addr&0xffff;
+      // MAME c000_w: only SHADOW, SPEED and DMA/CYA ($C035-$C037) are fast.
+      if(io!==0xc035 && io!==0xc036 && io!==0xc037) this.noteSlowCycle();
       if(this.trace) this.trace("W",io,val);
       // IIgs FPI compatibility soft switches (MAME c000_w).
       if(io===0xc000){this.legacy.dms_80store=false;return;}
@@ -825,6 +853,8 @@ export class IIgsMemory {
 
     const bank=addr>>>16, off=addr&0xffff;
     if(bank===0xe0 || bank===0xe1) {
+      // MAME e0ram/e1ram and LC handlers always take a slow bus cycle.
+      this.noteSlowCycle();
       if(off>=0xd000)
         // E0/E1 language-card windows remain main/aux respectively;
         // ALTZP must not redirect the E0 slow LC window.
@@ -867,9 +897,9 @@ export class IIgsMemory {
       // auxiliary write; HGR/SHR shadowing goes through auxram0000_w so the
       // NEWVIDEO address transform is applied when SHR mapping is active.
       if(off>=0x0400 && off<0x0800 && !(this.shadow&0x01)) {
-        this.slowE1[off]=val;
+        this.noteSlowCycle(); this.slowE1[off]=val;
       } else if(off>=0x0800 && off<0x0c00 && !(this.shadow&0x20)) {
-        this.slowE1[off]=val;
+        this.noteSlowCycle(); this.slowE1[off]=val;
       } else if(off>=0x2000 && off<0xa000) {
         let shadow=false;
         if(off<0x4000)
@@ -879,6 +909,7 @@ export class IIgsMemory {
         else
           shadow=!(this.shadow&0x08);
         if(shadow) {
+          this.noteSlowCycle();
           if(this.video) this.video.writeBankE1(off,val);
           else this.slowE1[off]=val;
         }
@@ -897,6 +928,7 @@ export class IIgsMemory {
           (!(bank&1) ? true : !(this.shadow&0x10));
         const shr = (bank&1) && off>=0x2000 && off<0xa000 && !(this.shadow&0x08);
         if(text1 || text2 || hires1 || hires2 || shr) {
+          this.noteSlowCycle();
           if((bank&1) && off>=0x2000 && off<0xa000 && this.video)
             // MAME bank1_0000_sh_w routes HGR/SHR shadow writes through
             // auxram0000_w(), so NEWVIDEO $40/$80 address swizzling applies.
