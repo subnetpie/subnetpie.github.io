@@ -4,6 +4,7 @@ import {readFileSync} from 'node:fs';
 import {decodeMedia,parse2IMG,prodosToDOS,readZipEntries,isZip,mountMedia} from './media.js';
 import {zipSync} from './vendor/fflate.js';
 import {createMachine} from './test-support/headless.mjs';
+import {Floppy35} from './floppy35.js';
 
 function wrap(data,format=1,flags=0,offset=64) {
   const out=new Uint8Array(offset+data.length+7);
@@ -137,6 +138,25 @@ test('IIgs Arkanoid 2MG progresses beyond its boot block',
       'Arkanoid stalled in boot block: PB='+m.cpu.register.pb.toString(16)+
       ' PC='+m.cpu.register.pc.toString(16)+' recentIO='+JSON.stringify(recent));
   });
+
+test('IIgs 800K native GCR fields round-trip payload across zones and heads',()=>{
+  const disk=new Uint8Array(1600*512);
+  for(let i=0;i<disk.length;i++)disk[i]=(i*37+(i>>>9)*11)&0xff;
+  const media=decodeMedia('roundtrip.2mg',wrap(disk,1)), f=new Floppy35();
+  assert.ok(f.mount(media));
+  for(const track of [0,16,32,48,64,79]) for(const head of [0,1]) {
+    f.track=track; f.head=head; f.cacheKey='';
+    const bytes=f.buildTrack(), ns=f.sectorCount(track);
+    for(let p=0;p<bytes.length-4;p++) if(bytes[p]===0xd5&&bytes[p+1]===0xaa&&bytes[p+2]===0xad) {
+      const sid=Floppy35.decodeGcrByte(bytes[p+3]);
+      const field=f.decodeSectorField(bytes,p+4);
+      assert.ok(field,'GCR data checksum must decode');
+      const expected=disk.subarray(f.sectorOffset(track,head,sid),f.sectorOffset(track,head,sid)+512);
+      assert.deepEqual(field.subarray(12),expected);
+    }
+    assert.ok(ns>=8&&ns<=12);
+  }
+});
 
 test('IIgs IWM sync latch supports Arkanoid high-bit polling',()=>{
   const {board:m}=createMachine(), b=m.memory;
