@@ -132,15 +132,22 @@ export class IIgsMemory {
   floatingBus() {
     if(!this.video) return 0;
     const cyclesPerLine=2800000/(60*262);
-    let h=Math.floor((this.video.scanCycleAccum/cyclesPerLine)*65);
-    if(h<0)h=0; else if(h>64)h=64;
+    // Convert the JS scan position to MAME's 65-cycle scanner clock.
+    // ALIGN_RFB is 1 in MAME 0.289: its h_clock calculation is effectively
+    // one scanner cycle ahead of the unaligned visible position.
+    let h=Math.floor((this.video.scanCycleAccum/cyclesPerLine)*65)+1;
+    if(h>=65)h-=65;
+    if(h<0)h+=65;
     let v=this.video.currentScanline;
     // MAME read_floatingbus remaps the 16-line top border to the end of VBL.
     if(v<16)v+=262;
     v-=16;
+    // Crossing the scanner's pre-visible boundary advances the vertical
+    // counter for floating-bus address generation (25 - ALIGN_RFB = 24).
+    if(h<24)v++;
+    if(v>=262)v-=262;
     // During IIgs blanking MAME approximates the last CPU fetch. Until the
-    // CPU exposes that fetch byte, use the bank byte rather than inventing
-    // video data for cycles where the VGC does not drive the bus.
+    // CPU exposes that fetch byte, don't invent video data where VGC is idle.
     if(h<5 || v>199) return 0;
 
     let a;
