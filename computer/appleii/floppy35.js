@@ -165,17 +165,27 @@ export class Floppy35 {
     return this.cellCache;
   }
 
-  tick(seconds) {
-    if(!this.media || seconds<=0)return;
+  advanceCells(seconds) {
+    if(!this.media || seconds<=0) return null;
     const cells=this.trackCells();
     // MAME's 3.5 GCR cell time is 1.979 us. RPM changes the number of cells
     // per revolution rather than the cell cadence.
     this.cellFrac += seconds/1.979e-6;
-    const n=this.cellFrac|0; if(!n)return; this.cellFrac-=n;
-    for(let k=0;k<n;k++) {
-      this.rawBits.push(cells[this.cellPos%cells.length]);
-      this.cellPos=(this.cellPos+1)%cells.length;
-    }
+    const n=this.cellFrac|0;
+    if(!n) return null;
+    this.cellFrac-=n;
+    const start=this.cellPos;
+    this.cellPos=(start+n)%cells.length;
+    return {cells, start, count:n};
+  }
+
+  tick(seconds) {
+    const span=this.advanceCells(seconds);
+    if(!span) return;
+    // Compatibility/debug path only. The live IWM consumes cells directly
+    // through advanceCells() to avoid allocating an array every instruction.
+    const cells=span.cells, len=cells.length;
+    for(let k=0;k<span.count;k++) this.rawBits.push(cells[(span.start+k)%len]);
   }
   takeBits() { const b=this.rawBits; this.rawBits=[]; return b; }
   takeTransitions() {
