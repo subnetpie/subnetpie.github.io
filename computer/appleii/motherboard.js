@@ -11,7 +11,7 @@
 
 import {W65C02S} from "https://subnetpie.github.io/computer/appleii/w65c02s.js";
 import {Memory} from "https://subnetpie.github.io/computer/appleii/memory.js";
-import {IIgsMemory} from "https://subnetpie.github.io/computer/appleii/iigs_memory.js?v=20260928-dirtyshr1";
+import {IIgsMemory} from "https://subnetpie.github.io/computer/appleii/iigs_memory.js?v=20260928-speed1";
 import {W65C816} from "https://subnetpie.github.io/computer/appleii/w65c816.js?v=20260928-blend";
 import {IOManager} from "https://subnetpie.github.io/computer/appleii/io_manager.js?v=20260928-blend";
 import {TextDisplay} from "https://subnetpie.github.io/computer/appleii/display_text.js";
@@ -27,6 +27,9 @@ import {IIgsVideo} from "https://subnetpie.github.io/computer/appleii/video_iigs
 import {MachineTrace} from "https://subnetpie.github.io/computer/appleii/machine_trace.js";
 import {rom_342_0304_cd} from "https://subnetpie.github.io/computer/appleii/rom/342-0304-cd.js";
 import {rom_342_0303_ef} from "https://subnetpie.github.io/computer/appleii/rom/342-0303-ef.js";
+
+const IIGS_FAST_HZ = 2800000;
+const IIGS_SLOW_HZ = 1021800;
 
 export class Motherboard
 {
@@ -99,12 +102,23 @@ export class Motherboard
         this.audio.begin_segment(this.cycles);
         const total = this.cycles + count;
         while(this.cycles < total) {
-            const used=this.cpu.step();
-            this.cycles += used;
+            // MAME apple2gs_state::update_speed():
+            // SPEED bit 7 selects the 2.8 MHz 65816 when set and the Apple II
+            // ~1 MHz rate when clear. Keep this.cycles in 2.8 MHz master-time
+            // ticks so video, RTC, disk, paddles and audio continue advancing
+            // at real machine time while only CPU execution slows down.
+            const cpuHz = this.iigsEnabled && !(this.memory.speed & 0x80)
+                ? IIGS_SLOW_HZ : (this.iigsEnabled ? IIGS_FAST_HZ : 1020500);
+            const usedCpu = this.cpu.step();
+            const usedMaster = this.iigsEnabled
+                ? usedCpu * (IIGS_FAST_HZ / cpuHz)
+                : usedCpu;
+            this.cycles += usedMaster;
+
             if(this.iigsEnabled && this.video_iigs) {
                 const oldLine=this.video_iigs.currentScanline;
                 const oldFrame=this.video_iigs.frameCount;
-                this.video_iigs.tick(used, 2800000);
+                this.video_iigs.tick(usedMaster, IIGS_FAST_HZ);
                 // MAME Mega II status: VBL is latched every frame; quarter
                 // second status is latched every 16 frames regardless of INTEN.
                 if(oldLine < 192 && this.video_iigs.currentScanline >= 192)
@@ -114,13 +128,18 @@ export class Motherboard
                     this.memory.setQuarterFlag();
             }
             if(this.iigsEnabled) {
-                this.memory.tickRtc(used, 2800000);
-                this.memory.tickIwm(used, 2800000);
+                this.memory.tickRtc(usedMaster, IIGS_FAST_HZ);
+                this.memory.tickIwm(usedMaster, IIGS_FAST_HZ);
             }
-            if(this.iigsEnabled && this.memory.scc) this.memory.scc.tick(used);
+            if(this.iigsEnabled && this.memory.scc) this.memory.scc.tick(usedMaster);
             if(this.iigsEnabled && this.memory.doc) {
-                const docSamples=this.memory.doc.tick(used, 2800000);
-                if(docSamples) this.audio.doc_sample(this.cycles, this.memory.doc.lastLeft, this.memory.doc.lastRight, this.memory.doc.getVolume());
+                const docSamples=this.memory.doc.tick(usedMaster, IIGS_FAST_HZ);
+                if(docSamples) this.audio.doc_sample(
+                    this.cycles,
+                    this.memory.doc.lastLeft,
+                    this.memory.doc.lastRight,
+                    this.memory.doc.getVolume()
+                );
             }
         }
         if(this.iigsEnabled) this.audio.end_segment(this.cycles);
