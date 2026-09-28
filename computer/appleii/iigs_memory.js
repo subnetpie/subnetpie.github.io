@@ -50,6 +50,8 @@ export class IIgsMemory {
     this.scc = new IIgsSCC();
     this.doc = new IIgsDOC();
     this.iwmMode = 0; this.iwmQ6 = false; this.iwmQ7 = false; this.iwmMotor = false;
+    // MAME iwm_device reset value for the write-handshake register.
+    this.iwmWhd = 0xbf;
   }
 
   setTrace(fn) { this.trace = fn; }
@@ -272,21 +274,22 @@ export class IIgsMemory {
       this.legacy.write(addr, value);
       return 0;
     }
-    const data = this.legacy.read(addr);
+    // IWM register selection is Q7:Q6. MAME returns $FF from the data
+    // register while inactive; importantly, do not consume a media byte in
+    // that state merely because firmware probes Q6L.
+    const inactiveData = !this.iwmQ6 && !this.iwmQ7 && !this.iwmMotor;
+    const data = inactiveData ? 0xff : this.legacy.read(addr);
     // IWM odd soft-switch reads have no register data; MAME's c080_r()
     // returns the machine floating bus when the controller supplies none.
     if(addr & 1) return this.floatingBus();
     // MAME 0.289 DISKREG bit 6 (35SEL) selects the IIgs 3.5-inch path.
-    // Bit 7 is HDSEL, the Sony drive head/drive select signal; it must not
-    // switch the controller away from the chained 5.25-inch drives.
-    if(this.diskReg&0x40) {
-      if(this.iwmQ6 && !this.iwmQ7)
-        return this.iwmMode | (this.iwmMotor ? 32 : 0) | 0x80;
-      if(!this.iwmQ6 && this.iwmQ7) return 0x80;
-      return 0;
-    }
-    if(this.iwmQ6 && !this.iwmQ7) return this.iwmMode | (this.iwmMotor ? 32 : 0) | ((!this.floppy?._active_disk.medium || this.floppy._active_disk.write_protect) ? 128 : 0);
-    if(!this.iwmQ6 && this.iwmQ7) return 0x80; // write handshake ready
+    // Bit 7 is HDSEL, the Sony drive head/drive select signal.
+    const noMedia = (this.diskReg&0x40) || !this.floppy?._active_disk.medium;
+    if(this.iwmQ6 && !this.iwmQ7)
+      return (this.iwmMode&0x1f) | (this.iwmMotor ? 0x20 : 0) |
+        ((noMedia || this.floppy._active_disk.write_protect) ? 0x80 : 0);
+    if(!this.iwmQ6 && this.iwmQ7) return this.iwmWhd;
+    if(this.iwmQ6 && this.iwmQ7) return 0xff;
     return data;
   }
 
@@ -838,5 +841,6 @@ export class IIgsMemory {
     this.scc.reset(); this.doc.reset();
     this.adb.reset();
     this.iwmMode = 0; this.iwmQ6 = this.iwmQ7 = this.iwmMotor = false;
+    this.iwmWhd = 0xbf;
   }
 }
