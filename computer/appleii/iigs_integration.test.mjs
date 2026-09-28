@@ -544,6 +544,28 @@ test('hidden hi-res page writes survive a page flip', () => {
   assert.notEqual(digest(pixels),blank,'page flip must reveal the updated pixels');
 });
 
+test('IIgs SHR artwork remains presented until the next frame boundary', () => {
+  const {board:m}=createMachine();
+  m.memory.write(0xc050,0);
+  m.memory.write(0xc057,0);
+  m.memory.write(0xc054,0);
+  m.memory.write(0xc029,0xc1); // SHR on
+  assert.equal(m.video_iigs.isSuperHires(),true);
+
+  m.memory.write(0x002000,0x7f); // prepare HGR underneath
+  m.memory.write(0xc029,0x01);   // hardware exits SHR now
+
+  assert.equal(m.video_iigs.isSuperHires(),false);
+  assert.equal(m.video_iigs.compatRevealPending,true,
+    'presentation handoff must remain pending until frame boundary');
+
+  const before=m.video_iigs.frameCount;
+  m.clock(60000);
+  assert.ok(m.video_iigs.frameCount>before);
+  assert.equal(m.video_iigs.compatRevealPending,false);
+  assert.equal(m.display_hires._active_page,1);
+});
+
 test('IIgs leaving SHR reveals HGR written while SHR was active', () => {
   const {board:m,pixels}=createMachine();
   m.memory.write(0xc050,0); // graphics
