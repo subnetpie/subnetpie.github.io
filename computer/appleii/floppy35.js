@@ -18,20 +18,21 @@ export class Floppy35 {
   constructor() { this.eject(); }
   eject() {
     this.media=null; this.track=0; this.subtrack=0; this.head=0; this.phases=0;
-    this.pos=0; this.cellPos=0; this.cellFrac=0; this.lastCellStart=0; this.rawBits=[]; this.cacheKey=''; this.cache=null; this.cellCacheKey=''; this.cellCache=null; this.cellCacheKey=''; this.cellCache=null;
+    this.pos=0; this.cellPos=0; this.cellFrac=0; this.lastCellStart=0; this.rawBits=[];
+    this.trackByteCache=new Array(160); this.trackCellCache=new Array(160);
   }
   mount(media) {
     if(!media?.data || media.data.length!==1600*512) return false;
     this.media=media; this.track=0; this.subtrack=0; this.head=0; this.phases=0;
-    this.pos=0; this.cellPos=0; this.cellFrac=0; this.lastCellStart=0; this.rawBits=[]; this.cacheKey=''; this.cache=null; this.cellCacheKey=''; this.cellCache=null; return true;
+    this.pos=0; this.cellPos=0; this.cellFrac=0; this.lastCellStart=0; this.rawBits=[];
+    this.trackByteCache=new Array(160); this.trackCellCache=new Array(160); return true;
   }
   reset() {
     this.track=0; this.subtrack=0; this.head=0; this.phases=0;
     this.pos=0; this.cellPos=0; this.cellFrac=0; this.lastCellStart=0; this.rawBits=[];
-    this.cacheKey=''; this.cache=null;
   }
   get writeProtected() { return !this.media || !!this.media.writeProtected; }
-  setHead(head) { head=head?1:0; if(head!==this.head){this.head=head;this.pos=0;this.cacheKey='';} }
+  setHead(head) { head=head?1:0; if(head!==this.head){this.head=head;this.pos=0;} }
   setPhase(mask) {
     // MAME floppy_image_device::seek_phase_w(): phase combinations select one
     // of eight quarter-track positions. Opposite phases do not move the head.
@@ -46,7 +47,7 @@ export class Floppy35 {
     next=Math.max(0,Math.min(79*4,next));
     if(next===cur)return;
     this.track=next>>>2; this.subtrack=next&3;
-    this.pos=0; this.cacheKey='';
+    this.pos=0;
   }
   sectorCount(track=this.track){return 12-Math.min(4,track>>>4);}
   sectorOffset(track,head,sector) {
@@ -60,8 +61,9 @@ export class Floppy35 {
   }
   buildTrack() {
     if(!this.media)return new Uint8Array([0xff]);
-    const key=this.track+':'+this.head;
-    if(key===this.cacheKey&&this.cache)return this.cache;
+    const cacheIndex=(this.track<<1)|this.head;
+    const cached=this.trackByteCache[cacheIndex];
+    if(cached)return cached;
     const out=[], ns=this.sectorCount(), physical=new Array(ns);
     let si=0; for(let i=0;i<ns;i++){physical[si]=i;si=(si+2)%ns;if(si===0)si++;}
     const sync=()=>{for(let i=0;i<16;i++)out.push(0xff);};
@@ -87,7 +89,9 @@ export class Floppy35 {
       }
       out.push(...gcr6(ca,cb,cc),0xde,0xaa,0xff,0xff);
     }
-    this.cacheKey=key; this.cache=Uint8Array.from(out); return this.cache;
+    const encoded=Uint8Array.from(out);
+    this.trackByteCache[cacheIndex]=encoded;
+    return encoded;
   }
   static decodeGcrByte(v) { return GCR6.indexOf(v); }
   decodeSectorField(bytes, start) {
@@ -116,9 +120,10 @@ export class Floppy35 {
     return Math.floor(30318342/this.rpm(track));
   }
   trackCells() {
-    const key=this.track+':'+this.head;
-    if(key===this.cellCacheKey && this.cellCache)return this.cellCache;
-    if(!this.media)return [1,1,1,1,1,1,1,1];
+    const cacheIndex=(this.track<<1)|this.head;
+    const cached=this.trackCellCache[cacheIndex];
+    if(cached)return cached;
+    if(!this.media)return Uint8Array.of(1,1,1,1,1,1,1,1);
 
     // Build flux cells directly. Sync bytes are a physical 48-cell pattern;
     // ordinary encoded $FF bytes remain ordinary eight-cell data. Inferring
@@ -161,8 +166,23 @@ export class Floppy35 {
       }
       gcr6(ca,cb,cc).forEach(byte); byte(0xde);byte(0xaa);byte(0xff);byte(0xff);
     }
-    this.cellCacheKey=key; this.cellCache=cells.slice(0,target);
-    return this.cellCache;
+    const encoded=Uint8Array.from(cells.slice(0,target));
+    this.trackCellCache[cacheIndex]=encoded;
+    return encoded;
+  }
+
+  invalidateTrack(track=this.track,head=this.head) {
+    const i=(track<<1)|(head?1:0);
+    this.trackByteCache[i]=undefined;
+    this.trackCellCache[i]=undefined;
+  }
+
+  writeSector(track,head,sector,bytes) {
+    if(!this.media || this.writeProtected || !bytes || bytes.length!==512) return false;
+    const off=this.sectorOffset(track,head,sector);
+    this.media.data.set(bytes,off);
+    this.invalidateTrack(track,head);
+    return true;
   }
 
   advanceCells(seconds) {
