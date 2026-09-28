@@ -303,17 +303,18 @@ export class IIgsMemory {
           this.iwmMode=value&0xff;
         }
       }
-      this.legacy.write(addr, value);
+      // Keep the existing 5.25-inch mechanism synchronized for phase, motor
+      // and drive-select switches, but do not route IWM register writes
+      // (Q6/Q7) through the Disk II latch implementation.
+      if(op<12) this.legacy.write(addr,value);
       return 0;
     }
-    // IWM register selection is Q7:Q6. MAME returns $FF from the data
-    // register while inactive; importantly, do not consume a media byte in
-    // that state merely because firmware probes Q6L.
-    const inactiveData = !this.iwmQ6 && !this.iwmQ7 && !this.iwmActive;
-    const data = inactiveData ? 0xff : this.legacy.read(addr);
     // IWM odd soft-switch reads have no register data; MAME's c080_r()
     // returns the machine floating bus when the controller supplies none.
-    if(addr & 1) return this.floatingBus();
+    if(addr & 1) {
+      if(op<12) this.legacy.read(addr);
+      return this.floatingBus();
+    }
     // MAME 0.289 DISKREG bit 6 (35SEL) selects the IIgs 3.5-inch path.
     // Bit 7 is HDSEL, the Sony drive head/drive select signal.
     const noMedia = (this.diskReg&0x40) || !this.floppy?._active_disk.medium;
@@ -322,7 +323,13 @@ export class IIgsMemory {
         ((noMedia || this.floppy._active_disk.write_protect) ? 0x80 : 0);
     if(!this.iwmQ6 && this.iwmQ7) return this.iwmWhd;
     if(this.iwmQ6 && this.iwmQ7) return 0xff;
-    return data;
+    if(!this.iwmActive) return 0xff;
+    // Q6L/Q7L is the IWM data register. Reuse the selected drive's existing
+    // DSK/WOZ timed latch directly instead of re-entering Disk II soft switches.
+    if(this.diskReg&0x40 || !this.floppy?._active_disk) return 0xff;
+    const cycles=this.floppy._get_cycles ? this.floppy._get_cycles() : 0;
+    this.iwmData=this.floppy._active_disk.read(cycles)&0xff;
+    return this.iwmData;
   }
 
   tickIwm(cycles, cpuHz=2800000) {
