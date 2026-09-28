@@ -77,7 +77,19 @@ export class Motherboard
                                         this.audio_click.bind(this), joyValues, () => this.cycles,
                                         this.video_iigs, this.iigsEnabled);
         this.legacyMemory.io_manager = this.io_manager;
-        if(this.iigsEnabled) this.memory.ioManager = this.io_manager;
+        if(this.iigsEnabled) {
+            this.memory.ioManager = this.io_manager;
+            this.memory.cpuFetchByte = () => {
+                const reg=this.cpu.register;
+                const pc=reg.pc&0xffff;
+                const bank=(reg.pbr===undefined?0:reg.pbr)&0xff;
+                const addr=(bank<<16)|((pc-1)&0xffff);
+                // Avoid I/O recursion: MAME's approximation is the previous
+                // program fetch, which should normally be ROM/RAM.
+                if((addr&0xffff)>=0xc000 && (addr&0xffff)<=0xc0ff) return bank;
+                return this.memory.read(addr);
+            };
+        }
     }
 
     clock(count) {
