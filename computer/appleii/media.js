@@ -38,10 +38,14 @@ export function prodosToDOS(data) {
 }
 
 export function decodeMedia(name,value) {
-  let data=bytesOf(value),format,writeProtected=false,volume=254;
+  let data=bytesOf(value),format,writeProtected=false,volume=254,physical=null;
   const lower=name.toLowerCase();
   if(hasMagic(data,'2IMG') || /\.(2mg|2img)$/.test(lower)) {
-    ({data,format,writeProtected,volume}=parse2MG(data));
+    const parsed=parse2MG(data);
+    ({data,format,writeProtected,volume}=parsed);
+    // Keep 800K 2MG on the proven slot-7 block boot path, but retain its
+    // physical identity so software can hand off to the IIgs 3.5 IWM later.
+    if(format===1 && parsed.blocks===1600) physical='35';
   } else if(/\.(rom|bin)$/.test(lower) && [0x20000,0x40000].includes(data.length)) {
     return {kind:'rom',name,data};
   } else if(hasMagic(data,'WOZ1') || hasMagic(data,'WOZ2')) {
@@ -64,7 +68,7 @@ export function decodeMedia(name,value) {
   }
   if(!data.length || data.length%512 || data.length/512>65535)
     throw new Error('Block image must contain 1–65535 blocks of 512 bytes');
-  return {kind:'block',name,data,writeProtected};
+  return {kind:'block',name,data,writeProtected,physical};
 }
 
 export function mountMedia(board, media, drive=0) {
@@ -74,7 +78,13 @@ export function mountMedia(board, media, drive=0) {
     board.loadIIgsROM(media.data);
     return true;
   }
-  if(media.kind==='block')ok=board.prodosBlock.load_image(media.name,media.data,media);
+  if(media.kind==='block') {
+    ok=board.prodosBlock.load_image(media.name,media.data,media);
+    if(board.iigsEnabled && board.memory && media.physical==='35') {
+      board.memory.floppy35Media=media;
+      board.memory.floppy35.mount(media);
+    }
+  }
   else ok=board.floppy525.load_image(drive,media.name,media.data,media);
   if(!ok)throw new Error('Unable to mount '+media.name);
   // Otherwise slot 7 keeps booting the previously selected hard disk.
