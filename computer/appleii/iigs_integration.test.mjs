@@ -311,6 +311,17 @@ test('ROM03 leaves its power-on delay loop during headless execution', () => {
   assert.ok(leftDelay,'ROM03 delay loop must complete rather than stall permanently');
 });
 
+test('IIgs floating bus blanking uses the current program bank', () => {
+  const {board:m}=createMachine();
+  m.cpu.register.pb=0xfc;
+  m.cpu.register.pc=0x1235;
+  m.memory.rom[0x1234]=0xa5;
+  m.memory.slowE0[0x1234]=0x5a;
+  // Force vertical blanking so floatingBus() takes MAME's PC-1 fallback.
+  m.video_iigs.currentScanline=220;
+  assert.equal(m.memory.floatingBus(),0xa5);
+});
+
 for(const format of ['dsk','woz1','woz2']) {
   test(`IIgs ROM cold-boots a ${format} floppy`, () => {
     const {board:m}=createMachine();
