@@ -118,6 +118,11 @@ export class Floppy35 {
     }
   }
   takeBits() { const b=this.rawBits; this.rawBits=[]; return b; }
+  takeTransitions() {
+    const bits=this.takeBits(), out=[];
+    for(let i=0;i<bits.length;i++) if(bits[i]) out.push(i);
+    return {cells:bits.length,transitions:out};
+  }
   read() { const t=this.buildTrack(); return t[this.pos%t.length]; }
 
 }
