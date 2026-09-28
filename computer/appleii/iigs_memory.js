@@ -576,6 +576,7 @@ export class IIgsMemory {
     }
     if((addr>>>16)===0 && (addr&0xffff)>=0xc000 && (addr&0xffff)<=0xc0ff) {
       const io=addr&0xffff;
+      if(this.trace) this.trace("W",io,val);
       if(io>=0xc000 && io<=0xc00f) return this.adb.readKeyData();
       if(io===0xc010) return this.adb.readAnyKeyAndClearStrobe();
       if(io===0xc068) return this.readState();
