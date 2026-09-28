@@ -24,6 +24,7 @@ export class IIgsVideo {
     this.doubleHires = doubleHires;
     this.scanlineIrqPending = false;
     this.currentScanline = 0;
+    this.vblActive = false;
     this.bankE1 = new Uint8Array(0x10000); // replaced by bus backing store on IIgs
     this.newVideo = 0x01;
     this.borderColor = 0x02;
@@ -76,6 +77,7 @@ export class IIgsVideo {
     this.markAllDirty(true);
     this.scanlineIrqPending = false;
     this.currentScanline = 0;
+    this.vblActive = false;
     this.vgcIntEnable = 0;
     this.vgcIntStatus = 0;
     this.vgcIrqRaised = 0;
@@ -200,6 +202,8 @@ export class IIgsVideo {
       const y=this.currentScanline;
       if(this.superHires && y < SHR_LINES) this.beginScanline(y);
       this.currentScanline++;
+      if(this.currentScanline === 208) this.vblActive = true;
+      else if(this.currentScanline === 16) this.vblActive = false;
       if(this.currentScanline >= 262) {
         this.currentScanline=0;
         this.frameCount++;
