@@ -31,6 +31,8 @@ export class IIgsVideo {
     this.monochrome = 0x00;
     this.superHires = false;
     this.dirty = true;
+    this.dirtyLines = new Uint8Array(SHR_LINES);
+    this.paletteDirtyMask = 0xffff;
     this.image = this.context.createImageData(640, 200);
     this.blendRow = new Uint8ClampedArray(640 * 4);
 
@@ -52,7 +54,7 @@ export class IIgsVideo {
     if(!(bytes instanceof Uint8Array) || bytes.length < 0x10000)
       throw new Error("IIgs VGC requires a 64K bank E1 backing store");
     this.bankE1 = bytes.subarray(0,0x10000);
-    this.dirty = true;
+    this.markAllDirty(true);
   }
 
   reset() {
@@ -63,7 +65,7 @@ export class IIgsVideo {
     this.monochrome = 0x00;
     this.superHires = false;
     // RAM clearing is owned by the IIgs memory bus, not the VGC.
-    this.dirty = true;
+    this.markAllDirty(true);
     this.scanlineIrqPending = false;
     this.currentScanline = 0;
     this.vgcIntEnable = 0;
@@ -73,6 +75,51 @@ export class IIgsVideo {
     this.frameCount = 0;
     this.secondFrameCount = 0;
     this.updateIRQ();
+  }
+
+  markAllDirty(palettes=false) {
+    this.dirtyLines.fill(1);
+    this.dirty = true;
+    if(palettes) this.paletteDirtyMask = 0xffff;
+  }
+
+  markLineDirty(y) {
+    y|=0;
+    if(y<0 || y>=SHR_LINES) return;
+    this.dirtyLines[y]=1;
+    this.dirty=true;
+  }
+
+  markPaletteDirty(palette) {
+    this.paletteDirtyMask |= 1 << (palette & 15);
+    this.dirty=true;
+  }
+
+  markPhysicalPixelDirty(addr) {
+    // Rendering reads two 80-byte physical strips per visible line.
+    if(addr>=SHR_PIXEL_BASE && addr<SHR_PIXEL_BASE+SHR_BYTES_PER_PLANE_LINE*SHR_LINES)
+      this.markLineDirty(((addr-SHR_PIXEL_BASE)/SHR_BYTES_PER_PLANE_LINE)|0);
+    if(addr>=SHR_PIXEL_PLANE2 && addr<SHR_PIXEL_PLANE2+SHR_BYTES_PER_PLANE_LINE*SHR_LINES)
+      this.markLineDirty(((addr-SHR_PIXEL_PLANE2)/SHR_BYTES_PER_PLANE_LINE)|0);
+  }
+
+  markWriteDirty(logical, physical) {
+    // Pixel data is consumed from the mapped physical addresses.
+    this.markPhysicalPixelDirty(physical);
+
+    // SCB/palette reads go through the same logical NEWVIDEO transform as
+    // writes, so CPU-visible writes to those windows must invalidate them
+    // even when their mapped destination lies in a pixel strip.
+    if(logical>=SHR_SCB_BASE && logical<SHR_SCB_END)
+      this.markLineDirty(logical-SHR_SCB_BASE);
+    if(logical>=SHR_PALETTE_BASE && logical<SHR_PALETTE_END)
+      this.markPaletteDirty((logical-SHR_PALETTE_BASE)>>>5);
+
+    // Also cover direct physical writes used by slow-bank/shadow paths.
+    if(physical>=SHR_SCB_BASE && physical<SHR_SCB_END)
+      this.markLineDirty(physical-SHR_SCB_BASE);
+    if(physical>=SHR_PALETTE_BASE && physical<SHR_PALETTE_END)
+      this.markPaletteDirty((physical-SHR_PALETTE_BASE)>>>5);
   }
 
   beamVPos() {
@@ -203,18 +250,18 @@ export class IIgsVideo {
     if (this.doubleHires && this.doubleHires.setMonochrome) {
       this.doubleHires.setMonochrome((this.newVideo & 0x20) !== 0);
     }
-    this.dirty = true;
+    this.markAllDirty(true);
     if (previousShr && !this.superHires && this.legacy && this.legacy.refresh) {
       this.legacy.refresh();
     }
   }
 
   readNewVideo() { return this.newVideo; }
-  setBorderColor(value) { this.borderColor=value&0x0f; this.dirty=true; }
+  setBorderColor(value) { this.borderColor=value&0x0f; }
   getBorderColor() { return this.borderColor&0x0f; }
-  setTextColor(value) { this.textColor=value&0xff; this.dirty=true; }
+  setTextColor(value) { this.textColor=value&0xff; }
   getTextColor() { return this.textColor&0xff; }
-  setMonochrome(value) { this.monochrome=value&0xff; this.dirty=true; }
+  setMonochrome(value) { this.monochrome=value&0xff; }
   isSuperHires() { return this.superHires; }
 
   mapAuxAddress(addr) {
@@ -232,23 +279,17 @@ export class IIgsVideo {
 
   writeBankE1(addr, value) {
     const logical=addr&0xffff;
-    addr=this.mapAuxAddress(logical);
-    this.bankE1[addr] = value & 0xff;
-    // NEWVIDEO $C0/$40 swizzles logical $2000-$9fff across the two
-    // physical SHR planes. Test the CPU-visible address as well as the
-    // mapped destination; otherwise logical SCB/palette writes can land
-    // outside the physical SCB/palette ranges without invalidating video.
-    if ((logical >= 0x2000 && logical < 0xa000) ||
-        (addr >= SHR_PIXEL_BASE && addr < SHR_PIXEL_END) ||
-        (addr >= SHR_SCB_BASE && addr < SHR_SCB_END) ||
-        (addr >= SHR_PALETTE_BASE && addr < SHR_PALETTE_END)) {
-      this.dirty = true;
-    }
+    const physical=this.mapAuxAddress(logical);
+    value &= 0xff;
+    if(this.bankE1[physical]===value) return;
+    this.bankE1[physical] = value;
+    this.markWriteDirty(logical,physical);
   }
 
-  rebuildPaletteCache() {
+  rebuildPaletteCache(mask=0xffff) {
     const rgb = this.paletteRgb;
     for(let palette=0; palette<16; palette++) {
+      if(!(mask & (1<<palette))) continue;
       for(let index=0; index<16; index++) {
         const a = SHR_PALETTE_BASE + (palette << 5) + (index << 1);
         const word = this.readBankE1(a) | (this.readBankE1(a + 1) << 8);
@@ -341,20 +382,50 @@ export class IIgsVideo {
   }
 
   refresh(force=false) {
-    if (!this.superHires || (!force && !this.dirty)) return false;
+    if(!this.superHires) return false;
+    if(force) this.markAllDirty(true);
+    if(!this.dirty) return false;
+
     const data=this.image.data;
-    this.rebuildPaletteCache();
-    for(let y=0; y<SHR_LINES; y++) {
+    const paletteMask=this.paletteDirtyMask;
+    if(paletteMask) {
+      this.rebuildPaletteCache(paletteMask);
+      // A palette update affects only scanlines whose SCB currently selects
+      // that palette. Walking 200 SCBs is much cheaper than redrawing 128K
+      // pixels, and also handles a palette change with no pixel writes.
+      for(let y=0;y<SHR_LINES;y++) {
+        const palette=this.readBankE1(SHR_SCB_BASE+y)&0x0f;
+        if(paletteMask & (1<<palette)) this.dirtyLines[y]=1;
+      }
+      this.paletteDirtyMask=0;
+    }
+
+    let firstDirty=SHR_LINES, lastDirty=-1;
+    for(let y=0;y<SHR_LINES;y++) {
+      if(!this.dirtyLines[y]) continue;
       const scb=this.decodeSCB(y);
-      if (scb.mode640) {
+      if(scb.mode640) {
         this.render640Line(y,scb,data);
         this.blend640Line(y,data);
+      } else {
+        this.render320Line(y,scb,data);
       }
-      else this.render320Line(y,scb,data);
+      this.dirtyLines[y]=0;
+      if(y<firstDirty) firstDirty=y;
+      if(y>lastDirty) lastDirty=y;
     }
-    // Scale 640x200 SHR to the emulator's presentation canvas. The staging
-    // canvas/context is persistent to avoid per-frame DOM/canvas allocation.
-    this.offscreenContext.putImageData(this.image,0,0);
+
+    if(lastDirty<0) {
+      this.dirty=false;
+      return false;
+    }
+
+    // Upload only the changed vertical band into the persistent staging
+    // canvas. The final scaled blit stays one drawImage call for stable Safari
+    // compositing and avoids seams from independently scaled scanline strips.
+    this.offscreenContext.putImageData(
+      this.image,0,0,0,firstDirty,640,lastDirty-firstDirty+1
+    );
     this.context.save();
     this.context.imageSmoothingEnabled=false;
     this.context.fillStyle="#000";
