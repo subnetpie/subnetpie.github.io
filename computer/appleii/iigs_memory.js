@@ -55,6 +55,7 @@ export class IIgsMemory {
     this.iwmActive = false;
     this.iwmDevSel = 0;
     this.floppy35 = new Floppy35();
+    this.iwmReadShift=0; this.iwmReadBits=0;
     this.iwmData = 0x00;
     this.iwmWritePending = 0;
     // MAME iwm_device reset value for the write-handshake register.
@@ -300,6 +301,7 @@ export class IIgsMemory {
       // WHD bit 6. Leaving it stops our controller-visible write handshake.
       if(this.iwmActive && this.iwmQ7) this.iwmWhd |= 0x40;
       else if(!this.iwmQ7) {
+        this.iwmReadShift=0; this.iwmReadBits=0; this.iwmData=0;
         this.iwmWhd &= ~0x40;
         this.iwmWritePending=0;
       }
@@ -341,9 +343,11 @@ export class IIgsMemory {
     const disk525=!select35 ? this.floppy?._active_disk : null;
     const noMedia=select35 ? !media35 : !disk525?.medium;
     const writeProtected=select35 ? !!media35?.writeProtected : !!disk525?.write_protect;
-    if(this.iwmQ6 && !this.iwmQ7)
+    if(this.iwmQ6 && !this.iwmQ7) {
+      this.iwmReadShift=0; this.iwmReadBits=0;
       return (this.iwmMode&0x1f) | (this.iwmActive ? 0x20 : 0) |
         ((noMedia || writeProtected) ? 0x80 : 0);
+    }
     if(!this.iwmQ6 && this.iwmQ7) return this.iwmWhd;
     if(this.iwmQ6 && this.iwmQ7) return 0xff;
     if(!this.iwmActive) return 0xff;
@@ -352,7 +356,6 @@ export class IIgsMemory {
     if(select35) {
       if(!media35) return 0xff;
       if(this.floppy35.media!==media35) this.floppy35.mount(media35);
-      this.iwmData=this.floppy35.read()&0xff;
       return this.iwmData;
     }
     if(!this.floppy?._active_disk) return 0xff;
@@ -375,7 +378,24 @@ export class IIgsMemory {
     // MAME apple2gs.cpp: IWM(config, ..., A2GS_7M), master 28,636,363 / 4.
     const iwmHz=28636363/4;
     const clocks=cycles * (iwmHz / cpuHz);
-    if((this.diskReg&0x40) && this.iwmActive) this.floppy35.tick(cycles/cpuHz);
+    if((this.diskReg&0x40) && this.iwmActive) {
+      this.floppy35.tick(cycles/cpuHz);
+      if(!this.iwmQ7) {
+        for(const bit of this.floppy35.takeBits()) {
+          this.iwmReadShift=((this.iwmReadShift<<1)|bit)&0xff;
+          this.iwmReadBits=Math.min(8,this.iwmReadBits+1);
+          // MAME sync read: once the shift register reaches bit 7, publish
+          // the completed value and restart synchronization.
+          if(this.iwmReadShift&0x80) {
+            this.iwmData=this.iwmReadShift;
+            this.iwmReadShift=0; this.iwmReadBits=0;
+          } else if(this.iwmReadBits>=8) {
+            this.iwmData=this.iwmReadShift;
+            this.iwmReadShift=0; this.iwmReadBits=0;
+          }
+        }
+      } else this.floppy35.takeBits();
+    }
     if(this.iwmWritePending) {
       this.iwmWritePending-=clocks;
       if(this.iwmWritePending<=0) {
