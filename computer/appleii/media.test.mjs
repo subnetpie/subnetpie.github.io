@@ -110,6 +110,34 @@ test('Total Replay loads from a ZIP containing a 2MG wrapper',
   });
 
 
+test('IIgs Arkanoid 2MG progresses beyond its boot block',
+  {skip:!process.env.ARKANOID_IMAGE}, () => {
+    const src=readFileSync(process.env.ARKANOID_IMAGE);
+    const {board:m}=createMachine();
+    const media=decodeMedia('Arkanoid.2mg',src);
+    assert.equal(media.kind,'block','Arkanoid image must decode as a ProDOS block device');
+    mountMedia(m,media); m.reset(true);
+
+    const recent=[];
+    m.memory.setTrace((rw,addr,value)=>{
+      if((addr&0xffff)>=0xc000 && (addr&0xffff)<=0xc0ff) {
+        recent.push({rw,addr:addr>>>0,value});
+        if(recent.length>64)recent.shift();
+      }
+    });
+    let enteredBoot=false, leftBoot=false;
+    m.cpu.setTrace(e=>{
+      const pc=e.pc&0xffff;
+      if(pc>=0x0800 && pc<0x0a00) enteredBoot=true;
+      else if(enteredBoot) leftBoot=true;
+    });
+    for(let i=0;i<40&&!leftBoot;i++)m.clock(500000);
+    assert.ok(enteredBoot,'Arkanoid must enter the ProDOS boot block');
+    assert.ok(leftBoot,
+      'Arkanoid stalled in boot block: PB='+m.cpu.register.pb.toString(16)+
+      ' PC='+m.cpu.register.pc.toString(16)+' recentIO='+JSON.stringify(recent));
+  });
+
 test('IIgs cold-boots a ProDOS block 2MG extracted from ZIP',()=>{
   const {board:m}=createMachine();
   const disk=new Uint8Array(4096);
