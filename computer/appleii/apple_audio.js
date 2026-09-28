@@ -26,7 +26,10 @@ export class AppleAudio
     }
 
     init() {
-        if(this.ac) return;
+        if(this.ac) {
+            if(this.ac.state === "suspended") void this.ac.resume();
+            return this.ac;
+        }
         this.ac = new (window.AudioContext || window.webkitAudioContext)();
         const osc = this.ac.createOscillator({channelCount:1, channelCountMode:"explicit", frequency:0});
         const ws = this.ac.createWaveShaper({channelCount:1, channelCountMode:"explicit"});
@@ -49,6 +52,14 @@ export class AppleAudio
         docRightOsc.connect(docRightShape); docRightShape.connect(this.docRightGn); this.docRightGn.connect(merger,0,1);
         merger.connect(this.ac.destination);
         osc.start(); docLeftOsc.start(); docRightOsc.start();
+        if(this.ac.state === "suspended") void this.ac.resume();
+        return this.ac;
+    }
+
+    unlock() {
+        const ac=this.init();
+        if(ac && ac.state === "suspended") return ac.resume();
+        return Promise.resolve();
     }
 
     begin_segment(clock) {
