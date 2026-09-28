@@ -235,6 +235,15 @@ test('IIgs 800K 2MG mounts only on native 3.5 drive, not synthetic slot 7',()=>{
   assert.equal(m.prodosBlock.image,null);
 });
 
+test('IIgs mounted 5.25 media selects external slot 6 across reset',()=>{
+  const {board:m}=createMachine(), b=m.memory;
+  const media=decodeMedia('boot.dsk',new Uint8Array(143360));
+  mountMedia(m,media); m.reset(true);
+  assert.ok(b.slotRom&0x40,'mounted Disk II media must select external slot 6');
+  assert.equal(b.slotRom&0x80,0,'Disk II boot must not leave slot 7 selected');
+  assert.equal(b.read(0xc600),0xa2,'Disk II P5 ROM must be visible to ROM03');
+});
+
 test('IIgs mounted block card selects slot 7 without bypassing ROM decode',()=>{
   const {board:m}=createMachine(), b=m.memory;
   const media=decodeMedia('boot.hdv',new Uint8Array(1024));
