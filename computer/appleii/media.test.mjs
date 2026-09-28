@@ -138,6 +138,23 @@ test('IIgs Arkanoid 2MG progresses beyond its boot block',
       ' PC='+m.cpu.register.pc.toString(16)+' recentIO='+JSON.stringify(recent));
   });
 
+test('IIgs 3.5-inch phase stepping matches MAME quarter-track mapping',()=>{
+  const {board:m}=createMachine();
+  const disk=new Uint8Array(1600*512), media=decodeMedia('800k.2mg',wrap(disk,1));
+  mountMedia(m,media);
+  const f=m.memory.floppy35; f.mount(media);
+  f.setPhase(0x1); assert.deepEqual([f.track,f.subtrack],[0,0]);
+  f.setPhase(0x3); assert.deepEqual([f.track,f.subtrack],[0,1]);
+  f.setPhase(0x2); assert.deepEqual([f.track,f.subtrack],[0,2]);
+  f.setPhase(0x6); assert.deepEqual([f.track,f.subtrack],[0,3]);
+  f.setPhase(0x4); assert.deepEqual([f.track,f.subtrack],[1,0]);
+  f.setPhase(0x1); assert.deepEqual([f.track,f.subtrack],[1,0],'opposite phase must not move');
+  f.setPhase(0xc); assert.deepEqual([f.track,f.subtrack],[1,1]);
+  f.setPhase(0x8); assert.deepEqual([f.track,f.subtrack],[1,2]);
+  f.setPhase(0x9); assert.deepEqual([f.track,f.subtrack],[1,3]);
+  f.setPhase(0x1); assert.deepEqual([f.track,f.subtrack],[2,0]);
+});
+
 test('IIgs 800K 3.5-inch backend follows MAME speed-zone geometry',()=>{
   const {board:m}=createMachine();
   const disk=new Uint8Array(1600*512);
