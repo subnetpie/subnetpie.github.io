@@ -544,6 +544,27 @@ test('hidden hi-res page writes survive a page flip', () => {
   assert.notEqual(digest(pixels),blank,'page flip must reveal the updated pixels');
 });
 
+test('IIgs leaving SHR reveals HGR written while SHR was active', () => {
+  const {board:m,pixels}=createMachine();
+  m.memory.write(0xc050,0); // graphics
+  m.memory.write(0xc057,0); // hires
+  m.memory.write(0xc054,0); // page 1
+  m.memory.write(0xc029,0xc1); // SHR on
+
+  // While SHR owns the screen, compatibility writes still shadow into
+  // Mega II RAM but do not update the hidden HGR pixel cache.
+  m.memory.write(0x002000,0x7f);
+  assert.equal(m.memory.slowE0[0x2000],0x7f);
+
+  // Total Replay does exactly this when hiding launch artwork.
+  m.memory.write(0xc029,0x01);
+
+  // The SHR->legacy transition must rebuild the HGR cache from Mega II RAM.
+  assert.equal(m.display_hires._active_page,1);
+  assert.equal(m.display_hires._active_bank,'main');
+  assert.notEqual(digest(pixels),digest(new Uint8ClampedArray(pixels.length)));
+});
+
 const replayPath=process.env.TOTAL_REPLAY_IMAGE;
 test('Total Replay boots on IIgs, accepts a search, and launches Battlezone',
   {skip:!replayPath}, () => {
