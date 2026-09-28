@@ -661,8 +661,12 @@ export class IIgsMemory {
         this.updateMegaIrq();
         return;
       }
+      // IIgs C07E/C07F are not the IIe IOUDIS/DHIRES write switches.
+      // MAME routes C07E through do_io() only for the Zip delay and C07F has
+      // no IIe IOU-disable side effect. Keep C080-C08F for LC switching.
+      if(io===0xc07e || io===0xc07f) return;
       if((io>=0xc050 && io<=0xc05f) || io===0xc070 ||
-         (io>=0xc07e && io<=0xc08f)) {
+         (io>=0xc080 && io<=0xc08f)) {
         for(const fn of this.legacy._write_hooks || []) {
           const v=fn(io,val);
           if(v!==undefined) return;
