@@ -471,6 +471,44 @@ for(const machine of ['iie','iigs']) {
   });
 }
 
+test('IIgs 80STORE PAGE2 aux HGR writes do not replace the displayed main page', () => {
+  const {board:m,pixels}=createMachine();
+  m.memory.write(0xc050,0); // graphics
+  m.memory.write(0xc057,0); // hires
+  m.memory.write(0xc001,0); // 80STORE on
+  m.memory.write(0xc054,0); // PAGE1 -> main page-1 banking
+  m.memory.write(0x002000,0x7f);
+  m.io_manager.latch_display_state();
+  m.io_manager.present_latched_display();
+  const mainPage=digest(pixels);
+
+  m.memory.write(0xc055,0); // PAGE2 under 80STORE -> AUX bank, still displays HGR page 1
+  m.memory.write(0x002000,0x00);
+  assert.equal(m.memory.slowE0[0x2000],0x7f);
+  assert.equal(m.memory.slowE1[0x2000],0x00);
+  m.io_manager.latch_display_state();
+  m.io_manager.present_latched_display();
+  assert.equal(digest(pixels),mainPage,
+    'PAGE2 under 80STORE must select AUX RAM without selecting an AUX display page');
+});
+
+test('IIgs 80-column text forwards AUX and MAIN writes to separate renderer banks', () => {
+  const {board:m}=createMachine();
+  const io=m.io_manager;
+  io._text_mode=true;
+  io._80col_mode=true;
+  const seen=[];
+  const draw=m.display_text_80.draw_text.bind(m.display_text_80);
+  m.display_text_80.draw_text=(addr,val,bank)=>seen.push({addr,val,bank});
+  io.draw_display(0x0400,0x41,'aux');
+  io.draw_display(0x0400,0x42,'main');
+  m.display_text_80.draw_text=draw;
+  assert.deepEqual(seen,[
+    {addr:0x0400,val:0x41,bank:'aux'},
+    {addr:0x0400,val:0x42,bank:'main'}
+  ]);
+});
+
 test('hidden hi-res page writes survive a page flip', () => {
   const {board:m,pixels}=createMachine('iie');
   m.memory.read(0xc050); m.memory.read(0xc057);
