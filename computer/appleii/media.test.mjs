@@ -138,6 +138,19 @@ test('IIgs Arkanoid 2MG progresses beyond its boot block',
       ' PC='+m.cpu.register.pc.toString(16)+' recentIO='+JSON.stringify(recent));
   });
 
+test('IIgs IWM sync latch supports Arkanoid high-bit polling',()=>{
+  const {board:m}=createMachine(), b=m.memory;
+  const disk=new Uint8Array(1600*512), media=decodeMedia('Arkanoid.2mg',wrap(disk,1));
+  mountMedia(m,media); b.floppy35.mount(media);
+  b.diskReg=0x40; b.iwmActive=true; b.iwmMotor=true; b.iwmQ6=false; b.iwmQ7=false; b.iwmMode=0;
+  let ready=false;
+  for(let i=0;i<200&&!ready;i++) {
+    b.tickIwm(28,2800000);
+    ready=!!(b.iwmAccess(0xc0ec)&0x80);
+  }
+  assert.ok(ready,'LDA $C0EC / BPL-style polling must eventually observe a synchronized byte');
+});
+
 test('IIgs IWM decodes 3.5 media through flux transition windows',()=>{
   const {board:m}=createMachine(), b=m.memory;
   const disk=new Uint8Array(1600*512), media=decodeMedia('800k.2mg',wrap(disk,1));
