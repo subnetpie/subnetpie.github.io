@@ -85,18 +85,42 @@ export class DoubleHiresDisplay
     if (this._id) this.refresh();
   }
 
-  draw(addr) {
-    const az = addr - 1 & 0xfffe;
+  draw(addr, val = undefined, writeBank = undefined) {
+    addr &= 0xffff;
     const ae = addr & 0xfffe; // even
     const ao = addr | 0x0001; // odd
     const col = (ae & 0x7f) % 40;  // column: 0-39
     const ac0 = ae - col;  // col 0, 40, 80 address in bits 6,5
     const row = ((ac0 << 1) & 0xc0) | ((ac0 >> 4) & 0x38) | ((ac0 >> 10) & 0x07);
     if(row > 191) return;
-    // data is spread across four bytes in main & aux memory
+
+    // IOManager's write hook runs before Memory commits the byte. Work out
+    // which physical bank will receive this write and substitute the new
+    // value while decoding the affected cell. Without this, every DHGR
+    // update was rendered one write behind and only corrected by the costly
+    // full-screen refresh in the browser frame loop.
+    if(writeBank !== "main" && writeBank !== "aux") {
+      if(addr < 0x4000 && this._mem.dms_80store && this._mem.dms_hires)
+        writeBank = this._mem.dms_page2 ? "aux" : "main";
+      else
+        writeBank = this._mem.aux_write ? "aux" : "main";
+    }
+    const read = (bank, a) => {
+      a &= 0xffff;
+      if(val !== undefined && a === addr && bank === writeBank) return val & 0xff;
+      return bank === "aux" ? this._mem._aux[a] : this._mem._main[a];
+    };
+
+    // Double-hi-res interleaves AUX and MAIN bytes for the same video page.
     const id = (addr < 0x4000) ? this._id1 : this._id2;
-    this.draw_cell (
-      id, row, col, this._mem._main[ae-1], this._mem._aux[ae], this._mem._main[ae], this._mem._aux[ao], this._mem._main[ao], this._mem._aux[ao+1]
+    this.draw_cell(
+      id, row, col,
+      read("main", ae - 1),
+      read("aux",  ae),
+      read("main", ae),
+      read("aux",  ao),
+      read("main", ao),
+      read("aux",  ao + 1)
     );
   }
 
