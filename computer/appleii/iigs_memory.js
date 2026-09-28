@@ -987,7 +987,7 @@ export class IIgsMemory {
     this.scc.reset(); this.doc.reset();
     this.adb.reset();
     this.iwmMode = 0; this.iwmPhases = 0; this.iwmQ6 = this.iwmQ7 = this.iwmMotor = false;
-    this.iwmMotorDelay = 0; this.iwmActive = false; this.iwmDevSel = 0; this.iwmControlDrive2 = false;
+    this.iwmMotorDelay = 0; this.iwmActive = false; this.iwmRw = 0; this.iwmDevSel = 0; this.iwmControlDrive2 = false;
     this.iwmData = 0x00; this.iwmWritePending = 0; this.iwmWhd = 0xbf;
     // MAME iwm_device::device_reset clears the complete read/write state
     // machine. Do not carry flux-window timing across RESET or media boots.
