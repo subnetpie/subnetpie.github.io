@@ -897,7 +897,8 @@ export class IIgsMemory {
     // IIgs RAM writes bypass Memory.write(), where the IIe normally
     // notifies the display. Draw the actual slow-bank byte so inhibited
     // shadow writes cannot leak fast RAM onto the screen.
-    if(off>=0x0400 && off<0x6000 && this.legacy.io_manager)
+    if(off>=0x0400 && off<0x6000 && this.legacy.io_manager &&
+       !(this.video && this.video.isSuperHires()))
       this.legacy.io_manager.draw_display(off,this.slowE0[off]);
     if(this.trace) this.trace("W",addr,val);
   }
