@@ -17,25 +17,31 @@ function gcr6(va,vb,vc) {
 export class Floppy35 {
   constructor() { this.eject(); }
   eject() {
-    this.media=null; this.track=0; this.head=0; this.phase=0;
+    this.media=null; this.track=0; this.subtrack=0; this.head=0; this.phases=0;
     this.pos=0; this.cacheKey=''; this.cache=null;
   }
   mount(media) {
     if(!media?.data || media.data.length!==1600*512) return false;
-    this.media=media; this.track=0; this.head=0; this.phase=0;
+    this.media=media; this.track=0; this.subtrack=0; this.head=0; this.phases=0;
     this.pos=0; this.cacheKey=''; this.cache=null; return true;
   }
   get writeProtected() { return !this.media || !!this.media.writeProtected; }
   setHead(head) { head=head?1:0; if(head!==this.head){this.head=head;this.pos=0;this.cacheKey='';} }
   setPhase(mask) {
-    // Sony 3.5-inch stepping is phase-driven through the IWM. Preserve a
-    // conservative adjacent-phase step model; ROM probes at track 0 remain exact.
-    const next=[0,1,2,3].find(i=>mask&(1<<i));
-    if(next===undefined)return;
-    const d=(next-this.phase+4)&3;
-    if(d===1)this.track=Math.min(79,this.track+1);
-    else if(d===3)this.track=Math.max(0,this.track-1);
-    this.phase=next; this.pos=0; this.cacheKey='';
+    // MAME floppy_image_device::seek_phase_w(): phase combinations select one
+    // of eight quarter-track positions. Opposite phases do not move the head.
+    this.phases=mask&0x0f;
+    const req=({1:0,3:1,2:2,6:3,4:4,12:5,8:6,9:7})[this.phases];
+    if(req===undefined)return;
+    const cur=(this.track<<2)|this.subtrack;
+    if(((cur^req)&7)===4)return;
+    let next=(cur&~7)|req;
+    if(next<cur-4)next+=8;
+    else if(next>cur+4)next-=8;
+    next=Math.max(0,Math.min(79*4,next));
+    if(next===cur)return;
+    this.track=next>>>2; this.subtrack=next&3;
+    this.pos=0; this.cacheKey='';
   }
   sectorCount(track=this.track){return 12-Math.min(4,track>>>4);}
   sectorOffset(track,head,sector) {
