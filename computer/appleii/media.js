@@ -38,15 +38,10 @@ export function prodosToDOS(data) {
 }
 
 export function decodeMedia(name,value) {
-  let data=bytesOf(value),format,writeProtected=false,volume=254,physical=null;
+  let data=bytesOf(value),format,writeProtected=false,volume=254;
   const lower=name.toLowerCase();
   if(hasMagic(data,'2IMG') || /\.(2mg|2img)$/.test(lower)) {
-    const parsed=parse2MG(data);
-    ({data,format,writeProtected,volume}=parsed);
-    // A ProDOS-order 1600-block 2MG is the native 800K IIgs 3.5-inch
-    // geometry. Keep using the block shim for sector transfers for now, but
-    // preserve the physical-media identity so IWM 35SEL probes see a disk.
-    if(format===1 && parsed.blocks===1600) physical='35';
+    ({data,format,writeProtected,volume}=parse2MG(data));
   } else if(/\.(rom|bin)$/.test(lower) && [0x20000,0x40000].includes(data.length)) {
     return {kind:'rom',name,data};
   } else if(hasMagic(data,'WOZ1') || hasMagic(data,'WOZ2')) {
@@ -58,9 +53,6 @@ export function decodeMedia(name,value) {
   else if(/\.(po|hdv)$/.test(lower) || data.length!==143360)format=1;
   else format=0;
 
-  if(physical==='35') {
-    return {kind:'floppy35',format:'prodos',name,data,writeProtected,physical:'35'};
-  }
   if(format===2) {
     if(data.length!==35*6656)throw new Error('NIB image must contain 35 tracks of 6656 bytes');
     return {kind:'floppy',format:'nib',name,data,writeProtected:true};
@@ -72,7 +64,7 @@ export function decodeMedia(name,value) {
   }
   if(!data.length || data.length%512 || data.length/512>65535)
     throw new Error('Block image must contain 1–65535 blocks of 512 bytes');
-  return {kind:'block',name,data,writeProtected,physical};
+  return {kind:'block',name,data,writeProtected};
 }
 
 export function mountMedia(board, media, drive=0) {
@@ -82,31 +74,10 @@ export function mountMedia(board, media, drive=0) {
     board.loadIIgsROM(media.data);
     return true;
   }
-  if(media.kind==='floppy35') {
-    if(!board.iigsEnabled || !board.memory) throw new Error('3.5-inch media requires IIgs mode');
-    board.memory.floppy35Media=media;
-    ok=board.memory.floppy35.mount(media);
-    board.prodosBlock.eject();
-    if(board.floppy525?._disks) {
-      for(const d of board.floppy525._disks) if(d) d.medium=null;
-      board.floppy525._active_disk=board.floppy525._disks[0];
-    }
-  } else if(media.kind==='block') {
-    ok=board.prodosBlock.load_image(media.name,media.data,media);
-    if(board.iigsEnabled && board.memory)
-      board.memory.floppy35Media=media.physical==='35' ? media : null;
-    // A newly mounted block image owns the boot path. Do not leave a prior
-    // Disk II image selected/active across the reset that follows loading.
-    if(ok && board.floppy525?._disks) {
-      for(const d of board.floppy525._disks) if(d) d.medium = null;
-      board.floppy525._active_disk = board.floppy525._disks[0];
-    }
-  } else {
-    ok=board.floppy525.load_image(drive,media.name,media.data,media);
-    if(board.iigsEnabled && board.memory) board.memory.floppy35Media=null;
-  }
+  if(media.kind==='block')ok=board.prodosBlock.load_image(media.name,media.data,media);
+  else ok=board.floppy525.load_image(drive,media.name,media.data,media);
   if(!ok)throw new Error('Unable to mount '+media.name);
   // Otherwise slot 7 keeps booting the previously selected hard disk.
-  if(media.kind==='floppy' || media.kind==='floppy35')board.prodosBlock.eject();
+  if(media.kind==='floppy')board.prodosBlock.eject();
   return true;
 }
