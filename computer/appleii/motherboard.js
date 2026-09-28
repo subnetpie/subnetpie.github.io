@@ -112,7 +112,10 @@ export class Motherboard
                    (this.video_iigs.frameCount & 0x0f) === 0)
                     this.memory.setQuarterFlag();
             }
-            if(this.iigsEnabled) this.memory.tickRtc(used, 2800000);
+            if(this.iigsEnabled) {
+                this.memory.tickRtc(used, 2800000);
+                this.memory.tickIwm(used, 2800000);
+            }
             if(this.iigsEnabled && this.memory.scc) this.memory.scc.tick(used);
             if(this.iigsEnabled && this.memory.doc) {
                 const docSamples=this.memory.doc.tick(used, 2800000);
