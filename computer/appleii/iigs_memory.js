@@ -37,6 +37,7 @@ export class IIgsMemory {
     this.intC8Rom = false;
     this.clockCtl = 0x00;
     this.clockData = 0x00;
+    this.rtc = {ce:1,clk:0,data:0,out:0};
     this.intEnable = 0x00;
     this.intFlag = 0x00;
     this.irq = null;
@@ -74,6 +75,20 @@ export class IIgsMemory {
     const base = 0xfc0000;
     if(addr >= base && addr < base + this.rom.length) return this.rom[addr - base];
     return undefined;
+  }
+
+  processClock() {
+    // MAME apple2gs_state::process_clock clocks CLOCKDATA MSB-first.
+    for(let i=0;i<8;i++) {
+      this.rtc.clk=1;
+      if(!(this.clockCtl&0x40)) {
+        this.rtc.data=(this.clockData>>(7-i))&1;
+        this.rtc.clk=0;
+      } else {
+        this.rtc.clk=0;
+        this.clockData=((this.clockData<<1)|(this.rtc.out&1))&0xff;
+      }
+    }
   }
 
   floatingBus() {
@@ -511,7 +526,13 @@ export class IIgsMemory {
       if(io===0xc031){this.diskReg=val&0xc0;return;}
       if(io===0xc032){if(this.video)this.video.writeSCANINT(val);return;}
       if(io===0xc033){this.clockData=val;return;}
-      if(io===0xc034){this.clockCtl=val&0x6f;if(this.video)this.video.setBorderColor(val);return;}
+      if(io===0xc034){
+        this.clockCtl=val&0x6f;
+        if(this.video)this.video.setBorderColor(val);
+        this.rtc.ce=((val>>7)&1)^1;
+        if(val&0x80)this.processClock();
+        return;
+      }
       if(io===0xc035){this.shadow=val;return;}
       if(io===0xc036){this.speed=val;return;}
       // MAME ROM03: DMAREG/CYAREG ($C037) is a no-op in this machine implementation.
