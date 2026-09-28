@@ -25,6 +25,11 @@ export class Floppy35 {
     this.media=media; this.track=0; this.subtrack=0; this.head=0; this.phases=0;
     this.pos=0; this.cellPos=0; this.cellFrac=0; this.rawBits=[]; this.cacheKey=''; this.cache=null; return true;
   }
+  reset() {
+    this.track=0; this.subtrack=0; this.head=0; this.phases=0;
+    this.pos=0; this.cellPos=0; this.cellFrac=0; this.rawBits=[];
+    this.cacheKey=''; this.cache=null;
+  }
   get writeProtected() { return !this.media || !!this.media.writeProtected; }
   setHead(head) { head=head?1:0; if(head!==this.head){this.head=head;this.pos=0;this.cacheKey='';} }
   setPhase(mask) {
