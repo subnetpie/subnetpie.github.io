@@ -109,10 +109,8 @@ test('IIgs SOUNDCTL and SOUNDDATA match MAME GLU semantics', () => {
 test('ROM03 C071-C07F IRQ helper window comes from firmware', () => {
   const {board:m}=createMachine();
   const b=m.memory;
-  for(let off=0x71;off<=0x7f;off++) {
-    if(off===0x7e) continue;
+  for(let off=0x71;off<=0x7f;off++)
     assert.equal(b.read(0xc000|off),b.rom[0x3c000+off]);
-  }
 });
 
 test('ROM03 GLU DATA_FULL clears only after KMSTATUS then DATA', () => {
