@@ -544,6 +544,10 @@ export class IOManager
         if(this._mixed_mode) this.draw_mixed_text();
     }
 
+    // Expose compatibility-video latches to IIgs bus/video timing logic.
+    get text_mode() { return this._text_mode; }
+    get mixed_mode() { return this._mixed_mode; }
+
     reset() {
         this._paddleDeadlines.fill(0);
         this._c3_rom = false;
