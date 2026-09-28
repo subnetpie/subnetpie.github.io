@@ -84,3 +84,39 @@ test('Drol headless timing trace', {timeout:120000}, () => {
   console.log(`DROL_TOTAL cycles=${m.cycles} steps=${steps} avgCyclesPerInstruction=${(cpuCycles/steps).toFixed(4)}`);
   assert.ok(steps>0);
 });
+
+
+test('Drol IIgs default-mode speed trace', {timeout:120000}, () => {
+  const disk=loadDisk();
+  const {board:m}=createMachine('iigs');
+  mountMedia(m,decodeMedia('Drol.dsk',disk),0);
+  m.reset(true);
+
+  let steps=0,cpuCycles=0;
+  const orig=m.cpu.step.bind(m.cpu);
+  m.cpu.step=()=>{
+    const used=orig();
+    steps++;
+    cpuCycles+=used;
+    return used;
+  };
+
+  const MASTER_HZ=2800000;
+  console.log(`DROL_IIGS start speed=$${m.memory.speed.toString(16).padStart(2,'0')} fast=${m.memory.isFastCpu()}`);
+  for(let sec=1;sec<=12;sec++) {
+    const before=m.cycles;
+    const beforeSteps=steps;
+    const beforeCpu=cpuCycles;
+    m.clock(MASTER_HZ);
+    const pc=m.cpu.register.pc&0xffff;
+    console.log(
+      `DROL_IIGS sec=${sec} actualMaster=${(m.cycles-before).toFixed(3)}`+
+      ` steps=${steps-beforeSteps} cpuCycles=${cpuCycles-beforeCpu}`+
+      ` pc=$${pc.toString(16).padStart(4,'0')}`+
+      ` speed=$${m.memory.speed.toString(16).padStart(2,'0')}`+
+      ` fast=${m.memory.isFastCpu()}`+
+      ` mode=${m.io_manager._text_mode?'TEXT':(m.legacyMemory.dms_hires?'HGR':'LORES')}`
+    );
+  }
+  assert.ok(steps>0);
+});
