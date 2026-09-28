@@ -116,7 +116,7 @@ test('IIgs Arkanoid 2MG progresses beyond its boot block',
     const src=readFileSync(process.env.ARKANOID_IMAGE);
     const {board:m}=createMachine();
     const media=decodeMedia('Arkanoid.2mg',src);
-    assert.equal(media.kind,'block','Arkanoid image must decode as a ProDOS block device');
+    assert.equal(media.kind,'floppy35','Arkanoid image must decode as a native IIgs 3.5-inch floppy');
     mountMedia(m,media); m.reset(true);
 
     const recent=[];
@@ -193,6 +193,16 @@ test('IIgs 800K native GCR fields round-trip payload across zones and heads',()=
     }
     assert.ok(ns>=8&&ns<=12);
   }
+});
+
+test('IIgs 800K 2MG mounts only on native 3.5 drive, not synthetic slot 7',()=>{
+  const {board:m}=createMachine(), b=m.memory;
+  const disk=new Uint8Array(1600*512), media=decodeMedia('Arkanoid.2mg',wrap(disk,1));
+  assert.equal(media.kind,'floppy35');
+  mountMedia(m,media); m.reset(true);
+  assert.equal(b.floppy35Media,media);
+  assert.equal(b.floppy35.media,media);
+  assert.equal(m.prodosBlock.image,null);
 });
 
 test('IIgs ROM03 can see mounted ProDOS slot-7 boot firmware after reset',()=>{
