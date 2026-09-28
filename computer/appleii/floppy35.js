@@ -18,12 +18,12 @@ export class Floppy35 {
   constructor() { this.eject(); }
   eject() {
     this.media=null; this.track=0; this.subtrack=0; this.head=0; this.phases=0;
-    this.pos=0; this.rotation=0; this.rawBits=[]; this.cacheKey=''; this.cache=null;
+    this.pos=0; this.cellPos=0; this.cellFrac=0; this.rawBits=[]; this.cacheKey=''; this.cache=null;
   }
   mount(media) {
     if(!media?.data || media.data.length!==1600*512) return false;
     this.media=media; this.track=0; this.subtrack=0; this.head=0; this.phases=0;
-    this.pos=0; this.rotation=0; this.rawBits=[]; this.cacheKey=''; this.cache=null; return true;
+    this.pos=0; this.cellPos=0; this.cellFrac=0; this.rawBits=[]; this.cacheKey=''; this.cache=null; return true;
   }
   get writeProtected() { return !this.media || !!this.media.writeProtected; }
   setHead(head) { head=head?1:0; if(head!==this.head){this.head=head;this.pos=0;this.cacheKey='';} }
@@ -82,21 +82,39 @@ export class Floppy35 {
     this.cacheKey=key; this.cache=Uint8Array.from(out); return this.cache;
   }
   rpm(track=this.track) { return [394,429,472,525,590][Math.min(4,track>>>4)]; }
+  cellCount(track=this.track) {
+    return Math.floor(30318342/this.rpm(track));
+  }
+  trackCells() {
+    const bytes=this.buildTrack(), cells=[];
+    // MAME self-sync FF is written as 48 cells containing FF3FCF/F3FCFF,
+    // not as ordinary 8-cell bytes. Expand FF runs with that transition
+    // pattern while retaining normal 8-cell GCR fields.
+    for(let i=0;i<bytes.length;i++) {
+      if(bytes[i]===0xff) {
+        const pat=[1,1,1,1,1,1,1,1,0,0,1,1,1,1,1,1,0,0,1,1,1,1,0,0,
+                   1,1,1,1,0,0,1,1,1,1,1,1,0,0,1,1,1,1,1,1,1,1,1,1];
+        cells.push(...pat);
+      } else for(let b=7;b>=0;b--)cells.push((bytes[i]>>>b)&1);
+    }
+    const target=this.cellCount();
+    if(cells.length<target) {
+      const sync=[1,1,1,1,1,1,1,1,0,0,1,1,1,1,1,1,0,0,1,1,1,1,0,0,
+                  1,1,1,1,0,0,1,1,1,1,1,1,0,0,1,1,1,1,1,1,1,1,1,1];
+      while(cells.length<target)cells.push(...sync.slice(0,Math.min(48,target-cells.length)));
+    }
+    return cells;
+  }
   tick(seconds) {
     if(!this.media || seconds<=0)return;
-    const t=this.buildTrack();
-    // Advance by physical-sector byte time. MAME documents 800 physical
-    // bytes/sector; the Sony drive changes RPM by zone to keep transfer rate
-    // approximately constant across 12..8 sector tracks.
-    const bytesPerRev=this.sectorCount()*800;
-    this.rotation += seconds*(this.rpm()/60)*bytesPerRev;
-    const n=this.rotation|0;
-    if(n){
-      this.rotation-=n;
-      for(let k=0;k<n;k++) {
-        const v=t[this.pos%t.length]; this.pos=(this.pos+1)%t.length;
-        for(let b=7;b>=0;b--)this.rawBits.push((v>>>b)&1);
-      }
+    const cells=this.trackCells();
+    // MAME's 3.5 GCR cell time is 1.979 us. RPM changes the number of cells
+    // per revolution rather than the cell cadence.
+    this.cellFrac += seconds/1.979e-6;
+    const n=this.cellFrac|0; if(!n)return; this.cellFrac-=n;
+    for(let k=0;k<n;k++) {
+      this.rawBits.push(cells[this.cellPos%cells.length]);
+      this.cellPos=(this.cellPos+1)%cells.length;
     }
   }
   takeBits() { const b=this.rawBits; this.rawBits=[]; return b; }
