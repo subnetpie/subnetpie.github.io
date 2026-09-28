@@ -50,9 +50,12 @@ export class Floppy35 {
   }
   sectorCount(track=this.track){return 12-Math.min(4,track>>>4);}
   sectorOffset(track,head,sector) {
+    // MAME apple_gcr_format::load consumes raw 800K data as
+    // track -> head -> logical sector. Each head owns one contiguous ns*512
+    // region; heads are not interleaved sector-by-sector.
     let n=0;
-    for(let t=0;t<track;t++) n+=(12-Math.min(4,t>>>4))*2;
-    n+=head*this.sectorCount(track)+sector;
+    for(let t=0;t<track;t++) n+=this.sectorCount(t)*2;
+    n+=(head?this.sectorCount(track):0)+sector;
     return n*512;
   }
   buildTrack() {
@@ -63,7 +66,7 @@ export class Floppy35 {
     let si=0; for(let i=0;i<ns;i++){order.push(si);si=(si+2)%ns;if(si===0)si++;}
     const sync=()=>{for(let i=0;i<16;i++)out.push(0xff);};
     for(let oi=0;oi<ns;oi++) {
-      const s=order[oi], side=this.head?0x20:0, fmt=0x00;
+      const s=order[oi], side=this.head?0x20:0, fmt=0x22;
       sync(); out.push(0xd5,0xaa,0x96,
         GCR6[this.track&0x3f],GCR6[s&0x3f],
         GCR6[((this.track&0x40)?1:0)|side],
@@ -127,7 +130,7 @@ export class Floppy35 {
     const sync=()=>{for(let i=0;i<16;i++)cells.push(...syncPat);};
     let si=0; for(let i=0;i<ns;i++){order.push(si);si=(si+2)%ns;if(si===0)si++;}
     for(const s of order) {
-      const side=this.head?0x20:0, fmt=0x00;
+      const side=this.head?0x20:0, fmt=0x22;
       sync();
       [0xd5,0xaa,0x96,GCR6[this.track&0x3f],GCR6[s&0x3f],
        GCR6[((this.track&0x40)?1:0)|side],GCR6[fmt],
