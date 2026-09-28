@@ -18,12 +18,12 @@ export class Floppy35 {
   constructor() { this.eject(); }
   eject() {
     this.media=null; this.track=0; this.subtrack=0; this.head=0; this.phases=0;
-    this.pos=0; this.rotation=0; this.cacheKey=''; this.cache=null;
+    this.pos=0; this.rotation=0; this.rawBits=[]; this.cacheKey=''; this.cache=null;
   }
   mount(media) {
     if(!media?.data || media.data.length!==1600*512) return false;
     this.media=media; this.track=0; this.subtrack=0; this.head=0; this.phases=0;
-    this.pos=0; this.rotation=0; this.cacheKey=''; this.cache=null; return true;
+    this.pos=0; this.rotation=0; this.rawBits=[]; this.cacheKey=''; this.cache=null; return true;
   }
   get writeProtected() { return !this.media || !!this.media.writeProtected; }
   setHead(head) { head=head?1:0; if(head!==this.head){this.head=head;this.pos=0;this.cacheKey='';} }
@@ -91,9 +91,15 @@ export class Floppy35 {
     const bytesPerRev=this.sectorCount()*800;
     this.rotation += seconds*(this.rpm()/60)*bytesPerRev;
     const n=this.rotation|0;
-    if(n){this.rotation-=n;this.pos=(this.pos+n)%t.length;}
+    if(n){
+      this.rotation-=n;
+      for(let k=0;k<n;k++) {
+        const v=t[this.pos%t.length]; this.pos=(this.pos+1)%t.length;
+        for(let b=7;b>=0;b--)this.rawBits.push((v>>>b)&1);
+      }
+    }
   }
-  read() {
-    const t=this.buildTrack(); return t[this.pos%t.length];
-  }
+  takeBits() { const b=this.rawBits; this.rawBits=[]; return b; }
+  read() { const t=this.buildTrack(); return t[this.pos%t.length]; }
+
 }
