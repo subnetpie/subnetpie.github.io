@@ -1030,29 +1030,37 @@ export class W65C02S
             } })(),
 
             // 3. Absolute Indexed with X  a,x
-            ((addr) => { return {
+            ((addr, base, crossed) => { return {
                 name: "absolute_x",
-                init: () => { addr = (pop_word_pc() + this.reg.x) & 0xffff; },
+                init: () => {
+                    base = pop_word_pc();
+                    addr = (base + this.reg.x) & 0xffff;
+                    crossed = (base & 0xff00) !== (addr & 0xff00);
+                },
                 addr: () => { return addr; },
                 read: () => { return this.mem.read(addr); },
                 write: (val) => { this.mem.write(addr, val); },
+                page_crossed: () => crossed,
                 bytes: 3,
                 cycles: 4,
                 write_extra_cycles: 2
-                // TODO: +1 cycle for page boundary
             } })(),
 
             // 4. Absolute Indexed with Y  a,y
-            ((addr) => { return {
+            ((addr, base, crossed) => { return {
                 name: "absolute_y",
-                init: () => { addr = (pop_word_pc() + this.reg.y) & 0xffff; },
+                init: () => {
+                    base = pop_word_pc();
+                    addr = (base + this.reg.y) & 0xffff;
+                    crossed = (base & 0xff00) !== (addr & 0xff00);
+                },
                 addr: () => { return addr; },
                 read: () => { return this.mem.read(addr); },
                 write: (val) => { this.mem.write(addr, val); },
+                page_crossed: () => crossed,
                 bytes: 3,
                 cycles: 4,
                 write_extra_cycles: 0
-                // TODO: +1 cycle for page boundary
             } })(),
 
             // 5. Absolute Indirect  (a)   (used for jmp)
@@ -1098,13 +1106,18 @@ export class W65C02S
             } })(),
 
             // 9a. Program Counter Relative  r
-            ((offs) => { return {
+            ((offs, target, crossed) => { return {
                 name: "relative_pc",
-                init: () => { offs = pop_byte_pc(); },
-                addr: () => { return (this.reg.pc + ((offs & 0x80) ? (offs | 0xff00) : offs)) & 0xffff; },
+                init: () => { offs = pop_byte_pc(); crossed = false; },
+                addr: () => {
+                    const base = this.reg.pc;
+                    target = (base + ((offs & 0x80) ? (offs | 0xff00) : offs)) & 0xffff;
+                    crossed = (base & 0xff00) !== (target & 0xff00);
+                    return target;
+                },
                 bytes: 2,
                 cycles: 2,
-                branch_extra_cycles: 1
+                get branch_extra_cycles() { return 1 + (crossed ? 1 : 0); }
             } })(),
 
             // 9b. Zero Page Program Counter Relative  zp,r
@@ -1192,18 +1205,30 @@ export class W65C02S
             } })(),
 
             // 16. Zero Page Indirect Indexed with Y  (zp),y
-            ((addr) => { return {
+            ((addr, base, crossed) => { return {
                 name: "zero_page_indirect_y",
-                init: () => { addr = (this.mem.read_word(pop_byte_pc()) + this.reg.y) & 0xffff; },
+                init: () => {
+                    base = this.mem.read_word(pop_byte_pc());
+                    addr = (base + this.reg.y) & 0xffff;
+                    crossed = (base & 0xff00) !== (addr & 0xff00);
+                },
                 addr: () => { return addr; },
                 read: () => { return this.mem.read(addr); },
                 write: (val) => { this.mem.write(addr, val); },
+                page_crossed: () => crossed,
                 bytes: 2,
                 cycles: 5,
                 write_extra_cycles: 0
             } })()
         ];
 
+
+        // Read-type indexed instructions gain one cycle when indexing crosses
+        // a page boundary. Stores/RMW instructions use fixed timing and must
+        // not receive this penalty.
+        const pageCrossReadOps = new Set([
+            "adc","and","cmp","eor","lda","ldx","ldy","ora","sbc"
+        ]);
 
         // build the opcode lookup table
         this.op = [ ];
@@ -1227,7 +1252,11 @@ export class W65C02S
                         const fp = this[opname];
                         this.op[opnum] = () => {
                             memfn.init();
-                            return fp.call(this, memfn, opnum);
+                            let cycles = fp.call(this, memfn, opnum);
+                            if(memfn.page_crossed && memfn.page_crossed() &&
+                               pageCrossReadOps.has(opname))
+                                cycles++;
+                            return cycles;
                         };
                     }
                 }
