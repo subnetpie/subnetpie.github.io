@@ -57,6 +57,7 @@ export class IIgsMemory {
     this.floppy35 = new Floppy35();
     this.iwmReadShift=0; this.iwmReadBits=0;
     this.iwmReadState=0; this.iwmReadClock=0; this.iwmNextWindow=0;
+    this.iwmSyncUpdate=0; this.iwmAsyncUpdate=0;
     this.iwmData = 0x00;
     this.iwmWritePending = 0;
     // MAME iwm_device reset value for the write-handshake register.
@@ -401,12 +402,32 @@ export class IIgsMemory {
           this.iwmReadBits=Math.min(8,this.iwmReadBits+1);
           now=this.iwmNextWindow+(this.iwmReadState?half:this.iwmWindowClocks());
           this.iwmNextWindow=now; this.iwmReadState=0;
-          if((this.iwmMode&0x02) ? (this.iwmReadShift&0x80) : (this.iwmReadShift&0x80)) {
+          if(!(this.iwmMode&0x02)) {
+            // MAME sync mode exposes partial shift values while searching for
+            // a high-bit byte, with an 8/4-clock delayed update near sync.
+            if(this.iwmReadShift>=0x80) {
+              this.iwmData=this.iwmReadShift; this.iwmReadShift=0; this.iwmReadBits=0;
+              this.iwmSyncUpdate=0;
+            } else if(this.iwmReadShift>=0x04) {
+              this.iwmData=this.iwmReadShift; this.iwmSyncUpdate=0;
+            } else if(this.iwmReadShift>=0x02) {
+              this.iwmSyncUpdate=now+((this.iwmMode&0x08)?4:8);
+            }
+          } else if(this.iwmReadShift>=0x80) {
             this.iwmData=this.iwmReadShift; this.iwmReadShift=0; this.iwmReadBits=0;
+            this.iwmAsyncUpdate=0;
           }
           while(ti<transitions.length && transitions[ti]<=now)ti++;
         }
         this.iwmReadClock=endClock;
+        if(this.iwmSyncUpdate && this.iwmSyncUpdate<=endClock) {
+          if(!(this.iwmMode&0x02)) this.iwmData=this.iwmReadShift;
+          this.iwmSyncUpdate=0;
+        }
+        if(this.iwmAsyncUpdate && this.iwmAsyncUpdate<=endClock) {
+          if(this.iwmMode&0x02) this.iwmData=0;
+          this.iwmAsyncUpdate=0;
+        }
       } else this.floppy35.takeBits();
     }
     if(this.iwmWritePending) {
