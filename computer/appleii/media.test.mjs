@@ -138,7 +138,7 @@ test('IIgs Arkanoid 2MG progresses beyond its boot block',
       ' PC='+m.cpu.register.pc.toString(16)+' recentIO='+JSON.stringify(recent));
   });
 
-test('IIgs cold-boots a ProDOS block 2MG extracted from ZIP',()=>{
+test('IIgs 1600-block 2MG is visible to the native 3.5-inch IWM status path',()=>{\n  const {board:m}=createMachine();\n  const disk=new Uint8Array(1600*512);\n  const media=decodeMedia('800k.2mg',wrap(disk,1));\n  assert.equal(media.kind,'block');\n  assert.equal(media.physical,'35');\n  mountMedia(m,media);\n  const b=m.memory;\n  b.diskReg=0x40;\n  b.iwmQ6=true; b.iwmQ7=false;\n  assert.equal(b.iwmAccess(0xc0ec)&0x80,0);\n});\n\ntest('IIgs cold-boots a ProDOS block 2MG extracted from ZIP',()=>{
   const {board:m}=createMachine();
   const disk=new Uint8Array(4096);
   // Slot-7 firmware copies block zero to $0800 then enters $0801.
