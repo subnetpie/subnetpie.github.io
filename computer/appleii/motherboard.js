@@ -169,10 +169,17 @@ export class Motherboard
                     this.memory.setVblFlag();
                 if(this.video_iigs.frameCount !== oldFrame) {
                     if(this.io_manager && this.io_manager.latch_display_state) {
-                        // Compatibility video is memory-backed. Present at the
-                        // emulated frame boundary before the CPU can modify the
-                        // next frame's backing store; otherwise a browser RAF
-                        // can upload a partially cleared/redrawn page.
+                        // NEWVIDEO changes hardware state immediately, but a
+                        // browser cannot reproduce MAME's partial-raster
+                        // update_now(). Keep the last SHR frame visible until
+                        // this frame boundary, then rebuild compatibility video
+                        // from physical Mega II RAM and reveal it atomically.
+                        if(!this.video_iigs.isSuperHires() &&
+                           this.video_iigs.consumeCompatRevealPending &&
+                           this.video_iigs.consumeCompatRevealPending() &&
+                           this.io_manager.refresh_compat_display_from_ram)
+                            this.io_manager.refresh_compat_display_from_ram();
+
                         this.io_manager.latch_display_state();
                         if(!this.video_iigs.isSuperHires() &&
                            this.io_manager.present_latched_display)
