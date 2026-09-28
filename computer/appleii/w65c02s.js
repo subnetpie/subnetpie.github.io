@@ -691,7 +691,7 @@ export class W65C02S
     //
     pla(memfn) {
         this.reg.a = this.stack_pull_byte();
-        return memfn.cycles;
+        return 4;
     }
 
     //                                            n v b d i z c
@@ -700,7 +700,7 @@ export class W65C02S
     plp(memfn) {
         this.reg.flag.value = this.stack_pull_byte();
         this.reg.flag.b = false;
-        return memfn.cycles;
+        return 4;
     }
 
     //                                            n v b d i z c
@@ -708,7 +708,7 @@ export class W65C02S
     //
     plx(memfn) {
         this.reg.x = this.stack_pull_byte();
-        return memfn.cycles;
+        return 4;
     }
 
     //                                            n v b d i z c
@@ -716,7 +716,7 @@ export class W65C02S
     //
     ply(memfn) {
         this.reg.y = this.stack_pull_byte();
-        return memfn.cycles;
+        return 4;
     }
 
     //                                            n v b d i z c
