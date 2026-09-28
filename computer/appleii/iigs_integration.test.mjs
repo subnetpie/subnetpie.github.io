@@ -640,6 +640,19 @@ test('IIgs legacy video reads slow RAM and follows shadow and direct writes', ()
 });
 
 
+test('IIgs slot 6 Disk II motor detect forces 1 MHz CPU speed while enabled', () => {
+  const {board:m}=createMachine();
+  const b=m.memory;
+  b.speed=0x84; // SPEED_HIGH + slot-6 Disk II motor detect
+  b.diskReg=0x00;
+  b.iwmMotor=false;
+  assert.equal(b.isFastCpu(),true);
+  b.iwmMotor=true;
+  assert.equal(b.isFastCpu(),false);
+  b.diskReg=0x40; // 3.5-inch IWM path does not trigger Disk II slowdown
+  assert.equal(b.isFastCpu(),true);
+});
+
 test('IIgs SPEED bit 7 changes CPU execution rate without slowing machine time', () => {
   const {board:m}=createMachine();
   // Run the same master-time budget once fast and once slow. Count executed
