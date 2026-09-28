@@ -1,5 +1,8 @@
 const machineParam = new URLSearchParams(location.search).get("machine");
-const machineType = machineParam === "iie" ? "iie" : "iigs";
+const machineType = machineParam === "iigs" ? "iigs" : "iie";
+// Apple IIe runs at the NTSC 65C02 rate used by this emulator; IIgs fast
+// mode runs the 65816 at 2.8 MHz. Do not let an omitted query parameter
+// silently select the IIgs clock for ordinary Apple II software.
 const khz = machineType === "iigs" ? 2800 : 1020.5;
 let motherboard;
 let interval;
@@ -150,10 +153,10 @@ function on_interval(now_ms) {
 }
 
 function init() {
-  showBootStatus("IIgs startup: constructing motherboard...");
+  showBootStatus(machineType === "iigs" ? "IIgs startup: constructing motherboard..." : "Apple II startup: constructing motherboard...");
   let canvas = document.querySelector("canvas");
   motherboard = new Motherboard(khz, canvas, joyValues, (n, s) => {}, machineType);
-  showBootStatus("IIgs startup: motherboard constructed");
+  showBootStatus(machineType === "iigs" ? "IIgs startup: motherboard constructed" : "Apple II startup: motherboard constructed");
 
 async function loadBuiltInIIgsROM() {
   if(machineType !== "iigs") return false;
