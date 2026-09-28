@@ -51,7 +51,9 @@ export class IIgsMemory {
     this.doc = new IIgsDOC();
     this.iwmMode = 0; this.iwmQ6 = false; this.iwmQ7 = false; this.iwmMotor = false;
     this.iwmMotorDelay = 0;
+    this.iwmActive = false;
     this.iwmDevSel = 0;
+    this.iwmData = 0x00;
     // MAME iwm_device reset value for the write-handshake register.
     this.iwmWhd = 0xbf;
   }
@@ -272,7 +274,8 @@ export class IIgsMemory {
         // MAME IWM: mode bit 2 disables the motor-off timer. Otherwise the
         // controller and selected drive remain active for 8,388,608 IWM clocks.
         if(this.iwmMode & 0x04) {
-          this.iwmMotor=false; this.iwmMotorDelay=0; this.iwmDevSel=0;
+          this.iwmMotor=false; this.iwmMotorDelay=0; this.iwmActive=false; this.iwmDevSel=0;
+          this.iwmWhd &= ~0x40;
         } else {
           this.iwmMotorDelay=8388608;
         }
@@ -280,6 +283,7 @@ export class IIgsMemory {
     }
     if(op === 9) {
       this.iwmMotor = true;
+      this.iwmActive = true;
       this.iwmMotorDelay = 0;
       this.iwmDevSel = (this.iwmControlDrive2 ? 2 : 1);
     }
@@ -288,14 +292,24 @@ export class IIgsMemory {
     if(op === 12 || op === 13) this.iwmQ6 = !!(op & 1);
     if(op === 14 || op === 15) this.iwmQ7 = !!(op & 1);
     if(value !== undefined) {
-      if(this.iwmQ6 && this.iwmQ7 && !this.iwmMotor) this.iwmMode = value & 31;
+      // MAME only latches mode/data on an odd Q6/Q7=11 access. During the
+      // delayed motor-off state the controller is still active, so this is
+      // a data write rather than a mode write.
+      if(this.iwmQ6 && this.iwmQ7 && (addr & 1)) {
+        if(this.iwmActive) {
+          this.iwmData=value&0xff;
+          if(this.iwmMode&0x01) this.iwmWhd&=0x7f;
+        } else {
+          this.iwmMode=value&0xff;
+        }
+      }
       this.legacy.write(addr, value);
       return 0;
     }
     // IWM register selection is Q7:Q6. MAME returns $FF from the data
     // register while inactive; importantly, do not consume a media byte in
     // that state merely because firmware probes Q6L.
-    const inactiveData = !this.iwmQ6 && !this.iwmQ7 && !this.iwmMotor;
+    const inactiveData = !this.iwmQ6 && !this.iwmQ7 && !this.iwmActive;
     const data = inactiveData ? 0xff : this.legacy.read(addr);
     // IWM odd soft-switch reads have no register data; MAME's c080_r()
     // returns the machine floating bus when the controller supplies none.
@@ -304,7 +318,7 @@ export class IIgsMemory {
     // Bit 7 is HDSEL, the Sony drive head/drive select signal.
     const noMedia = (this.diskReg&0x40) || !this.floppy?._active_disk.medium;
     if(this.iwmQ6 && !this.iwmQ7)
-      return (this.iwmMode&0x1f) | (this.iwmMotor ? 0x20 : 0) |
+      return (this.iwmMode&0x1f) | (this.iwmActive ? 0x20 : 0) |
         ((noMedia || this.floppy._active_disk.write_protect) ? 0x80 : 0);
     if(!this.iwmQ6 && this.iwmQ7) return this.iwmWhd;
     if(this.iwmQ6 && this.iwmQ7) return 0xff;
@@ -316,7 +330,8 @@ export class IIgsMemory {
     // IIgs IWM clock is 4.0192 MHz (28.63636 MHz / 7).
     this.iwmMotorDelay -= cycles * (4019200 / cpuHz);
     if(this.iwmMotorDelay <= 0) {
-      this.iwmMotorDelay=0; this.iwmMotor=false; this.iwmDevSel=0;
+      this.iwmMotorDelay=0; this.iwmMotor=false; this.iwmActive=false; this.iwmDevSel=0;
+      this.iwmWhd &= ~0x40;
     }
   }
 
@@ -868,7 +883,7 @@ export class IIgsMemory {
     this.scc.reset(); this.doc.reset();
     this.adb.reset();
     this.iwmMode = 0; this.iwmQ6 = this.iwmQ7 = this.iwmMotor = false;
-    this.iwmMotorDelay = 0; this.iwmDevSel = 0; this.iwmControlDrive2 = false;
-    this.iwmWhd = 0xbf;
+    this.iwmMotorDelay = 0; this.iwmActive = false; this.iwmDevSel = 0; this.iwmControlDrive2 = false;
+    this.iwmData = 0x00; this.iwmWhd = 0xbf;
   }
 }
