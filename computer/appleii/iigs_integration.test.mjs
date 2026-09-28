@@ -632,7 +632,9 @@ test('IIgs legacy video reads slow RAM and follows shadow and direct writes', ()
   assert.equal(m.memory.slowE0[0x2000],0x7f);
   assert.equal(digest(pixels),visible,'fast-only write must not change video');
   m.memory.write(0xe02000,0);
-  assert.notEqual(digest(pixels),visible,'direct slow-bank write must redraw video');
+  m.io_manager.latch_display_state();
+  m.io_manager.present_latched_display();
+  assert.notEqual(digest(pixels),visible,'direct slow-bank write must redraw video at frame presentation');
 });
 
 
