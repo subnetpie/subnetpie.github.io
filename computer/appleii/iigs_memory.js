@@ -332,10 +332,14 @@ export class IIgsMemory {
     }
     // MAME 0.289 DISKREG bit 6 (35SEL) selects the IIgs 3.5-inch path.
     // Bit 7 is HDSEL, the Sony drive head/drive select signal.
-    const noMedia = (this.diskReg&0x40) || !this.floppy?._active_disk.medium;
+    const select35=!!(this.diskReg&0x40);
+    const media35=select35 ? this.floppy35Media : null;
+    const disk525=!select35 ? this.floppy?._active_disk : null;
+    const noMedia=select35 ? !media35 : !disk525?.medium;
+    const writeProtected=select35 ? !!media35?.writeProtected : !!disk525?.write_protect;
     if(this.iwmQ6 && !this.iwmQ7)
       return (this.iwmMode&0x1f) | (this.iwmActive ? 0x20 : 0) |
-        ((noMedia || this.floppy._active_disk.write_protect) ? 0x80 : 0);
+        ((noMedia || writeProtected) ? 0x80 : 0);
     if(!this.iwmQ6 && this.iwmQ7) return this.iwmWhd;
     if(this.iwmQ6 && this.iwmQ7) return 0xff;
     if(!this.iwmActive) return 0xff;
