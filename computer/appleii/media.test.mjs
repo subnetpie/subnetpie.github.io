@@ -154,6 +154,17 @@ test('IIgs IWM 3.5 read register is a timed shift-register latch',()=>{
   assert.equal(b.iwmReadShift,0,'Q6H status access resets MAME read shift state');
 });
 
+test('IIgs 3.5-inch GCR uses MAME cell counts and self-sync transitions',()=>{
+  const {board:m}=createMachine(); const f=m.memory.floppy35;
+  const disk=new Uint8Array(1600*512), media=decodeMedia('800k.2mg',wrap(disk,1)); f.mount(media);
+  assert.deepEqual([0,16,32,48,64].map(t=>f.cellCount(t)),
+    [Math.floor(30318342/394),Math.floor(30318342/429),Math.floor(30318342/472),
+     Math.floor(30318342/525),Math.floor(30318342/590)]);
+  const cells=f.trackCells();
+  assert.equal(cells.length,f.cellCount(0));
+  assert.ok(cells.slice(0,48).some(v=>v===0),'self-sync field must contain inserted zero cells');
+});
+
 test('IIgs 3.5-inch rotation uses MAME Sony speed zones',()=>{
   const {board:m}=createMachine(); const f=m.memory.floppy35;
   const disk=new Uint8Array(1600*512), media=decodeMedia('800k.2mg',wrap(disk,1)); f.mount(media);
@@ -165,10 +176,10 @@ test('IIgs 3.5-inch data register is clock-driven, not read-driven',()=>{
   const disk=new Uint8Array(1600*512), media=decodeMedia('800k.2mg',wrap(disk,1));
   mountMedia(m,media); b.floppy35.mount(media);
   b.diskReg=0x40; b.iwmActive=true; b.iwmMotor=true; b.iwmQ6=false; b.iwmQ7=false;
-  const a=b.iwmAccess(0xc0ec), p=b.floppy35.pos;
-  assert.equal(b.iwmAccess(0xc0ec),a); assert.equal(b.floppy35.pos,p);
+  const a=b.iwmAccess(0xc0ec), p=b.floppy35.cellPos;
+  assert.equal(b.iwmAccess(0xc0ec),a); assert.equal(b.floppy35.cellPos,p);
   b.tickIwm(28000,2800000);
-  assert.notEqual(b.floppy35.pos,p);
+  assert.notEqual(b.floppy35.cellPos,p);
 });
 
 test('IIgs native 3.5-inch drive does not use 5.25 motor-off delay',()=>{
