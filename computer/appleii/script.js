@@ -54,7 +54,7 @@ function chooseArchiveImage(name, entries) {
   });
 }
 
-import { Motherboard } from "https://subnetpie.github.io/computer/appleii/motherboard.js?v=20260928-pcm2";
+import { Motherboard } from "https://subnetpie.github.io/computer/appleii/motherboard.js?v=20260928-dirtyshr1";
 
 class Drive {
   constructor(num, display, led, dialog) {
@@ -493,12 +493,11 @@ function setButtons(y) {
 }
 
 function publishJoy() {
-  // Apple II/IIgs paddles are 8-bit values. Keep the UI coordinates and
-  // hardware-visible values in the same 0..255 range; the previous *10 scale
-  // saturated nearly every position to 255 in IOManager.triggerPaddles().
+  // Apple II/IIgs paddles are 8-bit values.
   joyValues.axis0 = Math.max(0, Math.min(255, Math.round(joyX)));
   joyValues.axis1 = Math.max(0, Math.min(255, Math.round(joyY)));
-  publishJoy();
+  joyValues.button0 = val0;
+  joyValues.button1 = val1;
 }
 
 let joyPadPointer = null;
