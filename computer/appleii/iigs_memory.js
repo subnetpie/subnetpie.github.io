@@ -293,6 +293,194 @@ export class IIgsMemory {
     return data;
   }
 
+  iwmWindowClocks() {
+    // MAME iwm_device::window_size() for the IIgs IWM clock.
+    switch(this.iwmMode&0x18) {
+      case 0x00: return 28;
+      case 0x08: return 14;
+      case 0x10: return 36;
+      default: return 16;
+    }
+  }
+
+  tickIwm(cycles, cpuHz=2800000) {
+    // MAME apple2gs.cpp: IWM(config, ..., A2GS_7M), master 28,636,363 / 4.
+    const iwmHz=28636363/4;
+    const clocks=cycles * (iwmHz / cpuHz);
+    if((this.diskReg&0x40) && this.iwmActive) {
+      this.floppy35.tick(cycles/cpuHz);
+      if(!this.iwmQ7) {
+        const flux=this.floppy35.takeTransitions();
+        // Convert 1.979 us media cells to IWM clocks, then run the same
+        // edge-window rule as MAME SR_WINDOW_EDGE_0/1.
+        const clocksPerCell=iwmHz*1.979e-6;
+        const transitions=flux.transitions.map(x=>this.iwmReadClock+x*clocksPerCell);
+        const endClock=this.iwmReadClock+flux.cells*clocksPerCell;
+        let ti=0, now=this.iwmReadClock;
+        if(!this.iwmNextWindow)this.iwmNextWindow=now;
+        while(this.iwmNextWindow<=endClock) {
+          const win=this.iwmWindowClocks(), half=win/2;
+          const edge=transitions[ti];
+          const endw=this.iwmNextWindow+(this.iwmReadState===0?win:half);
+          if(this.iwmReadState===0 && edge!==undefined && edge<=endw && edge<=endClock) {
+            this.iwmNextWindow=edge; this.iwmReadState=1; ti++; continue;
+          }
+          if(endw>endClock)break;
+          const bit=this.iwmReadState?1:0;
+          this.iwmReadShift=((this.iwmReadShift<<1)|bit)&0xff;
+          this.iwmReadBits=Math.min(8,this.iwmReadBits+1);
+          now=endw;
+          this.iwmNextWindow=endw; this.iwmReadState=0;
+          if(!(this.iwmMode&0x02)) {
+            // MAME sync mode exposes partial shift values while searching for
+            // a high-bit byte, with an 8/4-clock delayed update near sync.
+            if(this.iwmReadShift>=0x80) {
+              this.iwmData=this.iwmReadShift; this.iwmReadShift=0; this.iwmReadBits=0;
+              this.iwmSyncUpdate=0;
+            } else if(this.iwmReadShift>=0x04) {
+              this.iwmData=this.iwmReadShift; this.iwmSyncUpdate=0;
+            } else if(this.iwmReadShift>=0x02) {
+              this.iwmSyncUpdate=now+((this.iwmMode&0x08)?4:8);
+            }
+          } else if(this.iwmReadShift>=0x80) {
+            this.iwmData=this.iwmReadShift; this.iwmReadShift=0; this.iwmReadBits=0;
+            this.iwmAsyncUpdate=0;
+          }
+          while(ti<transitions.length && transitions[ti]<=now)ti++;
+        }
+        this.iwmReadClock=endClock;
+        if(this.iwmSyncUpdate && this.iwmSyncUpdate<=endClock) {
+          if(!(this.iwmMode&0x02)) this.iwmData=this.iwmReadShift;
+          this.iwmSyncUpdate=0;
+        }
+        if(this.iwmAsyncUpdate && this.iwmAsyncUpdate<=endClock) {
+          if(this.iwmMode&0x02) this.iwmData=0;
+          this.iwmAsyncUpdate=0;
+        }
+      } else this.floppy35.takeBits();
+    }
+    if(this.iwmWritePending) {
+      this.iwmWritePending-=clocks;
+      if(this.iwmWritePending<=0) {
+        this.iwmWritePending=0;
+        // In latched mode MAME raises WHD bit 7 once the loaded byte has
+        // transferred to the write shift register.
+        if(this.iwmActive && this.iwmQ7 && (this.iwmWhd&0x40)) this.iwmWhd|=0x80;
+      }
+    }
+    if(!this.iwmMotorDelay) return;
+    // IIgs IWM clock is A2GS_7M (28.636363 MHz / 4).
+    this.iwmMotorDelay -= clocks;
+    if(this.iwmMotorDelay <= 0) {
+      this.iwmMotorDelay=0; this.iwmMotor=false; this.iwmActive=false; this.iwmDevSel=0;
+      this.iwmWritePending=0; this.iwmWhd &= ~0x40;
+    }
+  }
+
+  fastBank0Read(off) {
+    const m=this.legacy;
+    let aux;
+    if(off<0x0200) aux=!!m.aux_zp;
+    else {
+      aux=!!m.aux_read;
+      if(off>=0x0400&&off<0x0800&&m.dms_80store) aux=!!m.dms_page2;
+      else if(off>=0x2000&&off<0x4000&&m.dms_80store&&m.dms_hires) aux=!!m.dms_page2;
+    }
+    return this.ram[(aux?0x10000:0)+(off&0xffff)];
+  }
+
+  fastBank0Write(off,val) {
+    const m=this.legacy;
+    let aux;
+    if(off<0x0200) aux=!!m.aux_zp;
+    else {
+      aux=!!m.aux_write;
+      if(off>=0x0400&&off<0x0800&&m.dms_80store) aux=!!m.dms_page2;
+      else if(off>=0x2000&&off<0x4000&&m.dms_80store&&m.dms_hires) aux=!!m.dms_page2;
+    }
+    off&=0xffff; val&=0xff;
+    this.ram[(aux?0x10000:0)+off]=val;
+
+    if(!aux) {
+      if(off>=0x0400&&off<0x0800&&!(this.shadow&0x01)) this.slowE0[off]=val;
+      else if(off>=0x0800&&off<0x0c00&&!(this.shadow&0x20)) this.slowE0[off]=val;
+      else if(off>=0x2000&&off<0x4000&&!(this.shadow&0x02)) this.slowE0[off]=val;
+      else if(off>=0x4000&&off<0x6000&&!(this.shadow&0x04)) this.slowE0[off]=val;
+    } else {
+      if(off>=0x0400&&off<0x0800&&!(this.shadow&0x01)) this.slowE1[off]=val;
+      else if(off>=0x0800&&off<0x0c00&&!(this.shadow&0x20)) this.slowE1[off]=val;
+      else if(off>=0x2000&&off<0xa000) {
+        let shadow=false;
+        if(off<0x4000) shadow=(!(this.shadow&0x02)&&!(this.shadow&0x10))||!(this.shadow&0x08);
+        else if(off<0x6000) shadow=(!(this.shadow&0x04)&&!(this.shadow&0x10))||!(this.shadow&0x08);
+        else shadow=!(this.shadow&0x08);
+        if(shadow) {
+          if(this.video) this.video.writeBankE1(off,val);
+          else this.slowE1[off]=val;
+        }
+      }
+    }
+    if(this.video&&off>=0x0400&&off<0xa000) this.video.dirty=true;
+  }
+
+  e0ReadBank(off) {
+    const m=this.legacy;
+    if(off<0x0200) return (m.aux_zp ? this.slowE1 : this.slowE0)[off];
+    let aux=!!m.aux_read;
+    if(off>=0x0400 && off<0x0800 && m.dms_80store) aux=!!m.dms_page2;
+    else if(off>=0x2000 && off<0x4000 && m.dms_80store && m.dms_hires) aux=!!m.dms_page2;
+    return (aux ? this.slowE1 : this.slowE0)[off];
+  }
+
+  e0WriteBank(off,val) {
+    const m=this.legacy;
+    if(off<0x0200) {
+      (m.aux_zp ? this.slowE1 : this.slowE0)[off]=val;
+      return;
+    }
+    let aux=!!m.aux_write;
+    if(off>=0x0400 && off<0x0800 && m.dms_80store) aux=!!m.dms_page2;
+    else if(off>=0x2000 && off<0x4000 && m.dms_80store && m.dms_hires) aux=!!m.dms_page2;
+    (aux ? this.slowE1 : this.slowE0)[off]=val;
+  }
+
+  fastLc00Address(off) {
+    // MAME lc_00_r/lc_00_w: bank-$00 language-card RAM is fast
+    // motherboard RAM. ALTZP independently selects its main/aux half.
+    const aux=!!this.legacy.aux_zp;
+    if(off<0xe000)
+      return (aux?0x10000:0) | (this.legacy.bsr_bank2?0xc000:0xd000) | (off&0x0fff);
+    return (aux?0x10000:0) | 0xe000 | (off&0x1fff);
+  }
+
+  fastLc00Read(off) {
+    if(!this.legacy.bsr_read) return this.romRead(0xff0000|off);
+    return this.ram[this.fastLc00Address(off)];
+  }
+
+  fastLc00Write(off,val) {
+    if(this.legacy.bsr_write)
+      this.ram[this.fastLc00Address(off)]=val&0xff;
+  }
+
+  slowLcAddress(aux,off) {
+    if(off<0xe000)
+      return (aux?0x10000:0) | (this.legacy.bsr_bank2?0xc000:0xd000) | (off&0x0fff);
+    return (aux?0x10000:0) | 0xe000 | (off&0x1fff);
+  }
+
+  slowLcRead(aux,off) {
+    if(!this.legacy.bsr_read) return this.romRead(0xff0000|off);
+    const a=this.slowLcAddress(aux,off);
+    return a&0x10000 ? this.slowE1[a&0xffff] : this.slowE0[a&0xffff];
+  }
+
+  slowLcWrite(aux,off,val) {
+    if(!this.legacy.bsr_write) return;
+    const a=this.slowLcAddress(aux,off);
+    (a&0x10000 ? this.slowE1 : this.slowE0)[a&0xffff]=val&0xff;
+  }
+
   read(addr) {
     addr &= 0xffffff;
     const originalBank = addr >>> 16, originalOff = addr & 0xffff;
