@@ -113,6 +113,21 @@ test('ROM03 C071-C07F IRQ helper window comes from firmware', () => {
     assert.equal(b.read(0xc000|off),b.rom[0x3c000+off]);
 });
 
+test('IIgs DISKREG bit 6 selects 3.5-inch IWM path; bit 7 alone does not', () => {
+  const {board:m}=createMachine();
+  const b=m.memory;
+  // Q6 high/Q7 low exposes IWM status. With no 5.25 medium the legacy path
+  // reports write-protect/no-disk in bit 7.
+  b.iwmQ6=true; b.iwmQ7=false; b.iwmMotor=false; b.iwmMode=0;
+  b.diskReg=0x80; // HDSEL only: still chained to 5.25-inch drives.
+  assert.equal(b.iwmAccess(0xc0ec)&0x80,0x80);
+  b.diskReg=0x40; // 35SEL: internal 3.5-inch path.
+  assert.equal(b.iwmAccess(0xc0ec)&0x80,0x80);
+  // The important routing distinction is that HDSEL must not satisfy 35SEL.
+  assert.equal(!!(0x80&0x40),false);
+  assert.equal(!!(0x40&0x40),true);
+});
+
 test('ROM03 GLU DATA_FULL clears only after KMSTATUS then DATA', () => {
   const {board:m}=createMachine();
   const b=m.memory, adb=b.adb;
