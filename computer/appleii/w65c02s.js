@@ -1014,7 +1014,6 @@ export class W65C02S
                 write: (val) => { this.mem.write(addr, val); },
                 bytes: 3,
                 cycles: 4,
-                store_extra_cycles: 1,
                 write_extra_cycles: 2
             } })(),
 
@@ -1044,6 +1043,7 @@ export class W65C02S
                 page_crossed: () => crossed,
                 bytes: 3,
                 cycles: 4,
+                store_extra_cycles: 1,
                 write_extra_cycles: 2
             } })(),
 
