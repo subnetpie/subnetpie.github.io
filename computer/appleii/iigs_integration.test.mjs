@@ -106,6 +106,18 @@ test('IIgs SOUNDCTL and SOUNDDATA match MAME GLU semantics', () => {
   assert.equal(doc.addressLow(),0x41,'auto-increment advances after fetch');
 });
 
+test('IIgs C07E/C07F writes do not toggle the IIe IOUDIS latch', () => {
+  const {board:m}=createMachine();
+  const b=m.memory;
+  const io=m.legacyMemory.io_manager;
+  io._iou_disable=false;
+  b.write(0xc07e,0);
+  assert.equal(io._iou_disable,false);
+  io._iou_disable=true;
+  b.write(0xc07f,0);
+  assert.equal(io._iou_disable,true);
+});
+
 test('ROM03 C071-C07F IRQ helper window comes from firmware', () => {
   const {board:m}=createMachine();
   const b=m.memory;
