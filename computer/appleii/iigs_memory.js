@@ -616,10 +616,10 @@ export class IIgsMemory {
       if(io===0xc02b){this.langSel=val&0xf8;return;}
       if(io===0xc02d){this.slotRom=val&0xf6;return;}
       if(io===0xc031){
-        // MAME DISKREG: bit 7 selects 3.5-inch SmartPort/IWM operation and
-        // bit 6 is the 3.5-inch head-select line. The current JS drive is
-        // 5.25-inch only, so preserve both hardware-visible bits without
-        // incorrectly changing Disk II drive/head state.
+        // MAME DISKREG: bit 6 (35SEL) enables the 3.5-inch Sony path;
+        // bit 7 (HDSEL) is its head/drive select signal. Preserve both
+        // hardware-visible bits; the current JS backend still supplies only
+        // the existing 5.25-inch medium implementation.
         this.diskReg=val&0xc0;
         return;
       }
