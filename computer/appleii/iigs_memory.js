@@ -743,7 +743,12 @@ export class IIgsMemory {
     if(this.legacy.io_manager) this.legacy.io_manager._bsr_write_count = 0;
     this.shadow = 0; this.speed = 0x80;
     this.slotRom = 0; this.langSel = 0; this.diskReg = 0;
-    this.clockCtl = 0; this.clockData = 0; this.intEnable = 0; this.intFlag = 0;
+    this.clockCtl = 0; this.clockData = 0;
+    // CLOCKCTL reset deasserts the RTC serial transaction. Keep PRAM/clock
+    // contents, but abort any partial command exactly as CE does in MAME.
+    this.rtc.ce=1; this.rtc.clk=0; this.rtc.data=0; this.rtc.out=0;
+    this.rtc.dir=0; this.rtc.byte=0; this.rtc.bits=0; this.rtc.state=0;
+    this.intEnable = 0; this.intFlag = 0;
     this.vblIrq = this.quarterIrq = false;
     this.externalIrq.vgc=this.externalIrq.doc=this.externalIrq.scc=this.externalIrq.adb=false;
     this.updateMegaIrq();
