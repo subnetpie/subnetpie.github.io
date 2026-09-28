@@ -107,7 +107,10 @@ export function mountMedia(board, media, drive=0) {
     }
   } else {
     ok=board.floppy525.load_image(drive,media.name,media.data,media);
-    if(board.iigsEnabled && board.memory) board.memory.floppy35Media=null;
+    if(board.iigsEnabled && board.memory) {
+      board.memory.floppy35Media=null;
+      if(ok) board.memory.slotRom=(board.memory.slotRom&~0x80)|0x40;
+    }
   }
   if(!ok)throw new Error('Unable to mount '+media.name);
   // Otherwise slot 7 keeps booting the previously selected hard disk.
