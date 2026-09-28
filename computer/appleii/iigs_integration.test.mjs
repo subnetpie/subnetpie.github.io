@@ -42,6 +42,46 @@ test('Motherboard clock advances video/master time by Mega II wait states', () =
   assert.equal(m.cycles-start,4,'2 CPU cycles + first 2-cycle Mega II wait');
 });
 
+
+test('IIgs compatibility shadow renderer uses auxiliary Mega II bytes for aux writes', () => {
+  const {board:m}=createMachine();
+  const io=m.io_manager;
+  io._text_mode=false;
+  io._double_hires=false;
+  m.legacyMemory.dms_hires=true;
+  m.video_iigs.writeNewVideo(0x01);
+  m.legacyMemory.aux_write=true;
+  let seen=null;
+  const draw=io.draw_display.bind(io);
+  io.draw_display=(addr,val,bank)=>{seen={addr,val,bank};};
+  m.memory.write(0x002000,0xa5);
+  io.draw_display=draw;
+  assert.deepEqual(seen,{addr:0x2000,val:0xa5,bank:'aux'});
+  assert.equal(m.memory.slowE1[0x2000],0xa5);
+  assert.notEqual(m.memory.slowE0[0x2000],0xa5);
+});
+
+test('IIgs HGR writes update the cache without Canvas upload until frame presentation', () => {
+  const {board:m}=createMachine();
+  const io=m.io_manager, h=m.display_hires;
+  io._text_mode=false;
+  io._double_hires=false;
+  m.legacyMemory.dms_hires=true;
+  m.video_iigs.writeNewVideo(0x01);
+  io.latch_display_state();
+  let uploads=0;
+  const put=h._context.putImageData.bind(h._context);
+  h._context.putImageData=(...args)=>{uploads++; return put(...args);};
+  h.set_active_page(1);
+  uploads=0;
+  m.memory.write(0x002000,0x7f);
+  assert.equal(uploads,0,'video store must not synchronously upload a Canvas rectangle');
+  io.latch_display_state();
+  io.present_latched_display();
+  assert.equal(uploads,1,'frame presentation performs one completed HGR upload');
+  h._context.putImageData=put;
+});
+
 test('STATEREG restores bank selection without changing the LC write latch', () => {
   const {board:m}=createMachine();
   const b=m.memory, ram=m.legacyMemory;
