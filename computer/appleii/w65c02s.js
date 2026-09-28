@@ -422,7 +422,7 @@ export class W65C02S
         this.reg.flag.b = true;
         this.reg.flag.d = false;
         this.reg.flag.i = true;
-        return memfn.cycles;
+        return 7;
     }
 
     //                                            n v b d i z c
@@ -597,7 +597,7 @@ export class W65C02S
     jsr(memfn) {
         this.stack_push_word(this.reg.pc - 1);
         this.reg.pc = memfn.addr();
-        return memfn.cycles;
+        return 6;
     }
 
     //                                            n v b d i z c
@@ -764,7 +764,7 @@ export class W65C02S
         this.reg.flag.value = this.stack_pull_byte();
         this.reg.flag.b = false;
         this.reg.pc = this.stack_pull_word();
-        return memfn.cycles;
+        return 6;
     }
 
     //                                            n v b d i z c
@@ -772,7 +772,7 @@ export class W65C02S
     //
     rts(memfn) {
         this.reg.pc = this.stack_pull_word() + 1;
-        return memfn.cycles;
+        return 6;
     }
 
     //                                            n v b d i z c
