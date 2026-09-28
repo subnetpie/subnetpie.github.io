@@ -589,6 +589,32 @@ export class IOManager
         if(this._mixed_mode) this.draw_mixed_text();
     }
 
+    refresh_compat_display_from_ram() {
+        if(this._video_iigs && this._video_iigs.isSuperHires()) return;
+        const page = (this._mem.dms_page2 && !this._mem.dms_80store) ? 2 : 1;
+
+        if(this._text_mode) {
+            if(this._80col_mode) {
+                this._display_text_80.set_active_page(page);
+                this._display_text_80.refresh();
+            } else {
+                this._display_text.set_active_page(page);
+                this._display_text.refresh();
+            }
+            return;
+        }
+
+        if(this._mem.dms_hires) {
+            if(this._double_hires)
+                this._display_double_hires.set_active_page(page, true);
+            else
+                this._display_hires.set_active_page(page, "main", true);
+        } else {
+            this._display_lores.set_active_page(page, this._double_hires && this._80col_mode);
+        }
+        if(this._mixed_mode) this.draw_mixed_text();
+    }
+
     latch_display_state() {
         this._latched_display = {
             text: !!this._text_mode,
