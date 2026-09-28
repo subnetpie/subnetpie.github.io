@@ -144,12 +144,6 @@ export class Motherboard
         if(this.iigsEnabled) {
             this.iigsIrq.vgc=this.iigsIrq.doc=this.iigsIrq.scc=false;
             this.memory.reset(!!cold);
-            // A mounted synthetic ProDOS card is configured in slot 7.
-            // machine_reset restores hardware latches, then the configured
-            // external-slot selection is applied before ROM03 begins scanning.
-            if(this.prodosBlock?.image) this.memory.slotRom |= 0x80;
-            // 5.25 media uses ROM03's internal slot-6 IWM firmware; do not
-            // configure a synthetic external Disk II card on IIgs reset.
         }
         this.cpu.reset();
         this.display_text.reset();
