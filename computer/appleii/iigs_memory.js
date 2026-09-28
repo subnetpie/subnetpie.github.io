@@ -390,18 +390,20 @@ export class IIgsMemory {
         const transitions=flux.transitions.map(x=>this.iwmReadClock+x*clocksPerCell);
         const endClock=this.iwmReadClock+flux.cells*clocksPerCell;
         let ti=0, now=this.iwmReadClock;
-        if(!this.iwmNextWindow)this.iwmNextWindow=now+this.iwmWindowClocks();
+        if(!this.iwmNextWindow)this.iwmNextWindow=now;
         while(this.iwmNextWindow<=endClock) {
-          const half=this.iwmWindowClocks()/2;
+          const win=this.iwmWindowClocks(), half=win/2;
           const edge=transitions[ti];
-          if(this.iwmReadState===0 && edge!==undefined && edge<=this.iwmNextWindow+this.iwmWindowClocks()) {
+          const endw=this.iwmNextWindow+(this.iwmReadState===0?win:half);
+          if(this.iwmReadState===0 && edge!==undefined && edge<=endw && edge<=endClock) {
             this.iwmNextWindow=edge; this.iwmReadState=1; ti++; continue;
           }
+          if(endw>endClock)break;
           const bit=this.iwmReadState?1:0;
           this.iwmReadShift=((this.iwmReadShift<<1)|bit)&0xff;
           this.iwmReadBits=Math.min(8,this.iwmReadBits+1);
-          now=this.iwmNextWindow+(this.iwmReadState?half:this.iwmWindowClocks());
-          this.iwmNextWindow=now; this.iwmReadState=0;
+          now=endw;
+          this.iwmNextWindow=endw; this.iwmReadState=0;
           if(!(this.iwmMode&0x02)) {
             // MAME sync mode exposes partial shift values while searching for
             // a high-bit byte, with an 8/4-clock delayed update near sync.
