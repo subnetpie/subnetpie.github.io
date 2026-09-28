@@ -158,6 +158,34 @@ test('IIgs IWM drive-select follows control bit 5 while active', () => {
   assert.equal(b.iwmDevSel,1);
 });
 
+test('IIgs IWM register probes do not consume Disk II media', () => {
+  const {board:m}=createMachine();
+  const b=m.memory;
+  let reads=0;
+  b.floppy={
+    _get_cycles:()=>1234,
+    _active_disk:{
+      medium:{},
+      write_protect:true,
+      read:()=>{ reads++; return 0xa5; }
+    }
+  };
+  b.iwmActive=true; b.iwmMotor=true;
+
+  // Q6H/Q7L status and Q6L/Q7H WHD are controller registers.
+  b.iwmQ6=true; b.iwmQ7=false;
+  assert.equal(b.iwmAccess(0xc0ec)&0x80,0x80);
+  b.iwmQ6=false; b.iwmQ7=true;
+  assert.equal(b.iwmAccess(0xc0ec),0xbf);
+  assert.equal(reads,0);
+
+  // Only Q6L/Q7L consumes the selected media latch.
+  b.iwmQ6=false; b.iwmQ7=false;
+  assert.equal(b.iwmAccess(0xc0ec),0xa5);
+  assert.equal(reads,1);
+  assert.equal(b.iwmData,0xa5);
+});
+
 test('IIgs IWM Q6/Q7=11 writes mode only while inactive', () => {
   const {board:m}=createMachine();
   const b=m.memory;
