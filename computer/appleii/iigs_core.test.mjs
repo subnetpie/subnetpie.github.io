@@ -74,3 +74,26 @@ test('IWM mode readback reports an empty drive', () => {
   const bus=gsBus(); bus.read(0xc0e8); bus.read(0xc0ed); bus.write(0xc0ef,0x17);
   assert.equal(bus.read(0xe1c0ee),0x97);
 });
+
+
+test('IWM repeated Q7L polling preserves active read decoder state', () => {
+  const legacy={_main:new Uint8Array(65536),_aux:new Uint8Array(65536),_read_hooks:[],_write_hooks:[],read:()=>0xff,write:()=>{},reset(){}};
+  const bus=new IIgsMemory(legacy,null);
+  bus.iwmActive=true; bus.iwmMotor=true; bus.iwmRw=2;
+  bus.iwmReadShift=0x55; bus.iwmReadBits=7; bus.iwmReadState=1; bus.iwmNextWindow=1234; bus.iwmData=0xa5;
+  bus.iwmAccess(0xc0ee);
+  assert.equal(bus.iwmRw,1);
+  assert.equal(bus.iwmData,0);
+  bus.iwmReadShift=0x42; bus.iwmReadBits=6; bus.iwmReadState=1; bus.iwmNextWindow=5678; bus.iwmData=0x81;
+  bus.iwmAccess(0xc0ee);
+  assert.equal(bus.iwmReadShift,0x42);
+  assert.equal(bus.iwmReadBits,6);
+  assert.equal(bus.iwmReadState,1);
+  assert.equal(bus.iwmNextWindow,5678);
+  assert.equal(bus.iwmData,0x81);
+  bus.iwmQ6=true;
+  bus.iwmAccess(0xc0ec);
+  assert.equal(bus.iwmReadShift,0);
+  assert.equal(bus.iwmReadState,1);
+  assert.equal(bus.iwmNextWindow,5678);
+});
