@@ -457,10 +457,12 @@ export class IIgsMemory {
         // MAME preserves the current floating-bus byte in bits 0-6.
         return state|(this.floatingBus()&0x7f);
       }
-      // MAME exposes ROM03's IRQ-vector helper bytes directly at
-      // C071-C07D/C07F from ROM offset $3C000. C070 remains floating bus
-      // and C07E is the Zip delay soft switch.
-      if((io>=0xc071 && io<=0xc07d) || io===0xc07f)
+      // MAME 0.289 exposes ROM03's IRQ-vector helper bytes directly at
+      // C071-C07F from ROM offset $3C000. C070 remains floating bus.
+      // C07E also performs the Zip-delay side effect in MAME, then falls
+      // through to this ROM read; without ZipGS emulation the observable
+      // bus result is still the firmware byte.
+      if(io>=0xc071 && io<=0xc07f)
         return this.rom ? this.rom[0x3c000+(io&0xff)] : 0xff;
 
       // Compatibility status registers are implemented by the Mega II/IIe
@@ -468,7 +470,7 @@ export class IIgsMemory {
       // the IIgs floating bus, as MAME c000_r does.
       if((io>=0xc011 && io<=0xc01f) ||
          (io>=0xc050 && io<=0xc05f) || io===0xc070 ||
-         (io>=0xc07e && io<=0xc08f)) {
+         (io>=0xc080 && io<=0xc08f)) {
         for(const fn of this.legacy._read_hooks || []) {
           const v=fn(io);
           if(v!==undefined) return v&0xff;
