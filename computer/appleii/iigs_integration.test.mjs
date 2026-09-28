@@ -544,6 +544,23 @@ test('hidden hi-res page writes survive a page flip', () => {
   assert.notEqual(digest(pixels),blank,'page flip must reveal the updated pixels');
 });
 
+test('IIgs SHR handoff waits for compatibility redraw to settle', () => {
+  const {board:m}=createMachine();
+  m.memory.write(0xc050,0);
+  m.memory.write(0xc057,0);
+  m.memory.write(0xc054,0);
+  m.memory.write(0xc029,0xc1);
+  m.memory.write(0xc029,0x01);
+
+  // Simulate a game progressively rebuilding HGR while artwork is hidden.
+  for(let i=0;i<64;i++) m.memory.write(0x2000+i,i);
+  assert.equal(m.video_iigs.shouldRevealCompatibility(),false);
+  assert.equal(m.video_iigs.compatRevealPending,true);
+
+  // One quiet frame after a meaningful redraw burst is enough to reveal.
+  assert.equal(m.video_iigs.shouldRevealCompatibility(),true);
+});
+
 test('IIgs SHR artwork remains presented until the next frame boundary', () => {
   const {board:m}=createMachine();
   m.memory.write(0xc050,0);
