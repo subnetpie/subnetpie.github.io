@@ -77,6 +77,12 @@ export class IOManager
         this._joystick = joystick;
         this._video_iigs = video_iigs;
         this._iigsEnabled = !!iigsEnabled;
+        // IIgs compatibility video updates ImageData caches during emulation,
+        // but browser Canvas uploads happen once at frame presentation.
+        if(this._iigsEnabled) {
+            if(this._display_hires) this._display_hires.deferPresent = true;
+            if(this._display_double_hires) this._display_double_hires.deferPresent = true;
+        }
 
         this._c3_rom = false;
         this._c8_rom = false;
@@ -491,7 +497,7 @@ export class IOManager
     }
 
     ////////////////////////////////////////////
-    draw_display(addr, val) {
+    draw_display(addr, val, bank = undefined) {
         // When IIgs Super Hi-Res owns video output, Mega II memory writes still
         // update RAM/soft-switch state but must not paint over the SHR canvas.
         if(this._video_iigs && this._video_iigs.isSuperHires()) return;
@@ -511,8 +517,8 @@ export class IOManager
             // Both page buffers must track writes. Games draw the hidden page
             // before flipping PAGE2; filtering to the visible page loses it.
             if(addr >= 0x2000 && addr < 0x6000) {
-                if(this._double_hires) this._display_double_hires.draw(addr, val);
-                else this._display_hires.draw(addr, val);
+                if(this._double_hires) this._display_double_hires.draw(addr, val, bank);
+                else this._display_hires.draw(addr, val, bank);
                 if(this._mixed_mode) this.draw_mixed_text();
             }
         } else if(textWrite) {
@@ -586,8 +592,13 @@ export class IOManager
         }
 
         if(s.hires) {
-            if(s.doubleHires) this._display_double_hires.set_active_page(s.page);
-            else this._display_hires.set_active_page(s.page);
+            if(s.doubleHires) {
+                this._display_double_hires.set_active_page(s.page);
+                if(this._display_double_hires.present) this._display_double_hires.present();
+            } else {
+                this._display_hires.set_active_page(s.page);
+                if(this._display_hires.present) this._display_hires.present();
+            }
         } else {
             this._display_lores.set_active_page(s.page, s.doubleHires && s.col80);
         }
