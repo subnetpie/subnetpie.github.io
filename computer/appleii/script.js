@@ -250,6 +250,18 @@ function run() {
   interval = window.requestAnimationFrame(on_interval);
 }
 
+// Safari/iOS only permits WebAudio to become audible from a user activation.
+// Media loading completes asynchronously, so run() can occur after the file
+// picker gesture has ended. Unlock/resume audio on the next direct interaction.
+function unlockAudio() {
+  if(!motherboard || !motherboard.audio) return;
+  motherboard.audio.unlock().catch(()=>{});
+}
+document.addEventListener("pointerdown", unlockAudio, {passive:true});
+document.addEventListener("touchstart", unlockAudio, {passive:true});
+document.addEventListener("mousedown", unlockAudio, {passive:true});
+document.addEventListener("keydown", unlockAudio);
+
 // Keyboard
 
 // Wrapped in an IIFE so that the Map declaration and for-of loop are in a
