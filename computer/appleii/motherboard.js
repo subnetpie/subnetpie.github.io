@@ -16,9 +16,9 @@ import {W65C816} from "https://subnetpie.github.io/computer/appleii/w65c816.js?v
 import {IOManager} from "https://subnetpie.github.io/computer/appleii/io_manager.js?v=20260928-pageroute1";
 import {TextDisplay} from "https://subnetpie.github.io/computer/appleii/display_text.js";
 import {TextDisplay80} from "https://subnetpie.github.io/computer/appleii/display_text_80.js?v=20260928-pageroute1";
-import {HiresDisplay} from "https://subnetpie.github.io/computer/appleii/display_hires.js?v=20260928-compatvideo2";
+import {HiresDisplay} from "https://subnetpie.github.io/computer/appleii/display_hires.js?v=20260928-pageflipram1";
 import {LoresDisplay} from "https://subnetpie.github.io/computer/appleii/display_lores.js";
-import {DoubleHiresDisplay} from "https://subnetpie.github.io/computer/appleii/display_double_hires.js?v=20260928-compatvideo2";
+import {DoubleHiresDisplay} from "https://subnetpie.github.io/computer/appleii/display_double_hires.js?v=20260928-pageflipram1";
 import {Keyboard} from "https://subnetpie.github.io/computer/appleii/keyboard.js?v=20260928-blend";
 import {Floppy525} from "https://subnetpie.github.io/computer/appleii/FloppyWoz525.js";
 import {AppleAudio} from "https://subnetpie.github.io/computer/appleii/apple_audio.js?v=20260928-ring2";
