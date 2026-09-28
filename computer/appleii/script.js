@@ -116,7 +116,12 @@ function on_interval(now_ms) {
   // 60 Hz frame is ~46,667 cycles, so "& 0x7fff" wrapped it to ~13,899
   // and starved ROM03 to about 30% speed. Preserve fractional cycles and
   // cap only unusually long browser stalls.
-  const elapsed = Math.max(0, Math.min(now_ms - last_ms, 100));
+  // Never try to repay an arbitrarily large wall-clock stall in one RAF.
+  // Doing so creates a positive feedback loop: one GC/render hitch causes a
+  // huge 65816 catch-up slice, which makes the following frame even later.
+  // At 60 Hz the normal slice is ~16.67 ms; allow modest jitter but discard
+  // excess wall-clock debt rather than entering a catch-up spiral.
+  const elapsed = Math.max(0, Math.min(now_ms - last_ms, 25));
   const budget = elapsed * khz + cycle_fraction;
   const cycles = Math.floor(budget);
   cycle_fraction = budget - cycles;
