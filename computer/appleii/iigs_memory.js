@@ -276,9 +276,10 @@ export class IIgsMemory {
     // IWM odd soft-switch reads have no register data; MAME's c080_r()
     // returns the machine floating bus when the controller supplies none.
     if(addr & 1) return this.floatingBus();
-    // DISKREG bit 7 selects the IIgs 3.5-inch path. Do not feed 5.25-inch
-    // Disk II latch bytes into firmware while that path is selected.
-    if(this.diskReg&0x80) {
+    // MAME 0.289 DISKREG bit 6 (35SEL) selects the IIgs 3.5-inch path.
+    // Bit 7 is HDSEL, the Sony drive head/drive select signal; it must not
+    // switch the controller away from the chained 5.25-inch drives.
+    if(this.diskReg&0x40) {
       if(this.iwmQ6 && !this.iwmQ7)
         return this.iwmMode | (this.iwmMotor ? 32 : 0) | 0x80;
       if(!this.iwmQ6 && this.iwmQ7) return 0x80;
