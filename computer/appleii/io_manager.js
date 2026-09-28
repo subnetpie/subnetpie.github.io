@@ -246,12 +246,19 @@ export class IOManager
             switch(addr)
             {
                 case 0xc000: // 80store off
-                    //console.log("80store off");
-                    this._mem.dms_80store = false;
+                    // 80STORE changes PAGE2 from aux page-1 selection back to
+                    // the normal page-2 address range, so it is a video mode
+                    // change when the latch actually toggles.
+                    if(this._mem.dms_80store) {
+                        this._mem.dms_80store = false;
+                        this.switch_display_mode();
+                    }
                     return 0; // write handled
                 case 0xc001: // 80store on
-                    //console.log("80store on");
-                    this._mem.dms_80store = true;
+                    if(!this._mem.dms_80store) {
+                        this._mem.dms_80store = true;
+                        this.switch_display_mode();
+                    }
                     return 0; // write handled
                 case 0xc002: // read main memory
                     //console.log("aux ram read off");
@@ -393,17 +400,17 @@ export class IOManager
                 }
                 break;
             case 0xc054: // page2 off
-                //console.log("page2 off");
+                // PAGE2 is still a visible page flip with 80STORE enabled:
+                // it selects main vs auxiliary page-1 video memory.
                 if(this._mem.dms_page2) {
                     this._mem.dms_page2 = false;
-                    if(!this._mem.dms_80store) this.switch_display_mode();
+                    this.switch_display_mode();
                 }
                 break;
             case 0xc055: // page2 on
-                //console.log("page2 on");
                 if(!this._mem.dms_page2) {
                     this._mem.dms_page2 = true;
-                    if(!this._mem.dms_80store) this.switch_display_mode();
+                    this.switch_display_mode();
                 }
                 break;
             case 0xc056: // hires off
@@ -528,6 +535,7 @@ export class IOManager
             return;
         }
         const page = this._mem.dms_page2 && !this._mem.dms_80store ? 2 : 1;
+        const videoBank = this._mem.dms_80store && this._mem.dms_page2 ? "aux" : "main";
 
         if(this._text_mode) {
             if(this._80col_mode) this._display_text_80.set_active_page(page);
@@ -537,7 +545,7 @@ export class IOManager
 
         if(this._mem.dms_hires) {
             if(this._double_hires) this._display_double_hires.set_active_page(page);
-            else this._display_hires.set_active_page(page);
+            else this._display_hires.set_active_page(page, videoBank);
         } else {
             this._display_lores.set_active_page(page, this._double_hires && this._80col_mode);
         }
