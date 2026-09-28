@@ -129,7 +129,10 @@ export class Motherboard
         this.audio.begin_segment(this.cycles);
         const total = this.cycles + count;
         while(this.cycles < total) {
-            const cpuHz = this.iigsEnabled && !(this.memory.speed & 0x80)
+            const cpuFast = this.iigsEnabled && this.memory.isFastCpu
+                ? this.memory.isFastCpu()
+                : !!(this.memory.speed & 0x80);
+            const cpuHz = this.iigsEnabled && !cpuFast
                 ? IIGS_SLOW_HZ : (this.iigsEnabled ? IIGS_FAST_HZ : 1020500);
 
             let timed=this.perfEnabled ? performance.now() : 0;
