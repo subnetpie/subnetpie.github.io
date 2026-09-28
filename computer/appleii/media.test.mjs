@@ -235,16 +235,18 @@ test('IIgs 800K 2MG mounts only on native 3.5 drive, not synthetic slot 7',()=>{
   assert.equal(m.prodosBlock.image,null);
 });
 
-test('IIgs ROM03 can see mounted ProDOS slot-7 boot firmware after reset',()=>{
+test('IIgs mounted block card selects slot 7 without bypassing ROM decode',()=>{
   const {board:m}=createMachine(), b=m.memory;
-  const disk=new Uint8Array(1600*512), media=decodeMedia('Arkanoid.2mg',wrap(disk,1));
+  const media=decodeMedia('boot.hdv',new Uint8Array(1024));
   mountMedia(m,media); m.reset(true);
-  assert.equal(b.slotRom,0,'ROM03 reset default keeps SLOTROMSEL clear');
-  assert.equal(b.read(0xc700),0x24,'mounted external slot-7 signature must override internal ROM');
-  assert.equal(b.read(0xc708),0xa9,'slot-7 boot entry must be visible to firmware scanner');
-  m.prodosBlock.eject();
-  assert.notEqual(b.read(0xc708),0xa9,'ejected card must fall back to internal slot ROM');
+  assert.ok(b.slotRom&0x80,'mounted block card must select external slot 7 after reset');
+  assert.equal(b.read(0xc700),0x24);
+  assert.equal(b.read(0xc708),0xa9);
+  m.prodosBlock.eject(); m.reset(true);
+  assert.equal(b.slotRom&0x80,0,'ejected card must not force external slot 7');
 });
+
+
 
 test('IIgs reset clears native IWM decoder state but preserves mounted 800K media',()=>{
   const {board:m}=createMachine(), b=m.memory;
