@@ -372,7 +372,10 @@ export class IIgsMemory {
   }
 
   tickIwm(cycles, cpuHz=2800000) {
-    const clocks=cycles * (4019200 / cpuHz);
+    // MAME apple2gs.cpp: IWM(config, ..., A2GS_7M), master 28,636,363 / 4.
+    const iwmHz=28636363/4;
+    const clocks=cycles * (iwmHz / cpuHz);
+    if((this.diskReg&0x40) && this.iwmActive) this.floppy35.tick(cycles/cpuHz);
     if(this.iwmWritePending) {
       this.iwmWritePending-=clocks;
       if(this.iwmWritePending<=0) {
@@ -383,7 +386,7 @@ export class IIgsMemory {
       }
     }
     if(!this.iwmMotorDelay) return;
-    // IIgs IWM clock is 4.0192 MHz (28.63636 MHz / 7).
+    // IIgs IWM clock is A2GS_7M (28.636363 MHz / 4).
     this.iwmMotorDelay -= clocks;
     if(this.iwmMotorDelay <= 0) {
       this.iwmMotorDelay=0; this.iwmMotor=false; this.iwmActive=false; this.iwmDevSel=0;
