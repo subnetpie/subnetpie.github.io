@@ -7,6 +7,41 @@ import {fixture} from './test-support/woz-fixture.mjs';
 
 const digest = bytes => createHash('sha256').update(bytes).digest('hex');
 
+
+test('IIgs fast-mode Mega II accesses accumulate MAME slow-cycle wait states', () => {
+  const {board:m}=createMachine();
+  const b=m.memory;
+  b.speed=0x80;
+  b.slowCycleRemainder=0; b.pendingSlowCycles=0;
+
+  // MAME adds 0x2cccd in 16.16 fixed point per slow access. The first five
+  // accesses therefore charge 2,3,3,3,3 fast cycles = 14 total.
+  const waits=[];
+  for(let i=0;i<5;i++) {
+    b.read(0xe00000);
+    waits.push(b.consumeSlowCycles());
+  }
+  assert.deepEqual(waits,[2,3,3,3,3]);
+  assert.equal(b.slowCycleRemainder,5);
+
+  // When SPEED selects the ~1 MHz CPU, slow-bus accesses need no extra wait.
+  b.speed=0;
+  b.read(0xe00000);
+  assert.equal(b.consumeSlowCycles(),0);
+});
+
+test('Motherboard clock advances video/master time by Mega II wait states', () => {
+  const {board:m}=createMachine();
+  m.memory.speed=0x80;
+  m.memory.slowCycleRemainder=0; m.memory.pendingSlowCycles=0;
+  const start=m.cycles;
+  const originalStep=m.cpu.step.bind(m.cpu);
+  m.cpu.step=()=>{m.memory.noteSlowCycle(); return 2;};
+  m.clock(1);
+  m.cpu.step=originalStep;
+  assert.equal(m.cycles-start,4,'2 CPU cycles + first 2-cycle Mega II wait');
+});
+
 test('STATEREG restores bank selection without changing the LC write latch', () => {
   const {board:m}=createMachine();
   const b=m.memory, ram=m.legacyMemory;
