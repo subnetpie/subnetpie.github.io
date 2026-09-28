@@ -1,4 +1,4 @@
-import {Floppy35} from './floppy35.js?v=20260928-perf2';
+import {Floppy35} from './floppy35.js?v=20260928-perf3';
 import {IIgsADB} from "./iigs_adb.js";
 import {IIgsDOC} from "./iigs_doc.js?v=20260928-2mg";
 import {IIgsSCC} from "./iigs_scc.js?v=20260928-2mg";
