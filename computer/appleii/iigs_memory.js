@@ -276,8 +276,15 @@ export class IIgsMemory {
     // affect both memory selection and the compatibility renderer.
     const oldPage2=!!m.dms_page2;
     m.dms_page2 = !!(value & 0x40);
-    if(oldPage2!==m.dms_page2 && this.video && this.video.legacy &&
-       this.video.legacy.refresh) this.video.legacy.refresh();
+    if(oldPage2!==m.dms_page2) {
+      // STATEREG PAGE2 is the same hardware latch as C054/C055. Re-run the
+      // display selector instead of merely redrawing whichever cache happened
+      // to be active before the state-register write.
+      if(this.ioManager && this.ioManager.switch_display_mode)
+        this.ioManager.switch_display_mode();
+      else if(this.video && this.video.legacy && this.video.legacy.refresh)
+        this.video.legacy.refresh();
+    }
     this.intCxRom = !!(value & 1);
   }
 
@@ -771,8 +778,14 @@ export class IIgsMemory {
       if(io!==0xc035 && io!==0xc036 && io!==0xc037) this.noteSlowCycle();
       if(this.trace) this.trace("W",io,val);
       // IIgs FPI compatibility soft switches (MAME c000_w).
-      if(io===0xc000){this.legacy.dms_80store=false;return;}
-      if(io===0xc001){this.legacy.dms_80store=true;return;}
+      if(io===0xc000 || io===0xc001) {
+        // Keep the Mega II memory selector and compatibility renderer on the
+        // same soft-switch path. 80STORE changes whether PAGE2 means a real
+        // displayed page or only a main/aux page-1 bank selector.
+        if(this.ioManager) this.ioManager.write(io,val);
+        else this.legacy.dms_80store = io===0xc001;
+        return;
+      }
       if(io===0xc002){this.legacy.aux_read=false;return;}
       if(io===0xc003){this.legacy.aux_read=true;return;}
       if(io===0xc004){this.legacy.aux_write=false;return;}
