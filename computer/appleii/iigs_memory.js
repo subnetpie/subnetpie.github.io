@@ -37,7 +37,7 @@ export class IIgsMemory {
     this.intC8Rom = false;
     this.clockCtl = 0x00;
     this.clockData = 0x00;
-    this.rtc = {ce:1,clk:0,data:0,out:0,dir:0,byte:0,bits:0,state:0,cmd:0,xpaddr:0,writeProtect:false,pram:new Uint8Array(256),seconds:new Uint8Array(4)};
+    this.rtc = {ce:1,clk:0,data:0,out:0,dir:0,byte:0,bits:0,state:0,cmd:0,xpaddr:0,writeProtect:false,pram:new Uint8Array(256),seconds:new Uint8Array(4),cycleAccum:0};
     this.intEnable = 0x00;
     this.intFlag = 0x00;
     this.irq = null;
@@ -128,6 +128,21 @@ export class IIgsMemory {
         this.rtcShift(this.rtc.data);
         this.clockData=((this.clockData<<1)|(this.rtc.out&1))&0xff;
       }
+    }
+  }
+
+  tickRtc(cycles, clockHz=2800000) {
+    // MAME's 343-0042 advances its seconds counter on each rising CKO edge:
+    // one increment per second. Keep this tied to emulated CPU time so ROM03
+    // does not see a permanently frozen clock.
+    const r=this.rtc;
+    r.cycleAccum += cycles;
+    while(r.cycleAccum >= clockHz) {
+      r.cycleAccum -= clockHz;
+      let n=(r.seconds[0]|(r.seconds[1]<<8)|(r.seconds[2]<<16)|(r.seconds[3]<<24))>>>0;
+      n=(n+1)>>>0;
+      r.seconds[0]=n&0xff; r.seconds[1]=(n>>>8)&0xff;
+      r.seconds[2]=(n>>>16)&0xff; r.seconds[3]=(n>>>24)&0xff;
     }
   }
 
