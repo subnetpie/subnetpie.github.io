@@ -93,12 +93,8 @@ export function mountMedia(board, media, drive=0) {
     }
   } else if(media.kind==='block') {
     ok=board.prodosBlock.load_image(media.name,media.data,media);
-    if(board.iigsEnabled && board.memory) {
+    if(board.iigsEnabled && board.memory)
       board.memory.floppy35Media=media.physical==='35' ? media : null;
-      // The synthetic ProDOS card occupies slot 7. IIgs internal slot ROMs
-      // win after reset unless SLOTROMSEL explicitly enables that card.
-      if(ok) board.memory.slotRom |= 0x80;
-    }
     // A newly mounted block image owns the boot path. Do not leave a prior
     // Disk II image selected/active across the reset that follows loading.
     if(ok && board.floppy525?._disks) {
@@ -107,12 +103,7 @@ export function mountMedia(board, media, drive=0) {
     }
   } else {
     ok=board.floppy525.load_image(drive,media.name,media.data,media);
-    if(board.iigsEnabled && board.memory) {
-      // ROM03's internal slot-6 firmware drives the built-in IWM. MAME's
-      // IIgs has no external card installed in slot 6 by default.
-      board.memory.floppy35Media=null;
-      board.memory.slotRom &= ~0x40;
-    }
+    if(board.iigsEnabled && board.memory) board.memory.floppy35Media=null;
   }
   if(!ok)throw new Error('Unable to mount '+media.name);
   // Otherwise slot 7 keeps booting the previously selected hard disk.
