@@ -96,10 +96,12 @@ export class Keyboard
         }
 
         this._key = code | 0x80;
+        if(this.onChange)this.onChange(this._key,true);
     }
 
 
     key_up() {
         this._key_pressed = false;
+        if(this.onChange)this.onChange(this._key,false);
     }
 }

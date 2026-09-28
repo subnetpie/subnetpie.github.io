@@ -10,8 +10,8 @@ export class IIgsDOC {
   }
 
   reset() {
-    this.address=0; this.control=0; this.dummyRead=0; this.irqPending=false; this.irqQueue=[];
-    this.systemVolume=0;
+    this.address=0; this.control=0; this.irqPending=false; this.irqQueue=[];
+    this.systemVolume=0; this.readLatch=0; this.irqStatus=0xff;
     this.enabledOscillators=1; this.masterAccum=0; this.lastSample=0;
     this.lastLeft=0; this.lastRight=0;
     this.cpuHz=2800000; this.masterHz=7159090;
@@ -24,48 +24,51 @@ export class IIgsDOC {
   setAddressLow(v){this.address=(this.address&0xff00)|(v&255);}
   setAddressHigh(v){this.address=(this.address&255)|((v&255)<<8);}
   addressLow(){return this.address&255;} addressHigh(){return this.address>>>8;}
-  setControl(v){this.control=v&0x7f;this.systemVolume=v&0x0f;if(!(this.control&0x40))this.address&=0x00ff;}
-  getControl(){return this.control;}
+  setControl(v){this.control=v&0x7f;this.systemVolume=v&0x0f;if(!(v&0x40))this.address&=0xff;}
+  getControl(){return this.control|0x1f;}
   getVolume(){return this.systemVolume;}
   // SOUNDCTL bit 5 selects automatic address increment after DOC data access.
   advance(){if(this.control&0x20)this.address=(this.address+1)&0xffff;}
 
   decodeRegister(a) {
-    // ES5503 oscillator registers occupy eight 32-byte pages.
+    // ES5503 oscillator registers occupy seven 32-byte pages.
     const page=(a>>>5)&7, n=a&31;
-    if(page<=5) return {page,n};
+    if(page<=6) return {page,n};
     return null;
   }
   readRegister(a) {
     const r=this.decodeRegister(a);
     if(!r) {
-      if((a&0xffff)===0xe0) return ((this.enabledOscillators-1)<<1)&0x3e;
-      if((a&0xffff)===0xe1) {
+      if((a&0xffff)===0xe1) return ((this.enabledOscillators-1)<<1)&0x3e;
+      if((a&0xffff)===0xe0) {
         const n=this.irqQueue.length ? this.irqQueue.shift() : -1;
         this.irqPending=this.irqQueue.length>0; this.updateIRQ();
-        return n<0 ? 0xff : ((n<<1)&0x3e);
+        const status=n<0 ? this.irqStatus : n<<1;
+        if(n>=0)this.irqStatus=status|0x80;
+        return status|0x41;
       }
       return this.ram[a&0xffff];
     }
     const o=this.osc[r.n];
-    return [o.freq&255,o.freq>>>8,o.volume,o.wave,o.control,o.size][r.page]&255;
+    return [o.freq&255,o.freq>>>8,o.volume,o.data??0,o.wave,o.control,o.size][r.page]&255;
   }
   writeRegister(a,v) {
     v&=255; const r=this.decodeRegister(a);
     if(!r) {
-      if((a&0xffff)===0xe0){this.enabledOscillators=Math.min(32,((v&0x3e)>>>1)+1);return;}
+      if((a&0xffff)===0xe1){this.enabledOscillators=Math.min(32,((v&0x3e)>>>1)+1);return;}
       this.ram[a&0xffff]=v; return;
     }
     const o=this.osc[r.n];
     if(r.page===0)o.freq=(o.freq&0xff00)|v;
     else if(r.page===1)o.freq=(o.freq&255)|(v<<8);
     else if(r.page===2)o.volume=v;
-    else if(r.page===3)o.wave=v;
-    else if(r.page===4){o.control=v;if(!(v&1))o.accumulator=0;}
+    else if(r.page===3)return; // sample-data register is read-only
+    else if(r.page===4)o.wave=v;
+    else if(r.page===5){o.control=v;if(!(v&1))o.accumulator=0;}
     else o.size=v;
   }
-  readData(){const v=this.dummyRead;this.dummyRead=(this.control&0x40)?this.ram[this.address]:this.readRegister(this.address);this.advance();return v;}
-  writeData(v){if(this.control&0x40)this.ram[this.address]=v&0xff;else this.writeRegister(this.address,v);this.advance();}
+  readData(){const v=this.readLatch;this.readLatch=(this.control&0x40)?this.ram[this.address]:this.readRegister(this.address);this.advance();return v;}
+  writeData(v){if(this.control&0x40)this.ram[this.address]=v&255;else this.writeRegister(this.address,v);this.advance();}
 
   finish(n,o) {
     const mode=(o.control>>>1)&3;

@@ -5,20 +5,21 @@ import {IIgsDOC} from './iigs_doc.js';
 test('DOC oscillator register pages retain frequency volume wave and control',()=>{
   const d=new IIgsDOC();
   d.writeRegister(0x00,0x34); d.writeRegister(0x20,0x12);
-  d.writeRegister(0x40,0x80); d.writeRegister(0x60,0x22);
-  d.writeRegister(0x80,0x08);
+  d.writeRegister(0x40,0x80); d.writeRegister(0x80,0x22);
+  d.writeRegister(0xa0,0x08);
   assert.equal(d.osc[0].freq,0x1234);
   assert.equal(d.readRegister(0x40),0x80);
-  assert.equal(d.readRegister(0x60),0x22);
-  assert.equal(d.readRegister(0x80),0x08);
+  assert.equal(d.readRegister(0x80),0x22);
+  assert.equal(d.readRegister(0xa0),0x08);
 });
 
 test('DOC running oscillator fetches waveform and produces a sample',()=>{
   const d=new IIgsDOC();
-  d.ram[0x100]=0xc0;
+  d.ram[0x101]=0xc0;
   d.osc[0].freq=0x100; d.osc[0].volume=255; d.osc[0].wave=1; d.osc[0].control=0;
   d.renderSample();
-  assert.equal(d.lastSample,64);
+  assert.equal(d.lastLeft,64);
+  assert.equal(d.lastSample,32);
 });
 
 test('DOC zero terminator halts one-shot oscillator and raises IRQ',()=>{
@@ -28,7 +29,7 @@ test('DOC zero terminator halts one-shot oscillator and raises IRQ',()=>{
   d.renderSample();
   assert.ok(d.osc[0].control&1);
   assert.equal(irq,true);
-  assert.equal(d.readRegister(0xe1),0);
+  assert.equal(d.readRegister(0xe0),0x41);
   assert.equal(irq,false);
 });
 
@@ -37,7 +38,7 @@ test('DOC swap mode starts the paired oscillator at terminator',()=>{
   d.ram[0x100]=0; d.ram[0x200]=0x90;
   Object.assign(d.osc[0],{freq:0x100,volume:255,wave:1,control:0x04,accumulator:0});
   Object.assign(d.osc[1],{freq:0x100,volume:255,wave:2,control:1,accumulator:99});
-  d.renderSample();
+  d.finish(0,d.osc[0]);
   assert.ok(d.osc[0].control&1);
   assert.equal(d.osc[1].control&1,0);
   assert.equal(d.osc[1].accumulator,0);
@@ -71,7 +72,7 @@ test('DOC resolution selects and aligns larger wave tables',()=>{
   d.ram[0x401]=0xd0;
   Object.assign(d.osc[0],{freq:0x100,volume:255,wave:0x07,control:0,size:2,accumulator:0});
   d.renderSample();
-  assert.equal(d.lastSample,80);
+  assert.equal(d.lastLeft,80);
 });
 
 test('DOC resolution permits indexes beyond the old 256-byte window',()=>{
@@ -79,7 +80,7 @@ test('DOC resolution permits indexes beyond the old 256-byte window',()=>{
   d.ram[0x601]=0xe0;
   Object.assign(d.osc[0],{freq:0x20100,volume:255,wave:0x04,control:0,size:2,accumulator:0});
   d.renderSample();
-  assert.equal(d.lastSample,96);
+  assert.equal(d.lastLeft,96);
 });
 
 test('DOC loop mode restarts accumulator when a zero terminator is reached',()=>{
@@ -99,11 +100,11 @@ test('DOC queues simultaneous oscillator IRQs until each is acknowledged',()=>{
   Object.assign(d.osc[1],{freq:0x100,volume:255,wave:2,control:0x08,size:0,accumulator:0});
   d.renderSample();
   assert.equal(irq,true);
-  assert.equal(d.readRegister(0xe1),0);
+  assert.equal(d.readRegister(0xe0),0x41);
   assert.equal(irq,true);
-  assert.equal(d.readRegister(0xe1),2);
+  assert.equal(d.readRegister(0xe0),0x43);
   assert.equal(irq,false);
-  assert.equal(d.readRegister(0xe1),0xff);
+  assert.equal(d.readRegister(0xe0),0xc3);
 });
 
 test('DOC routes even and odd oscillators to separate output buses',()=>{
@@ -122,14 +123,24 @@ test('IIgs SOUNDCTL exposes four-bit system volume independently of DOC access f
   const d=new IIgsDOC();
   d.setControl(0x2b);
   assert.equal(d.getVolume(),0x0b);
-  assert.equal(d.getControl(),0x2b);
+  assert.equal(d.getControl(),0x3f);
 });
 
 test('IIgs SOUNDCTL auto-increment advances only when bit 5 is enabled',()=>{
   const d=new IIgsDOC();
   d.setAddressLow(0x10); d.setAddressHigh(0x12);
-  d.setControl(0x0f); d.writeData(0xaa);
+  d.setControl(0x4f); d.writeData(0xaa);
   assert.equal(d.address,0x1210);
-  d.setControl(0x2f); d.writeData(0xbb);
+  d.setControl(0x6f); d.writeData(0xbb);
   assert.equal(d.address,0x1211);
+});
+
+
+test('DOC RAM access is separate from registers and SOUNDDATA uses a read latch',()=>{
+ const d=new IIgsDOC(); d.setControl(0x40);d.setAddressLow(0xa0);d.writeData(0x55);
+ assert.equal(d.osc[0].control,1);assert.equal(d.ram[0xa0],0x55);
+ d.readData();assert.equal(d.readData(),0x55);
+ d.setControl(0);d.setAddressLow(0xe1);d.writeData(0x3e);
+ assert.equal(d.enabledOscillators,32);
+ d.setAddressHigh(0x12);d.setControl(0);assert.equal(d.address,0xe1);
 });

@@ -11,19 +11,19 @@
 
 import {W65C02S} from "https://subnetpie.github.io/computer/appleii/w65c02s.js";
 import {Memory} from "https://subnetpie.github.io/computer/appleii/memory.js";
-import {IIgsMemory} from "https://subnetpie.github.io/computer/appleii/iigs_memory.js?v=20260927-bootrepair1";
-import {W65C816} from "https://subnetpie.github.io/computer/appleii/w65c816.js";
-import {IOManager} from "https://subnetpie.github.io/computer/appleii/io_manager.js?v=20260927-bootstatus";
+import {IIgsMemory} from "https://subnetpie.github.io/computer/appleii/iigs_memory.js?v=20260928-2mg";
+import {W65C816} from "https://subnetpie.github.io/computer/appleii/w65c816.js?v=20260928-2mg";
+import {IOManager} from "https://subnetpie.github.io/computer/appleii/io_manager.js?v=20260928-2mg";
 import {TextDisplay} from "https://subnetpie.github.io/computer/appleii/display_text.js";
 import {TextDisplay80} from "https://subnetpie.github.io/computer/appleii/display_text_80.js";
 import {HiresDisplay} from "https://subnetpie.github.io/computer/appleii/display_hires.js";
 import {LoresDisplay} from "https://subnetpie.github.io/computer/appleii/display_lores.js";
 import {DoubleHiresDisplay} from "https://subnetpie.github.io/computer/appleii/display_double_hires.js?v=20260927-display";
-import {Keyboard} from "https://subnetpie.github.io/computer/appleii/keyboard.js";
+import {Keyboard} from "https://subnetpie.github.io/computer/appleii/keyboard.js?v=20260928-2mg";
 import {Floppy525} from "https://subnetpie.github.io/computer/appleii/FloppyWoz525.js";
 import {AppleAudio} from "https://subnetpie.github.io/computer/appleii/apple_audio.js";
 import {ProDOSBlockDevice} from "https://subnetpie.github.io/computer/appleii/prodos_block.js?v=20260927-boot";
-import {IIgsVideo} from "https://subnetpie.github.io/computer/appleii/video_iigs.js?v=20260927-bootstatus";
+import {IIgsVideo} from "https://subnetpie.github.io/computer/appleii/video_iigs.js?v=20260928-2mg";
 import {MachineTrace} from "https://subnetpie.github.io/computer/appleii/machine_trace.js";
 import {rom_342_0304_cd} from "https://subnetpie.github.io/computer/appleii/rom/342-0304-cd.js";
 import {rom_342_0303_ef} from "https://subnetpie.github.io/computer/appleii/rom/342-0303-ef.js";
@@ -50,6 +50,7 @@ export class Motherboard
             ? new IIgsMemory(this.legacyMemory, this.video_iigs)
             : this.legacyMemory;
         if(this.iigsEnabled) this.memory.initRtcFromHost();
+        if(this.iigsEnabled)this.keyboard.onChange=(value,down)=>this.memory.adb.setKeyData(value,down);
         this.cpu = this.iigsEnabled ? new W65C816(this.memory) : new W65C02S(this.memory);
         this.iigsIrq = {mega:false};
         this.updateIIgsIRQ = () => this.cpu.irq(this.iigsIrq.mega);

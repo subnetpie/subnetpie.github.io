@@ -1,7 +1,7 @@
 import {Floppy35} from './floppy35.js?v=20260927-v1';
 import {IIgsADB} from "./iigs_adb.js";
-import {IIgsDOC} from "./iigs_doc.js";
-import {IIgsSCC} from "./iigs_scc.js";
+import {IIgsDOC} from "./iigs_doc.js?v=20260928-2mg";
+import {IIgsSCC} from "./iigs_scc.js?v=20260928-2mg";
 // Apple IIgs 24-bit memory/bus.
 //
 // This is deliberately separate from memory.js: the IIe keeps its exact
@@ -580,6 +580,7 @@ export class IIgsMemory {
       if(io===0xc03e) return this.doc.addressLow();
       if(io===0xc03f) return this.doc.addressHigh();
       if(io===0xc041) return this.intEnable;
+      if(io===0xc047){this.intFlag&=~0x18;this.vblIrq=this.quarterIrq=false;this.updateMegaIrq();return 0;}
       // MAME returns zero for the SCC activity delta registers; AppleTalk
       // probes these during machine detection/startup.
       if(io===0xc044 || io===0xc045) return 0;
@@ -899,6 +900,12 @@ export class IIgsMemory {
     if(off>=0x0400 && off<0x6000 && this.legacy.io_manager)
       this.legacy.io_manager.draw_display(off,this.slowE0[off]);
     if(this.trace) this.trace("W",addr,val);
+  }
+
+  // FPI uses the 65816 vector-pull signal to select ROM independently
+  // of LC RAM. Ordinary data reads retain their selected mapping.
+  read_vector(addr) {
+    return this.read_word((this.shadow & 0x40) ? addr : (0xff0000 | addr));
   }
 
   read_word(addr) {

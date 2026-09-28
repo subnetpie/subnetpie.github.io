@@ -7,9 +7,10 @@ class SCCChannel {
     return (this.rx.length?0x01:0)|(this.txEmpty?0x04:0)|0x28;
   }
   controlRead(){
-    const p=this.pointer&15; this.pointer=0;
+    const p=this.pointer&15; this.pointer=0; this.expectPointer=false;
     if(p===0)return this.status();
     if(p===1)return this.parent.interruptStatus(this.index);
+    if(p===3)return this.index===0 ? this.parent.pendingBits() : 0;
     return this.reg[p];
   }
   controlWrite(v){
@@ -19,7 +20,7 @@ class SCCChannel {
       this.parent.updateIRQ(); return;
     }
     // WR0 low three bits select the following register. Zero is a command.
-    const sel=v&7;
+    const sel=(v&7)|(((v>>>3)&7)===1?8:0);
     if(sel){this.pointer=sel;this.expectPointer=true;return;}
     const cmd=(v>>>3)&7;
     if(cmd===3)this.parent.resetChannel(this.index);
@@ -66,18 +67,27 @@ export class IIgsSCC {
     const c=this.channels[n];
     return (c.rx.length && (c.reg[1]&0x18)) ? 0x20 : 0;
   }
+  pendingBits(){
+    let bits=0;
+    for(const c of this.channels) {
+      const shift=c.index===0?3:0;
+      if(c.rx.length && (c.reg[1]&0x18))bits|=4<<shift;
+      if(c.txEmpty && (c.reg[1]&2))bits|=2<<shift;
+    }
+    return bits;
+  }
   pending(){
     return this.channels.some(c=>(c.rx.length && (c.reg[1]&0x18)) || (c.txEmpty && (c.reg[1]&0x02)));
   }
   updateIRQ(){this.irqPending=this.pending();if(this.irq)this.irq(this.irqPending);}
   clearHighestIRQ(){this.irqPending=false;if(this.irq)this.irq(false);}
   read(port){
-    const ch=(port&2)?0:1; // IIgs C038/39=B, C03A/3B=A
-    return (port&1)?this.channels[ch].controlRead():this.channels[ch].dataRead();
+    const ch=(port&1)?0:1; // C038/39 = B/A control, C03A/3B = B/A data
+    return (port&2)?this.channels[ch].dataRead():this.channels[ch].controlRead();
   }
   write(port,v){
-    const ch=(port&2)?0:1;
-    if(port&1)this.channels[ch].controlWrite(v);else this.channels[ch].dataWrite(v);
+    const ch=(port&1)?0:1;
+    if(port&2)this.channels[ch].dataWrite(v);else this.channels[ch].controlWrite(v);
   }
   inject(channel,v){this.channels[channel&1].inject(v);}
   transmitted(channel,v){if(this.onTransmit)this.onTransmit(channel,v);}

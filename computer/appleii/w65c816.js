@@ -59,7 +59,7 @@ export class W65C816 {
  ptr(a,long=false){const wrap=this.r.e&&!(this.r.d&255)&&!long?255:65535;return this.word(a,wrap)|(long?this.mem.read((a+2)&65535)<<16:0);}
  irq(s=true){this.irqLine=!!s;if(s)this.waiting=false;}
  nmi(){this.nmiPending=true;this.waiting=false;}
- interrupt(vector,software=false){if(!this.r.e)this.push8(this.r.pb);this.push16(this.r.pc);this.push8(this.r.e?((this.r.p&~16)|(software?16:0)):this.r.p);this.r.p=(this.r.p|I)&~D;this.r.pb=0;this.r.pc=this.mem.read_word(vector);return this.r.e?7:8;}
+ interrupt(vector,software=false){if(!this.r.e)this.push8(this.r.pb);this.push16(this.r.pc);this.push8(this.r.e?((this.r.p&~16)|(software?16:0)):this.r.p);this.r.p=(this.r.p|I)&~D;this.r.pb=0;this.r.pc=this.mem.read_vector?this.mem.read_vector(vector):this.mem.read_word(vector);return this.r.e?7:8;}
  arithmetic(v,subtract,bits){
   const mask=bits===8?255:65535,sign=bits===8?128:32768,a=this.r.a&mask,c=this.r.p&C?1:0;
   let result=a+(subtract?(v^mask):v)+c;
