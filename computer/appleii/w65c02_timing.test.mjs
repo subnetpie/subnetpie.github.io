@@ -64,3 +64,25 @@ test('65C02 (zp),Y read and store timing matches page-cross rules', () => {
   assert.equal(cpu.step(),6);
   assert.equal(mem[0x2100],0xa5);
 });
+
+
+test('65C02 subroutine and stack timings match hardware', () => {
+  const {cpu,mem}=makeCpu();
+
+  cpu.register.pc=0x0200;
+  mem.set([0x20,0x00,0x03],0x0200); // JSR $0300
+  assert.equal(cpu.step(),6);
+  assert.equal(cpu.register.pc,0x0300);
+
+  mem[0x0300]=0x60; // RTS
+  assert.equal(cpu.step(),6);
+  assert.equal(cpu.register.pc,0x0203);
+
+  cpu.register.a=0x44;
+  cpu.register.pc=0x0400;
+  mem.set([0x48,0x68],0x0400); // PHA / PLA
+  assert.equal(cpu.step(),3);
+  cpu.register.a=0;
+  assert.equal(cpu.step(),4);
+  assert.equal(cpu.register.a,0x44);
+});
