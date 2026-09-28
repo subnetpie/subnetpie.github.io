@@ -498,6 +498,9 @@ export class IOManager
 
     ////////////////////////////////////////////
     draw_display(addr, val, bank = undefined) {
+        if(this._video_iigs && this._video_iigs.noteCompatVideoWrite)
+            this._video_iigs.noteCompatVideoWrite(addr);
+
         // Resolve the physical RAM bank once. PAGE2 under 80STORE is a CPU
         // bank selector for text page 1 and (when HIRES is on) HGR page 1;
         // it is not a displayed-page selector.
