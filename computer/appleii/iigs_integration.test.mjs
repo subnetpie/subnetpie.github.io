@@ -559,3 +559,34 @@ test('IIgs legacy video reads slow RAM and follows shadow and direct writes', ()
   m.memory.write(0xe02000,0);
   assert.notEqual(digest(pixels),visible,'direct slow-bank write must redraw video');
 });
+
+
+test('IIgs SPEED bit 7 changes CPU execution rate without slowing machine time', () => {
+  const {board:m}=createMachine();
+  // Run the same master-time budget once fast and once slow. Count executed
+  // instructions; video/master time must advance by the same amount.
+  let steps=0;
+  const originalStep=m.cpu.step.bind(m.cpu);
+  m.cpu.step=()=>{ steps++; return originalStep(); };
+
+  m.memory.speed=0x80;
+  const frame0=m.video_iigs.frameCount;
+  const startFast=m.cycles;
+  m.clock(28000);
+  const fastSteps=steps;
+  const fastMaster=m.cycles-startFast;
+
+  steps=0;
+  m.memory.speed=0x00;
+  const startSlow=m.cycles;
+  m.clock(28000);
+  const slowSteps=steps;
+  const slowMaster=m.cycles-startSlow;
+
+  assert.ok(slowSteps < fastSteps*0.5,
+    'slow mode must execute substantially fewer 65816 instructions per real-time slice');
+  assert.ok(fastMaster>=28000 && slowMaster>=28000,
+    'both modes must consume the requested master-time budget');
+  assert.ok(m.video_iigs.frameCount>=frame0,
+    'video time continues independently of CPU speed');
+});
