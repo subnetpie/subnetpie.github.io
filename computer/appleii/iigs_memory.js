@@ -1,3 +1,4 @@
+import {Floppy35} from './floppy35.js?v=20260927-v0';
 import {IIgsADB} from "./iigs_adb.js";
 import {IIgsDOC} from "./iigs_doc.js";
 import {IIgsSCC} from "./iigs_scc.js";
@@ -53,6 +54,7 @@ export class IIgsMemory {
     this.iwmMotorDelay = 0;
     this.iwmActive = false;
     this.iwmDevSel = 0;
+    this.floppy35 = new Floppy35();
     this.iwmData = 0x00;
     this.iwmWritePending = 0;
     // MAME iwm_device reset value for the write-handshake register.
@@ -334,6 +336,7 @@ export class IIgsMemory {
     // Bit 7 is HDSEL, the Sony drive head/drive select signal.
     const select35=!!(this.diskReg&0x40);
     const media35=select35 ? this.floppy35Media : null;
+    if(select35) this.floppy35.setHead(!!(this.diskReg&0x80));
     const disk525=!select35 ? this.floppy?._active_disk : null;
     const noMedia=select35 ? !media35 : !disk525?.medium;
     const writeProtected=select35 ? !!media35?.writeProtected : !!disk525?.write_protect;
@@ -345,7 +348,13 @@ export class IIgsMemory {
     if(!this.iwmActive) return 0xff;
     // Q6L/Q7L is the IWM data register. Reuse the selected drive's existing
     // DSK/WOZ timed latch directly instead of re-entering Disk II soft switches.
-    if(this.diskReg&0x40 || !this.floppy?._active_disk) return 0xff;
+    if(select35) {
+      if(!media35) return 0xff;
+      if(this.floppy35.media!==media35) this.floppy35.mount(media35);
+      this.iwmData=this.floppy35.read()&0xff;
+      return this.iwmData;
+    }
+    if(!this.floppy?._active_disk) return 0xff;
     const cycles=this.floppy._get_cycles ? this.floppy._get_cycles() : 0;
     this.iwmData=this.floppy._active_disk.read(cycles)&0xff;
     return this.iwmData;
