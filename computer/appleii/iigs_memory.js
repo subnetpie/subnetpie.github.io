@@ -1,4 +1,4 @@
-import {Floppy35} from './floppy35.js?v=20260928-perf3';
+import {Floppy35} from './floppy35.js?v=20260928-trackcache1';
 import {IIgsADB} from "./iigs_adb.js";
 import {IIgsDOC} from "./iigs_doc.js?v=20260928-2mg";
 import {IIgsSCC} from "./iigs_scc.js?v=20260928-2mg";
@@ -585,12 +585,12 @@ export class IIgsMemory {
       }
       if(io===0xc031) return this.diskReg;
       // MAME VGCINTCLEAR ($C032) is write-only; reads are floating bus.
-      if(io===0xc033) return this.clockData;
-      if(io===0xc034) return (this.clockCtl&0xf0)|(this.video?this.video.getBorderColor():0x02);
+      if(io===0xc033){if(this.syncPeripheralTime)this.syncPeripheralTime();return this.clockData;}
+      if(io===0xc034){if(this.syncPeripheralTime)this.syncPeripheralTime();return (this.clockCtl&0xf0)|(this.video?this.video.getBorderColor():0x02);}
       if(io===0xc035) return this.shadow;
       if(io===0xc036) return this.speed;
       // MAME has no C037 read register; reads fall through to the Mega II floating bus.
-      if(io>=0xc038 && io<=0xc03b) return this.scc.read(io-0xc038);
+      if(io>=0xc038 && io<=0xc03b){if(this.syncPeripheralTime)this.syncPeripheralTime();return this.scc.read(io-0xc038);}
       if(io===0xc03c) return (this.doc.getControl()|0x1f)&0x7f;
       if(io===0xc03d) return this.doc.readData();
       if(io===0xc03e) return this.doc.addressLow();
@@ -766,8 +766,8 @@ export class IIgsMemory {
         return;
       }
       if(io===0xc032){if(this.video)this.video.writeSCANINT(val);return;}
-      if(io===0xc033){this.clockData=val;return;}
-      if(io===0xc034){
+      if(io===0xc033){if(this.syncPeripheralTime)this.syncPeripheralTime();this.clockData=val;return;}
+      if(io===0xc034){if(this.syncPeripheralTime)this.syncPeripheralTime();
         this.clockCtl=val&0x6f;
         if(this.video)this.video.setBorderColor(val);
         const nextCe=((val>>7)&1)^1;
@@ -785,7 +785,7 @@ export class IIgsMemory {
       if(io===0xc036){this.speed=val;return;}
       // MAME ROM03: DMAREG/CYAREG ($C037) is a no-op in this machine implementation.
       if(io===0xc037)return;
-      if(io>=0xc038 && io<=0xc03b){this.scc.write(io-0xc038,val);return;}
+      if(io>=0xc038 && io<=0xc03b){if(this.syncPeripheralTime)this.syncPeripheralTime();this.scc.write(io-0xc038,val);return;}
       if(io===0xc03c){this.doc.setControl(val);return;}
       if(io===0xc03d){this.doc.writeData(val);return;}
       if(io===0xc03e){this.doc.setAddressLow(val);return;}
