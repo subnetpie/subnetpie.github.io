@@ -33,6 +33,18 @@ export class IIgsVideo {
     this.dirty = true;
     this.image = this.context.createImageData(640, 200);
     this.blendRow = new Uint8ClampedArray(640 * 4);
+
+    // Reuse the SHR staging surface. Creating a canvas/context on every
+    // refresh is particularly expensive in mobile Safari.
+    this.offscreen = document.createElement("canvas");
+    this.offscreen.width = 640;
+    this.offscreen.height = 200;
+    this.offscreenContext = this.offscreen.getContext("2d", {alpha:false});
+    this.offscreenContext.imageSmoothingEnabled = false;
+
+    // 16 palettes * 16 entries * RGB. Rebuilt only when a dirty SHR frame
+    // is actually rendered, avoiding per-pixel temporary arrays.
+    this.paletteRgb = new Uint8Array(16 * 16 * 3);
     this.reset();
   }
 
@@ -234,20 +246,28 @@ export class IIgsVideo {
     }
   }
 
-  paletteColor(palette, index) {
-    const a = SHR_PALETTE_BASE + ((palette & 0x0f) << 5) + ((index & 0x0f) << 1);
-    const word = this.readBankE1(a) | (this.readBankE1(a + 1) << 8);
-    // IIgs color is 0RGB, four bits per component.
-    return [
-      ((word >> 8) & 0x0f) * 17,
-      ((word >> 4) & 0x0f) * 17,
-      (word & 0x0f) * 17
-    ];
+  rebuildPaletteCache() {
+    const rgb = this.paletteRgb;
+    for(let palette=0; palette<16; palette++) {
+      for(let index=0; index<16; index++) {
+        const a = SHR_PALETTE_BASE + (palette << 5) + (index << 1);
+        const word = this.readBankE1(a) | (this.readBankE1(a + 1) << 8);
+        const o = ((palette << 4) | index) * 3;
+        rgb[o] = ((word >> 8) & 0x0f) * 17;
+        rgb[o+1] = ((word >> 4) & 0x0f) * 17;
+        rgb[o+2] = (word & 0x0f) * 17;
+      }
+    }
   }
 
-  putPixel(data, x, y, rgb) {
-    const o = (y * 640 + x) * 4;
-    data[o] = rgb[0]; data[o+1] = rgb[1]; data[o+2] = rgb[2]; data[o+3] = 255;
+  putPalettePixel(data, x, y, palette, index) {
+    const src = (((palette & 0x0f) << 4) | (index & 0x0f)) * 3;
+    const dst = (y * 640 + x) * 4;
+    const rgb = this.paletteRgb;
+    data[dst] = rgb[src];
+    data[dst+1] = rgb[src+1];
+    data[dst+2] = rgb[src+2];
+    data[dst+3] = 255;
   }
 
   render320Line(y, scb, data) {
@@ -267,9 +287,10 @@ export class IIgsVideo {
           if (c===0) c=last; else last=c;
         }
         const x=i*8+plane*4;
-        const ca=this.paletteColor(palette,a), cc=this.paletteColor(palette,c);
-        this.putPixel(data,x,y,ca); this.putPixel(data,x+1,y,ca);
-        this.putPixel(data,x+2,y,cc); this.putPixel(data,x+3,y,cc);
+        this.putPalettePixel(data,x,y,palette,a);
+        this.putPalettePixel(data,x+1,y,palette,a);
+        this.putPalettePixel(data,x+2,y,palette,c);
+        this.putPalettePixel(data,x+3,y,palette,c);
       }
     }
   }
@@ -285,10 +306,10 @@ export class IIgsVideo {
         const b=this.bankE1[(plane ? base2 : base)+i];
         const x=i*8+plane*4;
         const p0=(b>>6)&3, p1=(b>>4)&3, p2=(b>>2)&3, p3=b&3;
-        this.putPixel(data,x,y,this.paletteColor(palette,p0));
-        this.putPixel(data,x+1,y,this.paletteColor(palette,4+p1));
-        this.putPixel(data,x+2,y,this.paletteColor(palette,8+p2));
-        this.putPixel(data,x+3,y,this.paletteColor(palette,12+p3));
+        this.putPalettePixel(data,x,y,palette,p0);
+        this.putPalettePixel(data,x+1,y,palette,4+p1);
+        this.putPalettePixel(data,x+2,y,palette,8+p2);
+        this.putPalettePixel(data,x+3,y,palette,12+p3);
       }
     }
   }
@@ -322,6 +343,7 @@ export class IIgsVideo {
   refresh(force=false) {
     if (!this.superHires || (!force && !this.dirty)) return false;
     const data=this.image.data;
+    this.rebuildPaletteCache();
     for(let y=0; y<SHR_LINES; y++) {
       const scb=this.decodeSCB(y);
       if (scb.mode640) {
@@ -330,15 +352,14 @@ export class IIgsVideo {
       }
       else this.render320Line(y,scb,data);
     }
-    // Scale 640x200 SHR to the emulator's 564x390 presentation canvas.
-    const off=document.createElement("canvas");
-    off.width=640; off.height=200;
-    off.getContext("2d",{alpha:false}).putImageData(this.image,0,0);
+    // Scale 640x200 SHR to the emulator's presentation canvas. The staging
+    // canvas/context is persistent to avoid per-frame DOM/canvas allocation.
+    this.offscreenContext.putImageData(this.image,0,0);
     this.context.save();
     this.context.imageSmoothingEnabled=false;
     this.context.fillStyle="#000";
     this.context.fillRect(0,0,this.canvas.width,this.canvas.height);
-    this.context.drawImage(off,0,0,640,200,2,3,560,384);
+    this.context.drawImage(this.offscreen,0,0,640,200,2,3,560,384);
     this.context.restore();
     this.dirty=false;
     return true;
