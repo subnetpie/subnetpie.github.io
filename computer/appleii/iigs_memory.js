@@ -37,7 +37,7 @@ export class IIgsMemory {
     this.intC8Rom = false;
     this.clockCtl = 0x00;
     this.clockData = 0x00;
-    this.rtc = {ce:1,clk:0,data:0,out:0,dir:0,byte:0,bits:0,state:0,cmd:0,xpaddr:0,writeProtect:false,pram:new Uint8Array(256),seconds:new Uint8Array(4),cycleAccum:0};
+    this.rtc = {ce:1,clk:0,data:0,out:0,dir:0,byte:0,bits:0,state:0,cmd:0,xpaddr:0,writeProtect:false,pram:new Uint8Array(256),seconds:new Uint8Array(4),cycleAccum:0,timeWasSet:false};
     this.intEnable = 0x00;
     this.intFlag = 0x00;
     this.irq = null;
@@ -92,7 +92,7 @@ export class IIgsMemory {
       r.state=0;
       const a=(r.cmd>>2)&0x1f;
       if(r.writeProtect && a!==13)return;
-      if(a<8)r.seconds[a&3]=data;
+      if(a<8){r.seconds[a&3]=data;r.timeWasSet=true;}
       else if((a>=8&&a<=11)||(a>=16&&a<=31))r.pram[a]=data;
       else if(a===13)r.writeProtect=!!(data&0x80);
       return;
@@ -129,6 +129,16 @@ export class IIgsMemory {
         this.clockData=((this.clockData<<1)|(this.rtc.out&1))&0xff;
       }
     }
+  }
+
+  initRtcFromHost(date=new Date()) {
+    const r=this.rtc;
+    if(r.timeWasSet)return;
+    // Apple RTC epoch is 1904-01-01 UTC.
+    const epoch=Date.UTC(1904,0,1);
+    const n=(Math.floor((date.getTime()-epoch)/1000)>>>0);
+    r.seconds[0]=n&0xff; r.seconds[1]=(n>>>8)&0xff;
+    r.seconds[2]=(n>>>16)&0xff; r.seconds[3]=(n>>>24)&0xff;
   }
 
   tickRtc(cycles, clockHz=2800000) {
