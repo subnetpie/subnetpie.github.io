@@ -32,9 +32,18 @@ export class HiresDisplay
 
         this._id1 = this._context.createImageData(564, 390);
         this._id2 = this._context.createImageData(564, 390);
+        // 80STORE + PAGE2 selects auxiliary page-1 video RAM rather than
+        // the normal $4000 HGR page. Keep separate caches for both banks so
+        // page flipping remains incremental instead of rebuilding 8K/frame.
+        this._id1aux = this._context.createImageData(564, 390);
+        this._id2aux = this._context.createImageData(564, 390);
         this._id = undefined;
+        this._active_page = 1;
+        this._active_bank = "main";
         this._page1_init = false;
         this._page2_init = false;
+        this._page1_aux_init = false;
+        this._page2_aux_init = false;
 
         // when set, tjos over-rides color
         this._monochrome = 0;
@@ -171,7 +180,7 @@ export class HiresDisplay
         this.group2 = [group2e, group2o];
     }
 
-    draw(addr, val) {
+    draw(addr, val, bank = undefined) {
         // rows are 120 columns wide consuming 128 bytes (0-119)+8
         // every 40 columns rows wrap for a total of three wraps
         // 8 rows wrapping 3 times creates a total of 24 rows
@@ -206,6 +215,15 @@ export class HiresDisplay
         //   5) orange: aa d5 aa d5 -> 1010 1010 1101 0101 -> 1+01010101010101
         //   6) blue  : d5 aa d5 aa -> 1101 0101 1010 1010 -> 1+10101010101010
         //   7) white2: ff ff ff ff -> 1111 1111 1111 1111 -> 1+11111111111111
+        // Memory hooks run before the backing RAM write. Resolve the bank
+        // that the write will actually hit so hidden 80STORE pages stay hot.
+        if(bank !== "main" && bank !== "aux") {
+            if(addr < 0x4000 && this._mem.dms_80store && this._mem.dms_hires)
+                bank = this._mem.dms_page2 ? "aux" : "main";
+            else
+                bank = this._mem.aux_write ? "aux" : "main";
+        }
+        const source = bank === "aux" ? this._mem._aux : this._mem._main;
         const color_group = (val & 0x80) ? this.group2 : this.group1;
 
         // one column is seven pixels but pixels 0 & 6 are dependent on the pixel values
@@ -232,8 +250,8 @@ export class HiresDisplay
         //  +v+          -> pix0 (-1)
         //  56012345601
         //  ppcccccccnn
-        const prev = (col < 1) ? 0 : this._mem.read(addr-1);
-        const next = (col > 38) ? 0 : this._mem.read(addr+1);
+        const prev = (col < 1) ? 0 : source[(addr-1)&0xffff];
+        const next = (col > 38) ? 0 : source[(addr+1)&0xffff];
 
         //     <--- read ---
         // nnnnnnncccccccppppppp
@@ -245,7 +263,9 @@ export class HiresDisplay
         const ox = (col * 14) + 1;
         const oy = (row * 2) + 3;
         const lo = (ox + oy * 564) * 4;
-        const id = (addr < 0x4000) ? this._id1 : this._id2;
+        const id = addr < 0x4000
+            ? (bank === "aux" ? this._id1aux : this._id1)
+            : (bank === "aux" ? this._id2aux : this._id2);
         const data = id.data;
 
         let oe = col & 0x01;
@@ -259,39 +279,35 @@ export class HiresDisplay
     }
 
     refresh() {
-        if(this._id == this._id1) {
-            this._id = undefined; // suspend rendering
-            for(let a=0x2000; a<0x4000; a++) this.draw(a, this._mem.read(a));
-            this._id = this._id1;
-            this._context.putImageData(this._id, 0, 0);
-        }
-        else if(this._id == this._id2) {
-            this._id = undefined; // suspend rendering
-            for(let a=0x4000; a<0x6000; a++) this.draw(a, this._mem.read(a));
-            this._id = this._id2;
-            this._context.putImageData(this._id, 0, 0);
-        }
+        this.set_active_page(this._active_page, this._active_bank, true);
     }
 
-    set_active_page(page) {
-        if(page != 2) {
-            // select page 1
-            if(!this._page1_init) {
-                this._id = undefined; // suspend rendering
-                for(let a=0x2000; a<0x4000; a++) this.draw(a, this._mem.read(a));
-                this._page1_init = true;
-            }
-            this._id = this._id1;
-        } else {
-            // select page 2
-            if(!this._page2_init) {
-                this._id = undefined; // suspend rendering
-                for(let a=0x4000; a<0x6000; a++) this.draw(a, this._mem.read(a));
-                this._page2_init = true;
-            }
-            this._id = this._id2;
+    set_active_page(page, bank = "main", force = false) {
+        page = page === 2 ? 2 : 1;
+        bank = bank === "aux" ? "aux" : "main";
+        const isAux = bank === "aux";
+        const id = page === 1
+            ? (isAux ? this._id1aux : this._id1)
+            : (isAux ? this._id2aux : this._id2);
+        const initKey = page === 1
+            ? (isAux ? "_page1_aux_init" : "_page1_init")
+            : (isAux ? "_page2_aux_init" : "_page2_init");
+        const begin = page === 1 ? 0x2000 : 0x4000;
+        const end = begin + 0x2000;
+        const source = isAux ? this._mem._aux : this._mem._main;
+
+        if(force || !this[initKey]) {
+            const saved = this._id;
+            this._id = undefined; // suspend incremental Canvas uploads
+            for(let a=begin; a<end; a++) this.draw(a, source[a], bank);
+            this._id = saved;
+            this[initKey] = true;
         }
-        this._context.putImageData(this._id, 0, 0);
+
+        this._active_page = page;
+        this._active_bank = bank;
+        this._id = id;
+        this._context.putImageData(id, 0, 0);
     }
 
     reset() {
@@ -301,15 +317,19 @@ export class HiresDisplay
         const b = this.black & 0xff;
         const imax = 564 * 390 * 4; // (560+4, 384+6) * rgba
         for(let i=0; i<imax; i+=4) {
-            this._id1.data[i]   = this._id2.data[i]   = r;
-            this._id1.data[i+1] = this._id2.data[i+1] = g;
-            this._id1.data[i+2] = this._id2.data[i+2] = b;
-            this._id1.data[i+3] = this._id2.data[i+3] = 0xff;
+            this._id1.data[i]   = this._id2.data[i]   = this._id1aux.data[i]   = this._id2aux.data[i]   = r;
+            this._id1.data[i+1] = this._id2.data[i+1] = this._id1aux.data[i+1] = this._id2aux.data[i+1] = g;
+            this._id1.data[i+2] = this._id2.data[i+2] = this._id1aux.data[i+2] = this._id2aux.data[i+2] = b;
+            this._id1.data[i+3] = this._id2.data[i+3] = this._id1aux.data[i+3] = this._id2aux.data[i+3] = 0xff;
         }
         this._context.putImageData(this._id1, 0, 0);
         this._id = undefined;
+        this._active_page = 1;
+        this._active_bank = "main";
         this._page1_init = false;
         this._page2_init = false;
+        this._page1_aux_init = false;
+        this._page2_aux_init = false;
     }
 }
 
