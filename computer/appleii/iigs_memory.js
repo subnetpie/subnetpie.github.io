@@ -601,7 +601,13 @@ export class IIgsMemory {
         this.clockCtl=val&0x6f;
         if(this.video)this.video.setBorderColor(val);
         const nextCe=((val>>7)&1)^1;
-        if(nextCe!==this.rtc.ce){this.rtc.ce=nextCe;this.rtc.byte=0;this.rtc.bits=0;this.rtc.dir=0;this.rtc.out=0;this.rtc.state=0;}
+        // rtc3430042_device::ce_w aborts the current serial transaction on
+        // either CE edge, but leaves the command latch itself intact.
+        if(nextCe!==this.rtc.ce){
+          this.rtc.ce=nextCe;
+          this.rtc.byte=0; this.rtc.bits=0; this.rtc.dir=0; this.rtc.out=0;
+          this.rtc.state=0;
+        }
         if(val&0x80)this.processClock();
         return;
       }
