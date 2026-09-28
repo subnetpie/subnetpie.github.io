@@ -127,11 +127,20 @@ export class Floppy35 {
     const syncPat=[1,1,1,1,1,1,1,1,0,0,1,1,1,1,1,1,0,0,1,1,1,1,0,0,
                    1,1,1,1,0,0,1,1,1,1,1,1,0,0,1,1,1,1,1,1,1,1,1,1];
     const byte=v=>{for(let b=7;b>=0;b--)cells.push((v>>>b)&1);};
-    const sync=()=>{for(let i=0;i<16;i++)cells.push(...syncPat);};
+    const sync=(count)=>{for(let i=0;i<count;i++)cells.push(...syncPat);};
     let si=0; for(let i=0;i<ns;i++){order.push(si);si=(si+2)%ns;if(si===0)si++;}
+    // MAME build_mac_track_gcr: each sector consumes 6208 cells. The
+    // remainder is a pregap at the index, followed by 8 self-sync units per
+    // sector. Keep the partial pregap bit-exact as the leading slice of the
+    // same 48-cell sync pattern.
+    const target=this.cellCount();
+    const pregap=target-6208*ns;
+    const partial=pregap%48;
+    if(partial)cells.push(...syncPat.slice(48-partial));
+    sync(Math.floor(pregap/48));
     for(const s of order) {
       const side=this.head?0x20:0, fmt=0x22;
-      sync();
+      sync(8);
       [0xd5,0xaa,0x96,GCR6[this.track&0x3f],GCR6[s&0x3f],
        GCR6[((this.track&0x40)?1:0)|side],GCR6[fmt],
        GCR6[(this.track^s^((this.track&0x40)?1:0)^side^fmt)&0x3f],
@@ -150,8 +159,6 @@ export class Floppy35 {
       }
       gcr6(ca,cb,cc).forEach(byte); byte(0xde);byte(0xaa);byte(0xff);byte(0xff);
     }
-    const target=this.cellCount();
-    while(cells.length<target)cells.push(...syncPat.slice(0,Math.min(syncPat.length,target-cells.length)));
     this.cellCacheKey=key; this.cellCache=cells.slice(0,target);
     return this.cellCache;
   }
