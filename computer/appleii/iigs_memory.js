@@ -73,8 +73,19 @@ export class IIgsMemory {
   }
 
   setTrace(fn) { this.trace = fn; }
+
+  isFastCpu() {
+    // MAME update_speed(): SPEED_HIGH is overridden by enabled Disk II
+    // motor detection. The built-in 5.25-inch controller occupies slot 6,
+    // corresponding to SPEED bit 2 ($04). 3.5-inch IWM operation is not a
+    // Disk II slot-motor slowdown source.
+    const diskIISlot6Slow =
+      !!(this.speed & 0x04) && !(this.diskReg & 0x40) && this.iwmMotor;
+    return !!(this.speed & 0x80) && !diskIISlot6Slow;
+  }
+
   noteSlowCycle() {
-    if(!(this.speed & 0x80)) return;
+    if(!this.isFastCpu()) return;
     this.slowCycleRemainder += 0x0002cccd;
     this.pendingSlowCycles += (this.slowCycleRemainder >>> 16) & 0xffff;
     this.slowCycleRemainder &= 0xffff;
