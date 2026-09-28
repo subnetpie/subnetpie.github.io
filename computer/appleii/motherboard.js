@@ -21,7 +21,7 @@ import {LoresDisplay} from "https://subnetpie.github.io/computer/appleii/display
 import {DoubleHiresDisplay} from "https://subnetpie.github.io/computer/appleii/display_double_hires.js?v=20260928-writeahead1";
 import {Keyboard} from "https://subnetpie.github.io/computer/appleii/keyboard.js?v=20260928-blend";
 import {Floppy525} from "https://subnetpie.github.io/computer/appleii/FloppyWoz525.js";
-import {AppleAudio} from "https://subnetpie.github.io/computer/appleii/apple_audio.js?v=20260928-ring1";
+import {AppleAudio} from "https://subnetpie.github.io/computer/appleii/apple_audio.js?v=20260928-ring2";
 import {ProDOSBlockDevice} from "https://subnetpie.github.io/computer/appleii/prodos_block.js?v=20260927-boot";
 import {IIgsVideo} from "https://subnetpie.github.io/computer/appleii/video_iigs.js?v=20260928-blendopt1";
 import {MachineTrace} from "https://subnetpie.github.io/computer/appleii/machine_trace.js";
