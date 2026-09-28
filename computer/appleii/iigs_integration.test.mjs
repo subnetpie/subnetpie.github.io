@@ -158,6 +158,30 @@ test('IIgs IWM drive-select follows control bit 5 while active', () => {
   assert.equal(b.iwmDevSel,1);
 });
 
+test('IIgs IWM Q6/Q7=11 writes mode only while inactive', () => {
+  const {board:m}=createMachine();
+  const b=m.memory;
+  b.iwmQ6=true; b.iwmQ7=true;
+  // MAME mode/data latch occurs only on an odd control access.
+  b.iwmAccess(0xc0ee,0x1d);
+  assert.equal(b.iwmMode,0);
+  b.iwmAccess(0xc0ef,0x1d);
+  assert.equal(b.iwmMode,0x1d);
+
+  b.iwmAccess(0xc0e9); // active
+  b.iwmAccess(0xc0ef,0xa5);
+  assert.equal(b.iwmMode,0x1d);
+  assert.equal(b.iwmData,0xa5);
+  // Latched-write mode clears WHD bit 7 when data is loaded.
+  assert.equal(b.iwmWhd&0x80,0);
+
+  b.iwmAccess(0xc0e8); // timer mode: active during delayed motor-off
+  assert.equal(b.iwmActive,true);
+  b.iwmAccess(0xc0ef,0x5a);
+  assert.equal(b.iwmMode,0x1d);
+  assert.equal(b.iwmData,0x5a);
+});
+
 test('IIgs IWM reset register reads match MAME inactive state', () => {
   const {board:m}=createMachine();
   const b=m.memory;
