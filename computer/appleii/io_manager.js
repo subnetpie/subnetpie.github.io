@@ -89,6 +89,13 @@ export class IOManager
         this._double_hires = false;
         this._iou_disable = false;
 
+        // Browser RAF slices can end while software is temporarily using
+        // PAGE2/80STORE for banked memory access. Real video does not turn
+        // that transient access state into a whole displayed frame. Snapshot
+        // the compatibility-video latches at the emulated frame boundary and
+        // present from that stable state.
+        this._latched_display = null;
+
         this._bsr_write_count = 0;
 
         this._mem.add_read_hook(this.read.bind(this));
@@ -504,7 +511,7 @@ export class IOManager
             // Both page buffers must track writes. Games draw the hidden page
             // before flipping PAGE2; filtering to the visible page loses it.
             if(addr >= 0x2000 && addr < 0x6000) {
-                if(this._double_hires) this._display_double_hires.draw(addr);
+                if(this._double_hires) this._display_double_hires.draw(addr, val);
                 else this._display_hires.draw(addr, val);
                 if(this._mixed_mode) this.draw_mixed_text();
             }
@@ -535,7 +542,6 @@ export class IOManager
             return;
         }
         const page = this._mem.dms_page2 && !this._mem.dms_80store ? 2 : 1;
-        const videoBank = this._mem.dms_80store && this._mem.dms_page2 ? "aux" : "main";
 
         if(this._text_mode) {
             if(this._80col_mode) this._display_text_80.set_active_page(page);
@@ -545,11 +551,49 @@ export class IOManager
 
         if(this._mem.dms_hires) {
             if(this._double_hires) this._display_double_hires.set_active_page(page);
-            else this._display_hires.set_active_page(page, videoBank);
+            else this._display_hires.set_active_page(page);
         } else {
             this._display_lores.set_active_page(page, this._double_hires && this._80col_mode);
         }
         if(this._mixed_mode) this.draw_mixed_text();
+    }
+
+    latch_display_state() {
+        this._latched_display = {
+            text: !!this._text_mode,
+            mixed: !!this._mixed_mode,
+            col80: !!this._80col_mode,
+            doubleHires: !!this._double_hires,
+            hires: !!this._mem.dms_hires,
+            // With 80STORE on, PAGE2 is a main/aux access selector for page 1,
+            // not a request to display the normal second video page.
+            page: (this._mem.dms_page2 && !this._mem.dms_80store) ? 2 : 1
+        };
+    }
+
+    present_latched_display() {
+        const s = this._latched_display;
+        if(!s) {
+            this.latch_display_state();
+            return this.present_latched_display();
+        }
+        if(this._video_iigs && this._video_iigs.isSuperHires()) return false;
+
+        if(s.text) {
+            if(s.col80) this._display_text_80.set_active_page(s.page);
+            else this._display_text.set_active_page(s.page);
+            return true;
+        }
+
+        if(s.hires) {
+            if(s.doubleHires) this._display_double_hires.set_active_page(s.page);
+            else this._display_hires.set_active_page(s.page);
+        } else {
+            this._display_lores.set_active_page(s.page, s.doubleHires && s.col80);
+        }
+
+        if(s.mixed) this.draw_mixed_text();
+        return true;
     }
 
     // Expose compatibility-video latches to IIgs bus/video timing logic.
@@ -570,6 +614,7 @@ export class IOManager
         this._iou_disable = true;
 
         this._bsr_write_count = 0;
+        this.latch_display_state();
     }
 }
 
