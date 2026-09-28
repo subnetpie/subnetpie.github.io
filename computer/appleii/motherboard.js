@@ -174,14 +174,23 @@ export class Motherboard
                         // update_now(). Keep the last SHR frame visible until
                         // this frame boundary, then rebuild compatibility video
                         // from physical Mega II RAM and reveal it atomically.
+                        let revealCompat = true;
                         if(!this.video_iigs.isSuperHires() &&
-                           this.video_iigs.consumeCompatRevealPending &&
-                           this.video_iigs.consumeCompatRevealPending() &&
-                           this.io_manager.refresh_compat_display_from_ram)
-                            this.io_manager.refresh_compat_display_from_ram();
+                           this.video_iigs.compatRevealPending) {
+                            revealCompat = this.video_iigs.shouldRevealCompatibility
+                                ? this.video_iigs.shouldRevealCompatibility()
+                                : true;
+                            if(revealCompat &&
+                               this.video_iigs.consumeCompatRevealPending)
+                                this.video_iigs.consumeCompatRevealPending();
+
+                            if(revealCompat &&
+                               this.io_manager.refresh_compat_display_from_ram)
+                                this.io_manager.refresh_compat_display_from_ram();
+                        }
 
                         this.io_manager.latch_display_state();
-                        if(!this.video_iigs.isSuperHires() &&
+                        if(!this.video_iigs.isSuperHires() && revealCompat &&
                            this.io_manager.present_latched_display)
                             this.io_manager.present_latched_display();
                     }
