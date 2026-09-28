@@ -54,6 +54,7 @@ export class IIgsMemory {
     this.iwmActive = false;
     this.iwmDevSel = 0;
     this.iwmData = 0x00;
+    this.iwmWritePending = 0;
     // MAME iwm_device reset value for the write-handshake register.
     this.iwmWhd = 0xbf;
   }
@@ -290,7 +291,16 @@ export class IIgsMemory {
     if(op === 10) { this.iwmControlDrive2=false; if(this.iwmMotor) this.iwmDevSel=1; }
     if(op === 11) { this.iwmControlDrive2=true; if(this.iwmMotor) this.iwmDevSel=2; }
     if(op === 12 || op === 13) this.iwmQ6 = !!(op & 1);
-    if(op === 14 || op === 15) this.iwmQ7 = !!(op & 1);
+    if(op === 14 || op === 15) {
+      this.iwmQ7 = !!(op & 1);
+      // Entering write mode while active starts MAME's write clock and sets
+      // WHD bit 6. Leaving it stops our controller-visible write handshake.
+      if(this.iwmActive && this.iwmQ7) this.iwmWhd |= 0x40;
+      else if(!this.iwmQ7) {
+        this.iwmWhd &= ~0x40;
+        this.iwmWritePending=0;
+      }
+    }
     if(value !== undefined) {
       // MAME only latches mode/data on an odd Q6/Q7=11 access. During the
       // delayed motor-off state the controller is still active, so this is
@@ -298,7 +308,12 @@ export class IIgsMemory {
       if(this.iwmQ6 && this.iwmQ7 && (addr & 1)) {
         if(this.iwmActive) {
           this.iwmData=value&0xff;
-          if(this.iwmMode&0x01) this.iwmWhd&=0x7f;
+          if(this.iwmMode&0x01) {
+            this.iwmWhd&=0x7f;
+            // Approximate the controller's byte-consume point. This models
+            // WHD readiness only; mounted DSK/WOZ media remain read-only.
+            this.iwmWritePending=8 * this.iwmWindowClocks();
+          }
         } else {
           this.iwmMode=value&0xff;
         }
@@ -332,13 +347,33 @@ export class IIgsMemory {
     return this.iwmData;
   }
 
+  iwmWindowClocks() {
+    // MAME iwm_device::window_size() for the IIgs IWM clock.
+    switch(this.iwmMode&0x18) {
+      case 0x00: return 28;
+      case 0x08: return 14;
+      case 0x10: return 36;
+      default: return 16;
+    }
+  }
+
   tickIwm(cycles, cpuHz=2800000) {
+    const clocks=cycles * (4019200 / cpuHz);
+    if(this.iwmWritePending) {
+      this.iwmWritePending-=clocks;
+      if(this.iwmWritePending<=0) {
+        this.iwmWritePending=0;
+        // In latched mode MAME raises WHD bit 7 once the loaded byte has
+        // transferred to the write shift register.
+        if(this.iwmActive && this.iwmQ7 && (this.iwmWhd&0x40)) this.iwmWhd|=0x80;
+      }
+    }
     if(!this.iwmMotorDelay) return;
     // IIgs IWM clock is 4.0192 MHz (28.63636 MHz / 7).
-    this.iwmMotorDelay -= cycles * (4019200 / cpuHz);
+    this.iwmMotorDelay -= clocks;
     if(this.iwmMotorDelay <= 0) {
       this.iwmMotorDelay=0; this.iwmMotor=false; this.iwmActive=false; this.iwmDevSel=0;
-      this.iwmWhd &= ~0x40;
+      this.iwmWritePending=0; this.iwmWhd &= ~0x40;
     }
   }
 
@@ -891,6 +926,6 @@ export class IIgsMemory {
     this.adb.reset();
     this.iwmMode = 0; this.iwmQ6 = this.iwmQ7 = this.iwmMotor = false;
     this.iwmMotorDelay = 0; this.iwmActive = false; this.iwmDevSel = 0; this.iwmControlDrive2 = false;
-    this.iwmData = 0x00; this.iwmWhd = 0xbf;
+    this.iwmData = 0x00; this.iwmWritePending = 0; this.iwmWhd = 0xbf;
   }
 }
