@@ -85,7 +85,9 @@ export class IIgsMemory {
       else {r.state=3;r.byte=0;r.bits=0;}
       return;
     }
-    if(r.state===3){if(!r.writeProtect)r.pram[r.xpaddr]=data;r.state=0;return;}
+    // MAME 0.289 RTC3430042 extended-PRAM writes bypass the normal
+    // register write-protect check; XPWRITE stores the byte unconditionally.
+    if(r.state===3){r.pram[r.xpaddr]=data;r.state=0;return;}
     if(r.state===2) {
       r.state=0;
       const a=(r.cmd>>2)&0x1f;
