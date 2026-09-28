@@ -93,15 +93,21 @@ export class AppleAudio
 
     doc_sample(clock, left, right = left, systemVolume = 15) {
         if(!this.ac) return;
+        const master = (systemVolume & 15) / 15;
+        const nextLeft = Math.max(-1, Math.min(1, left / 128)) * this.level * master;
+        const nextRight = Math.max(-1, Math.min(1, right / 128)) * this.level * master;
+        // Most DOC updates leave the held DAC level unchanged. end_segment()
+        // fills that constant run, so avoid walking the PCM clock here.
+        if(Math.abs(nextLeft-this.docSignalLeft)<0.00001 &&
+           Math.abs(nextRight-this.docSignalRight)<0.00001) return;
         // Emit the previous DAC level up to this exact emulated clock, then
         // change the held level. This preserves DOC timing without creating
         // thousands of WebAudio automation events.
         this.emitDocUntil(clock);
-        const master = (systemVolume & 15) / 15;
-        this.docSignalLeft = Math.max(-1, Math.min(1, left / 128)) * this.level * master;
-        this.docSignalRight = Math.max(-1, Math.min(1, right / 128)) * this.level * master;
-        this.docLastLeft = this.docSignalLeft;
-        this.docLastRight = this.docSignalRight;
+        this.docSignalLeft = nextLeft;
+        this.docSignalRight = nextRight;
+        this.docLastLeft = nextLeft;
+        this.docLastRight = nextRight;
     }
 
     end_segment(clock) {
@@ -113,9 +119,17 @@ export class AppleAudio
     flushDocPcm() {
         const n=this.docPcmCount;
         if(!n || !this.ac || !this.docOutput) return;
+        // A suspended AudioContext has a frozen currentTime. Never accumulate
+        // scheduled BufferSource nodes behind it; resume on the next gesture
+        // and start with a fresh bounded block.
+        if(this.ac.state !== "running") {
+            this.docPcmCount=0;
+            this.docQueueTime=this.ac.currentTime;
+            return;
+        }
         const buffer=this.ac.createBuffer(2,n,this.docRate);
-        buffer.copyToChannel(this.docPcmLeft.subarray(0,n),0);
-        buffer.copyToChannel(this.docPcmRight.subarray(0,n),1);
+        buffer.getChannelData(0).set(this.docPcmLeft.subarray(0,n));
+        buffer.getChannelData(1).set(this.docPcmRight.subarray(0,n));
         const source=this.ac.createBufferSource();
         source.buffer=buffer;
         source.connect(this.docOutput);
