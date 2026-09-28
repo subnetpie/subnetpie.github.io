@@ -138,6 +138,16 @@ test('IIgs Arkanoid 2MG progresses beyond its boot block',
       ' PC='+m.cpu.register.pc.toString(16)+' recentIO='+JSON.stringify(recent));
   });
 
+test('IIgs native 3.5-inch drive does not use 5.25 motor-off delay',()=>{
+  const {board:m}=createMachine(); const b=m.memory;
+  b.diskReg=0x40; b.iwmMode=0; b.iwmMotor=true; b.iwmActive=true; b.iwmDevSel=1;
+  b.iwmAccess(0xc0e8);
+  assert.equal(b.iwmMotor,false);
+  assert.equal(b.iwmActive,false);
+  assert.equal(b.iwmMotorDelay,0);
+  assert.equal(b.iwmDevSel,0);
+});
+
 test('IIgs 3.5-inch phase stepping matches MAME quarter-track mapping',()=>{
   const {board:m}=createMachine();
   const disk=new Uint8Array(1600*512), media=decodeMedia('800k.2mg',wrap(disk,1));
