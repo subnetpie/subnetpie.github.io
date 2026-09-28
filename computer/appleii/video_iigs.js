@@ -244,12 +244,16 @@ export class IIgsVideo {
   // Bit 5 controls DHGR color interpretation on the Mega II path
   // (0 = color, 1 = monochrome).
   writeNewVideo(value) {
+    value &= 0xff;
+    if(value===this.newVideo) return;
     const previousShr = this.superHires;
-    this.newVideo = value & 0xff;
+    this.newVideo = value;
     this.superHires = (this.newVideo & 0x80) !== 0;
     if (this.doubleHires && this.doubleHires.setMonochrome) {
       this.doubleHires.setMonochrome((this.newVideo & 0x20) !== 0);
     }
+    // Changing NEWVIDEO changes the SHR address transform itself, so this is
+    // one of the few cases that legitimately invalidates every scanline.
     this.markAllDirty(true);
     if (previousShr && !this.superHires && this.legacy && this.legacy.refresh) {
       this.legacy.refresh();
