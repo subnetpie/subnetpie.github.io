@@ -56,7 +56,7 @@ function chooseArchiveImage(name, entries) {
   });
 }
 
-import { Motherboard } from "https://subnetpie.github.io/computer/appleii/motherboard.js?v=20260928-pageflip1";
+import { Motherboard } from "https://subnetpie.github.io/computer/appleii/motherboard.js?v=20260928-framelatch1";
 
 class Drive {
   constructor(num, display, led, dialog) {
@@ -133,8 +133,12 @@ function on_interval(now_ms) {
     const io = motherboard.io_manager;
     if(motherboard.iigsEnabled && motherboard.video_iigs && motherboard.video_iigs.isSuperHires()) {
       motherboard.video_iigs.refresh();
+    } else if(motherboard.iigsEnabled && io.present_latched_display) {
+      // Present the compatibility-video state sampled at the emulated frame
+      // boundary, not whichever PAGE2 banking state happens to exist when
+      // this browser RAF slice ends.
+      io.present_latched_display();
     } else if(!io._text_mode && motherboard.legacyMemory.dms_hires && io._double_hires) {
-      // The DHGR switch can be set while text or low-res still owns video.
       motherboard.display_double_hires.refresh();
       if(io._mixed_mode) io.draw_mixed_text();
     }
