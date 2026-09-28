@@ -34,6 +34,7 @@ export class DoubleHiresDisplay
     this._id = undefined;
     this._page1_init = false;
     this._page2_init = false;
+    this.deferPresent = false;
     // IIgs NEWVIDEO bit 5 controls monochrome vs color DHGR.
     // false = color, true = monochrome.
     this.monochrome = false;
@@ -211,7 +212,8 @@ export class DoubleHiresDisplay
       }
     }
  // void ctx.putImageData(imageData, dx, dy, dirtyX, dirtyY, dirtyWidth, dirtyHeight);
-    if (id == this._id) this._context.putImageData(this._id, 0, 0, ox, oy, 28, 2);
+    if (id == this._id && !this.deferPresent)
+      this._context.putImageData(this._id, 0, 0, ox, oy, 28, 2);
   }
 
     refresh() {
@@ -248,7 +250,11 @@ export class DoubleHiresDisplay
         }
         this._id = this._id2;
       }
-      this._context.putImageData(this._id, 0, 0);
+      if(!this.deferPresent) this._context.putImageData(this._id, 0, 0);
+    }
+
+    present() {
+      if(this._id) this._context.putImageData(this._id, 0, 0);
     }
 
     reset() {
