@@ -364,21 +364,18 @@ export class IIgsMemory {
       // transition, and mapped-transition arrays on virtually every CPU
       // instruction while the 3.5-inch motor was active, causing steadily
       // increasing GC stalls in Safari.
-      const flux=this.floppy35.advanceCells(cycles/cpuHz);
-      if(flux && !this.iwmQ7) {
+      const fluxCount=this.floppy35.advanceCells(cycles/cpuHz);
+      if(fluxCount && !this.iwmQ7) {
         const clocksPerCell=iwmHz*1.979e-6;
-        const endClock=this.iwmReadClock+flux.count*clocksPerCell;
-        const cells=flux.cells, cellLen=cells.length;
+        const endClock=this.iwmReadClock+fluxCount*clocksPerCell;
+        const cells=this.floppy35.trackCells(), cellLen=cells.length;
+        const fluxStart=this.floppy35.lastCellStart;
         let scan=0, nextEdge=Infinity, now=this.iwmReadClock;
 
-        const findNextEdge = (from) => {
-          for(let k=from;k<flux.count;k++)
-            if(cells[(flux.start+k)%cellLen]) return k;
-          return -1;
-        };
-
-        let edgeIndex=findNextEdge(0);
-        if(edgeIndex>=0) nextEdge=this.iwmReadClock+edgeIndex*clocksPerCell;
+        let edgeIndex=0;
+        while(edgeIndex<fluxCount && !cells[(fluxStart+edgeIndex)%cellLen]) edgeIndex++;
+        if(edgeIndex<fluxCount) nextEdge=this.iwmReadClock+edgeIndex*clocksPerCell;
+        else edgeIndex=-1;
         if(!this.iwmNextWindow)this.iwmNextWindow=now;
 
         while(this.iwmNextWindow<=endClock) {
@@ -387,8 +384,10 @@ export class IIgsMemory {
           if(this.iwmReadState===0 && nextEdge<=endw && nextEdge<=endClock) {
             this.iwmNextWindow=nextEdge; this.iwmReadState=1;
             scan=edgeIndex+1;
-            edgeIndex=findNextEdge(scan);
-            nextEdge=edgeIndex>=0 ? this.iwmReadClock+edgeIndex*clocksPerCell : Infinity;
+            edgeIndex=scan;
+            while(edgeIndex<fluxCount && !cells[(fluxStart+edgeIndex)%cellLen]) edgeIndex++;
+            if(edgeIndex<fluxCount) nextEdge=this.iwmReadClock+edgeIndex*clocksPerCell;
+            else { edgeIndex=-1; nextEdge=Infinity; }
             continue;
           }
           if(endw>endClock)break;
@@ -412,8 +411,10 @@ export class IIgsMemory {
           }
           while(nextEdge<=now) {
             scan=edgeIndex+1;
-            edgeIndex=findNextEdge(scan);
-            nextEdge=edgeIndex>=0 ? this.iwmReadClock+edgeIndex*clocksPerCell : Infinity;
+            edgeIndex=scan;
+            while(edgeIndex<fluxCount && !cells[(fluxStart+edgeIndex)%cellLen]) edgeIndex++;
+            if(edgeIndex<fluxCount) nextEdge=this.iwmReadClock+edgeIndex*clocksPerCell;
+            else { edgeIndex=-1; nextEdge=Infinity; }
           }
         }
         this.iwmReadClock=endClock;
