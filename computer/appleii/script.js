@@ -54,7 +54,7 @@ function chooseArchiveImage(name, entries) {
   });
 }
 
-import { Motherboard } from "https://subnetpie.github.io/computer/appleii/motherboard.js?v=20260928-pcm1";
+import { Motherboard } from "https://subnetpie.github.io/computer/appleii/motherboard.js?v=20260928-pcm2";
 
 class Drive {
   constructor(num, display, led, dialog) {
