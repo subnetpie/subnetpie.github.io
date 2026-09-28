@@ -774,6 +774,12 @@ export class IIgsMemory {
     if(this.legacy.io_manager) this.legacy.io_manager._bsr_write_count = 0;
     this.shadow = 0; this.speed = 0x80;
     this.slotRom = 0; this.langSel = 0; this.diskReg = 0;
+    // MAME machine_reset also restores the VGC compatibility defaults.
+    if(this.video) {
+      this.video.writeNewVideo(0x01);
+      this.video.setTextColor(0xf2);
+      this.video.setBorderColor(0x02);
+    }
     this.clockCtl = 0; this.clockData = 0;
     // CLOCKCTL reset deasserts the RTC serial transaction. Keep PRAM/clock
     // contents, but abort any partial command exactly as CE does in MAME.
