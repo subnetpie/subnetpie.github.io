@@ -50,7 +50,6 @@ export class Motherboard
             ? new IIgsMemory(this.legacyMemory, this.video_iigs)
             : this.legacyMemory;
         this.cpu = this.iigsEnabled ? new W65C816(this.memory) : new W65C02S(this.memory);
-        if(this.iigsEnabled) this.memory.ioManager = this.io_manager;
         this.iigsIrq = {mega:false};
         this.updateIIgsIRQ = () => this.cpu.irq(this.iigsIrq.mega);
         if(this.video_iigs) {
@@ -78,6 +77,7 @@ export class Motherboard
                                         this.audio_click.bind(this), joyValues, () => this.cycles,
                                         this.video_iigs, this.iigsEnabled);
         this.legacyMemory.io_manager = this.io_manager;
+        if(this.iigsEnabled) this.memory.ioManager = this.io_manager;
     }
 
     clock(count) {
