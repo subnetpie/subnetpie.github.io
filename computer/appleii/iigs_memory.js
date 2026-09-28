@@ -53,6 +53,7 @@ export class IIgsMemory {
     this.iwmMode = 0; this.iwmQ6 = false; this.iwmQ7 = false; this.iwmMotor = false;
     this.iwmMotorDelay = 0;
     this.iwmActive = false;
+    this.iwmPhases = 0;
     this.iwmDevSel = 0;
     this.floppy35 = new Floppy35();
     this.iwmReadShift=0; this.iwmReadBits=0;
@@ -275,6 +276,14 @@ export class IIgsMemory {
 
   iwmAccess(addr, value) {
     const op = addr & 15;
+    // IWM phases are a four-bit latch changed by softswitches 0-7.
+    // MAME forwards the complete phase mask to the currently selected drive.
+    if(op < 8) {
+      const bit=1<<(op>>1);
+      if(op&1) this.iwmPhases=(this.iwmPhases|bit)&0x0f;
+      else this.iwmPhases=(this.iwmPhases&~bit)&0x0f;
+      if(this.iwmDevSel && (this.diskReg&0x40)) this.floppy35.setPhase(this.iwmPhases);
+    }
     if(op === 8) {
       if(this.iwmMotor) {
         // MAME IWM: mode bit 2 disables the motor-off timer. Otherwise the
@@ -1008,7 +1017,7 @@ export class IIgsMemory {
     this.romBank = false; this.intCxRom = false; this.slotC3Rom = false; this.intC8Rom = false;
     this.scc.reset(); this.doc.reset();
     this.adb.reset();
-    this.iwmMode = 0; this.iwmQ6 = this.iwmQ7 = this.iwmMotor = false;
+    this.iwmMode = 0; this.iwmPhases = 0; this.iwmQ6 = this.iwmQ7 = this.iwmMotor = false;
     this.iwmMotorDelay = 0; this.iwmActive = false; this.iwmDevSel = 0; this.iwmControlDrive2 = false;
     this.iwmData = 0x00; this.iwmWritePending = 0; this.iwmWhd = 0xbf;
     // MAME iwm_device::device_reset clears the complete read/write state
