@@ -81,6 +81,28 @@ export class Floppy35 {
     }
     this.cacheKey=key; this.cache=Uint8Array.from(out); return this.cache;
   }
+  static decodeGcrByte(v) { return GCR6.indexOf(v); }
+  decodeSectorField(bytes, start) {
+    let p=start, ca=0,cb=0,cc=0; const out=new Uint8Array(524);
+    const dec=v=>Floppy35.decodeGcrByte(v);
+    for(let i=0;i<175;i++) {
+      const e0=dec(bytes[p++]),e1=dec(bytes[p++]),e2=dec(bytes[p++]);
+      const e3=i<174?dec(bytes[p++]):0;
+      if(e0<0||e1<0||e2<0||e3<0)return null;
+      let va=((e0&0x30)<<2)|e1, vb=((e0&0x0c)<<4)|e2, vc=((e0&3)<<6)|e3;
+      cc=((cc<<1)|(cc>>>7))&0xff;
+      va^=cc; const suma=ca+va+(cc&1); ca=suma&0xff;
+      vb^=ca; const sumb=cb+vb+(suma>>>8); cb=sumb&0xff;
+      vc^=cb;
+      out[3*i]=va; out[3*i+1]=vb;
+      if(i!==174){cc=(cc+vc+(sumb>>>8))&0xff;out[3*i+2]=vc;}
+    }
+    const chk0=dec(bytes[p++]),chk1=dec(bytes[p++]),chk2=dec(bytes[p++]),chk3=dec(bytes[p++]);
+    if(chk0<0||chk1<0||chk2<0||chk3<0)return null;
+    const cva=((chk0&0x30)<<2)|chk1, cvb=((chk0&0x0c)<<4)|chk2, cvc=((chk0&3)<<6)|chk3;
+    if(cva!==ca||cvb!==cb||cvc!==cc||bytes[p++]!==0xde||bytes[p++]!==0xaa)return null;
+    return out;
+  }
   rpm(track=this.track) { return [394,429,472,525,590][Math.min(4,track>>>4)]; }
   cellCount(track=this.track) {
     return Math.floor(30318342/this.rpm(track));
