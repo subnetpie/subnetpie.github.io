@@ -32,6 +32,7 @@ export class DoubleHiresDisplay
     this._id1 = this._context.createImageData(560, 384);
     this._id2 = this._context.createImageData(560, 384);
     this._id = undefined;
+    this._active_page = 1;
     this._page1_init = false;
     this._page2_init = false;
     this.deferPresent = false;
@@ -230,26 +231,31 @@ export class DoubleHiresDisplay
       this._context.putImageData(page, 0, 0);
     }
 
-    set_active_page(page) {
+    set_active_page(page, force = false) {
+      page = page === 2 ? 2 : 1;
+      if(page !== this._active_page) force = true;
       if (page != 2) {
         // select page 1
-        if (!this._page1_init) {
+        if (force || !this._page1_init) {
+          const saved=this._id;
           this._id = undefined; // suspend rendering
-          for (let a=0x2000; a<0x6000; a++) this.draw(a);
-   //       for (let b=0x4000; b<0x6000; b++) this.draw(b);
+          for (let a=0x2000; a<0x4000; a++) this.draw(a);
+          this._id=saved;
           this._page1_init = true;
         }
         this._id = this._id1;
       } else {
         // select page 2
-        if (!this._page2_init) {
+        if (force || !this._page2_init) {
+          const saved=this._id;
           this._id = undefined; // suspend rendering
-          for (let a=0x2000; a<0x6000; a++) this.draw(a);
-   //       for (let b=0x4000; b<0x6000; b++) this.draw(b);
+          for (let a=0x4000; a<0x6000; a++) this.draw(a);
+          this._id=saved;
           this._page2_init = true;
         }
         this._id = this._id2;
       }
+      this._active_page = page;
       if(!this.deferPresent) this._context.putImageData(this._id, 0, 0);
     }
 
@@ -267,6 +273,7 @@ export class DoubleHiresDisplay
        }
        this._context.putImageData(this._id1, 0, 0);
        this._id = undefined;
+       this._active_page = 1;
        this._page1_init = false;
        this._page2_init = false;
     }
