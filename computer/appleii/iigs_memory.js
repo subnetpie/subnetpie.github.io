@@ -489,7 +489,6 @@ export class IIgsMemory {
         }
       }
     }
-    if(this.video&&off>=0x0400&&off<0xa000) this.video.dirty=true;
   }
 
   e0ReadBank(off) {
@@ -904,7 +903,6 @@ export class IIgsMemory {
             this.video.writeBankE1(off,val);
           else
             slow[off]=val;
-          if((bank&1) && this.video) this.video.dirty=true;
         }
       }
     } else if(addr>=this.ghostStart && addr<0x800000) {
