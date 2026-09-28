@@ -298,6 +298,17 @@ test('IIgs reset matches MAME ROM03 power-on register defaults', () => {
   assert.equal(m.legacyMemory._bsr_write_count,0);
 });
 
+test('IIgs reset restores MAME VGC display defaults after software changes', () => {
+  const {board:m}=createMachine();
+  m.memory.write(0xc029,0x80);
+  m.memory.write(0xc022,0x13);
+  m.memory.write(0xc034,0x0a);
+  m.reset(false);
+  assert.equal(m.video_iigs.readNewVideo(),0x01);
+  assert.equal(m.video_iigs.getTextColor(),0xf2);
+  assert.equal(m.video_iigs.getBorderColor(),0x02);
+});
+
 test('ROM03 leaves its power-on delay loop during headless execution', () => {
   const {board:m}=createMachine();
   let sawDelay=false, leftDelay=false;
