@@ -50,6 +50,8 @@ export class IIgsMemory {
     this.scc = new IIgsSCC();
     this.doc = new IIgsDOC();
     this.iwmMode = 0; this.iwmQ6 = false; this.iwmQ7 = false; this.iwmMotor = false;
+    this.iwmMotorDelay = 0;
+    this.iwmDevSel = 0;
     // MAME iwm_device reset value for the write-handshake register.
     this.iwmWhd = 0xbf;
   }
@@ -265,8 +267,24 @@ export class IIgsMemory {
 
   iwmAccess(addr, value) {
     const op = addr & 15;
-    if(op === 8) this.iwmMotor = false;
-    if(op === 9) this.iwmMotor = true;
+    if(op === 8) {
+      if(this.iwmMotor) {
+        // MAME IWM: mode bit 2 disables the motor-off timer. Otherwise the
+        // controller and selected drive remain active for 8,388,608 IWM clocks.
+        if(this.iwmMode & 0x04) {
+          this.iwmMotor=false; this.iwmMotorDelay=0; this.iwmDevSel=0;
+        } else {
+          this.iwmMotorDelay=8388608;
+        }
+      }
+    }
+    if(op === 9) {
+      this.iwmMotor = true;
+      this.iwmMotorDelay = 0;
+      this.iwmDevSel = (this.iwmControlDrive2 ? 2 : 1);
+    }
+    if(op === 10) { this.iwmControlDrive2=false; if(this.iwmMotor) this.iwmDevSel=1; }
+    if(op === 11) { this.iwmControlDrive2=true; if(this.iwmMotor) this.iwmDevSel=2; }
     if(op === 12 || op === 13) this.iwmQ6 = !!(op & 1);
     if(op === 14 || op === 15) this.iwmQ7 = !!(op & 1);
     if(value !== undefined) {
@@ -291,6 +309,15 @@ export class IIgsMemory {
     if(!this.iwmQ6 && this.iwmQ7) return this.iwmWhd;
     if(this.iwmQ6 && this.iwmQ7) return 0xff;
     return data;
+  }
+
+  tickIwm(cycles, cpuHz=2800000) {
+    if(!this.iwmMotorDelay) return;
+    // IIgs IWM clock is 4.0192 MHz (28.63636 MHz / 7).
+    this.iwmMotorDelay -= cycles * (4019200 / cpuHz);
+    if(this.iwmMotorDelay <= 0) {
+      this.iwmMotorDelay=0; this.iwmMotor=false; this.iwmDevSel=0;
+    }
   }
 
   fastBank0Read(off) {
@@ -841,6 +868,7 @@ export class IIgsMemory {
     this.scc.reset(); this.doc.reset();
     this.adb.reset();
     this.iwmMode = 0; this.iwmQ6 = this.iwmQ7 = this.iwmMotor = false;
+    this.iwmMotorDelay = 0; this.iwmDevSel = 0; this.iwmControlDrive2 = false;
     this.iwmWhd = 0xbf;
   }
 }
