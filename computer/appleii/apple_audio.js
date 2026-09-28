@@ -67,7 +67,7 @@ export class AppleAudio
            typeof AudioWorkletNode === "undefined") return;
         this.docWorkletStarting=true;
         try {
-            await this.ac.audioWorklet.addModule(new URL('./doc_audio_worklet.js?v=20260928-ring1',import.meta.url));
+            await this.ac.audioWorklet.addModule(new URL('./doc_audio_worklet.js?v=20260928-ring2',import.meta.url));
             const node=new AudioWorkletNode(this.ac,'iigs-doc-ring',{
                 numberOfInputs:0,numberOfOutputs:1,outputChannelCount:[2]
             });
