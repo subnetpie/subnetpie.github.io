@@ -195,6 +195,22 @@ test('IIgs 800K native GCR fields round-trip payload across zones and heads',()=
   }
 });
 
+test('IIgs IWM phase softswitches seek the selected native 3.5 drive',()=>{
+  const {board:m}=createMachine(), b=m.memory;
+  const media=decodeMedia('disk.2mg',wrap(new Uint8Array(1600*512),1));
+  mountMedia(m,media);
+  b.diskReg=0x40;
+  b.iwmAccess(0xc0e9); // motor on / drive 1
+  assert.equal(b.iwmDevSel,1);
+  b.iwmAccess(0xc0e1); // phase 0 on
+  b.iwmAccess(0xc0e3); // phase 1 on -> mask 3, quarter-track 1
+  assert.equal(b.iwmPhases,3);
+  assert.equal(b.floppy35.track,0); assert.equal(b.floppy35.subtrack,1);
+  b.iwmAccess(0xc0e0); // phase 0 off -> mask 2, quarter-track 2
+  assert.equal(b.iwmPhases,2);
+  assert.equal(b.floppy35.subtrack,2);
+});
+
 test('IIgs 800K 2MG mounts only on native 3.5 drive, not synthetic slot 7',()=>{
   const {board:m}=createMachine(), b=m.memory;
   const disk=new Uint8Array(1600*512), media=decodeMedia('Arkanoid.2mg',wrap(disk,1));
