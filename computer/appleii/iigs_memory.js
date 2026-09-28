@@ -246,7 +246,9 @@ export class IIgsMemory {
       return 0;
     }
     const data = this.legacy.read(addr);
-    if(addr & 1) return 0;
+    // IWM odd soft-switch reads have no register data; MAME's c080_r()
+    // returns the machine floating bus when the controller supplies none.
+    if(addr & 1) return this.floatingBus();
     // DISKREG bit 7 selects the IIgs 3.5-inch path. Do not feed 5.25-inch
     // Disk II latch bytes into firmware while that path is selected.
     if(this.diskReg&0x80) {
