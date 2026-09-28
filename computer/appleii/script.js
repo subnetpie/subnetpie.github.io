@@ -386,6 +386,7 @@ function setMode(e) {
       buttonMode.innerText = "8-way";
     break;
   }
+  setJoy();
 }
 
 function setCenter(e) {
@@ -491,6 +492,15 @@ function setButtons(y) {
   val1 = y >= joyHeight / 2 ? 1 : 0;
 }
 
+function publishJoy() {
+  // Apple II/IIgs paddles are 8-bit values. Keep the UI coordinates and
+  // hardware-visible values in the same 0..255 range; the previous *10 scale
+  // saturated nearly every position to 255 in IOManager.triggerPaddles().
+  joyValues.axis0 = Math.max(0, Math.min(255, Math.round(joyX)));
+  joyValues.axis1 = Math.max(0, Math.min(255, Math.round(joyY)));
+  publishJoy();
+}
+
 let joyPadPointer = null;
 joyPad.addEventListener("pointerdown", (e) => {
   e.preventDefault();
@@ -511,6 +521,7 @@ const releaseJoy = (e) => {
   if (buttonCenter.innerText === "on") {
     joyX = posX = joyWidth / 2;
     joyY = posY = joyHeight / 2;
+    publishJoy();
   }
 };
 joyPad.addEventListener("pointerup", releaseJoy);
@@ -592,9 +603,9 @@ function setJoy() {
   } else {
     joyX = posX; joyY = posY;
   }
-  // Publish paddle state synchronously for the same reason as fire buttons.
-  joyValues.axis0 = joyX * 10;
-  joyValues.axis1 = joyY * 10;
+  // Publish paddle state synchronously so games polling $C064/$C065 see the
+  // new position on the same pointer event.
+  publishJoy();
 }
 
 function composeScreen() {
@@ -646,31 +657,25 @@ $(function() {
   joyPadCtx.joyWidth = joyWidth;
   joyPadCtx.joyHeight = joyHeight;
   joyRender.init(joyPadCtx);
-  setInterval(function() {
-    joyValues.axis0 = joyX * 10;
-    joyValues.axis1 = joyY * 10;
-    joyValues.button0 = val0;
-    joyValues.button1 = val1;
+  publishJoy();
+
+  // UI painting follows the display refresh rate. Hardware input itself is
+  // published synchronously by the pointer handlers above, so this does not
+  // add input latency and avoids the old 1 ms (~1000 Hz) main-thread timer.
+  function renderJoystickUI() {
     joyRender.clear(joyPadCtx);
     joyRender.plot(joyPadCtx,joyX,joyY);
     if (buttonGrid.innerText=="on") {
       joyRender.crosshair(joyPadCtx,Z);
-      if (joyX<joyWidth/Z) {
-        joyRender.left(joyPadCtx);
-      }
-      if (joyX>(joyWidth/Z)*(Z-1)){
-        joyRender.right(joyPadCtx);
-      }
-      if (joyY<joyHeight/Z) {
-        joyRender.up(joyPadCtx);
-      }
-      if(joyY>(joyHeight/Z)*(Z-1)) {
-        joyRender.down(joyPadCtx);
-      }
+      if (joyX<joyWidth/Z) joyRender.left(joyPadCtx);
+      if (joyX>(joyWidth/Z)*(Z-1)) joyRender.right(joyPadCtx);
+      if (joyY<joyHeight/Z) joyRender.up(joyPadCtx);
+      if (joyY>(joyHeight/Z)*(Z-1)) joyRender.down(joyPadCtx);
     }
-    if (buttonDebug.innerText=="on") {
+    if (buttonDebug.innerText=="on")
       joyRender.debug(joyPadCtx,joyX,joyY,joyPadPointer===null?0:1,val0,val1);
-    }
-    joyRender.buttons(joyButtonsCtx, val0, val1);
-  },1);
+    joyRender.buttons(joyButtonsCtx,val0,val1);
+    window.requestAnimationFrame(renderJoystickUI);
+  }
+  window.requestAnimationFrame(renderJoystickUI);
 });
