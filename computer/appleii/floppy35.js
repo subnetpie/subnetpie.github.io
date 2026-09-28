@@ -18,12 +18,12 @@ export class Floppy35 {
   constructor() { this.eject(); }
   eject() {
     this.media=null; this.track=0; this.subtrack=0; this.head=0; this.phases=0;
-    this.pos=0; this.cellPos=0; this.cellFrac=0; this.rawBits=[]; this.cacheKey=''; this.cache=null;
+    this.pos=0; this.cellPos=0; this.cellFrac=0; this.rawBits=[]; this.cacheKey=''; this.cache=null; this.cellCacheKey=''; this.cellCache=null; this.cellCacheKey=''; this.cellCache=null;
   }
   mount(media) {
     if(!media?.data || media.data.length!==1600*512) return false;
     this.media=media; this.track=0; this.subtrack=0; this.head=0; this.phases=0;
-    this.pos=0; this.cellPos=0; this.cellFrac=0; this.rawBits=[]; this.cacheKey=''; this.cache=null; return true;
+    this.pos=0; this.cellPos=0; this.cellFrac=0; this.rawBits=[]; this.cacheKey=''; this.cache=null; this.cellCacheKey=''; this.cellCache=null; return true;
   }
   reset() {
     this.track=0; this.subtrack=0; this.head=0; this.phases=0;
@@ -113,25 +113,46 @@ export class Floppy35 {
     return Math.floor(30318342/this.rpm(track));
   }
   trackCells() {
-    const bytes=this.buildTrack(), cells=[];
-    // MAME self-sync FF is written as 48 cells containing FF3FCF/F3FCFF,
-    // not as ordinary 8-cell bytes. Expand FF runs with that transition
-    // pattern while retaining normal 8-cell GCR fields.
-    for(let i=0;i<bytes.length;i++) {
-      if(bytes[i]===0xff) {
-        const pat=[1,1,1,1,1,1,1,1,0,0,1,1,1,1,1,1,0,0,1,1,1,1,0,0,
+    const key=this.track+':'+this.head;
+    if(key===this.cellCacheKey && this.cellCache)return this.cellCache;
+    if(!this.media)return [1,1,1,1,1,1,1,1];
+
+    // Build flux cells directly. Sync bytes are a physical 48-cell pattern;
+    // ordinary encoded $FF bytes remain ordinary eight-cell data. Inferring
+    // sync from byte value corrupts valid GCR fields.
+    const cells=[], ns=this.sectorCount(), order=[];
+    const syncPat=[1,1,1,1,1,1,1,1,0,0,1,1,1,1,1,1,0,0,1,1,1,1,0,0,
                    1,1,1,1,0,0,1,1,1,1,1,1,0,0,1,1,1,1,1,1,1,1,1,1];
-        cells.push(...pat);
-      } else for(let b=7;b>=0;b--)cells.push((bytes[i]>>>b)&1);
+    const byte=v=>{for(let b=7;b>=0;b--)cells.push((v>>>b)&1);};
+    const sync=()=>{for(let i=0;i<16;i++)cells.push(...syncPat);};
+    let si=0; for(let i=0;i<ns;i++){order.push(si);si=(si+2)%ns;if(si===0)si++;}
+    for(const s of order) {
+      const side=this.head?0x20:0, fmt=0x00;
+      sync();
+      [0xd5,0xaa,0x96,GCR6[this.track&0x3f],GCR6[s&0x3f],
+       GCR6[((this.track&0x40)?1:0)|side],GCR6[fmt],
+       GCR6[(this.track^s^((this.track&0x40)?1:0)^side^fmt)&0x3f],
+       0xde,0xaa,0xff,0xff,0xff,0xff,0xff,0xff,0xd5,0xaa,0xad,GCR6[s&0x3f]].forEach(byte);
+      const start=this.sectorOffset(this.track,this.head,s);
+      const src=this.media.data.subarray(start,start+512);
+      const all=new Uint8Array(524); all.set(src,12);
+      let ca=0,cb=0,cc=0;
+      for(let i=0;i<175;i++) {
+        const p=i*3,va0=all[p],vb0=all[p+1],vc0=i!==174?all[p+2]:0;
+        cc=((cc<<1)|(cc>>>7))&0xff;
+        const suma=ca+va0+(cc&1);ca=suma&0xff;const va=va0^cc;
+        const sumb=cb+vb0+(suma>>>8);cb=sumb&0xff;const vb=vb0^ca;
+        if(i!==174)cc=(cc+vc0+(sumb>>>8))&0xff;
+        const enc=gcr6(va,vb,vc);byte(enc[0]);byte(enc[1]);byte(enc[2]);if(i!==174)byte(enc[3]);
+      }
+      gcr6(ca,cb,cc).forEach(byte); byte(0xde);byte(0xaa);byte(0xff);byte(0xff);
     }
     const target=this.cellCount();
-    if(cells.length<target) {
-      const sync=[1,1,1,1,1,1,1,1,0,0,1,1,1,1,1,1,0,0,1,1,1,1,0,0,
-                  1,1,1,1,0,0,1,1,1,1,1,1,0,0,1,1,1,1,1,1,1,1,1,1];
-      while(cells.length<target)cells.push(...sync.slice(0,Math.min(48,target-cells.length)));
-    }
-    return cells;
+    while(cells.length<target)cells.push(...syncPat.slice(0,Math.min(syncPat.length,target-cells.length)));
+    this.cellCacheKey=key; this.cellCache=cells.slice(0,target);
+    return this.cellCache;
   }
+
   tick(seconds) {
     if(!this.media || seconds<=0)return;
     const cells=this.trackCells();
