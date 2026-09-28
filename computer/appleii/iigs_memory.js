@@ -809,6 +809,10 @@ export class IIgsMemory {
     this.rtc.ce=1; this.rtc.clk=0; this.rtc.data=0; this.rtc.out=0;
     this.rtc.dir=0; this.rtc.byte=0; this.rtc.bits=0; this.rtc.state=0;
     this.rtc.cmd=0; this.rtc.writeProtect=false;
+    // Preserve the RTC seconds/PRAM across RESET, but restart only the
+    // fractional emulation accumulator; MAME's device clock continues from
+    // the retained RTC register value.
+    this.rtc.cycleAccum=0;
     this.intEnable = 0; this.intFlag = 0;
     this.vblIrq = this.quarterIrq = false;
     this.externalIrq.vgc=this.externalIrq.doc=this.externalIrq.scc=this.externalIrq.adb=false;
