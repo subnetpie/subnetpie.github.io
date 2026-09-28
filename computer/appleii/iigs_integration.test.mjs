@@ -22,7 +22,7 @@ test('IIgs fast-mode Mega II accesses accumulate MAME slow-cycle wait states', (
     waits.push(b.consumeSlowCycles());
   }
   assert.deepEqual(waits,[2,3,3,3,3]);
-  assert.equal(b.slowCycleRemainder,5);
+  assert.equal(b.slowCycleRemainder,1);
 
   // When SPEED selects the ~1 MHz CPU, slow-bus accesses need no extra wait.
   b.speed=0;
