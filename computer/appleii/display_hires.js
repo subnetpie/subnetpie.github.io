@@ -287,6 +287,10 @@ export class HiresDisplay
     set_active_page(page, bank = "main", force = false) {
         page = page === 2 ? 2 : 1;
         bank = bank === "aux" ? "aux" : "main";
+        // A page flip is a hardware selection event. Rebuild the newly
+        // selected page from physical video RAM instead of trusting an
+        // incremental cache that may have missed writes while hidden.
+        if(page !== this._active_page || bank !== this._active_bank) force = true;
         const isAux = bank === "aux";
         const id = page === 1
             ? (isAux ? this._id1aux : this._id1)
