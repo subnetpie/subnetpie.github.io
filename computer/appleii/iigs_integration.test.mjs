@@ -298,6 +298,30 @@ test('IIgs reset matches MAME ROM03 power-on register defaults', () => {
   assert.equal(m.legacyMemory._bsr_write_count,0);
 });
 
+test('IIgs RTC advances with emulated time and preserves seconds across reset', () => {
+  const {board:m}=createMachine();
+  m.memory.rtc.seconds.fill(0);
+  m.memory.rtc.cycleAccum=0;
+  m.clock(2800000);
+  assert.equal(m.memory.rtc.seconds[0],1);
+  assert.equal(m.memory.rtc.seconds[1],0);
+  m.memory.rtc.cycleAccum=12345;
+  m.reset(false);
+  assert.equal(m.memory.rtc.seconds[0],1);
+  assert.equal(m.memory.rtc.cycleAccum,0);
+});
+
+test('IIgs extended RTC PRAM writes bypass normal write protect', () => {
+  const {board:m}=createMachine();
+  const r=m.memory.rtc;
+  r.writeProtect=true;
+  r.state=3;
+  r.xpaddr=0x55;
+  m.memory.rtcByte(0xa5);
+  assert.equal(r.pram[0x55],0xa5);
+  assert.equal(r.state,0);
+});
+
 test('IIgs reset restores MAME VGC display defaults after software changes', () => {
   const {board:m}=createMachine();
   m.memory.write(0xc029,0x80);
