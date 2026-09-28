@@ -477,7 +477,7 @@ export class IIgsMemory {
 
   fastBank0Write(off,val) {
     const m=this.legacy;
-    let aux;
+    let aux, shadowed=false;
     if(off<0x0200) aux=!!m.aux_zp;
     else {
       aux=!!m.aux_write;
@@ -488,27 +488,28 @@ export class IIgsMemory {
     this.ram[(aux?0x10000:0)+off]=val;
 
     if(!aux) {
-      let shadowed=false;
       if(off>=0x0400&&off<0x0800&&!(this.shadow&0x01)) { this.slowE0[off]=val; shadowed=true; }
       else if(off>=0x0800&&off<0x0c00&&!(this.shadow&0x20)) { this.slowE0[off]=val; shadowed=true; }
       else if(off>=0x2000&&off<0x4000&&!(this.shadow&0x02)) { this.slowE0[off]=val; shadowed=true; }
       else if(off>=0x4000&&off<0x6000&&!(this.shadow&0x04)) { this.slowE0[off]=val; shadowed=true; }
       if(shadowed) this.noteSlowCycle();
     } else {
-      if(off>=0x0400&&off<0x0800&&!(this.shadow&0x01)) this.slowE1[off]=val;
-      else if(off>=0x0800&&off<0x0c00&&!(this.shadow&0x20)) this.slowE1[off]=val;
+      if(off>=0x0400&&off<0x0800&&!(this.shadow&0x01)) { this.slowE1[off]=val; shadowed=true; }
+      else if(off>=0x0800&&off<0x0c00&&!(this.shadow&0x20)) { this.slowE1[off]=val; shadowed=true; }
       else if(off>=0x2000&&off<0xa000) {
         let shadow=false;
         if(off<0x4000) shadow=(!(this.shadow&0x02)&&!(this.shadow&0x10))||!(this.shadow&0x08);
         else if(off<0x6000) shadow=(!(this.shadow&0x04)&&!(this.shadow&0x10))||!(this.shadow&0x08);
         else shadow=!(this.shadow&0x08);
         if(shadow) {
+          shadowed=true;
           this.noteSlowCycle();
           if(this.video) this.video.writeBankE1(off,val);
           else this.slowE1[off]=val;
         }
       }
     }
+    return shadowed ? (aux ? "aux" : "main") : null;
   }
 
   e0ReadBank(off) {
@@ -523,13 +524,15 @@ export class IIgsMemory {
   e0WriteBank(off,val) {
     const m=this.legacy;
     if(off<0x0200) {
-      (m.aux_zp ? this.slowE1 : this.slowE0)[off]=val;
-      return;
+      const aux=!!m.aux_zp;
+      (aux ? this.slowE1 : this.slowE0)[off]=val;
+      return aux ? "aux" : "main";
     }
     let aux=!!m.aux_write;
     if(off>=0x0400 && off<0x0800 && m.dms_80store) aux=!!m.dms_page2;
     else if(off>=0x2000 && off<0x4000 && m.dms_80store && m.dms_hires) aux=!!m.dms_page2;
     (aux ? this.slowE1 : this.slowE0)[off]=val;
+    return aux ? "aux" : "main";
   }
 
   fastLc00Address(off) {
@@ -852,6 +855,7 @@ export class IIgsMemory {
     }
 
     const bank=addr>>>16, off=addr&0xffff;
+    let displayBank=null;
     if(bank===0xe0 || bank===0xe1) {
       // MAME e0ram/e1ram and LC handlers always take a slow bus cycle.
       this.noteSlowCycle();
@@ -860,14 +864,17 @@ export class IIgsMemory {
         // ALTZP must not redirect the E0 slow LC window.
         this.slowLcWrite(bank===0xe1,off,val);
       else if(bank===0xe0 && off<0xc000)
-        this.e0WriteBank(off,val);
-      else if(bank===0xe1 && off>=0x2000 && off<0xa000 && this.video)
+        displayBank=this.e0WriteBank(off,val);
+      else if(bank===0xe1 && off>=0x2000 && off<0xa000 && this.video) {
         this.video.writeBankE1(off,val);
-      else
+        displayBank="aux";
+      } else {
         (bank===0xe0 ? this.slowE0 : this.slowE1)[off]=val;
+        displayBank=bank===0xe1 ? "aux" : "main";
+      }
     } else if(bank===0x00) {
       if(off<0xc000)
-        this.fastBank0Write(off,val);
+        displayBank=this.fastBank0Write(off,val);
       else if(off>=0xd000)
         this.fastLc00Write(off,val);
       else
@@ -897,9 +904,9 @@ export class IIgsMemory {
       // auxiliary write; HGR/SHR shadowing goes through auxram0000_w so the
       // NEWVIDEO address transform is applied when SHR mapping is active.
       if(off>=0x0400 && off<0x0800 && !(this.shadow&0x01)) {
-        this.noteSlowCycle(); this.slowE1[off]=val;
+        this.noteSlowCycle(); this.slowE1[off]=val; displayBank="aux";
       } else if(off>=0x0800 && off<0x0c00 && !(this.shadow&0x20)) {
-        this.noteSlowCycle(); this.slowE1[off]=val;
+        this.noteSlowCycle(); this.slowE1[off]=val; displayBank="aux";
       } else if(off>=0x2000 && off<0xa000) {
         let shadow=false;
         if(off<0x4000)
@@ -912,6 +919,7 @@ export class IIgsMemory {
           this.noteSlowCycle();
           if(this.video) this.video.writeBankE1(off,val);
           else this.slowE1[off]=val;
+          displayBank="aux";
         }
       }
     } else if(addr < this.ram.length) {
@@ -929,6 +937,7 @@ export class IIgsMemory {
         const shr = (bank&1) && off>=0x2000 && off<0xa000 && !(this.shadow&0x08);
         if(text1 || text2 || hires1 || hires2 || shr) {
           this.noteSlowCycle();
+          displayBank=(bank&1) ? "aux" : "main";
           if((bank&1) && off>=0x2000 && off<0xa000 && this.video)
             // MAME bank1_0000_sh_w routes HGR/SHR shadow writes through
             // auxram0000_w(), so NEWVIDEO $40/$80 address swizzling applies.
@@ -944,9 +953,11 @@ export class IIgsMemory {
     // IIgs RAM writes bypass Memory.write(), where the IIe normally
     // notifies the display. Draw the actual slow-bank byte so inhibited
     // shadow writes cannot leak fast RAM onto the screen.
-    if(off>=0x0400 && off<0x6000 && this.legacy.io_manager &&
-       !(this.video && this.video.isSuperHires()))
-      this.legacy.io_manager.draw_display(off,this.slowE0[off]);
+    if(displayBank && off>=0x0400 && off<0x6000 && this.legacy.io_manager &&
+       !(this.video && this.video.isSuperHires())) {
+      const slow=displayBank==="aux" ? this.slowE1 : this.slowE0;
+      this.legacy.io_manager.draw_display(off,slow[off],displayBank);
+    }
     if(this.trace) this.trace("W",addr,val);
   }
 
