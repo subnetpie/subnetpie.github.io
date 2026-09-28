@@ -659,8 +659,7 @@ export class IIgsMemory {
     }
     // MAME routes slot-6 IWM internally only when SLOTROMSEL bit 6 is clear.
     // If external slot 6 is selected, let the normal legacy hooks handle it.
-    if(addr >= 0xc0e0 && addr <= 0xc0ef && !(this.slotRom&0x40))
-      return this.iwmAccess(addr);
+    if(addr >= 0xc0e0 && addr <= 0xc0ef) return this.iwmAccess(addr);
     // MAME c100_r/c400_r: INTCXROM forces the internal ROM over slot
     // CnXX firmware. Our external slot devices are read hooks, so suppress
     // those hooks across C100-C7FF while the internal-ROM latch is set.
@@ -853,7 +852,7 @@ export class IIgsMemory {
         }
       }
     }
-    if(addr >= 0xc0e0 && addr <= 0xc0ef && !(this.slotRom&0x40)) {this.iwmAccess(addr,val);return;}
+    if(addr >= 0xc0e0 && addr <= 0xc0ef) {this.iwmAccess(addr,val);return;}
     const lowAddr=addr&0xffff;
     const slotNum=(lowAddr>>>8)&0x0f;
     const slotWindow=(addr>>>16)===0 && lowAddr>=0xc100 && lowAddr<=0xc7ff;
