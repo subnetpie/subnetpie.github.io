@@ -576,7 +576,7 @@ export class IIgsMemory {
     }
     if((addr>>>16)===0 && (addr&0xffff)>=0xc000 && (addr&0xffff)<=0xc0ff) {
       const io=addr&0xffff;
-      if(this.trace) this.trace("W",io,val);
+      if(this.trace) this.trace("R",io,undefined);
       if(io>=0xc000 && io<=0xc00f) return this.adb.readKeyData();
       if(io===0xc010) return this.adb.readAnyKeyAndClearStrobe();
       if(io===0xc068) return this.readState();
@@ -757,6 +757,7 @@ export class IIgsMemory {
     }
     if((addr>>>16)===0 && (addr&0xffff)>=0xc000 && (addr&0xffff)<=0xc0ff) {
       const io=addr&0xffff;
+      if(this.trace) this.trace("W",io,val);
       // IIgs FPI compatibility soft switches (MAME c000_w).
       if(io===0xc000){this.legacy.dms_80store=false;return;}
       if(io===0xc001){this.legacy.dms_80store=true;return;}
