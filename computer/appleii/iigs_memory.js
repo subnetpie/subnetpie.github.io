@@ -659,19 +659,9 @@ export class IIgsMemory {
     const lowAddr=addr&0xffff;
     const slotNum=(lowAddr>>>8)&0x0f;
     const slotWindow=(addr>>>16)===0 && lowAddr>=0xc100 && lowAddr<=0xc7ff;
-    // MAME c100_r/c400_r: internal ROM wins if INTCXROM is set or the
-    // corresponding SLOTROMSEL bit is clear.
-    // Synthetic slot devices installed by the emulator are real external
-    // cards for bus-decode purposes. Give an installed hook first refusal
-    // before falling back to the IIgs SLOTROMSEL/internal-ROM rule.
-    let externalSlotValue;
-    if(slotWindow && !this.intCxRom) {
-      for(const fn of this.readHooks) {
-        const v=fn(addr);
-        if(v!==undefined){externalSlotValue=v&0xff;break;}
-      }
-    }
-    if(externalSlotValue!==undefined) return externalSlotValue;
+    // MAME c100_r/c400_r: INTCXROM/SLOTROMSEL select the ROM source
+    // before an external card can respond. Do not let generic read hooks
+    // bypass the IIgs internal-slot decode.
     const internalSlotRom=slotWindow &&
       (slotNum===3
         ? (this.intCxRom || !this.slotC3Rom)
