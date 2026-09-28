@@ -154,7 +154,9 @@ export class Motherboard
                 const oldFrame=this.video_iigs.frameCount;
                 this.video_iigs.tick(usedMaster, IIGS_FAST_HZ);
                 if(this.perfEnabled) this.perf.video += performance.now()-timed;
-                if(oldLine < 192 && this.video_iigs.currentScanline >= 192)
+                // MAME asserts Mega II VBL at raw scanline 208
+                // (192 visible lines + 16-line top border).
+                if(oldLine < 208 && this.video_iigs.currentScanline >= 208)
                     this.memory.setVblFlag();
                 if(this.video_iigs.frameCount !== oldFrame) {
                     if(this.io_manager && this.io_manager.latch_display_state) {
