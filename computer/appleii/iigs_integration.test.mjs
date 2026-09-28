@@ -322,6 +322,24 @@ test('IIgs extended RTC PRAM writes bypass normal write protect', () => {
   assert.equal(r.state,0);
 });
 
+test('IIgs RTC advances once per emulated second and survives reset', () => {
+  const {board:m}=createMachine();
+  const rtc=m.memory.rtc;
+  rtc.seconds.fill(0);
+  m.memory.tickRtc(2799999,2800000);
+  assert.deepEqual([...rtc.seconds],[0,0,0,0]);
+  m.memory.tickRtc(1,2800000);
+  assert.deepEqual([...rtc.seconds],[1,0,0,0]);
+  rtc.seconds.set([0xff,0xff,0xff,0xff]);
+  m.memory.tickRtc(2800000,2800000);
+  assert.deepEqual([...rtc.seconds],[0,0,0,0]);
+  rtc.seconds.set([0x78,0x56,0x34,0x12]);
+  rtc.cycleAccum=12345;
+  m.reset(false);
+  assert.deepEqual([...rtc.seconds],[0x78,0x56,0x34,0x12]);
+  assert.equal(rtc.cycleAccum,0);
+});
+
 test('IIgs reset restores MAME VGC display defaults after software changes', () => {
   const {board:m}=createMachine();
   m.memory.write(0xc029,0x80);
