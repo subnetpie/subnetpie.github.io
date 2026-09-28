@@ -13,12 +13,12 @@ import {W65C02S} from "https://subnetpie.github.io/computer/appleii/w65c02s.js";
 import {Memory} from "https://subnetpie.github.io/computer/appleii/memory.js";
 import {IIgsMemory} from "https://subnetpie.github.io/computer/appleii/iigs_memory.js?v=20260928-speed1";
 import {W65C816} from "https://subnetpie.github.io/computer/appleii/w65c816.js?v=20260928-blend";
-import {IOManager} from "https://subnetpie.github.io/computer/appleii/io_manager.js?v=20260928-pageflip1";
+import {IOManager} from "https://subnetpie.github.io/computer/appleii/io_manager.js?v=20260928-framelatch1";
 import {TextDisplay} from "https://subnetpie.github.io/computer/appleii/display_text.js";
 import {TextDisplay80} from "https://subnetpie.github.io/computer/appleii/display_text_80.js";
 import {HiresDisplay} from "https://subnetpie.github.io/computer/appleii/display_hires.js?v=20260928-pageflip1";
 import {LoresDisplay} from "https://subnetpie.github.io/computer/appleii/display_lores.js";
-import {DoubleHiresDisplay} from "https://subnetpie.github.io/computer/appleii/display_double_hires.js?v=20260927-display";
+import {DoubleHiresDisplay} from "https://subnetpie.github.io/computer/appleii/display_double_hires.js?v=20260928-writeahead1";
 import {Keyboard} from "https://subnetpie.github.io/computer/appleii/keyboard.js?v=20260928-blend";
 import {Floppy525} from "https://subnetpie.github.io/computer/appleii/FloppyWoz525.js";
 import {AppleAudio} from "https://subnetpie.github.io/computer/appleii/apple_audio.js?v=20260928-pcm2";
@@ -123,9 +123,15 @@ export class Motherboard
                 // second status is latched every 16 frames regardless of INTEN.
                 if(oldLine < 192 && this.video_iigs.currentScanline >= 192)
                     this.memory.setVblFlag();
-                if(this.video_iigs.frameCount !== oldFrame &&
-                   (this.video_iigs.frameCount & 0x0f) === 0)
-                    this.memory.setQuarterFlag();
+                if(this.video_iigs.frameCount !== oldFrame) {
+                    // Snapshot Mega II compatibility-video latches at the
+                    // emulated frame boundary. This prevents temporary PAGE2
+                    // bank-access states from becoming full browser frames.
+                    if(this.io_manager && this.io_manager.latch_display_state)
+                        this.io_manager.latch_display_state();
+                    if((this.video_iigs.frameCount & 0x0f) === 0)
+                        this.memory.setQuarterFlag();
+                }
             }
             if(this.iigsEnabled) {
                 this.memory.tickRtc(usedMaster, IIGS_FAST_HZ);
