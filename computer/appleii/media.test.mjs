@@ -138,6 +138,20 @@ test('IIgs Arkanoid 2MG progresses beyond its boot block',
       ' PC='+m.cpu.register.pc.toString(16)+' recentIO='+JSON.stringify(recent));
   });
 
+test('IIgs IWM decodes 3.5 media through flux transition windows',()=>{
+  const {board:m}=createMachine(), b=m.memory;
+  const disk=new Uint8Array(1600*512), media=decodeMedia('800k.2mg',wrap(disk,1));
+  mountMedia(m,media); b.floppy35.mount(media);
+  b.diskReg=0x40; b.iwmActive=true; b.iwmMotor=true; b.iwmQ6=false; b.iwmQ7=false;
+  b.iwmData=0;
+  b.tickIwm(56000,2800000);
+  assert.ok(b.iwmReadClock>0);
+  assert.ok((b.iwmData&0x80)!==0,'synchronized GCR data must latch with high bit set');
+  const v=b.iwmData, p=b.floppy35.cellPos;
+  assert.equal(b.iwmAccess(0xc0ec),v);
+  assert.equal(b.floppy35.cellPos,p,'register polling must not move flux position');
+});
+
 test('IIgs IWM 3.5 read register is a timed shift-register latch',()=>{
   const {board:m}=createMachine(), b=m.memory;
   const disk=new Uint8Array(1600*512), media=decodeMedia('800k.2mg',wrap(disk,1));
