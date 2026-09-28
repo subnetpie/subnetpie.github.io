@@ -1,8 +1,7 @@
 const machineParam = new URLSearchParams(location.search).get("machine");
-const machineType = machineParam === "iigs" ? "iigs" : "iie";
-// Apple IIe runs at the NTSC 65C02 rate used by this emulator; IIgs fast
-// mode runs the 65816 at 2.8 MHz. Do not let an omitted query parameter
-// silently select the IIgs clock for ordinary Apple II software.
+const machineType = machineParam === "iie" ? "iie" : "iigs";
+// IIgs is the default machine. Its 65816 speed changes dynamically through
+// $C036 SPEED; the browser scheduler always supplies 2.8 MHz master-time.
 const khz = machineType === "iigs" ? 2800 : 1020.5;
 let motherboard;
 let interval;
@@ -57,7 +56,7 @@ function chooseArchiveImage(name, entries) {
   });
 }
 
-import { Motherboard } from "https://subnetpie.github.io/computer/appleii/motherboard.js?v=20260928-dirtyshr2";
+import { Motherboard } from "https://subnetpie.github.io/computer/appleii/motherboard.js?v=20260928-speed1";
 
 class Drive {
   constructor(num, display, led, dialog) {
