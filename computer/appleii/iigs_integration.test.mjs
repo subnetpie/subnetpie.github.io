@@ -125,6 +125,21 @@ test('ROM03 C071-C07F IRQ helper window comes from firmware', () => {
     assert.equal(b.read(0xc000|off),b.rom[0x3c000+off]);
 });
 
+test('IIgs IWM reset register reads match MAME inactive state', () => {
+  const {board:m}=createMachine();
+  const b=m.memory;
+  // Q6L/Q7L with motor off selects the data register. MAME returns $FF
+  // while inactive and must not advance the mounted medium.
+  b.iwmQ6=false; b.iwmQ7=false; b.iwmMotor=false;
+  assert.equal(b.iwmAccess(0xc0ec),0xff);
+  // Q7H/Q6L selects the write-handshake register, reset value $BF.
+  b.iwmQ7=true;
+  assert.equal(b.iwmAccess(0xc0ec),0xbf);
+  // Q6H/Q7H is not a readable register.
+  b.iwmQ6=true;
+  assert.equal(b.iwmAccess(0xc0ec),0xff);
+});
+
 test('IIgs DISKREG bit 6 selects 3.5-inch IWM path; bit 7 alone does not', () => {
   const {board:m}=createMachine();
   const b=m.memory;
