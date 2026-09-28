@@ -148,6 +148,7 @@ export class Motherboard
             // machine_reset restores hardware latches, then the configured
             // external-slot selection is applied before ROM03 begins scanning.
             if(this.prodosBlock?.image) this.memory.slotRom |= 0x80;
+            else if(this.floppy525?._disks?.some(d=>d?.medium)) this.memory.slotRom |= 0x40;
         }
         this.cpu.reset();
         this.display_text.reset();
