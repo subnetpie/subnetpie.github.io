@@ -32,6 +32,7 @@ export class IIgsVideo {
     this.superHires = false;
     this.dirty = true;
     this.image = this.context.createImageData(640, 200);
+    this.blendRow = new Uint8ClampedArray(640 * 4);
     this.reset();
   }
 
@@ -292,12 +293,41 @@ export class IIgsVideo {
     }
   }
 
+  blend640Line(y, data) {
+    // Presentation filter for repeating two-pixel color dithers. Use the
+    // unfiltered row for every comparison so blending cannot propagate.
+    // Keep grayscale detail (especially desktop text) and isolated edges raw.
+    const start = y * 640 * 4;
+    const row = this.blendRow;
+    row.set(data.subarray(start, start + row.length));
+    const samePair = (a,b) => {
+      for(let c=0;c<8;c++) if(row[a+c]!==row[b+c]) return false;
+      return true;
+    };
+    for(let x=0;x<640;x+=2) {
+      const a=x*4, b=a+4;
+      const colored = row[a]!==row[a+1] || row[a+1]!==row[a+2] ||
+                      row[b]!==row[b+1] || row[b+1]!==row[b+2];
+      if(!colored) continue;
+      const repeated = (x>=2 && samePair(a,a-8)) ||
+                       (x<638 && samePair(a,a+8));
+      if(!repeated) continue;
+      for(let c=0;c<3;c++) {
+        const value=Math.round((row[a+c]+row[b+c])/2);
+        data[start+a+c]=data[start+b+c]=value;
+      }
+    }
+  }
+
   refresh(force=false) {
     if (!this.superHires || (!force && !this.dirty)) return false;
     const data=this.image.data;
     for(let y=0; y<SHR_LINES; y++) {
       const scb=this.decodeSCB(y);
-      if (scb.mode640) this.render640Line(y,scb,data);
+      if (scb.mode640) {
+        this.render640Line(y,scb,data);
+        this.blend640Line(y,data);
+      }
       else this.render320Line(y,scb,data);
     }
     // Scale 640x200 SHR to the emulator's 564x390 presentation canvas.
