@@ -100,9 +100,29 @@ export class IIgsMemory {
       return a<0x10000 ? this.slowE0[a] : this.slowE1[a&0xffff];
     }
 
-    // Legacy scanner_address() is implemented separately once IOManager's
-    // text/graphics/mixed state is exposed to this bus object.
-    return 0;
+    // MAME a2_video_device::scanner_address(), using the same compatibility
+    // soft-switch latches that drive the legacy renderer.
+    const io=this.ioManager;
+    if(!io) return 0;
+    let hires=(this.legacy.dms_hires && !io.text_mode);
+    const mixed=io.mixed_mode;
+    const page2=this.legacy.dms_page2 && !this.legacy.dms_80store;
+    const hs=h-(h>0?1:0);
+    const h0=hs&1, h1=(hs>>1)&1, h2=(hs>>2)&1;
+    const h3=(hs>>3)&1, h4=(hs>>4)&1, h5=(hs>>5)&1;
+    let vs=256+v;
+    if(v>=256) vs-=262;
+    const va=vs&1, vb=(vs>>1)&1, vc=(vs>>2)&1;
+    const v0=(vs>>3)&1, v1=(vs>>4)&1, v2=(vs>>5)&1;
+    const v3=(vs>>6)&1, v4=(vs>>7)&1;
+    if(hires && mixed && v4 && v2) hires=false;
+    const sum=(0x0d+(h5<<2)+(h4<<1)+h3+(v4<<3)+(v3<<2)+(v4<<1)+v3)&0x0f;
+    a=h0|(h1<<1)|(h2<<2)|(sum<<3)|(v0<<7)|(v1<<8)|(v2<<9);
+    if(hires)
+      a|=(va<<10)|(vb<<11)|(vc<<12)|(page2?0x4000:0x2000);
+    else
+      a|=page2?0x0800:0x0400;
+    return this.slowE0[a&0xffff];
   }
 
   readState() {
