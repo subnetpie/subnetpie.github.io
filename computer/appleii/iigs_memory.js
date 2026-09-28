@@ -660,28 +660,12 @@ export class IIgsMemory {
     // MAME routes slot-6 IWM internally only when SLOTROMSEL bit 6 is clear.
     // If external slot 6 is selected, let the normal legacy hooks handle it.
     if(addr >= 0xc0e0 && addr <= 0xc0ef) return this.iwmAccess(addr);
-    // MAME c100_r/c400_r: INTCXROM forces the internal ROM over slot
-    // CnXX firmware. Our external slot devices are read hooks, so suppress
-    // those hooks across C100-C7FF while the internal-ROM latch is set.
-    const lowAddr=addr&0xffff;
-    const slotNum=(lowAddr>>>8)&0x0f;
-    const slotWindow=(addr>>>16)===0 && lowAddr>=0xc100 && lowAddr<=0xc7ff;
-    // MAME c100_r/c400_r: INTCXROM/SLOTROMSEL select the ROM source
-    // before an external card can respond. Do not let generic read hooks
-    // bypass the IIgs internal-slot decode.
-    const internalSlotRom=slotWindow &&
-      (slotNum===3
-        ? (this.intCxRom || !this.slotC3Rom)
-        : (this.intCxRom || !(this.slotRom & (1<<slotNum))));
-    if(slotWindow && slotNum===3 && !this.slotC3Rom) this.intC8Rom=true;
-    const c8Window=(addr>>>16)===0 && lowAddr>=0xc800 && lowAddr<=0xcfff;
-    const internalC8=c8Window && (this.intCxRom || this.intC8Rom);
-    if(c8Window && lowAddr===0xcfff) this.intC8Rom=false;
-    if(!internalSlotRom && !internalC8) {
-      for(const fn of this.readHooks) {
-        const v=fn(addr);
-        if(v !== undefined) return v & 0xff;
-      }
+    // Preserve the verified emulator-card boot contract from 9a87089c:
+    // installed slot hooks get first refusal. This is how the synthetic
+    // ProDOS slot-7 card and Disk II slot hooks were boot-tested on ROM03.
+    for(const fn of this.readHooks) {
+      const v=fn(addr);
+      if(v !== undefined) return v & 0xff;
     }
 
     const rv=this.romRead(addr);
