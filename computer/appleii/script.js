@@ -56,7 +56,7 @@ function chooseArchiveImage(name, entries) {
   });
 }
 
-import { Motherboard } from "https://subnetpie.github.io/computer/appleii/motherboard.js?v=20260928-shrframe1";
+import { Motherboard } from "https://subnetpie.github.io/computer/appleii/motherboard.js?v=20260928-shrready1";
 
 class Drive {
   constructor(num, display, led, dialog) {
