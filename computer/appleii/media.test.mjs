@@ -195,6 +195,20 @@ test('IIgs 800K native GCR fields round-trip payload across zones and heads',()=
   }
 });
 
+test('IIgs ROM03 native 800K boot trace reaches 3.5 controller',()=>{
+  const {board:m}=createMachine(), b=m.memory;
+  const media=decodeMedia('boot.2mg',wrap(new Uint8Array(1600*512),1));
+  mountMedia(m,media);
+  const io=[]; b.setTrace((rw,addr,value)=>{
+    if((addr===0xc031)||(addr>=0xc0e0&&addr<=0xc0ef)) io.push([rw,addr,value]);
+  });
+  m.reset(true); m.clock(2000000);
+  const diskreg=io.filter(x=>x[0]==='W'&&x[1]===0xc031);
+  const iwm=io.filter(x=>x[1]>=0xc0e0&&x[1]<=0xc0ef);
+  assert.ok(diskreg.some(x=>(x[2]&0x40)!==0),'ROM03 must select 35SEL while boot-scanning native 800K media');
+  assert.ok(iwm.length>0,'ROM03 must access IWM while scanning native 800K media');
+});
+
 test('IIgs IWM phase softswitches seek the selected native 3.5 drive',()=>{
   const {board:m}=createMachine(), b=m.memory;
   const media=decodeMedia('disk.2mg',wrap(new Uint8Array(1600*512),1));
