@@ -195,6 +195,22 @@ test('IIgs 800K native GCR fields round-trip payload across zones and heads',()=
   }
 });
 
+test('IIgs reset clears native IWM decoder state but preserves mounted 800K media',()=>{
+  const {board:m}=createMachine(), b=m.memory;
+  const disk=new Uint8Array(1600*512), media=decodeMedia('Arkanoid.2mg',wrap(disk,1));
+  mountMedia(m,media); b.floppy35.mount(media);
+  b.iwmReadShift=0x55; b.iwmReadBits=7; b.iwmReadState=1; b.iwmReadClock=1234;
+  b.iwmNextWindow=1300; b.iwmSyncUpdate=1400; b.iwmAsyncUpdate=1500;
+  b.floppy35.cellPos=321; b.floppy35.rawBits=[1,0,1];
+  m.reset(true);
+  assert.equal(b.floppy35Media,media);
+  assert.equal(b.floppy35.media,media);
+  assert.equal(b.iwmReadShift,0); assert.equal(b.iwmReadBits,0); assert.equal(b.iwmReadState,0);
+  assert.equal(b.iwmReadClock,0); assert.equal(b.iwmNextWindow,0);
+  assert.equal(b.iwmSyncUpdate,0); assert.equal(b.iwmAsyncUpdate,0);
+  assert.equal(b.floppy35.cellPos,0); assert.deepEqual(b.floppy35.rawBits,[]);
+});
+
 test('IIgs IWM sync latch supports Arkanoid high-bit polling',()=>{
   const {board:m}=createMachine(), b=m.memory;
   const disk=new Uint8Array(1600*512), media=decodeMedia('Arkanoid.2mg',wrap(disk,1));
