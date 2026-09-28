@@ -158,6 +158,29 @@ test('IIgs IWM drive-select follows control bit 5 while active', () => {
   assert.equal(b.iwmDevSel,1);
 });
 
+test('IIgs IWM WHD exposes write-engine and byte-ready transitions', () => {
+  const {board:m}=createMachine();
+  const b=m.memory;
+  b.iwmMode=0x01; // latched synchronous mode
+  b.iwmAccess(0xc0e9); // active
+  b.iwmAccess(0xc0ef); // Q7H: enter write mode
+  assert.equal(b.iwmWhd&0x40,0x40);
+
+  b.iwmQ6=true;
+  b.iwmAccess(0xc0ef,0xa5); // load write byte
+  assert.equal(b.iwmData,0xa5);
+  assert.equal(b.iwmWhd&0x80,0);
+  assert.ok(b.iwmWritePending>0);
+
+  b.tickIwm(1000,2800000);
+  assert.equal(b.iwmWhd&0x80,0x80);
+  assert.equal(b.iwmWhd&0x40,0x40);
+
+  b.iwmAccess(0xc0ee); // Q7L: leave write mode
+  assert.equal(b.iwmWhd&0x40,0);
+  assert.equal(b.iwmWritePending,0);
+});
+
 test('IIgs IWM register probes do not consume Disk II media', () => {
   const {board:m}=createMachine();
   const b=m.memory;
