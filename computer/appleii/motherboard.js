@@ -157,8 +157,16 @@ export class Motherboard
                 if(oldLine < 192 && this.video_iigs.currentScanline >= 192)
                     this.memory.setVblFlag();
                 if(this.video_iigs.frameCount !== oldFrame) {
-                    if(this.io_manager && this.io_manager.latch_display_state)
+                    if(this.io_manager && this.io_manager.latch_display_state) {
+                        // Compatibility video is memory-backed. Present at the
+                        // emulated frame boundary before the CPU can modify the
+                        // next frame's backing store; otherwise a browser RAF
+                        // can upload a partially cleared/redrawn page.
                         this.io_manager.latch_display_state();
+                        if(!this.video_iigs.isSuperHires() &&
+                           this.io_manager.present_latched_display)
+                            this.io_manager.present_latched_display();
+                    }
                     if((this.video_iigs.frameCount & 0x0f) === 0)
                         this.memory.setQuarterFlag();
                 }
