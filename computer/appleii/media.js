@@ -93,8 +93,12 @@ export function mountMedia(board, media, drive=0) {
     }
   } else if(media.kind==='block') {
     ok=board.prodosBlock.load_image(media.name,media.data,media);
-    if(board.iigsEnabled && board.memory)
+    if(board.iigsEnabled && board.memory) {
       board.memory.floppy35Media=media.physical==='35' ? media : null;
+      // The synthetic ProDOS card occupies slot 7. IIgs internal slot ROMs
+      // win after reset unless SLOTROMSEL explicitly enables that card.
+      if(ok) board.memory.slotRom |= 0x80;
+    }
     // A newly mounted block image owns the boot path. Do not leave a prior
     // Disk II image selected/active across the reset that follows loading.
     if(ok && board.floppy525?._disks) {
