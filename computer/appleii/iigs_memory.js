@@ -146,9 +146,11 @@ export class IIgsMemory {
     // counter for floating-bus address generation (25 - ALIGN_RFB = 24).
     if(h<24)v++;
     if(v>=262)v-=262;
-    // During IIgs blanking MAME approximates the last CPU fetch. Until the
-    // CPU exposes that fetch byte, don't invent video data where VGC is idle.
-    if(h<5 || v>199) return 0;
+    // MAME returns the byte at PC-1 while the VGC is not driving the bus.
+    // Use a motherboard callback so this path does not recursively perform
+    // another floating-bus I/O read.
+    if(h<5 || v>199)
+      return this.cpuFetchByte ? (this.cpuFetchByte()&0xff) : 0;
 
     let a;
     if(this.video.readNewVideo()&0x80) {
