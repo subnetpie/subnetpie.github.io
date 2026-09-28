@@ -65,8 +65,8 @@ export class Floppy35 {
     const out=[], ns=this.sectorCount(), physical=new Array(ns);
     let si=0; for(let i=0;i<ns;i++){physical[si]=i;si=(si+2)%ns;if(si===0)si++;}
     const sync=()=>{for(let i=0;i<16;i++)out.push(0xff);};
-    for(let oi=0;oi<ns;oi++) {
-      const s=order[oi], side=this.head?0x20:0, fmt=0x22;
+    for(let slot=0;slot<ns;slot++) {
+      const s=physical[slot], side=this.head?0x20:0, fmt=0x22;
       sync(); out.push(0xd5,0xaa,0x96,
         GCR6[this.track&0x3f],GCR6[s&0x3f],
         GCR6[((this.track&0x40)?1:0)|side],
@@ -128,7 +128,7 @@ export class Floppy35 {
                    1,1,1,1,0,0,1,1,1,1,1,1,0,0,1,1,1,1,1,1,1,1,1,1];
     const byte=v=>{for(let b=7;b>=0;b--)cells.push((v>>>b)&1);};
     const sync=(count)=>{for(let i=0;i<count;i++)cells.push(...syncPat);};
-    let si=0; for(let i=0;i<ns;i++){order.push(si);si=(si+2)%ns;if(si===0)si++;}
+    let si=0; for(let i=0;i<ns;i++){physical[si]=i;si=(si+2)%ns;if(si===0)si++;}
     // MAME build_mac_track_gcr: each sector consumes 6208 cells. The
     // remainder is a pregap at the index, followed by 8 self-sync units per
     // sector. Keep the partial pregap bit-exact as the leading slice of the
@@ -138,7 +138,8 @@ export class Floppy35 {
     const partial=pregap%48;
     if(partial)cells.push(...syncPat.slice(48-partial));
     sync(Math.floor(pregap/48));
-    for(let slot=0;slot<ns;slot++) {\n      const s=physical[slot];
+    for(let slot=0;slot<ns;slot++) {
+      const s=physical[slot];
       const side=this.head?0x20:0, fmt=0x22;
       sync(8);
       [0xd5,0xaa,0x96,GCR6[this.track&0x3f],GCR6[s&0x3f],
