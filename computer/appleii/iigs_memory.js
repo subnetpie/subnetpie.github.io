@@ -837,26 +837,12 @@ export class IIgsMemory {
       }
     }
     if(addr >= 0xc0e0 && addr <= 0xc0ef) {this.iwmAccess(addr,val);return;}
-    const lowAddr=addr&0xffff;
-    const slotNum=(lowAddr>>>8)&0x0f;
-    const slotWindow=(addr>>>16)===0 && lowAddr>=0xc100 && lowAddr<=0xc7ff;
-    const internalSlotRom=slotWindow &&
-      (slotNum===3
-        ? (this.intCxRom || !this.slotC3Rom)
-        : (this.intCxRom || !(this.slotRom & (1<<slotNum))));
-    const c8Window=(addr>>>16)===0 && lowAddr>=0xc800 && lowAddr<=0xcfff;
-    // MAME c800_w forwards writes to a claimed external slot regardless of
-    // INTCXROM/INTC8ROM. CFFF releases the C800 claim/latch after the access.
-    if(!internalSlotRom) {
-      for(const fn of this.writeHooks) {
-        const r=fn(addr,val);
-        if(r !== undefined) {
-          if(c8Window && lowAddr===0xcfff) this.intC8Rom=false;
-          return;
-        }
-      }
+    // Preserve the verified 9a87089c card-write contract as well:
+    // installed emulator cards see their address windows before RAM fallback.
+    for(const fn of this.writeHooks) {
+      const r=fn(addr,val);
+      if(r !== undefined) return;
     }
-    if(c8Window && lowAddr===0xcfff) this.intC8Rom=false;
 
     const bank=addr>>>16, off=addr&0xffff;
     if(bank===0xe0 || bank===0xe1) {
