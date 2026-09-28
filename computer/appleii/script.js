@@ -151,11 +151,11 @@ function on_interval(now_ms) {
     const renderStart=perfMode ? performance.now() : 0;
     if(motherboard.iigsEnabled && motherboard.video_iigs && motherboard.video_iigs.isSuperHires()) {
       motherboard.video_iigs.refresh();
-    } else if(motherboard.iigsEnabled && io.present_latched_display) {
-      // Present the compatibility-video state sampled at the emulated frame
-      // boundary, not whichever PAGE2 banking state happens to exist when
-      // this browser RAF slice ends.
-      io.present_latched_display();
+    } else if(motherboard.iigsEnabled) {
+      // Compatibility video is presented inside Motherboard.clock() exactly
+      // at the emulated frame boundary. Re-presenting here would upload
+      // backing-store changes made for the following frame and reintroduce
+      // one-frame flicker.
     } else if(!io._text_mode && motherboard.legacyMemory.dms_hires && io._double_hires) {
       motherboard.display_double_hires.refresh();
       if(io._mixed_mode) io.draw_mixed_text();
