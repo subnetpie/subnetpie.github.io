@@ -125,6 +125,39 @@ test('ROM03 C071-C07F IRQ helper window comes from firmware', () => {
     assert.equal(b.read(0xc000|off),b.rom[0x3c000+off]);
 });
 
+test('IIgs IWM motor-off follows MAME delayed and immediate modes', () => {
+  const {board:m}=createMachine();
+  const b=m.memory;
+  b.iwmAccess(0xc0e9); // motor on
+  assert.equal(b.iwmMotor,true);
+  assert.equal(b.iwmDevSel,1);
+  b.iwmAccess(0xc0e8); // timer-enabled motor off
+  assert.equal(b.iwmMotor,true);
+  assert.ok(b.iwmMotorDelay>0);
+  b.tickIwm(5600000,2800000); // ~2 s, 8,038,400 IWM clocks
+  assert.equal(b.iwmMotor,true);
+  b.tickIwm(300000,2800000);
+  assert.equal(b.iwmMotor,false);
+  assert.equal(b.iwmDevSel,0);
+
+  b.iwmMode=0x04;
+  b.iwmAccess(0xc0e9);
+  b.iwmAccess(0xc0e8);
+  assert.equal(b.iwmMotor,false);
+  assert.equal(b.iwmMotorDelay,0);
+});
+
+test('IIgs IWM drive-select follows control bit 5 while active', () => {
+  const {board:m}=createMachine();
+  const b=m.memory;
+  b.iwmAccess(0xc0e9);
+  assert.equal(b.iwmDevSel,1);
+  b.iwmAccess(0xc0eb);
+  assert.equal(b.iwmDevSel,2);
+  b.iwmAccess(0xc0ea);
+  assert.equal(b.iwmDevSel,1);
+});
+
 test('IIgs IWM reset register reads match MAME inactive state', () => {
   const {board:m}=createMachine();
   const b=m.memory;
