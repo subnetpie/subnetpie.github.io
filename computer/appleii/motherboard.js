@@ -47,7 +47,13 @@ export class Motherboard
         // IIgs video sits above the Mega II-compatible legacy display path.
         // SHR is dormant until NEWVIDEO bit 7 is selected.
         this.video_iigs = this.iigsEnabled ? new IIgsVideo(canvas, {
-            refresh: () => this.io_manager && this.io_manager.switch_display_mode()
+            refresh: () => {
+                if(!this.io_manager) return;
+                if(this.io_manager.refresh_compat_display_from_ram)
+                    this.io_manager.refresh_compat_display_from_ram();
+                else
+                    this.io_manager.switch_display_mode();
+            }
         }, null, this.display_double_hires) : null;
         this.memory = this.iigsEnabled
             ? new IIgsMemory(this.legacyMemory, this.video_iigs)
