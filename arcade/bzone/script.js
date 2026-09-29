@@ -23,66 +23,86 @@ class Mathbox{
  divide(c,q){let r=this.r,qq=s16(q);this.set(14,r[7]^qq);this.set(13,qq);if(qq>=0)qq=s16(c);else{this.set(13,-qq-1);qq=s16(-c-1);if(qq<0&&s16(qq+1)<0)this.set(13,r[13]+1);qq=s16(qq+1)}this.set(12,r[7]>=0?r[7]:-r[7]);this.set(15,r[6]);do{this.set(13,r[13]-r[12]);let msb=qq&32768;qq=s16(qq<<1);if(r[13]>=0)qq=s16(qq+1);else this.set(13,r[13]+r[12]);this.set(13,r[13]<<1);this.set(13,r[13]+(msb?1:0))}while(this.set(15,r[15]-1)>=0);this.result=s16(r[14]>=0?qq:-qq)}
  lo(){return this.result&255}hi(){return(this.result>>8)&255}}
 class BzoneAudio{
- constructor(){this.ctx=null;this.node=null;this.gain=null;this.reg=new Uint8Array(16);this.latch=0;this.haveControl=false;this.phase=new Float64Array(4);this.enginePhase=0;this.engineCount4=4;this.engineCount6=6;this.engineLP=0;this.fxLP=0;this.noise=0;this.noisePhase=0;this.noiseDiv31=0;this.noiseDiv34=0;this.noiseNand=1;this.explosionGate=0;this.explosionLP=0;this.explosionDC=0;this.envShell=0}
+ constructor(game){
+  this.game=game;this.ctx=null;this.node=null;this.gain=null;
+  this.reg=new Uint8Array(16);this.synthReg=new Uint8Array(16);
+  this.latch=0;this.pendingLatch=0;this.events=[];this.eventHead=0;this.audioCycle=null;
+  this.phase=new Float64Array(4);this.enginePhase=0;this.engineCount4=4;this.engineCount6=6;this.engineLP=0;
+  this.noise=0;this.noisePhase=0;this.noiseDiv31=0;this.noiseDiv34=0;this.noiseNand=1;
+  this.shellGate=0;this.shellLP=0;this.shellDC=0;
+  this.explosionGate=0;this.explosionLP=0;this.explosionDC=0;
+ }
  start(){if(!this.ctx){this.ctx=new (window.AudioContext||window.webkitAudioContext)({sampleRate:48000});this.node=this.ctx.createScriptProcessor(1024,0,1);this.node.onaudioprocess=e=>this.render(e.outputBuffer.getChannelData(0));this.gain=this.ctx.createGain();this.gain.gain.value=.9;this.node.connect(this.gain);this.gain.connect(this.ctx.destination)}if(this.ctx.state!=="running")this.ctx.resume()}
  read(r){r&=15;if(r===8)return window.battlezone?window.battlezone.in3():0;return this.reg[r]}
- write(r,d){this.start();this.reg[r&15]=d&255}
- control(d){this.start();d&=255;let old=this.latch;this.latch=d;this.haveControl=true;if((d&4)&&!(old&4))this.envShell=1}
- render(out){const sr=this.ctx.sampleRate,enabled=!this.haveControl||(this.latch&32)!==0,motor=(this.latch&128)!==0,rev=(this.latch&16)!==0;for(let i=0;i<out.length;i++){let s=0;
-  if(enabled){
-   for(let ch=0;ch<4;ch++){let f=this.reg[ch*2],au=this.reg[ch*2+1],vol=au&15;if(!vol)continue;let audctl=this.reg[8],div=(audctl&1)?114:28;if((ch===0&&(audctl&0x40))||(ch===2&&(audctl&0x20)))div=1;let n=f+(div===1?4:1),hz=CPU_CLOCK/(2*div*n);if(au&0x10){s+=(vol/15)*.035;continue}this.phase[ch]=(this.phase[ch]+hz/sr)%1;if(au&0x20)s+=(this.phase[ch]<.5?1:-1)*(vol/15)*.060;else{let gate=((Math.floor(this.phase[ch]*31)*13+ch*7)&16)?1:-1;s+=gate*(vol/15)*.035}}
-   // MAME bzone_a.cpp: the 6 kHz LFSR clocks two separate edge-dividers.
+ event(e){this.events.push({cycle:this.game.cpu?.cycles??0,...e})}
+ write(r,d){this.start();r&=15;d&=255;this.reg[r]=d;this.event({type:1,r,d})}
+ control(d){this.start();d&=255;this.pendingLatch=d;this.event({type:0,d})}
+ applyEvent(e){if(e.type===0)this.latch=e.d;else this.synthReg[e.r]=e.d}
+ render(out){
+  const sr=this.ctx.sampleRate,cyclesPerSample=CPU_CLOCK/sr;
+  const filter=1-Math.exp(-1/(sr*.001551)),coupling=1-Math.exp(-1/(sr*.075));
+  const shellRelease=Math.exp(-1/(sr*.1081)),explosionRelease=Math.exp(-1/(sr*.23));
+  if(this.audioCycle===null){
+   this.audioCycle=Math.max(0,(this.game.cpu?.cycles??0)-CPU_CLOCK/FPS);
+   while(this.eventHead<this.events.length&&this.events[this.eventHead].cycle<this.audioCycle)
+    this.applyEvent(this.events[this.eventHead++]);
+  }
+  const cpuHorizon=this.game.cpu?.cycles??0;
+  for(let i=0;i<out.length;i++){
+   if(this.audioCycle+cyclesPerSample>cpuHorizon){out.fill(0,i);break}
+   while(this.eventHead<this.events.length&&this.events[this.eventHead].cycle<=this.audioCycle)
+    this.applyEvent(this.events[this.eventHead++]);
+   const d=this.latch,rev=(d&16)!==0,motor=(d&128)!==0;
+   let s=0;
+   // POKEY is still the existing approximate generator; its writes are now timestamped.
+   for(let ch=0;ch<4;ch++){
+    const f=this.synthReg[ch*2],au=this.synthReg[ch*2+1],vol=au&15;
+    if(!vol)continue;
+    const audctl=this.synthReg[8],div=((ch===0&&(audctl&0x40))||(ch===2&&(audctl&0x20)))?1:((audctl&1)?114:28);
+    const hz=CPU_CLOCK/(2*div*(f+(div===1?4:1)));
+    if(au&0x10){s+=(vol/15)*.035;continue}
+    this.phase[ch]=(this.phase[ch]+hz/sr)%1;
+    if(au&0x20)s+=(this.phase[ch]<.5?1:-1)*(vol/15)*.060;
+    else{s+=(((Math.floor(this.phase[ch]*31)*13+ch*7)&16)?1:-1)*(vol/15)*.035}
+   }
+   // bzone_a.cpp: 6 kHz 16-bit LFSR; NODE_31 from bit 15, NODE_34 from NAND(11..14).
    this.noisePhase+=6000/sr;
    if(this.noisePhase>=1){
     this.noisePhase-=1;
-    const prev=(this.noise>>15)&1;
+    const oldBit=(this.noise>>15)&1;
     const feedback=1^(((this.noise>>3)^(this.noise>>14))&1);
     this.noise=((this.noise<<1)|feedback)&65535;
-    const next=(this.noise>>15)&1;
-    if(!prev&&next)this.noiseDiv31^=1; // NODE_31: shell clock
+    if(!oldBit&&((this.noise>>15)&1))this.noiseDiv31^=1;
     const nand=(((this.noise>>11)&15)===15)?0:1;
-    if(!this.noiseNand&&nand)this.noiseDiv34^=1; // NODE_34: explosion clock
+    if(!this.noiseNand&&nand)this.noiseDiv34^=1;
     this.noiseNand=nand;
    }
-   let n=(this.noise&0x8000)?1:-1;
-   let fx=0;
-   if(this.envShell>.0005){fx+=n*this.envShell*((this.latch&8)?.48:.24);this.envShell*=.99915}
-   // D0 is a level gate, not a rising-edge one-shot. NODE_34 drives explosion.
-   // The release approximates the R16+R17/C14 RC tail; the exact MAME
-   // DISCRETE_RC_CIRCUIT_1 and custom op-amp are not yet modeled here.
-   if(this.latch&1)this.explosionGate=1;
-   else this.explosionGate*=Math.exp(-1/(sr*.23));
-   const explosionIn=(this.noiseDiv34?1:0)*this.explosionGate;
-   this.explosionLP+=(1-Math.exp(-1/(sr*.001551)))*(explosionIn-this.explosionLP);
-   this.explosionDC+=(1-Math.exp(-1/(sr*.075)))*(this.explosionLP-this.explosionDC);
-   s+=(this.explosionLP-this.explosionDC)*((this.latch&2)?.9:.24);
-   this.fxLP+=.11*(fx-this.fxLP);s+=this.fxLP;
-   if(motor){
-    /* The recording's engine fundamental sits around 38-45 Hz.  Battlezone's
-       discrete board derives the motor from a VCO feeding binary counters,
-       not a sawtooth oscillator.  Recreate that divided, stepped waveform. */
-    /* MAME 0.289 bzone_a.cpp: the 555 VCO clocks two counters.
-       The audible engine taps are counter states, so the engine pitch is
-       divided down from the VCO rather than being the VCO frequency itself. */
-    let vco=rev?430:300;
-    this.enginePhase+=vco/sr;
-    if(this.enginePhase>=1){
-      this.enginePhase-=1;
-      /* MAME DISCRETE_COUNTER nodes 65/68 count one step per 555 edge.
-         The previous code incorrectly swept 60 counter states PER VCO cycle,
-         creating the measured 430/860/1290/1720 Hz whistle. */
-      this.engineCount4++;if(this.engineCount4>15)this.engineCount4=4;
-      this.engineCount6++;if(this.engineCount6>15)this.engineCount6=6;
-    }
-    let a=this.engineCount4,b=this.engineCount6;
-    let raw=((a>7)?1:-1)*.55+((a===15)?1:-1)*.28+
-            ((b>7)?1:-1)*.12+((b===15)?1:-1)*.08;
-    this.engineLP+=.025*(raw-this.engineLP);s+=this.engineLP*.0825
-   }
-  }out[i]=Math.max(-.65,Math.min(.65,s))}
- }}
+   // Level gates. Release and coupling approximate MAME's RC_CIRCUIT_1 and custom filters.
+   this.shellGate=(d&4)?1:this.shellGate*shellRelease;
+   this.explosionGate=(d&1)?1:this.explosionGate*explosionRelease;
+   this.shellLP+=filter*((this.noiseDiv31?1:0)*this.shellGate-this.shellLP);
+   this.shellDC+=coupling*(this.shellLP-this.shellDC);
+   this.explosionLP+=filter*((this.noiseDiv34?1:0)*this.explosionGate-this.explosionLP);
+   this.explosionDC+=coupling*(this.explosionLP-this.explosionDC);
+   // The active MAME netlist connects BZ_INP_EXPLOLS (D1) to BOTH custom filters.
+   s+=(this.shellLP-this.shellDC)*((d&2)?.48:.14);
+   s+=(this.explosionLP-this.explosionDC)*((d&2)?.9:.24);
+   // Engine VCO values remain approximate; counters have the MAME 4..15/6..15 ranges.
+   this.enginePhase+=(rev?430:300)/sr;
+   if(this.enginePhase>=1){this.enginePhase-=1;if(motor){this.engineCount4=this.engineCount4===15?4:this.engineCount4+1;this.engineCount6=this.engineCount6===15?6:this.engineCount6+1}}
+   if(!motor){this.engineCount4=4;this.engineCount6=6}
+   const a=this.engineCount4,b=this.engineCount6;
+   const raw=((a>7)?1:-1)*.55+((a===15)?1:-1)*.28+((b>7)?1:-1)*.12+((b===15)?1:-1)*.08;
+   this.engineLP+=.025*((motor?raw:0)-this.engineLP);
+   if(motor)s+=this.engineLP*.0825;
+   out[i]=(d&32)?Math.max(-1,Math.min(1,s)):0;
+   this.audioCycle+=cyclesPerSample;
+  }
+  if(this.eventHead>512){this.events.splice(0,this.eventHead);this.eventHead=0}
+ }
+}
 class Battlezone{
- constructor(){this.cv=document.querySelector("#gameCanvas");this.cx=this.cv.getContext("2d");this.cv.width=W;this.cv.height=H;this.mem=new Uint8Array(32768);this.math=new Mathbox();this.pokeyRandom=new PokeyRandom();this.i={coin1:0,start1:0,fire:0,lu:0,ld:0,ru:0,rd:0};this.sound=0;this.audio=new BzoneAudio();this.avgDone=1;this.vectors=[];this.colorized=true;this.paused=false;this.bind()}
+ constructor(){this.cv=document.querySelector("#gameCanvas");this.cx=this.cv.getContext("2d");this.cv.width=W;this.cv.height=H;this.mem=new Uint8Array(32768);this.math=new Mathbox();this.pokeyRandom=new PokeyRandom();this.i={coin1:0,start1:0,fire:0,lu:0,ld:0,ru:0,rd:0};this.sound=0;this.audio=new BzoneAudio(this);this.avgDone=1;this.vectors=[];this.colorized=true;this.paused=false;this.bind()}
  async rom(n){const r=await fetch("../bzone-old/roms/"+n);if(!r.ok)throw Error("ROM "+n);return new Uint8Array(await r.arrayBuffer())}
  async init(){const files=["036408-01.k7","036414-02.e1","036413-01.h1","036412-01.j1","036411-01.k1","036410-01.lm1","036409-01.n1","036422-01.bc3","036421-01.a3"],a=Object.fromEntries(await Promise.all(files.map(async n=>[n,await this.rom(n)])));[["036414-02.e1",20480],["036413-01.h1",22528],["036412-01.j1",24576],["036411-01.k1",26624],["036410-01.lm1",28672],["036409-01.n1",30720],["036422-01.bc3",12288],["036421-01.a3",14336]].forEach(([n,o])=>this.mem.set(a[n],o));this.avgProm=a["036408-01.k7"];this.assetTrace=new AssetTrace(this.mem);this.cpu=new M6502(x=>this.read(x),(x,d)=>this.write(x,d));this.cpu.reset();console.log("[BZONE] reset PC",this.cpu.pc.toString(16),"vector",this.read(0x7ffc).toString(16),this.read(0x7ffd).toString(16))}
  in0(){let v=255;if(this.i.coin1)v&=254;if(this.avgDone)v|=64;else v&=191;if(this.cpu.cycles&256)v|=128;else v&=127;return v}
@@ -154,6 +174,7 @@ class Battlezone{
     const seen=new Set(),p=[];for(const q of g){const k=Math.round(q[0]*16)+","+Math.round(q[1]*16);if(!seen.has(k)){seen.add(k);p.push(q)}}if(p.length<3)continue;
     p.sort((a,b)=>a[0]-b[0]||a[1]-b[1]);const cross=(a,b,d)=>(b[0]-a[0])*(d[1]-a[1])-(b[1]-a[1])*(d[0]-a[0]),lo=[],hi=[];
     for(const q of p){while(lo.length>1&&cross(lo[lo.length-2],lo[lo.length-1],q)<=0)lo.pop();lo.push(q)}
+    for(let i=p.length-1;i>=0;i--){const q=p[i];while(hi.length>1&&cross(hi[hi.length-2],hi[hi.length-1],q)<=0)hi.pop();hi.push(q)}
     const h=lo.slice(0,-1).concat(hi.slice(0,-1));if(h.length<3)continue;c.beginPath();c.moveTo(h[0][0],h[0][1]);for(let i=1;i<h.length;i++)c.lineTo(h[i][0],h[i][1]);c.closePath();c.fill();
    }c.restore();
   }
