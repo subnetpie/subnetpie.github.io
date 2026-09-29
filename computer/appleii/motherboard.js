@@ -11,7 +11,7 @@
 
 import {W65C02S} from "https://subnetpie.github.io/computer/appleii/w65c02s.js?v=20260928-stacktiming1";
 import {Memory} from "https://subnetpie.github.io/computer/appleii/memory.js";
-import {IIgsMemory} from "https://subnetpie.github.io/computer/appleii/iigs_memory.js?v=20260929-docfix";
+import {IIgsMemory} from "https://subnetpie.github.io/computer/appleii/iigs_memory.js?v=20260929-floppyspeed";
 import {W65C816} from "https://subnetpie.github.io/computer/appleii/w65c816.js?v=20260928-blend";
 import {IOManager} from "https://subnetpie.github.io/computer/appleii/io_manager.js?v=20260928-shrready1";
 import {TextDisplay} from "https://subnetpie.github.io/computer/appleii/display_text.js";
@@ -96,6 +96,7 @@ export class Motherboard
             // RTC/SCC may be advanced in batches, but reads/writes to their
             // registers first synchronize all completed instruction time.
             this.memory.syncPeripheralTime = () => this.flushDeferredPeripherals();
+            this.memory.cpuInEmulation = () => this.cpu.register.e;
             this.memory.cpuFetchByte = () => {
                 const reg=this.cpu.register;
                 const pc=reg.pc&0xffff;

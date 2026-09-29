@@ -95,6 +95,8 @@ export function mountMedia(board, media, drive=0) {
   }
   else ok=board.floppy525.load_image(drive,media.name,media.data,media);
   if(!ok)throw new Error('Unable to mount '+media.name);
+  if(board.iigsEnabled && board.memory)
+    board.memory.legacyFloppySpeed = media.kind==='floppy';
   // Otherwise slot 7 keeps booting the previously selected hard disk.
   if(media.kind==='floppy')board.prodosBlock.eject();
   return true;

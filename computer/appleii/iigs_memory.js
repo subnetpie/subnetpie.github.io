@@ -75,6 +75,10 @@ export class IIgsMemory {
   setTrace(fn) { this.trace = fn; }
 
   isFastCpu() {
+    // Host compatibility policy for 5.25-inch Apple II software. The ROM
+    // releases hardware motor slowdown after loading; old games do not know
+    // to clear SPEED themselves. Native 65816 programs retain hardware speed.
+    if(this.legacyFloppySpeed && this.cpuInEmulation?.())return false;
     // MAME update_speed(): SPEED_HIGH is overridden by enabled Disk II
     // motor detection. The built-in 5.25-inch controller occupies slot 6,
     // corresponding to SPEED bit 2 ($04). 3.5-inch IWM operation is not a
