@@ -38,6 +38,7 @@ export class AppleAudio
         this.docQueueTime = 0;
         this.docWorklet = null;
         this.docWorkletStarting = false;
+        this.docSources = new Set();
     }
 
     init() {
@@ -51,6 +52,8 @@ export class AppleAudio
         ws.curve = new Float32Array([-1, -1]);
         this.gn = this.ac.createGain({channelCount:1, channelCountMode:"explicit", gain:0});
 
+        this.gn.gain.value = 0;
+        osc.frequency.value = 0;
         osc.connect(ws);
         ws.connect(this.gn);
         this.gn.connect(this.ac.destination);
@@ -67,12 +70,14 @@ export class AppleAudio
            typeof AudioWorkletNode === "undefined") return;
         this.docWorkletStarting=true;
         try {
-            await this.ac.audioWorklet.addModule(new URL('./doc_audio_worklet.js?v=20260928-ring2',import.meta.url));
+            await this.ac.audioWorklet.addModule(new URL('./doc_audio_worklet.js?v=20260929-docfix',import.meta.url));
             const node=new AudioWorkletNode(this.ac,'iigs-doc-ring',{
                 numberOfInputs:0,numberOfOutputs:1,outputChannelCount:[2]
             });
             node.connect(this.ac.destination);
             this.docWorklet=node;
+            for(const source of this.docSources)source.stop();
+            this.docSources.clear();
         } catch(err) {
             console.warn('[IIgs audio] AudioWorklet unavailable; using buffer fallback',err);
         } finally {
@@ -172,17 +177,21 @@ export class AppleAudio
         const now=this.ac.currentTime;
         if(this.docQueueTime < now + 0.025 || this.docQueueTime > now + 0.15)
             this.docQueueTime = now + 0.04;
+        this.docSources.add(source);
         source.start(this.docQueueTime);
         this.docQueueTime += n / this.docRate;
-        source.onended=()=>source.disconnect();
+        source.onended=()=>{source.disconnect();this.docSources.delete(source);};
         this.docPcmCount=0;
     }
 
     reset() {
-        if(!this.gn) return;
         this.state = false;
-        this.gn.gain.cancelScheduledValues(0);
-        this.gn.gain.value = 0;
+        if(this.gn) {
+            this.gn.gain.cancelScheduledValues(0);
+            this.gn.gain.value = 0;
+        }
+        for(const source of this.docSources)source.stop();
+        this.docSources.clear();
         this.docSignalLeft=this.docSignalRight=0;
         this.docLastLeft=this.docLastRight=0;
         this.docNextClock=0;

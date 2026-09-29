@@ -56,7 +56,7 @@ function chooseArchiveImage(name, entries) {
   });
 }
 
-import { Motherboard } from "https://subnetpie.github.io/computer/appleii/motherboard.js?v=20260928-stacktiming1";
+import { Motherboard } from "https://subnetpie.github.io/computer/appleii/motherboard.js?v=20260929-docfix";
 
 class Drive {
   constructor(num, display, led, dialog) {
@@ -278,6 +278,7 @@ async function loadBuiltInIIgsROM() {
 }
 
 function stop() {
+  if(motherboard?.audio) motherboard.audio.reset();
   buttonRunStop.innerText = "run";
   
   if(interval) {

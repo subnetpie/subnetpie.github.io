@@ -1,6 +1,6 @@
 # Apple IIgs support status
 
-Updated 2026-09-28. IIgs support remains experimental, with the compatibility
+Updated 2026-09-29. IIgs support remains experimental, with the compatibility
 boot path now exercised end to end.
 
 ## Implemented
@@ -84,7 +84,7 @@ native iOS picker still needs device verification.
 
 - Complete native memory/ROM-bank switching and shadow behavior.
 - Complete RTC/PRAM and ADB input/interrupt behavior.
-- Implement native Ensoniq DOC audio and missing peripherals.
+- Verify native DOC audio on iOS hardware and extend remaining peripheral coverage.
 - Complete 3.5-inch/SmartPort hardware and floppy writes; validate controller
   timing beyond the boot fixtures.
 - Verify sustained gameplay, native IIgs applications, and touch/file-picker
@@ -95,4 +95,22 @@ Optional native startup regressions (images are not bundled):
 
 ```sh
 THEXDER_ZIP='/path/to/Thexder.zip' ARKANOID_IMAGE='/path/to/Arkanoid.2mg' node --test computer/appleii/iigs_interrupt_boot.test.mjs
+```
+
+## DOC audio update (2026-09-29)
+
+The DOC now uses the two overhead clock slots, separate waveform-size and
+resolution fields, phase-preserving loops, one-shot/swap/sync/AM modes,
+control-selected stereo routing, fixed mixer gain, and per-scan PCM delivery.
+The behavioral reference is MAME 0.289's ES5503 core. Playback buffers frame
+jitter, interpolates output, bounds stale queued audio, and clears queued
+sound on Stop/Reset.
+
+All 21 targeted checks passed, including Thexder (30 emulated seconds) and
+Arkanoid (70 seconds, with Space input). Both generated changing, finite PCM
+without clipping in these captures. Worklet tests cover 44.1 and 48 kHz output.
+These are automated signal checks, not a listening comparison or iPhone test.
+
+```sh
+THEXDER_ZIP='/path/to/Thexder.zip' ARKANOID_IMAGE='/path/to/Arkanoid.2mg' node --test computer/appleii/iigs_doc.test.mjs computer/appleii/doc_audio_worklet.test.mjs computer/appleii/iigs_audio_integration.test.mjs
 ```

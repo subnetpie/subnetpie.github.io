@@ -2,122 +2,103 @@ import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import {IIgsDOC} from './iigs_doc.js';
 
-test('DOC oscillator register pages retain frequency volume wave and control',()=>{
-  const d=new IIgsDOC();
-  d.writeRegister(0x00,0x34); d.writeRegister(0x20,0x12);
-  d.writeRegister(0x40,0x80); d.writeRegister(0x80,0x22);
-  d.writeRegister(0xa0,0x08);
-  assert.equal(d.osc[0].freq,0x1234);
-  assert.equal(d.readRegister(0x40),0x80);
-  assert.equal(d.readRegister(0x80),0x22);
-  assert.equal(d.readRegister(0xa0),0x08);
+function voice(options={}) {
+  const d=new IIgsDOC();d.enabledOscillators=32;
+  d.ram.fill(0xc0,0x100,0x200);
+  Object.assign(d.osc[0],{freq:0x200,volume:255,wave:1,control:0,...options});
+  return d;
+}
+
+test('DOC fetches before phase advance, updates data register and uses fixed mixer gain',()=>{
+  const d=voice();d.ram[0x101]=0xa0;
+  d.renderSample();assert.equal(d.readRegister(0x60),0xc0);
+  assert.equal(d.lastLeft,64*255/2048);
+  d.renderSample();assert.equal(d.readRegister(0x60),0xa0);
+  assert.equal(d.lastLeft,32*255/2048);
 });
 
-test('DOC running oscillator fetches waveform and produces a sample',()=>{
-  const d=new IIgsDOC();
-  d.ram[0x101]=0xc0;
-  d.osc[0].freq=0x100; d.osc[0].volume=255; d.osc[0].wave=1; d.osc[0].control=0;
+test('DOC routing follows channel control bits, independent of voice number',()=>{
+  const d=voice({control:0x10});
+  Object.assign(d.osc[1],{volume:128,wave:1,control:0});
   d.renderSample();
-  assert.equal(d.lastLeft,64);
-  assert.equal(d.lastSample,32);
+  assert.equal(d.lastLeft,64*128/2048);
+  assert.equal(d.lastRight,64*255/2048);
 });
 
-test('DOC zero terminator halts one-shot oscillator and raises IRQ',()=>{
-  let irq=false; const d=new IIgsDOC(v=>irq=v);
-  d.ram[0x200]=0;
-  Object.assign(d.osc[0],{freq:0x100,volume:255,wave:2,control:0x0e,accumulator:0});
-  d.renderSample();
-  assert.ok(d.osc[0].control&1);
-  assert.equal(irq,true);
-  assert.equal(d.readRegister(0xe0),0x41);
-  assert.equal(irq,false);
+test('DOC adds voices without changing the gain of existing voices; last voice is tripled',()=>{
+  const d=voice();d.renderSample();const one=d.lastLeft;
+  Object.assign(d.osc[1],{volume:255,wave:1,control:0});
+  d.renderSample();assert.equal(d.lastLeft,one*2);
+  d.enabledOscillators=2;d.renderSample();assert.equal(d.lastLeft,one*4);
 });
 
-test('DOC swap mode starts the paired oscillator at terminator',()=>{
-  const d=new IIgsDOC(); d.enabledOscillators=2;
-  d.ram[0x100]=0; d.ram[0x200]=0x90;
-  Object.assign(d.osc[0],{freq:0x100,volume:255,wave:1,control:0x04,accumulator:0});
-  Object.assign(d.osc[1],{freq:0x100,volume:255,wave:2,control:1,accumulator:99});
-  d.finish(0,d.osc[0]);
-  assert.ok(d.osc[0].control&1);
-  assert.equal(d.osc[1].control&1,0);
-  assert.equal(d.osc[1].accumulator,0);
+test('DOC size bits and resolution bits independently select table and phase shift',()=>{
+  const d=voice({wave:7,size:(2<<3)|3,accumulator:513*1024,freq:0});
+  d.ram[0x601]=0xd0; // 1K table aligned to $400; shift = 9+3-2 = 10.
+  d.renderSample();assert.equal(d.readRegister(0x60),0xd0);
 });
 
-
-test('DOC master clock preserves fractional time across CPU instructions',()=>{
-  const d=new IIgsDOC();
-  d.enabledOscillators=1;
-  d.ram[0x100]=0x90;
-  Object.assign(d.osc[0],{freq:0x100,volume:255,wave:1,control:0,accumulator:0});
-  const threshold=2800000*8;
-  const cycles=Math.floor(threshold/d.masterHz);
-  assert.equal(d.tick(cycles,2800000),0);
-  assert.equal(d.osc[0].accumulator,0);
-  assert.equal(d.tick(1,2800000),1);
-  assert.equal(d.osc[0].accumulator,0x100);
+test('free-run wraps at table end with fractional phase preserved; one-shot halts',()=>{
+  for(const control of [0,2]) {
+    const d=voice({control,accumulator:255*512+17,freq:600});
+    d.renderSample();
+    assert.equal(d.osc[0].control&1,control===2?1:0);
+    if(control===0)assert.equal(d.osc[0].accumulator,617);
+  }
 });
 
-test('DOC output rate falls as more oscillators are enabled',()=>{
-  const a=new IIgsDOC(), b=new IIgsDOC();
-  a.enabledOscillators=1; b.enabledOscillators=2;
-  const cycles=1000;
-  assert.ok(a.tick(cycles,2800000) > b.tick(cycles,2800000));
+test('zero data halts both free-run and one-shot, with IRQ acknowledgment',()=>{
+  for(const control of [8,10]) {
+    const d=voice({control});d.ram[0x100]=0;d.renderSample();
+    assert.equal(d.osc[0].control&1,1);assert.equal(d.irqPending,true);
+    assert.equal(d.readRegister(0xe0),0x41);assert.equal(d.irqPending,false);
+  }
 });
 
-
-test('DOC resolution selects and aligns larger wave tables',()=>{
-  const d=new IIgsDOC();
-  // 1K table (resolution 2): wave pointer $07 aligns to $0400.
-  d.ram[0x401]=0xd0;
-  Object.assign(d.osc[0],{freq:0x100,volume:255,wave:0x07,control:0,size:2,accumulator:0});
-  d.renderSample();
-  assert.equal(d.lastLeft,80);
+test('swap mode 3 starts partner; mode 2 odd voice modulates the next voice',()=>{
+  const d=voice({control:6});d.ram[0x100]=0;d.osc[1].wave=2;d.ram[0x200]=0x80;
+  d.renderSample();assert.equal(d.osc[0].control&1,1);assert.equal(d.osc[1].control&1,0);
+  d.osc[1].control=4;d.osc[1].wave=2;d.ram[0x200]=0x40;
+  d.osc[2].control=0;d.osc[2].wave=3;d.ram[0x300]=0xc0;
+  d.renderSample();assert.equal(d.osc[2].volume,0x40);
+  assert.equal(d.lastLeft,64*64/2048);
 });
 
-test('DOC resolution permits indexes beyond the old 256-byte window',()=>{
-  const d=new IIgsDOC();
-  d.ram[0x601]=0xe0;
-  Object.assign(d.osc[0],{freq:0x20100,volume:255,wave:0x04,control:0,size:2,accumulator:0});
-  d.renderSample();
-  assert.equal(d.lastLeft,96);
+test('even sync voice resets the preceding voice at its table end',()=>{
+  const d=voice();d.osc[0].control=1;
+  Object.assign(d.osc[1],{wave:1,control:0,accumulator:5000});
+  Object.assign(d.osc[2],{wave:1,control:4,accumulator:255*512});
+  d.renderSample();assert.equal(d.osc[1].accumulator,0);
 });
 
-test('DOC loop mode restarts accumulator when a zero terminator is reached',()=>{
-  const d=new IIgsDOC();
-  d.ram[0x101]=0;
-  Object.assign(d.osc[0],{freq:0x100,volume:255,wave:1,control:0x02,size:0,accumulator:0});
-  d.renderSample();
-  assert.equal(d.osc[0].control&1,0);
+test('running control writes preserve phase; a halted-to-running edge restarts it',()=>{
+  const d=voice({accumulator:1234});d.writeRegister(0xa0,0x10);
+  assert.equal(d.osc[0].accumulator,1234);
+  d.writeRegister(0xa0,1);d.writeRegister(0xa0,0);
   assert.equal(d.osc[0].accumulator,0);
 });
 
-
-test('DOC queues simultaneous oscillator IRQs until each is acknowledged',()=>{
-  let irq=false; const d=new IIgsDOC(v=>irq=v); d.enabledOscillators=2;
-  d.ram[0x101]=0; d.ram[0x201]=0;
-  Object.assign(d.osc[0],{freq:0x100,volume:255,wave:1,control:0x08,size:0,accumulator:0});
-  Object.assign(d.osc[1],{freq:0x100,volume:255,wave:2,control:0x08,size:0,accumulator:0});
-  d.renderSample();
-  assert.equal(irq,true);
-  assert.equal(d.readRegister(0xe0),0x41);
-  assert.equal(irq,true);
-  assert.equal(d.readRegister(0xe0),0x43);
-  assert.equal(irq,false);
-  assert.equal(d.readRegister(0xe0),0xc3);
+test('CPU halt in swap mode starts partner without an IRQ if newly disabled',()=>{
+  const d=voice({control:14});d.writeRegister(0xa0,7);
+  assert.equal(d.osc[1].control&1,0);assert.equal(d.irqPending,false);
 });
 
-test('DOC routes even and odd oscillators to separate output buses',()=>{
-  const d=new IIgsDOC(); d.enabledOscillators=2;
-  d.ram[0x101]=0xc0; d.ram[0x201]=0xa0;
-  Object.assign(d.osc[0],{freq:0x100,volume:255,wave:1,control:0,size:0,accumulator:0});
-  Object.assign(d.osc[1],{freq:0x100,volume:255,wave:2,control:0,size:0,accumulator:0});
-  d.renderSample();
-  assert.equal(d.lastLeft,64);
-  assert.equal(d.lastRight,32);
-  assert.equal(d.lastSample,48);
+test('IRQ acknowledgment prioritizes oscillator number, not event order',()=>{
+  const d=voice();d.irqQueue=[5,2];d.irqPending=true;
+  assert.equal(d.readRegister(0xe0),0x45);assert.equal(d.irqPending,true);
+  assert.equal(d.readRegister(0xe0),0x4b);assert.equal(d.irqPending,false);
+  assert.equal(d.readRegister(0xe0),0xcb);
 });
 
+test('DOC scan clock includes two overhead slots and is independent of tick boundaries',()=>{
+  const a=voice(),b=voice();let delivered=0,lastTime=-1;
+  a.onSample=(l,r,remaining)=>{delivered++;const time=2800000-remaining;assert.ok(time>lastTime);lastTime=time;};
+  const count=a.tick(2800000);
+  assert.equal(count,Math.floor(7159090/(8*34)));assert.equal(delivered,count);
+  for(let i=0;i<1000;i++)b.tick(2800);
+  assert.equal(a.masterAccum,b.masterAccum);
+  assert.equal(a.osc[0].accumulator,b.osc[0].accumulator);
+});
 
 test('IIgs SOUNDCTL exposes four-bit system volume independently of DOC access flags',()=>{
   const d=new IIgsDOC();

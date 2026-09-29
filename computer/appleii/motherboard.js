@@ -11,7 +11,7 @@
 
 import {W65C02S} from "https://subnetpie.github.io/computer/appleii/w65c02s.js?v=20260928-stacktiming1";
 import {Memory} from "https://subnetpie.github.io/computer/appleii/memory.js";
-import {IIgsMemory} from "https://subnetpie.github.io/computer/appleii/iigs_memory.js?v=20260928-pagesync2";
+import {IIgsMemory} from "https://subnetpie.github.io/computer/appleii/iigs_memory.js?v=20260929-docfix";
 import {W65C816} from "https://subnetpie.github.io/computer/appleii/w65c816.js?v=20260928-blend";
 import {IOManager} from "https://subnetpie.github.io/computer/appleii/io_manager.js?v=20260928-shrready1";
 import {TextDisplay} from "https://subnetpie.github.io/computer/appleii/display_text.js";
@@ -21,7 +21,7 @@ import {LoresDisplay} from "https://subnetpie.github.io/computer/appleii/display
 import {DoubleHiresDisplay} from "https://subnetpie.github.io/computer/appleii/display_double_hires.js?v=20260928-pageflipram1";
 import {Keyboard} from "https://subnetpie.github.io/computer/appleii/keyboard.js?v=20260928-blend";
 import {Floppy525} from "https://subnetpie.github.io/computer/appleii/FloppyWoz525.js";
-import {AppleAudio} from "https://subnetpie.github.io/computer/appleii/apple_audio.js?v=20260928-ring2";
+import {AppleAudio} from "https://subnetpie.github.io/computer/appleii/apple_audio.js?v=20260929-docfix";
 import {ProDOSBlockDevice} from "https://subnetpie.github.io/computer/appleii/prodos_block.js?v=20260928-drivepair";
 import {IIgsVideo} from "https://subnetpie.github.io/computer/appleii/video_iigs.js?v=20260928-shrready1";
 import {MachineTrace} from "https://subnetpie.github.io/computer/appleii/machine_trace.js";
@@ -132,6 +132,10 @@ export class Motherboard
     }
 
     clock(count) {
+        if(this.iigsEnabled && !this.memory.doc.onSample) {
+            this.memory.doc.onSample=(left,right,remaining)=>this.audio.doc_sample(
+                this.cycles-remaining,left,right,this.memory.doc.getVolume());
+        }
         this.audio.begin_segment(this.cycles);
         const total = this.cycles + count;
         while(this.cycles < total) {
@@ -217,13 +221,7 @@ export class Motherboard
 
             if(this.iigsEnabled && this.memory.doc) {
                 timed=this.perfEnabled ? performance.now() : 0;
-                const docSamples=this.memory.doc.tick(usedMaster,IIGS_FAST_HZ);
-                if(docSamples) this.audio.doc_sample(
-                    this.cycles,
-                    this.memory.doc.lastLeft,
-                    this.memory.doc.lastRight,
-                    this.memory.doc.getVolume()
-                );
+                this.memory.doc.tick(usedMaster,IIGS_FAST_HZ);
                 if(this.perfEnabled) this.perf.audio += performance.now()-timed;
             }
         }
