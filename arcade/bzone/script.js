@@ -259,11 +259,11 @@ class Battlezone{
   this.avgDone=1;this.draw();
  }
  draw(){const c=this.cx;c.save();c.globalCompositeOperation=\"source-over\";c.fillStyle=\"#000\";c.fillRect(0,0,W,H);c.lineCap=\"round\";
-  if(this.colorized){
-   const groups=new Map();
+  if(this.colorized){\n   const groups=new Map();
    for(const v of this.vectors){const o=v[8];if(o?.asset!==\"obstacle\"||o.id==null)continue;let g=groups.get(o.id);if(!g){g=[];groups.set(o.id,g)};if(Number.isFinite(v[0]+v[1]))g.push([v[0],v[1]]);if(Number.isFinite(v[2]+v[3]))g.push([v[2],v[3]])}
    c.save();c.globalCompositeOperation=\"source-over\";c.fillStyle=\"rgba(255,145,35,.32)\";
-   for(const g of groups.values()){\n    const seen=new Set(),p=[];for(const q of g){const k=Math.round(q[0]*16)+\",\"+Math.round(q[1]*16);if(!seen.has(k)){seen.add(k);p.push(q)}}if(p.length<3)continue;
+   for(const g of groups.values()){
+    const seen=new Set(),p=[];for(const q of g){const k=Math.round(q[0]*16)+\",\"+Math.round(q[1]*16);if(!seen.has(k)){seen.add(k);p.push(q)}}if(p.length<3)continue;
     p.sort((a,b)=>a[0]-b[0]||a[1]-b[1]);const cross=(a,b,d)=>(b[0]-a[0])*(d[1]-a[1])-(b[1]-a[1])*(d[0]-a[0]),lo=[],hi=[];
     for(const q of p){while(lo.length>1&&cross(lo[lo.length-2],lo[lo.length-1],q)<=0)lo.pop();lo.push(q)}
     for(let i=p.length-1;i>=0;i--){const q=p[i];while(hi.length>1&&cross(hi[hi.length-2],hi[hi.length-1],q)<=0)hi.pop();hi.push(q)}
@@ -273,7 +273,9 @@ class Battlezone{
   const rgb={green:\"80,255,80\",purple:\"190,70,255\",darkPurple:\"95,30,140\",orange:\"255,145,35\",lightOrange:\"255,190,105\",red:\"255,45,45\",blue:\"70,135,255\"};
   c.globalCompositeOperation=\"lighter\";
   const layers=[[7,.035],[4,.09],[2,.24],[1,1]],hudAssets=new Set([\"hudRadar\",\"playerLives\",\"score\",\"highScore\",\"enemyInRange\",\"enemyDirection\",\"motionBlocked\"]),horizonAsset=\"horizon\";
-  for(const [spread,gain] of layers){\n  for(const v of this.vectors){\n   const x1=v[0],y1=v[1],x2=v[2],y2=v[3],z=this.colorized?(ASSETS[v[8]?.asset]?.displayIntensity??v[4]):v[4];if(v[4]<=0||!Number.isFinite(x1+y1+x2+y2))continue;
+  for(const [spread,gain] of layers){
+  for(const v of this.vectors){
+   const x1=v[0],y1=v[1],x2=v[2],y2=v[3],z=this.colorized?(ASSETS[v[8]?.asset]?.displayIntensity??v[4]):v[4];if(v[4]<=0||!Number.isFinite(x1+y1+x2+y2))continue;
    const asset=v[8]?.asset,hudRed=asset===\"hudRadar\"||asset===\"playerLives\"||asset===\"score\"||asset===\"highScore\"||asset===\"enemyInRange\"||asset===\"enemyDirection\"||asset===\"motionBlocked\",originalRed=hudRed;
    const alpha=Math.min(1,Math.max(.18,z/15)),color=this.colorized?(asset===\"highScore\"?rgb.orange:(rgb[v[6]]||rgb.green)):(originalRed?rgb.red:rgb.green);
    const ink=\"rgba(\"+color+\",\"+(alpha*gain)+\")\";
