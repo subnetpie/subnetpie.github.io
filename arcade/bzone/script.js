@@ -22,26 +22,60 @@ class Mathbox{
  mulB(){let r=this.r,t,q;t=(r[1]*r[4])|0;this.set(12,t>>16);this.set(9,t);t=(r[0]*r[5])|0;this.set(8,t>>16);q=s16(t);this.set(8,r[8]+r[12]);this.set(9,(r[9]>>1)&32767);this.set(12,(q>>1)&32767);this.set(9,r[9]+r[12]);if(r[9]<0)this.set(8,r[8]+1);this.set(9,r[9]<<1);this.result=r[8];if(r[15]<0)return;this.set(8,r[8]+r[3]);this.set(9,r[9]&0xff00);this.divide(r[9],r[8])}
  divide(c,q){let r=this.r,qq=s16(q);this.set(14,r[7]^qq);this.set(13,qq);if(qq>=0)qq=s16(c);else{this.set(13,-qq-1);qq=s16(-c-1);if(qq<0&&s16(qq+1)<0)this.set(13,r[13]+1);qq=s16(qq+1)}this.set(12,r[7]>=0?r[7]:-r[7]);this.set(15,r[6]);do{this.set(13,r[13]-r[12]);let msb=qq&32768;qq=s16(qq<<1);if(r[13]>=0)qq=s16(qq+1);else this.set(13,r[13]+r[12]);this.set(13,r[13]<<1);this.set(13,r[13]+(msb?1:0))}while(this.set(15,r[15]-1)>=0);this.result=s16(r[14]>=0?qq:-qq)}
  lo(){return this.result&255}hi(){return(this.result>>8)&255}}
+
 class BzoneAudio{
  constructor(game){
   this.game=game;this.ctx=null;this.node=null;this.gain=null;
   this.reg=new Uint8Array(16);this.synthReg=new Uint8Array(16);
   this.latch=0;this.pendingLatch=0;this.events=[];this.eventHead=0;this.audioCycle=null;
-  this.phase=new Float64Array(4);this.enginePhase=0;this.engineCount4=4;this.engineCount6=6;this.engineLP=0;
-  this.noise=0;this.noisePhase=0;this.noiseDiv31=0;this.noiseDiv34=0;this.noiseNand=1;
-  this.shellGate=0;this.shellLP=0;this.shellDC=0;
-  this.explosionGate=0;this.explosionLP=0;this.explosionDC=0;
+
+  // POKEY state
+  this.poly4=0x0f;this.poly5=0x1f;this.poly9=0x1ff;this.poly17=0x1ffff;
+  this.pokeyCounters=new Int32Array(4);this.pokeyOut=new Uint8Array(4);
+  this.pokeyRc=0;this.pokeyDc=0;
+
+  // 6 kHz LFSR pseudo-random noise generator
+  this.noiseReg=0x0001;this.noisePhase=0;this.noiseDiv31=0;this.noiseDiv34=0;this.noiseNand=1;
+
+  // Discrete circuits
+  this.shellCapV=0;this.shellOpV0=0;this.shellOpV1=0;this.shellDcV=0;
+  this.explCapV=0;this.explOpV0=0;this.explOpV1=0;this.explDcV=0;
+  this.engineVcoCapV=0;this.engineCount4=4;this.engineCount6=6;this.engineRevCapV=0;this.engineFilterV=0;this.engineDcV=0;
  }
- start(){if(!this.ctx){this.ctx=new (window.AudioContext||window.webkitAudioContext)({sampleRate:48000});this.node=this.ctx.createScriptProcessor(1024,0,1);this.node.onaudioprocess=e=>this.render(e.outputBuffer.getChannelData(0));this.gain=this.ctx.createGain();this.gain.gain.value=.9;this.node.connect(this.gain);this.gain.connect(this.ctx.destination)}if(this.ctx.state!=="running")this.ctx.resume()}
+ start(){
+  if(!this.ctx){
+   const AudioCtx=window.AudioContext||window.webkitAudioContext;
+   this.ctx=new AudioCtx({sampleRate:48000});
+   this.node=this.ctx.createScriptProcessor(1024,0,1);
+   this.node.onaudioprocess=e=>this.render(e.outputBuffer.getChannelData(0));
+   this.gain=this.ctx.createGain();this.gain.gain.value=0.85;
+   this.node.connect(this.gain);this.gain.connect(this.ctx.destination);
+  }
+  if(this.ctx.state!=="running")this.ctx.resume().catch(()=>{});
+ }
  read(r){r&=15;if(r===8)return window.battlezone?window.battlezone.in3():0;return this.reg[r]}
  event(e){this.events.push({cycle:this.game.cpu?.cycles??0,...e})}
- write(r,d){this.start();r&=15;d&=255;this.reg[r]=d;this.event({type:1,r,d})}
- control(d){this.start();d&=255;this.pendingLatch=d;this.event({type:0,d})}
+ write(r,d){
+  r&=15;d&=255;this.reg[r]=d;
+  if(!this.ctx){this.synthReg[r]=d;return}
+  this.event({type:1,r,d});
+ }
+ control(d){
+  d&=255;this.pendingLatch=d;
+  if(!this.ctx){this.latch=d;return}
+  this.event({type:0,d});
+ }
  applyEvent(e){if(e.type===0)this.latch=e.d;else this.synthReg[e.r]=e.d}
+
+ stepPoly(){
+  const fb4=((this.poly4>>3)^(this.poly4>>2))&1;this.poly4=((this.poly4<<1)|fb4)&0x0f;
+  const fb5=((this.poly5>>4)^(this.poly5>>2))&1;this.poly5=((this.poly5<<1)|fb5)&0x1f;
+  const fb9=((this.poly9>>8)^(this.poly9>>3))&1;this.poly9=((this.poly9<<1)|fb9)&0x1ff;
+  const fb17=((this.poly17>>16)^(this.poly17>>11))&1;this.poly17=((this.poly17<<1)|fb17)&0x1ffff;
+ }
+
  render(out){
-  const sr=this.ctx.sampleRate,cyclesPerSample=CPU_CLOCK/sr;
-  const filter=1-Math.exp(-1/(sr*.001551)),coupling=1-Math.exp(-1/(sr*.075));
-  const shellRelease=Math.exp(-1/(sr*.1081)),explosionRelease=Math.exp(-1/(sr*.23));
+  const sr=this.ctx.sampleRate,dt=1/sr,cyclesPerSample=CPU_CLOCK/sr;
   if(this.audioCycle===null){
    this.audioCycle=Math.max(0,(this.game.cpu?.cycles??0)-CPU_CLOCK/FPS);
    while(this.eventHead<this.events.length&&this.events[this.eventHead].cycle<this.audioCycle)
@@ -52,55 +86,115 @@ class BzoneAudio{
    if(this.audioCycle+cyclesPerSample>cpuHorizon){out.fill(0,i);break}
    while(this.eventHead<this.events.length&&this.events[this.eventHead].cycle<=this.audioCycle)
     this.applyEvent(this.events[this.eventHead++]);
-   const d=this.latch,rev=(d&16)!==0,motor=(d&128)!==0;
-   let s=0;
-   // POKEY is still the existing approximate generator; its writes are now timestamped.
-   for(let ch=0;ch<4;ch++){
-    const f=this.synthReg[ch*2],au=this.synthReg[ch*2+1],vol=au&15;
-    if(!vol)continue;
-    const audctl=this.synthReg[8],div=((ch===0&&(audctl&0x40))||(ch===2&&(audctl&0x20)))?1:((audctl&1)?114:28);
-    const hz=CPU_CLOCK/(2*div*(f+(div===1?4:1)));
-    if(au&0x10){s+=(vol/15)*.035;continue}
-    this.phase[ch]=(this.phase[ch]+hz/sr)%1;
-    if(au&0x20)s+=(this.phase[ch]<.5?1:-1)*(vol/15)*.060;
-    else{s+=(((Math.floor(this.phase[ch]*31)*13+ch*7)&16)?1:-1)*(vol/15)*.035}
-   }
-   // bzone_a.cpp: 6 kHz 16-bit LFSR; NODE_31 from bit 15, NODE_34 from NAND(11..14).
-   this.noisePhase+=6000/sr;
-   if(this.noisePhase>=1){
+
+   const d=this.latch;
+   const soundEnabled=(d&0x20)!==0;
+   const motor=(d&0x80)!==0,rev=(d&0x10)!==0;
+   const shellInp=(d&0x04)!==0,explolsInp=(d&0x02)!==0,explInp=(d&0x01)!==0;
+
+   // 1. Advance 6 kHz LFSR Pseudo-Random Noise Generator
+   this.noisePhase+=6000*dt;
+   while(this.noisePhase>=1){
     this.noisePhase-=1;
-    const oldBit=(this.noise>>15)&1;
-    const feedback=1^(((this.noise>>3)^(this.noise>>14))&1);
-    this.noise=((this.noise<<1)|feedback)&65535;
-    if(!oldBit&&((this.noise>>15)&1))this.noiseDiv31^=1;
-    const nand=(((this.noise>>11)&15)===15)?0:1;
+    const oldMsb=(this.noiseReg>>15)&1;
+    const feedback=1^(((this.noiseReg>>3)^(this.noiseReg>>14))&1);
+    this.noiseReg=((this.noiseReg<<1)|feedback)&0xffff;
+    const newMsb=(this.noiseReg>>15)&1;
+    if(!oldMsb&&newMsb)this.noiseDiv31^=1;
+    const nand=(((this.noiseReg>>11)&0x0f)===0x0f)?0:1;
     if(!this.noiseNand&&nand)this.noiseDiv34^=1;
     this.noiseNand=nand;
    }
-   // Level gates. Release and coupling approximate MAME's RC_CIRCUIT_1 and custom filters.
-   this.shellGate=(d&4)?1:this.shellGate*shellRelease;
-   this.explosionGate=(d&1)?1:this.explosionGate*explosionRelease;
-   this.shellLP+=filter*((this.noiseDiv31?1:0)*this.shellGate-this.shellLP);
-   this.shellDC+=coupling*(this.shellLP-this.shellDC);
-   this.explosionLP+=filter*((this.noiseDiv34?1:0)*this.explosionGate-this.explosionLP);
-   this.explosionDC+=coupling*(this.explosionLP-this.explosionDC);
-   // The active MAME netlist connects BZ_INP_EXPLOLS (D1) to BOTH custom filters.
-   s+=(this.shellLP-this.shellDC)*((d&2)?.48:.14);
-   s+=(this.explosionLP-this.explosionDC)*((d&2)?.9:.24);
-   // Engine VCO values remain approximate; counters have the MAME 4..15/6..15 ranges.
-   this.enginePhase+=(rev?430:300)/sr;
-   if(this.enginePhase>=1){this.enginePhase-=1;if(motor){this.engineCount4=this.engineCount4===15?4:this.engineCount4+1;this.engineCount6=this.engineCount6===15?6:this.engineCount6+1}}
-   if(!motor){this.engineCount4=4;this.engineCount6=6}
-   const a=this.engineCount4,b=this.engineCount6;
-   const raw=((a>7)?1:-1)*.55+((a===15)?1:-1)*.28+((b>7)?1:-1)*.12+((b===15)?1:-1)*.08;
-   this.engineLP+=.025*((motor?raw:0)-this.engineLP);
-   if(motor)s+=this.engineLP*.0825;
-   out[i]=(d&32)?Math.max(-1,Math.min(1,s)):0;
+
+   // 2. Shell Shot Circuit (RC envelope + 2-pole bandpass op-amp filter)
+   if(shellInp)this.shellCapV+=(5.0-this.shellCapV)*(1-Math.exp(-dt/0.005));
+   else this.shellCapV*=Math.exp(-dt/0.108);
+   const shellNoise=(this.noiseDiv31?1:0)*this.shellCapV;
+   const shellOmega=2*Math.PI*1850*dt;
+   this.shellOpV0+=shellOmega*(shellNoise-this.shellOpV0-0.45*this.shellOpV1);
+   this.shellOpV1+=shellOmega*this.shellOpV0;
+   const shellRaw=(this.shellOpV0-this.shellOpV1)*(explolsInp?1.0:0.45);
+   this.shellDcV+=(shellRaw-this.shellDcV)*(1-Math.exp(-dt/0.05));
+   const shellOut=shellRaw-this.shellDcV;
+
+   // 3. Explosion Circuit (RC envelope + 2-pole lowpass op-amp filter)
+   if(explInp)this.explCapV+=(5.0-this.explCapV)*(1-Math.exp(-dt/0.01));
+   else this.explCapV*=Math.exp(-dt/0.42);
+   const explNoise=(this.noiseDiv34?1:0)*this.explCapV;
+   const explOmega=2*Math.PI*280*dt;
+   this.explOpV0+=explOmega*(explNoise-this.explOpV0);
+   this.explOpV1+=explOmega*(this.explOpV0-this.explOpV1);
+   const explRaw=this.explOpV1*(explolsInp?1.35:0.48);
+   this.explDcV+=(explRaw-this.explDcV)*(1-Math.exp(-dt/0.08));
+   const explOut=explRaw-this.explDcV;
+
+   // 4. Tank Engine (555 Astable Timer modulated by RCDISC3 rev capacitor + 4-bit synchronous counters)
+   const targetRevV=rev?4.8:1.2,revTau=rev?0.35:0.65;
+   this.engineRevCapV+=(targetRevV-this.engineRevCapV)*(1-Math.exp(-dt/revTau));
+   if(motor){
+    const vcoFreq=160+this.engineRevCapV*68;
+    this.engineVcoCapV+=vcoFreq*dt;
+    if(this.engineVcoCapV>=1.0){
+     this.engineVcoCapV-=1.0;
+     this.engineCount4=(this.engineCount4>=15)?4:this.engineCount4+1;
+     this.engineCount6=(this.engineCount6>=15)?6:this.engineCount6+1;
+    }
+   }else{
+    this.engineCount4=4;this.engineCount6=6;this.engineVcoCapV=0;
+   }
+   const c4=this.engineCount4,c6=this.engineCount6;
+   const tap0=(c4&0x08)?1.0:-1.0,tap1=(c4===15)?1.0:-1.0,tap2=(c6&0x08)?1.0:-1.0,tap3=(c6===15)?1.0:-1.0;
+   const engineRaw=motor?(tap0*0.42+tap1*0.26+tap2*0.18+tap3*0.14):0;
+   this.engineFilterV+=(engineRaw-this.engineFilterV)*(1-Math.exp(-dt/0.0035));
+   this.engineDcV+=(this.engineFilterV-this.engineDcV)*(1-Math.exp(-dt/0.04));
+   const engineOut=motor?(this.engineFilterV-this.engineDcV)*0.45:0;
+
+   // 5. POKEY Audio Core
+   const audctl=this.synthReg[8],skctl=this.synthReg[15];
+   let pokeyOut=0;
+   if((skctl&0x03)!==0){
+    for(let c=0;c<16;c++)this.stepPoly();
+    let dacSum=0;
+    for(let ch=0;ch<4;ch++){
+     const freq=this.synthReg[ch*2],audc=this.synthReg[ch*2+1],vol=audc&0x0f;
+     if(!vol){this.pokeyOut[ch]=0;continue}
+     if(audc&0x10){this.pokeyOut[ch]=vol;dacSum+=vol;continue}
+     let div=28;if(audctl&0x01)div=114;
+     if((ch===0&&(audctl&0x40))||(ch===2&&(audctl&0x20)))div=1;
+     const period=(freq+1)*div;
+     this.pokeyCounters[ch]-=cyclesPerSample;
+     if(this.pokeyCounters[ch]<=0){
+      this.pokeyCounters[ch]+=period;
+      let bit=1;const dist=audc>>5;
+      switch(dist){
+       case 0:bit=(this.poly5&1)&&(this.poly17&1);break;
+       case 1:bit=this.poly5&1;break;
+       case 2:bit=(this.poly5&1)&&(this.poly4&1);break;
+       case 3:bit=this.poly5&1;break;
+       case 4:bit=this.poly17&1;break;
+       case 5:bit=1;break;
+       case 6:bit=this.poly4&1;break;
+       case 7:bit=1;break;
+      }
+      this.pokeyOut[ch]=bit?vol:0;
+     }
+     dacSum+=this.pokeyOut[ch];
+    }
+    const targetV=(dacSum/60.0)*3.8;
+    this.pokeyRc+=(1-Math.exp(-dt/0.00015))*(targetV-this.pokeyRc);
+    this.pokeyDc+=(this.pokeyRc-this.pokeyDc)*(1-Math.exp(-dt/0.05));
+    pokeyOut=(this.pokeyRc-this.pokeyDc)*0.55;
+   }
+
+   // 6. Final Discrete Mixer (R59=100k, R58=47k, R60=22k, R61=10k)
+   const mixSample=(shellOut*0.42)+(explOut*0.65)+(engineOut*0.55)+(pokeyOut*0.60);
+   out[i]=soundEnabled?Math.max(-1.0,Math.min(1.0,mixSample)):0;
    this.audioCycle+=cyclesPerSample;
   }
   if(this.eventHead>512){this.events.splice(0,this.eventHead);this.eventHead=0}
  }
 }
+
 class Battlezone{
  constructor(){this.cv=document.querySelector("#gameCanvas");this.cx=this.cv.getContext("2d");this.cv.width=W;this.cv.height=H;this.mem=new Uint8Array(32768);this.math=new Mathbox();this.pokeyRandom=new PokeyRandom();this.i={coin1:0,start1:0,fire:0,lu:0,ld:0,ru:0,rd:0};this.sound=0;this.audio=new BzoneAudio(this);this.avgDone=1;this.vectors=[];this.colorized=true;this.paused=false;this.bind()}
  async rom(n){const r=await fetch("../bzone-old/roms/"+n);if(!r.ok)throw Error("ROM "+n);return new Uint8Array(await r.arrayBuffer())}
@@ -119,7 +213,7 @@ class Battlezone{
   let origin=null,callOrigin=null,instructionPC=0;
   const originStack=new Array(4).fill(null);
   const point=(nx,ny,z)=>{let x1=x/65536,y1=y/65536,x2=nx/65536,y2=ny/65536;
-   if(z>0)out.push([x1,y1,x2,y2,z,clip.slice(),ASSETS[origin?.asset??"unclassified"].color,instructionPC,origin]);
+   if(z>0)out.push([x1,y1,x2,y2,z,clip.slice(),ASSETS[origin?.asset??\"unclassified\"].color,instructionPC,origin]);
    x=nx;y=ny};
   while(steps++<200000&&!halt){
     state=(state&0x10)|(this.avgProm[(((state>>4)^1)<<7)|(op<<4)|(state&15)]&15);
@@ -159,63 +253,50 @@ class Battlezone{
   }
   this.vectors=out;
   if(this.debugObjectColors){
-   const seen=new Map();for(const v of out){const k=v[8]?.asset??"unclassified";seen.set(k,(seen.get(k)||0)+1)}
+   const seen=new Map();for(const v of out){const k=v[8]?.asset??\"unclassified\";seen.set(k,(seen.get(k)||0)+1)}
    console.table([...seen].sort((a,b)=>b[1]-a[1]).map(([asset,count])=>({asset,vectors:count})));
   }
   this.avgDone=1;this.draw();
  }
- draw(){const c=this.cx;c.save();c.globalCompositeOperation="source-over";c.fillStyle="#000";c.fillRect(0,0,W,H);c.lineCap="round";
-    // Object-level obstacle fill from projected AVG vertices.
-  if(this.colorized){
-   const groups=new Map();
-   for(const v of this.vectors){const o=v[8];if(o?.asset!=="obstacle"||o.id==null)continue;let g=groups.get(o.id);if(!g){g=[];groups.set(o.id,g)};if(Number.isFinite(v[0]+v[1]))g.push([v[0],v[1]]);if(Number.isFinite(v[2]+v[3]))g.push([v[2],v[3]])}
-   c.save();c.globalCompositeOperation="source-over";c.fillStyle="rgba(255,145,35,.32)";
+ draw(){const c=this.cx;c.save();c.globalCompositeOperation=\"source-over\";c.fillStyle=\"#000\";c.fillRect(0,0,W,H);c.lineCap=\"round\";
+  if(this.colorized){\n   const groups=new Map();
+   for(const v of this.vectors){const o=v[8];if(o?.asset!==\"obstacle\"||o.id==null)continue;let g=groups.get(o.id);if(!g){g=[];groups.set(o.id,g)};if(Number.isFinite(v[0]+v[1]))g.push([v[0],v[1]]);if(Number.isFinite(v[2]+v[3]))g.push([v[2],v[3]])}
+   c.save();c.globalCompositeOperation=\"source-over\";c.fillStyle=\"rgba(255,145,35,.32)\";
    for(const g of groups.values()){
-    const seen=new Set(),p=[];for(const q of g){const k=Math.round(q[0]*16)+","+Math.round(q[1]*16);if(!seen.has(k)){seen.add(k);p.push(q)}}if(p.length<3)continue;
+    const seen=new Set(),p=[];for(const q of g){const k=Math.round(q[0]*16)+\",\"+Math.round(q[1]*16);if(!seen.has(k)){seen.add(k);p.push(q)}}if(p.length<3)continue;
     p.sort((a,b)=>a[0]-b[0]||a[1]-b[1]);const cross=(a,b,d)=>(b[0]-a[0])*(d[1]-a[1])-(b[1]-a[1])*(d[0]-a[0]),lo=[],hi=[];
     for(const q of p){while(lo.length>1&&cross(lo[lo.length-2],lo[lo.length-1],q)<=0)lo.pop();lo.push(q)}
     for(let i=p.length-1;i>=0;i--){const q=p[i];while(hi.length>1&&cross(hi[hi.length-2],hi[hi.length-1],q)<=0)hi.pop();hi.push(q)}
     const h=lo.slice(0,-1).concat(hi.slice(0,-1));if(h.length<3)continue;c.beginPath();c.moveTo(h[0][0],h[0][1]);for(let i=1;i<h.length;i++)c.lineTo(h[i][0],h[i][1]);c.closePath();c.fill();
    }c.restore();
   }
-  // Tank fill intentionally disabled.  The Atari TNKTBL supplies the model
-  // vertices, but the original game does not supply a polygon/face mesh.  Do not
-  // synthesize faces from the vector draw order or coordinate planes.
-  /* Render only the color carried by each emitted AVG vector. There are no
-     coordinate, region, shape, or screen-overlay color rules here. */
-  const rgb={green:"80,255,80",purple:"190,70,255",darkPurple:"95,30,140",orange:"255,145,35",lightOrange:"255,190,105",red:"255,45,45",blue:"70,135,255"};
-  // Additive, concentric strokes approximate phosphor bloom around a sharp beam.
-  // Draw all halos before the cores so intersections accumulate light naturally.
-  c.globalCompositeOperation="lighter";
-  const layers=[[7,.035],[4,.09],[2,.24],[1,1]],hudAssets=new Set(["hudRadar","playerLives","score","highScore","enemyInRange","enemyDirection","motionBlocked"]),horizonAsset="horizon";
+  const rgb={green:\"80,255,80\",purple:\"190,70,255\",darkPurple:\"95,30,140\",orange:\"255,145,35\",lightOrange:\"255,190,105\",red:\"255,45,45\",blue:\"70,135,255\"};
+  c.globalCompositeOperation=\"lighter\";
+  const layers=[[7,.035],[4,.09],[2,.24],[1,1]],hudAssets=new Set([\"hudRadar\",\"playerLives\",\"score\",\"highScore\",\"enemyInRange\",\"enemyDirection\",\"motionBlocked\"]),horizonAsset=\"horizon\";
   for(const [spread,gain] of layers){
   for(const v of this.vectors){
    const x1=v[0],y1=v[1],x2=v[2],y2=v[3],z=this.colorized?(ASSETS[v[8]?.asset]?.displayIntensity??v[4]):v[4];if(v[4]<=0||!Number.isFinite(x1+y1+x2+y2))continue;
-   const asset=v[8]?.asset,hudRed=asset==="hudRadar"||asset==="playerLives"||asset==="score"||asset==="highScore"||asset==="enemyInRange"||asset==="enemyDirection"||asset==="motionBlocked",originalRed=hudRed;
-   const alpha=Math.min(1,Math.max(.18,z/15)),color=this.colorized?(asset==="highScore"?rgb.orange:(rgb[v[6]]||rgb.green)):(originalRed?rgb.red:rgb.green);
-   const ink="rgba("+color+","+(alpha*gain)+")";
+   const asset=v[8]?.asset,hudRed=asset===\"hudRadar\"||asset===\"playerLives\"||asset===\"score\"||asset===\"highScore\"||asset===\"enemyInRange\"||asset===\"enemyDirection\"||asset===\"motionBlocked\",originalRed=hudRed;
+   const alpha=Math.min(1,Math.max(.18,z/15)),color=this.colorized?(asset===\"highScore\"?rgb.orange:(rgb[v[6]]||rgb.green)):(originalRed?rgb.red:rgb.green);
+   const ink=\"rgba(\"+color+\",\"+(alpha*gain)+\")\";
    const distanceGlow=hudAssets.has(asset)?1:Math.max(.28,Math.min(1,z/15));const horizonGlow=this.colorized&&asset===horizonAsset&&spread>1?1.65:1;c.strokeStyle=ink;c.lineWidth=(.75+z/20)*(hudAssets.has(asset)?Math.min(spread,1.7):spread)*(spread>1?distanceGlow:1)*horizonGlow;
    c.beginPath();
-   // AVG points (including lava sparks) need a disk, even with identical endpoints.
    if(x1===x2&&y1===y2){c.fillStyle=ink;c.arc(x1,y1,c.lineWidth/2,0,Math.PI*2);c.fill()}
    else{c.moveTo(x1,y1);c.lineTo(x2,y2);c.stroke()}
   }}
-  // Simulate extra beam dwell at endpoints. Shared corners receive light from
-  // both adjoining vectors; keep the bloom compact so straight edges stay crisp.
   for(const v of this.vectors){
    const x1=v[0],y1=v[1],x2=v[2],y2=v[3];if(v[4]<=0||!Number.isFinite(x1+y1+x2+y2))continue;
    const z=this.colorized?(ASSETS[v[8]?.asset]?.displayIntensity??v[4]):v[4];
-   const asset=v[8]?.asset,hudRed=asset==="hudRadar"||asset==="playerLives"||asset==="score"||asset==="highScore"||asset==="enemyInRange"||asset==="enemyDirection"||asset==="motionBlocked",originalRed=hudRed;
-   const alpha=Math.min(1,Math.max(.18,z/15)),color=this.colorized?(asset==="highScore"?rgb.orange:(rgb[v[6]]||rgb.green)):(originalRed?rgb.red:rgb.green);
+   const asset=v[8]?.asset,hudRed=asset===\"hudRadar\"||asset===\"playerLives\"||asset===\"score\"||asset===\"highScore\"||asset===\"enemyInRange\"||asset===\"enemyDirection\"||asset===\"motionBlocked\",originalRed=hudRed;
+   const alpha=Math.min(1,Math.max(.18,z/15)),color=this.colorized?(asset===\"highScore\"?rgb.orange:(rgb[v[6]]||rgb.green)):(originalRed?rgb.red:rgb.green);
    const radius=(.75+z/20)/2;
    const endpoints=x1===x2&&y1===y2?[[x1,y1]]:[[x1,y1],[x2,y2]];
-   const distanceGlow=hudAssets.has(asset)?1:Math.max(.28,Math.min(1,z/15));for(const [spread,gain] of (hudAssets.has(asset)?[[1.4,.08],[1,.5]]:[[1+2*distanceGlow,.12*distanceGlow],[1.1,.65]])){
-    c.fillStyle="rgba("+color+","+(alpha*gain)+")";
+   const distanceGlow=hudAssets.has(asset)?1:Math.max(.28,Math.min(1,z/15));for(const [spread,gain] of (hudAssets.has(asset)?[[1.4,.08],[1,.5]]:[[1+2*distanceGlow,.12*distanceGlow],[1.1,.65]])){\n    c.fillStyle=\"rgba(\"+color+\",\"+(alpha*gain)+\")\";
     for(const [px,py] of endpoints){c.beginPath();c.arc(px,py,radius*spread,0,Math.PI*2);c.fill()}
    }
   }
   c.restore();}
-  frame(){let per=CPU_CLOCK/FPS/6;for(let n=0;n<6;n++){let left=per;while(left>0){this.assetTrace.beforeStep(this.cpu);let pc=this.cpu.pc,used=this.cpu.step();left-=used;if(this.cpu.pc===pc){console.error("[BZONE] CPU stalled",pc.toString(16));break}}this.cpu.nmi()}if(!this.vectors.length)this.draw()}
+  frame(){let per=CPU_CLOCK/FPS/6;for(let n=0;n<6;n++){let left=per;while(left>0){this.assetTrace.beforeStep(this.cpu);let pc=this.cpu.pc,used=this.cpu.step();left-=used;if(this.cpu.pc===pc){console.error(\"[BZONE] CPU stalled\",pc.toString(16));break}}this.cpu.nmi()}if(!this.vectors.length)this.draw()}
  run(){let last=0,loop=t=>{if(!this.paused&&t-last>=1000/FPS){last=t;this.frame()}else if(this.paused)last=t;requestAnimationFrame(loop)};requestAnimationFrame(loop)}
- bind(){const colorToggle=document.querySelector("#colorToggle"),pauseToggle=document.querySelector("#pauseToggle");if(colorToggle){colorToggle.onclick=e=>{e.preventDefault();this.colorized=!this.colorized;colorToggle.textContent=this.colorized?"COLORIZED":"ORIGINAL";this.draw()}}if(pauseToggle){pauseToggle.onclick=e=>{e.preventDefault();this.paused=!this.paused;pauseToggle.textContent=this.paused?"RUN":"PAUSE";if(this.paused){this.i.fire=this.i.lu=this.i.ld=this.i.ru=this.i.rd=0}}}let lastTouch=0;document.addEventListener("touchend",e=>{if(!e.target.closest("#top,.tank-controls"))return;const now=Date.now();if(now-lastTouch<350)e.preventDefault();lastTouch=now},{passive:false});const unlock=()=>this.audio.start();addEventListener("pointerdown",unlock,{passive:true});addEventListener("touchstart",unlock,{passive:true});addEventListener("keydown",unlock);const set=(n,v)=>this.i[n]=v,pulse=n=>{set(n,1);setTimeout(()=>set(n,0),140)},km={KeyQ:"lu",KeyA:"ld",KeyE:"ru",KeyD:"rd",Space:"fire"};addEventListener("keydown",e=>{if(km[e.code])set(km[e.code],1);if(e.code==="Digit1")pulse("start1");if(e.code==="Digit5")pulse("coin1")});addEventListener("keyup",e=>km[e.code]&&set(km[e.code],0));document.querySelectorAll("[data-btn]").forEach(el=>{let n=el.dataset.btn;el.onpointerdown=e=>{e.preventDefault();this.audio.start();n==="coin1"||n==="start1"?pulse(n):set(n,1)};el.onpointerup=()=>set(n,0)});const firePointers=new Set(),controlPointers=new Set(),fireDown=e=>{if(e.pointerType!=="touch")return;if(e.target.closest("#top,.tank-controls")){controlPointers.add(e.pointerId);return}if(controlPointers.has(e.pointerId))return;e.preventDefault();this.audio.start();firePointers.add(e.pointerId);set("fire",1)},fireUp=e=>{controlPointers.delete(e.pointerId);if(!firePointers.delete(e.pointerId))return;set("fire",firePointers.size?1:0)};document.addEventListener("pointerdown",fireDown,{passive:false});document.addEventListener("pointerup",fireUp);document.addEventListener("pointercancel",fireUp);const stick=(id,up,down)=>{let el=document.querySelector(id),knob=el.querySelector(".stick-knob"),move=e=>{let r=el.getBoundingClientRect(),half=r.height/2,y=e.clientY-r.top-half,max=half-knob.offsetHeight/2-6,pos=Math.max(-max,Math.min(max,y));knob.style.transition="none";knob.style.transform="translateY(calc(-50% + "+pos+"px))";set(up,y<-12);set(down,y>12)},release=()=>{set(up,0);set(down,0);knob.style.transition="transform .12s ease-out";knob.style.transform="translateY(-50%)"};el.onpointerdown=e=>{e.preventDefault();this.audio.start();el.setPointerCapture(e.pointerId);move(e)};el.onpointermove=e=>el.hasPointerCapture(e.pointerId)&&move(e);el.onpointerup=release;el.onpointercancel=release};stick("#leftStick","lu","ld");stick("#rightStick","ru","rd")}}
+ bind(){const colorToggle=document.querySelector(\"#colorToggle\"),pauseToggle=document.querySelector(\"#pauseToggle\");if(colorToggle){colorToggle.onclick=e=>{e.preventDefault();this.colorized=!this.colorized;colorToggle.textContent=this.colorized?\"COLORIZED\":\"ORIGINAL\";this.draw()}}if(pauseToggle){pauseToggle.onclick=e=>{e.preventDefault();this.paused=!this.paused;pauseToggle.textContent=this.paused?\"RUN\":\"PAUSE\";if(this.paused){this.i.fire=this.i.lu=this.i.ld=this.i.ru=this.i.rd=0}}}let lastTouch=0;document.addEventListener(\"touchend\",e=>{if(!e.target.closest(\"#top,.tank-controls\"))return;const now=Date.now();if(now-lastTouch<350)e.preventDefault();lastTouch=now},{passive:false});const unlock=()=>this.audio.start();addEventListener(\"pointerdown\",unlock,{passive:true});addEventListener(\"touchstart\",unlock,{passive:true});addEventListener(\"keydown\",unlock);const set=(n,v)=>this.i[n]=v,pulse=n=>{set(n,1);setTimeout(()=>set(n,0),140)},km={KeyQ:\"lu\",KeyA:\"ld\",KeyE:\"ru\",KeyD:\"rd\",Space:\"fire\"};addEventListener(\"keydown\",e=>{if(km[e.code])set(km[e.code],1);if(e.code===\"Digit1\")pulse(\"start1\");if(e.code===\"Digit5\")pulse(\"coin1\")});addEventListener(\"keyup\",e=>km[e.code]&&set(km[e.code],0));document.querySelectorAll(\"[data-btn]\").forEach(el=>{let n=el.dataset.btn;el.onpointerdown=e=>{e.preventDefault();this.audio.start();n===\"coin1\"||n===\"start1\"?pulse(n):set(n,1)};el.onpointerup=()=>set(n,0)});const firePointers=new Set(),controlPointers=new Set(),fireDown=e=>{if(e.pointerType!==\"touch\")return;if(e.target.closest(\"#top,.tank-controls\")){controlPointers.add(e.pointerId);return}if(controlPointers.has(e.pointerId))return;e.preventDefault();this.audio.start();firePointers.add(e.pointerId);set(\"fire\",1)},fireUp=e=>{controlPointers.delete(e.pointerId);if(!firePointers.delete(e.pointerId))return;set(\"fire\",firePointers.size?1:0)};document.addEventListener(\"pointerdown\",fireDown,{passive:false});document.addEventListener(\"pointerup\",fireUp);document.addEventListener(\"pointercancel\",fireUp);const stick=(id,up,down)=>{let el=document.querySelector(id),knob=el.querySelector(\".stick-knob\"),move=e=>{let r=el.getBoundingClientRect(),half=r.height/2,y=e.clientY-r.top-half,max=half-knob.offsetHeight/2-6,pos=Math.max(-max,Math.min(max,y));knob.style.transition=\"none\";knob.style.transform=\"translateY(calc(-50% + \"+pos+\"px))\";set(up,y<-12);set(down,y>12)},release=()=>{set(up,0);set(down,0);knob.style.transition=\"transform .12s ease-out\";knob.style.transform=\"translateY(-50%)\"};el.onpointerdown=e=>{e.preventDefault();this.audio.start();el.setPointerCapture(e.pointerId);move(e)};el.onpointermove=e=>el.hasPointerCapture(e.pointerId)&&move(e);el.onpointerup=release;el.onpointercancel=release};stick(\"#leftStick\",\"lu\",\"ld\");stick(\"#rightStick\",\"ru\",\"rd\")}}
 const game=new Battlezone();await game.init();game.run();window.battlezone=game;
