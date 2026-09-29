@@ -30,16 +30,16 @@ class BzoneAudio{
 
   // POKEY state
   this.poly4=0x0f;this.poly5=0x1f;this.poly9=0x1ff;this.poly17=0x1ffff;
-  this.pokeyCounters=new Int32Array(4);this.pokeyOut=new Uint8Array(4);
+  this.pokeyCounters=new Float64Array(4);this.pokeyOut=new Float64Array(4);
   this.pokeyRc=0;this.pokeyDc=0;
 
   // 6 kHz LFSR pseudo-random noise generator
   this.noiseReg=0x0001;this.noisePhase=0;this.noiseDiv31=0;this.noiseDiv34=0;this.noiseNand=1;
 
   // Discrete circuits
-  this.shellCapV=0;this.shellOpV0=0;this.shellOpV1=0;this.shellDcV=0;
-  this.explCapV=0;this.explOpV0=0;this.explOpV1=0;this.explDcV=0;
-  this.engineVcoCapV=0;this.engineCount4=4;this.engineCount6=6;this.engineRevCapV=0;this.engineFilterV=0;this.engineDcV=0;
+  this.shellGate=0;this.shellLP=0;this.shellDC=0;
+  this.explosionGate=0;this.explosionLP=0;this.explosionDC=0;
+  this.enginePhase=0;this.engineCount4=4;this.engineCount6=6;this.engineLP=0;this.engineDC=0;
  }
  start(){
   if(!this.ctx){
@@ -87,6 +87,9 @@ class BzoneAudio{
 
  render(out){
   const sr=this.ctx.sampleRate,dt=1/sr,cyclesPerSample=CPU_CLOCK/sr;
+  const filter=1-Math.exp(-1/(sr*.001551)),coupling=1-Math.exp(-1/(sr*.075));
+  const shellRelease=Math.exp(-1/(sr*.1081)),explosionRelease=Math.exp(-1/(sr*.23));
+
   if(this.audioCycle===null){
    this.audioCycle=Math.max(0,(this.game.cpu?.cycles??0)-CPU_CLOCK/FPS);
    while(this.eventHead<this.events.length&&this.events[this.eventHead].cycle<this.audioCycle)
@@ -101,9 +104,8 @@ class BzoneAudio{
    const d=this.latch;
    const soundEnabled=(d&0x20)!==0;
    const motor=(d&0x80)!==0,rev=(d&0x10)!==0;
-   const shellInp=(d&0x04)!==0,explolsInp=(d&0x02)!==0,explInp=(d&0x01)!==0;
 
-   // 1. Advance 6 kHz LFSR Pseudo-Random Noise Generator
+   // 1. Advance 6 kHz LFSR Pseudo-Random Noise Generator (MAME 0.289 bzone_a.cpp)
    this.noisePhase+=6000*dt;
    while(this.noisePhase>=1){
     this.noisePhase-=1;
@@ -117,89 +119,56 @@ class BzoneAudio{
     this.noiseNand=nand;
    }
 
-   // 2. Shell Shot Circuit (RC envelope + 2-pole bandpass op-amp filter)
-   if(shellInp)this.shellCapV+=(5.0-this.shellCapV)*(1-Math.exp(-dt/0.005));
-   else this.shellCapV*=Math.exp(-dt/0.108);
-   const shellNoise=(this.noiseDiv31?1:0)*this.shellCapV;
-   const shellOmega=2*Math.PI*1850*dt;
-   this.shellOpV0+=shellOmega*(shellNoise-this.shellOpV0-0.45*this.shellOpV1);
-   this.shellOpV1+=shellOmega*this.shellOpV0;
-   const shellRaw=(this.shellOpV0-this.shellOpV1)*(explolsInp?1.0:0.45);
-   this.shellDcV+=(shellRaw-this.shellDcV)*(1-Math.exp(-dt/0.05));
-   const shellOut=shellRaw-this.shellDcV;
+   // 2. Shell Shot Circuit (NODE_31 divided noise + op-amp bandpass filter)
+   this.shellGate=(d&4)?1:this.shellGate*shellRelease;
+   this.shellLP+=filter*((this.noiseDiv31?1:0)*this.shellGate-this.shellLP);
+   this.shellDC+=coupling*(this.shellLP-this.shellDC);
+   const shellOut=(this.shellLP-this.shellDC)*((d&2)?.24:.09);
 
-   // 3. Explosion Circuit (RC envelope + 2-pole lowpass op-amp filter)
-   if(explInp)this.explCapV+=(5.0-this.explCapV)*(1-Math.exp(-dt/0.01));
-   else this.explCapV*=Math.exp(-dt/0.42);
-   const explNoise=(this.noiseDiv34?1:0)*this.explCapV;
-   const explOmega=2*Math.PI*280*dt;
-   this.explOpV0+=explOmega*(explNoise-this.explOpV0);
-   this.explOpV1+=explOmega*(this.explOpV0-this.explOpV1);
-   const explRaw=this.explOpV1*(explolsInp?1.35:0.48);
-   this.explDcV+=(explRaw-this.explDcV)*(1-Math.exp(-dt/0.08));
-   const explOut=explRaw-this.explDcV;
+   // 3. Explosion Circuit (NODE_34 divided noise + op-amp lowpass filter)
+   this.explosionGate=(d&1)?1:this.explosionGate*explosionRelease;
+   this.explosionLP+=filter*((this.noiseDiv34?1:0)*this.explosionGate-this.explosionLP);
+   this.explosionDC+=coupling*(this.explosionLP-this.explosionDC);
+   const explOut=(this.explosionLP-this.explosionDC)*((d&2)?.75:.25);
 
-   // 4. Tank Engine (555 Astable Timer modulated by RCDISC3 rev capacitor + 4-bit synchronous counters)
-   const targetRevV=rev?4.8:1.2,revTau=rev?0.35:0.65;
-   this.engineRevCapV+=(targetRevV-this.engineRevCapV)*(1-Math.exp(-dt/revTau));
-   if(motor){
-    const vcoFreq=160+this.engineRevCapV*68;
-    this.engineVcoCapV+=vcoFreq*dt;
-    if(this.engineVcoCapV>=1.0){
-     this.engineVcoCapV-=1.0;
-     this.engineCount4=(this.engineCount4>=15)?4:this.engineCount4+1;
-     this.engineCount6=(this.engineCount6>=15)?6:this.engineCount6+1;
+   // 4. Tank Engine (4..15 and 6..15 synchronous counter ladder)
+   this.enginePhase+=(rev?430:300)/sr;
+   if(this.enginePhase>=1){
+    this.enginePhase-=1;
+    if(motor){
+     this.engineCount4=(this.engineCount4===15)?4:this.engineCount4+1;
+     this.engineCount6=(this.engineCount6===15)?6:this.engineCount6+1;
     }
-   }else{
-    this.engineCount4=4;this.engineCount6=6;this.engineVcoCapV=0;
    }
-   const c4=this.engineCount4,c6=this.engineCount6;
-   const tap0=(c4&0x08)?1.0:-1.0,tap1=(c4===15)?1.0:-1.0,tap2=(c6&0x08)?1.0:-1.0,tap3=(c6===15)?1.0:-1.0;
-   const engineRaw=motor?(tap0*0.42+tap1*0.26+tap2*0.18+tap3*0.14):0;
-   this.engineFilterV+=(engineRaw-this.engineFilterV)*(1-Math.exp(-dt/0.0035));
-   this.engineDcV+=(this.engineFilterV-this.engineDcV)*(1-Math.exp(-dt/0.04));
-   const engineOut=motor?(this.engineFilterV-this.engineDcV)*0.45:0;
+   if(!motor){this.engineCount4=4;this.engineCount6=6}
+   const a=this.engineCount4,b=this.engineCount6;
+   const raw=((a>7)?1:-1)*.55+((a===15)?1:-1)*.28+((b>7)?1:-1)*.12+((b===15)?1:-1)*.08;
+   this.engineLP+=.025*((motor?raw:0)-this.engineLP);
+   const engineOut=motor?this.engineLP*.12:0;
 
-   // 5. POKEY Audio Core
-   const audctl=this.synthReg[8],skctl=this.synthReg[15];
+   // 5. POKEY Audio Core (MAME 0.289 pokey.cpp: Radar sonar blips, saucer siren, pure tones)
+   const audctl=this.synthReg[8];
+   this.stepPoly();
    let pokeyOut=0;
-   if((skctl&0x03)!==0){
-    for(let c=0;c<16;c++)this.stepPoly();
-    let dacSum=0;
-    for(let ch=0;ch<4;ch++){
-     const freq=this.synthReg[ch*2],audc=this.synthReg[ch*2+1],vol=audc&0x0f;
-     if(!vol){this.pokeyOut[ch]=0;continue}
-     if(audc&0x10){this.pokeyOut[ch]=vol;dacSum+=vol;continue}
-     let div=28;if(audctl&0x01)div=114;
-     if((ch===0&&(audctl&0x40))||(ch===2&&(audctl&0x20)))div=1;
-     const period=(freq+1)*div;
-     this.pokeyCounters[ch]-=cyclesPerSample;
-     if(this.pokeyCounters[ch]<=0){
-      this.pokeyCounters[ch]+=period;
-      let bit=1;const dist=audc>>5;
-      switch(dist){
-       case 0:bit=(this.poly5&1)&&(this.poly17&1);break;
-       case 1:bit=this.poly5&1;break;
-       case 2:bit=(this.poly5&1)&&(this.poly4&1);break;
-       case 3:bit=this.poly5&1;break;
-       case 4:bit=this.poly17&1;break;
-       case 5:bit=1;break;
-       case 6:bit=this.poly4&1;break;
-       case 7:bit=1;break;
-      }
-      this.pokeyOut[ch]=bit?vol:0;
-     }
-     dacSum+=this.pokeyOut[ch];
-    }
-    const targetV=(dacSum/60.0)*3.8;
-    this.pokeyRc+=(1-Math.exp(-dt/0.00015))*(targetV-this.pokeyRc);
-    this.pokeyDc+=(this.pokeyRc-this.pokeyDc)*(1-Math.exp(-dt/0.05));
-    pokeyOut=(this.pokeyRc-this.pokeyDc)*0.55;
+   for(let ch=0;ch<4;ch++){
+    const freq=this.synthReg[ch*2],audc=this.synthReg[ch*2+1],vol=audc&0x0f;
+    if(!vol)continue;
+    if(audc&0x10){pokeyOut+=(vol/15)*.040;continue}
+    let div=((ch===0&&(audctl&0x40))||(ch===2&&(audctl&0x20)))?1:((audctl&1)?114:28);
+    const hz=CPU_CLOCK/(2*div*(freq+(div===1?4:1)));
+    this.pokeyCounters[ch]=(this.pokeyCounters[ch]+hz/sr)%1;
+    let bit=1;const dist=audc>>5;
+    // Distortion modes from MAME pokey.cpp
+    if(dist===0||dist===4)bit=(this.poly17&1)?1:-1;
+    else if(dist===1||dist===3)bit=(this.poly5&1)?1:-1;
+    else if(dist===2||dist===6)bit=(this.poly4&1)?1:-1;
+    else bit=(this.pokeyCounters[ch]<.5)?1:-1;
+    pokeyOut+=bit*(vol/15)*.075;
    }
 
-   // 6. Final Discrete Mixer (R59=100k, R58=47k, R60=22k, R61=10k)
-   const mixSample=(shellOut*0.42)+(explOut*0.65)+(engineOut*0.55)+(pokeyOut*0.60);
-   out[i]=soundEnabled?Math.max(-1.0,Math.min(1.0,mixSample)):0;
+   // 6. Final output mix
+   const s=shellOut+explOut+engineOut+pokeyOut;
+   out[i]=soundEnabled?Math.max(-1,Math.min(1,s)):0;
    this.audioCycle+=cyclesPerSample;
   }
   if(this.eventHead>512){this.events.splice(0,this.eventHead);this.eventHead=0}
