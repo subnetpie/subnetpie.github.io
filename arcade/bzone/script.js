@@ -35,8 +35,8 @@ class BzoneAudio{
  start(){if(!this.ctx){this.ctx=new (window.AudioContext||window.webkitAudioContext)({sampleRate:48000});this.node=this.ctx.createScriptProcessor(1024,0,1);this.node.onaudioprocess=e=>this.render(e.outputBuffer.getChannelData(0));this.gain=this.ctx.createGain();this.gain.gain.value=.9;this.node.connect(this.gain);this.gain.connect(this.ctx.destination)}if(this.ctx.state!=="running")this.ctx.resume()}
  read(r){r&=15;if(r===8)return window.battlezone?window.battlezone.in3():0;return this.reg[r]}
  event(e){this.events.push({cycle:this.game.cpu?.cycles??0,...e})}
- write(r,d){this.start();r&=15;d&=255;this.reg[r]=d;this.event({type:1,r,d})}
- control(d){this.start();d&=255;this.pendingLatch=d;this.event({type:0,d})}
+ write(r,d){r&=15;d&=255;this.reg[r]=d;if(!this.ctx){this.synthReg[r]=d;return}this.event({type:1,r,d})}
+ control(d){d&=255;this.pendingLatch=d;if(!this.ctx){this.latch=d;return}this.event({type:0,d})}
  applyEvent(e){if(e.type===0)this.latch=e.d;else this.synthReg[e.r]=e.d}
  render(out){
   const sr=this.ctx.sampleRate,cyclesPerSample=CPU_CLOCK/sr;
