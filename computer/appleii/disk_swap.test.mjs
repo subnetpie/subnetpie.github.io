@@ -24,3 +24,17 @@ test('floppy insertion preserves mounted hard disk and existing speed policy',()
  assert.throws(()=>mountMedia(m,{kind:'rom',data:new Uint8Array(0x40000)},0,{preserveSession:true}),/require Load and restart/);
  assert.equal(m.prodosBlock.name,'system.hdv');
 });
+
+test('fresh DSK boot ejects stale 3.5 media, but insertion preserves it',()=>{
+ const {board:m}=createMachine();
+ const system={kind:'block',name:'system.2mg',data:new Uint8Array(819200),physical:'35'};
+ mountMedia(m,system);
+ const floppy=decodeMedia('game.dsk',new Uint8Array(143360));
+ mountMedia(m,floppy,0,{preserveSession:true});
+ assert.equal(m.memory.floppy35.media,system);
+ mountMedia(m,floppy);
+ m.reset(true);
+ assert.equal(m.memory.floppy35Media,null);
+ assert.equal(m.memory.floppy35.media,null);
+ assert.equal(m.prodosBlock.image,null);
+});

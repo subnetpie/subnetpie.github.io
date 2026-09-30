@@ -98,6 +98,12 @@ export function mountMedia(board, media, drive=0, {preserveSession=false}={}) {
   if(!ok)throw new Error('Unable to mount '+media.name);
   if(!preserveSession && board.iigsEnabled && board.memory)
     board.memory.legacyFloppySpeed = media.kind==='floppy';
+  // A fresh boot must not find the previous 3.5-inch image before slot 6.
+  // Disk insertion deliberately keeps other drives mounted.
+  if(!preserveSession && board.iigsEnabled && media.physical!=='35') {
+    board.memory.floppy35Media=null;
+    board.memory.floppy35.eject();
+  }
   // Otherwise slot 7 keeps booting the previously selected hard disk.
   if(!preserveSession && media.kind==='floppy')board.prodosBlock.eject();
   return true;

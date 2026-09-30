@@ -28,6 +28,9 @@ test('disk menu and native picker labels are exempt from touch cancellation', ()
   assert.match(html, /<button[^>]*id="buttonLoad"/);
   assert.match(html, /<label[^>]*for="filedialog1"/);
   assert.match(html, /<label[^>]*for="filedialogInsert"/);
+  const menu = html.match(/<dialog id="mediaDialog"[\s\S]*?<\/dialog>/)[0];
+  assert.match(menu, /<input[^>]*id="filedialog1"/,'restart picker is inside the active modal');
+  assert.match(menu, /<input[^>]*id="filedialogInsert"/,'insert picker is inside the active modal');
   const handlers = new Map();
   class Element {
     constructor(kind) {this.kind = kind;}

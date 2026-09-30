@@ -80,7 +80,9 @@ export class Motherboard
 
         // Pass a cycle-count getter into Floppy525 so the WOZ latch emulation
         // can advance the bitstream by the correct number of bits on each read.
-        this.floppy525 = new Floppy525(6, this.legacyMemory, floppy_led_cb, () => this.cycles);
+        // WOZ rotation is measured in 1 MHz Disk II cycles, while IIgs
+        // this.cycles counts 2.8 MHz master time, even with a slow CPU.
+        this.floppy525 = new Floppy525(6, this.legacyMemory, floppy_led_cb, () => this.iigsEnabled ? this.cycles * (IIGS_SLOW_HZ / IIGS_FAST_HZ) : this.cycles);
         if(this.iigsEnabled) this.memory.floppy = this.floppy525;
         this.prodosBlock = new ProDOSBlockDevice(7, this.iigsEnabled ? this.memory : this.legacyMemory);
 

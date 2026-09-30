@@ -40,7 +40,7 @@ var joyButtons = document.getElementById("joyButtonsCanvas");
 var joyButtonsCtx = joyButtons.getContext("2d");
 document.oncontextmenu = new Function("return false;");
 
-import {decodeMedia, isZip, readZipEntries, mountMedia} from './media.js?v=20260930-diskswap';
+import {decodeMedia, isZip, readZipEntries, mountMedia} from './media.js?v=20260930-diskfix';
 
 function chooseArchiveImage(name, entries) {
   const dialog = document.getElementById('archiveDialog');
@@ -58,7 +58,7 @@ function chooseArchiveImage(name, entries) {
   });
 }
 
-import { Motherboard } from "https://subnetpie.github.io/computer/appleii/motherboard.js?v=20260930-beep";
+import { Motherboard } from "https://subnetpie.github.io/computer/appleii/motherboard.js?v=20260930-diskfix";
 
 class Drive {
   constructor(num, display, led, dialog, restart=true) {

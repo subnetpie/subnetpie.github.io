@@ -5,9 +5,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
     <title>Apple 2ios</title>
-    <script src="./touch-guard.js?v=20260930-diskswap"></script>
+    <script src="./touch-guard.js?v=20260930-diskfix"></script>
     <link rel='stylesheet' href='https://fonts.googleapis.com/css2?family=Rubik'>
-<link rel='stylesheet' href='https://fonts.googleapis.com/css2?family=Russo+One&amp;display=swap'><link rel="stylesheet" href="./style.css?v=20260930-diskswap">
+<link rel='stylesheet' href='https://fonts.googleapis.com/css2?family=Russo+One&amp;display=swap'><link rel="stylesheet" href="./style.css?v=20260930-diskfix">
 
   </head>
     
@@ -152,13 +152,12 @@
 </div>
 <!-- Leave accept unset: iOS can disable unknown disk-image extensions.
      The media loader validates the selected file after reading it. -->
-<input type="file" id="filedialog1" style="display:none"/>
-<input type="file" id="filedialogInsert" style="display:none"/>
 <dialog id="mediaDialog" aria-labelledby="mediaTitle">
+  <input type="file" id="filedialog1" hidden/>
+  <input type="file" id="filedialogInsert" hidden/>
   <h2 id="mediaTitle">Disk controls</h2>
-  <p>Insert a replacement disk when a program asks for the next disk.</p>
-  <label class="mediaChoice" for="filedialogInsert">Insert disk — keep running</label>
-  <label class="mediaChoice" for="filedialog1">Load and restart</label>
+  <label class="mediaChoice" for="filedialog1"><strong>Load and restart</strong><span>Start a game or boot a different disk.</span></label>
+  <label class="mediaChoice" for="filedialogInsert"><strong>Insert disk — keep running</strong><span>Swap disks when the running program asks.</span></label>
   <p>DSK, WOZ, 2MG, HDV and ZIP supported. The selected disk replaces the media in its drive.</p>
   <form method="dialog"><button>Cancel</button></form>
 </dialog>
@@ -215,7 +214,7 @@
   }, 1500);
 })();
 </script>
-<script src="./joystick.js"></script><script type="module" src="./script.js?v=20260930-diskswap"></script>
+<script src="./joystick.js"></script><script type="module" src="./script.js?v=20260930-diskfix"></script>
 
   </body>
   
