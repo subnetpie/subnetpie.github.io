@@ -35,7 +35,7 @@ export function attachHostKeyboard(keyboard, adb, joystick, doc=document, host=w
   }
   function excluded(e) {
     return e.target?.isContentEditable ||
-      e.target?.closest?.('input,textarea,select,dialog,[contenteditable="true"]');
+      e.target?.closest?.('input,textarea,select,dialog,#controls,#buttonSettings,[contenteditable="true"]');
   }
   function down(e) {
     if(excluded(e)) { release(); return; }

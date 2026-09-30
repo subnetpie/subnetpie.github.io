@@ -590,3 +590,37 @@ button,
     top: var(--emulator-top) !important;
   }
 }
+
+/* The gear stays available in both orientations; the panel overlays the screen. */
+#buttonSettings {
+  position: fixed;
+  z-index: 21;
+  top: var(--emulator-top);
+  right: max(8px, env(safe-area-inset-right));
+  width: 44px;
+  height: 40px;
+  opacity: 1;
+  background: var(--control-brown);
+  cursor: pointer;
+  touch-action: manipulation;
+}
+#buttonSettings[aria-expanded="true"] { background: #382920; }
+#controls {
+  position: fixed;
+  z-index: 20;
+  top: calc(var(--emulator-top) + 46px) !important;
+  left: auto;
+  right: max(8px, env(safe-area-inset-right));
+  width: min(320px, calc(100vw - 16px));
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--key-border);
+  border-radius: 10px;
+  background: var(--apple-beige);
+  box-shadow: 0 6px 24px #0008;
+}
+#controls[hidden] { display: none !important; }
+#controls .button { width: 100%; min-height: 44px; opacity: 1; cursor: pointer; touch-action: manipulation; }
+#buttonSettings:focus-visible, #controls button:focus-visible { outline: 3px solid #ffdf80; outline-offset: 2px; }

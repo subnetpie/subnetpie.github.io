@@ -5,7 +5,7 @@ const machineType = machineParam === "iie" ? "iie" : "iigs";
 const khz = machineType === "iigs" ? 2800 : 1020.5;
 let motherboard;
 let screenMouse;
-import {attachHostKeyboard} from "./host_keyboard.js?v=20260930-keyboard";
+import {attachHostKeyboard} from "./host_keyboard.js?v=20260930-gear";
 let emulatorSurface = null;
 let screenCanvas = null;
 
@@ -610,12 +610,12 @@ function setScanlines(e) {
   }
 }
 
-document.getElementById("buttonInput").addEventListener("pointerdown", () => {setInput(buttonInput.innerText)});
-document.getElementById("buttonColor").addEventListener("pointerdown", () => {setColor(buttonColor.innerText)});
-document.getElementById("buttonScanlines").addEventListener("pointerdown", () => {setScanlines(buttonScanlines.innerText)});
+document.getElementById("buttonInput").addEventListener("click", () => {setInput(buttonInput.innerText)});
+document.getElementById("buttonColor").addEventListener("click", () => {setColor(buttonColor.innerText)});
+document.getElementById("buttonScanlines").addEventListener("click", () => {setScanlines(buttonScanlines.innerText)});
 
-document.getElementById("buttonRunStop").addEventListener("pointerdown", ()=>{(interval?stop:run)()});
-document.getElementById("buttonReset").addEventListener("pointerdown", buttonReset);
+document.getElementById("buttonRunStop").addEventListener("click", ()=>{(interval?stop:run)()});
+document.getElementById("buttonReset").addEventListener("click", buttonReset);
 
 document.getElementById("buttonKeyboard").addEventListener("pointerdown", ()=>{setKeyboard(buttonKeyboard.innerText)});
 document.getElementById("buttonMode").addEventListener("pointerdown", ()=>{setMode(buttonMode.innerText)});
@@ -773,14 +773,12 @@ function composeScreen() {
   const keypad = document.getElementById("keypad");
   const joyStickEl = document.getElementById("joyStick");
   const joyControlsEl = document.getElementById("joyControls");
-  const controlsEl = document.getElementById("controls");
 
   document.body.classList.toggle("keyboard-mode", keyboardMode);
   document.body.classList.toggle("joystick-mode", !keyboardMode);
   [keyboard0, keyboard1, keyboard2, keypad, joyStickEl, joyControlsEl]
     .forEach(el => { if (el) el.style.removeProperty("display"); });
 
-  controlsEl.style.display = "flex";
   document.body.style.backgroundColor = "#c4c1a0";
 
   if (portrait) {
@@ -793,7 +791,6 @@ function composeScreen() {
     return;
   }
 
-  controlsEl.style.display = "none";
   document.body.style.backgroundColor = "#0f0000";
   screenCanvas.style.left = "50%";
   screenCanvas.style.top = "";
