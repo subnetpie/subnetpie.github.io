@@ -337,6 +337,19 @@ export class IIgsVideo {
   setMonochrome(value) { this.monochrome=value&0xff; }
   isSuperHires() { return this.superHires; }
 
+  restoreLegacyCanvas() {
+    // Legacy Apple II renderers are built around the original 564x390
+    // backing surface. Resize only when compatibility video is actually
+    // revealed, so the last SHR frame can remain visible during the existing
+    // atomic SHR->Mega II transition.
+    if(this.canvas.width !== 564 || this.canvas.height !== 390) {
+      this.canvas.width = 564;
+      this.canvas.height = 390;
+      this.context = this.canvas.getContext("2d", {alpha:false});
+      this.context.imageSmoothingEnabled = false;
+    }
+  }
+
   mapAuxAddress(addr) {
     addr &= 0xffff;
     // MAME auxram0000_r/w: NEWVIDEO bits 6/7 enable the IIgs SHR bus
