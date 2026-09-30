@@ -33,6 +33,7 @@ function presentScreen(forceResize=false) {
     screenCanvas.height = h;
     screenCanvas.dataset.resolution = w + "x" + h;
   }
+  document.documentElement.style.setProperty("--screen-ratio", String(h / w));
   const ctx = screenCanvas.getContext("2d", {alpha:false});
   ctx.imageSmoothingEnabled = false;
   ctx.fillStyle = "#000";
@@ -794,8 +795,9 @@ function composeScreen() {
   document.body.style.backgroundColor = "#0f0000";
   screenCanvas.style.left = "50%";
   screenCanvas.style.top = "";
+  const screenRatio = screenCanvas.height / Math.max(1, screenCanvas.width);
   screenCanvas.style.height = window.innerHeight + "px";
-  screenCanvas.style.width = (window.innerHeight * 564 / 390) + "px";
+  screenCanvas.style.width = (window.innerHeight / screenRatio) + "px";
 }
 
 // MAIN FUNCTION //
