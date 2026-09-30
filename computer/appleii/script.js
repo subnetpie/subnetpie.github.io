@@ -80,6 +80,7 @@ var val0=0,val1=0,I1=0,I2=0,Z=3.25;
 var joyX=joyWidth/2,joyY=joyHeight/2;
 var joy0=joyWidth/2,joy1=joyHeight/2;
 var joyValues = {axis0:joyX,axis1:joyY,axis2:joyX,axis3:joyY,button0:val0,button1:val1};
+let joystickEnabled = true;
 var joyCenter = {joyX:joyWidth/2,joyY:joyHeight/2,on:true};
 var joyPad = document.getElementById("joyPadCanvas");
 var joyPadCtx = joyPad.getContext("2d");
@@ -564,6 +565,23 @@ window.addEventListener("pagehide",()=>diskPersistenceWriter.flush());
   }
 })();
 
+function setJoystickEnabled(enabled) {
+  joystickEnabled = !!enabled;
+  buttonJoystick.innerText = joystickEnabled ? "joy on" : "joy off";
+  buttonJoystick.setAttribute("aria-pressed", joystickEnabled ? "true" : "false");
+  if(!joystickEnabled) {
+    joyPadPointer = null;
+    firePointers.clear();
+    joyX = posX = 127;
+    joyY = posY = 127;
+    val0 = val1 = 0;
+    joyValues.axis0 = joyValues.axis2 = 127;
+    joyValues.axis1 = joyValues.axis3 = 127;
+    joyValues.button0 = joyValues.button1 = 0;
+  }
+  composeScreen();
+}
+
 function setInput(e) {
   if (e=="keyboard") {
     buttonInput.innerText = "joystick";
@@ -665,6 +683,7 @@ function setScanlines(e) {
 }
 
 document.getElementById("buttonInput").addEventListener("click", () => {setInput(buttonInput.innerText)});
+document.getElementById("buttonJoystick").addEventListener("click", () => {setJoystickEnabled(!joystickEnabled)});
 document.getElementById("buttonColor").addEventListener("click", () => {setColor(buttonColor.innerText)});
 document.getElementById("buttonScanlines").addEventListener("click", () => {setScanlines(buttonScanlines.innerText)});
 
@@ -830,6 +849,7 @@ function composeScreen() {
 
   document.body.classList.toggle("keyboard-mode", keyboardMode);
   document.body.classList.toggle("joystick-mode", !keyboardMode);
+  document.body.classList.toggle("joystick-disabled", !joystickEnabled);
   [keyboard0, keyboard1, keyboard2, keypad, joyStickEl, joyControlsEl]
     .forEach(el => { if (el) el.style.removeProperty("display"); });
 
@@ -869,6 +889,10 @@ $(function() {
   // published synchronously by the pointer handlers above, so this does not
   // add input latency and avoids the old 1 ms (~1000 Hz) main-thread timer.
   function renderJoystickUI() {
+    if(!joystickEnabled) {
+      window.requestAnimationFrame(renderJoystickUI);
+      return;
+    }
     joyRender.clear(joyPadCtx);
     joyRender.plot(joyPadCtx,joyX,joyY);
     if (buttonGrid.innerText=="on") {
