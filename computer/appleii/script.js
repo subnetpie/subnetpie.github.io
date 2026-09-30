@@ -44,7 +44,20 @@ function presentScreen(forceResize=false) {
   ctx.fillRect(0,0,w,h);
   ctx.drawImage(emulatorSurface, 0,0,emulatorSurface.width,emulatorSurface.height, 0,0,w,h);
   const label=document.getElementById('screenResolution');
-  const text=w+' × '+h;
+  const vv=window.visualViewport;
+  const cssW=Math.round(rect.width*100)/100;
+  const cssH=Math.round(rect.height*100)/100;
+  const dpr=Math.round((window.devicePixelRatio||1)*100)/100;
+  const vvW=Math.round((vv?.width??window.innerWidth)*100)/100;
+  const vvH=Math.round((vv?.height??window.innerHeight)*100)/100;
+  const text=[
+    'canvas '+w+' × '+h+' px',
+    'display '+cssW+' × '+cssH+' CSS px',
+    'window '+window.innerWidth+' × '+window.innerHeight+' CSS px',
+    'viewport '+vvW+' × '+vvH+' CSS px',
+    'screen '+screen.width+' × '+screen.height+' CSS px',
+    'DPR '+dpr
+  ].join('\\n');
   if(label.textContent!==text)label.textContent=text;
   // Keep the badge at the visible lower-right edge if landscape crops the canvas.
   const right=Math.max(4,window.innerWidth-Math.min(rect.right,window.innerWidth)+4)+'px';
