@@ -40,6 +40,7 @@ export class AppleAudio
         this.docSources = new Set();
         this.lastVisibleContextTime = 0;
         this.recovering = null;
+        this.browserUnlocked = false;
     }
 
     init() {
@@ -76,23 +77,42 @@ export class AppleAudio
     }
 
     async unlock() {
-        // IMPORTANT: this is the only normal browser path that creates WebAudio.
-        // iOS/iPadOS requires AudioContext creation/resume to originate from a
-        // direct user activation; automatic emulator boot must remain silent.
+        // IMPORTANT: AudioContext creation, resume(), and the first source.start()
+        // must all be initiated by the user gesture on iPadOS. Do not suspend a
+        // newly-created running context here: awaiting suspend() can consume the
+        // Safari activation before resume() gets a chance to run.
         const ac=this.init();
+        if(this.browserUnlocked && ac.state === "running") return ac;
+
+        // Call resume immediately while the pointer/key event still owns user
+        // activation. Keep its promise only so callers can observe completion.
+        const resumePromise = ac.state === "running" ? null : ac.resume();
+
+        // WebKit has historically needed a real source to start during the
+        // gesture before it opens the hardware output route. One silent frame
+        // is enough and is inaudible.
         try {
-            if(ac.state !== "running") await ac.resume();
-            // WebKit can report "running" while its audio clock is stalled after
-            // an interruption. A direct gesture is our strongest opportunity to
-            // kick the destination back into service.
-            if(ac.state === "running" && this.lastVisibleContextTime &&
-               ac.currentTime <= this.lastVisibleContextTime) {
-                await ac.suspend();
-                await ac.resume();
+            const buffer=ac.createBuffer(1,1,ac.sampleRate);
+            const source=ac.createBufferSource();
+            source.buffer=buffer;
+            source.connect(ac.destination);
+            source.start(0);
+            source.onended=()=>source.disconnect();
+        } catch(err) {
+            console.warn('[Apple audio] Safari output prime failed',err);
+        }
+
+        try {
+            if(resumePromise) await resumePromise;
+            this.browserUnlocked = ac.state === "running";
+            if(this.browserUnlocked) {
+                this.resetBrowserQueue();
+                this.lastVisibleContextTime=ac.currentTime || 0;
             }
-        } finally {
-            this.resetBrowserQueue();
-            this.lastVisibleContextTime=ac.currentTime || 0;
+            return ac;
+        } catch(err) {
+            this.browserUnlocked=false;
+            throw err;
         }
     }
 
@@ -134,7 +154,22 @@ export class AppleAudio
     }
 
     noteHidden() {
-        if(this.ac) this.lastVisibleContextTime=this.ac.currentTime || 0;
+        if(this.ac) {
+            this.lastVisibleContextTime=this.ac.currentTime || 0;
+            this.browserUnlocked=false;
+        }
+    }
+
+    diagnostics() {
+        return {
+            state:this.ac?.state || "not-created",
+            time:this.ac ? Math.round(this.ac.currentTime*100)/100 : 0,
+            sampleRate:this.ac?.sampleRate || 0,
+            worklet:!!this.docWorklet,
+            unlocked:this.browserUnlocked,
+            queued:this.docSources.size,
+            pcm:this.docPcmCount
+        };
     }
 
     begin_segment(clock) {
