@@ -80,7 +80,7 @@ var val0=0,val1=0,I1=0,I2=0,Z=3.25;
 var joyX=joyWidth/2,joyY=joyHeight/2;
 var joy0=joyWidth/2,joy1=joyHeight/2;
 var joyValues = {axis0:joyX,axis1:joyY,axis2:joyX,axis3:joyY,button0:val0,button1:val1};
-let joystickEnabled = true;
+let joystickEnabled = false;
 var joyCenter = {joyX:joyWidth/2,joyY:joyHeight/2,on:true};
 var joyPad = document.getElementById("joyPadCanvas");
 var joyPadCtx = joyPad.getContext("2d");
