@@ -381,3 +381,170 @@ button,
 }
 #mediaDialog .mediaChoice span { font-size: .875rem; }
 #mediaDialog button { width: 100%; min-height: 44px; padding: .5rem 1rem; font-size: 1rem; }
+
+
+/* Full Apple II keyboard, modeled after the physical IIgs/extended layout. */
+#keyboard0,
+#keyboard2 {
+  display: none !important;
+}
+
+#keyboard1.apple2-keyboard {
+  box-sizing: border-box;
+  width: calc(100% - 20px);
+  left: 10px;
+  padding: clamp(7px, 1.1vw, 14px);
+  border: clamp(4px, .55vw, 7px) solid #aaa88c;
+  border-radius: 13px;
+  background: #c8c6aa;
+  box-shadow:
+    inset 0 2px 0 rgba(255,255,255,.32),
+    inset 0 -2px 0 rgba(0,0,0,.08);
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+#keyboard1 .kb-row {
+  display: flex;
+  width: 100%;
+  gap: clamp(3px, .42vw, 7px);
+  margin: 0 0 clamp(4px, .52vw, 8px);
+}
+
+#keyboard1 .kb-row:last-child {
+  margin-bottom: 0;
+}
+
+#keyboard1 .KBbutton {
+  box-sizing: border-box;
+  min-width: 0;
+  width: auto;
+  flex: 1 1 0;
+  height: clamp(48px, 6.15vw, 82px);
+  padding: 3px;
+  border: 0;
+  border-radius: clamp(6px, .7vw, 10px);
+  background: linear-gradient(135deg, #5b4a39 0%, #4c3e30 52%, #44372a 100%);
+  color: #f5f3ed;
+  font: 500 clamp(13px, 1.65vw, 25px)/1 "Helvetica Neue", Arial, sans-serif;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  box-shadow:
+    inset 3px 3px 0 rgba(255,255,255,.08),
+    inset -3px -3px 0 rgba(0,0,0,.35),
+    clamp(3px, .42vw, 6px) clamp(4px, .52vw, 7px) 0 #0d0c0a;
+  transform: translate(0,0);
+  touch-action: manipulation;
+}
+
+#keyboard1 .KBbutton:active,
+#keyboard1 .KBbutton.pressed,
+#keyboard1 .modifier-key.active {
+  transform: translate(2px, 3px);
+  box-shadow:
+    inset 2px 2px 0 rgba(255,255,255,.06),
+    inset -2px -2px 0 rgba(0,0,0,.3),
+    2px 2px 0 #0d0c0a;
+}
+
+#keyboard1 .dual {
+  flex-direction: column;
+  gap: clamp(2px, .28vw, 5px);
+}
+
+#keyboard1 .dual span {
+  display: block;
+  line-height: .95;
+}
+
+#keyboard1 .dual span:first-child {
+  font-size: .82em;
+}
+
+#keyboard1 .key-wide-esc      { flex: 1.08 1 0; font-size: .66em; }
+#keyboard1 .key-wide-delete   { flex: 1.45 1 0; font-size: .58em; }
+#keyboard1 .key-wide-tab      { flex: 1.45 1 0; font-size: .62em; }
+#keyboard1 .key-wide-ctrl     { flex: 1.72 1 0; font-size: .62em; }
+#keyboard1 .key-wide-return   { flex: 1.67 1 0; font-size: .60em; }
+#keyboard1 .key-wide-shift    { flex: 2.15 1 0; font-size: .60em; }
+#keyboard1 .key-space         { flex: 5.35 1 0; }
+
+#keyboard1 .caps-key {
+  flex: 1.08 1 0;
+  flex-direction: column;
+  gap: 5px;
+  color: #63ff50;
+  font-size: clamp(9px, 1.05vw, 15px);
+}
+
+#keyboard1 .indicator-key {
+  flex: 1.06 1 0;
+  background: #e4e1bd;
+  box-shadow:
+    inset 2px 2px 0 rgba(255,255,255,.65),
+    inset -2px -2px 0 rgba(0,0,0,.16),
+    clamp(3px, .42vw, 6px) clamp(4px, .52vw, 7px) 0 #88856e;
+}
+
+#keyboard1 .key-led {
+  width: 42%;
+  aspect-ratio: 1.45 / 1;
+  background: #43f33f;
+  box-shadow: 0 0 7px rgba(67,243,63,.38);
+}
+
+#keyboard1 .apple-key {
+  flex: 1.04 1 0;
+  font-size: clamp(25px, 3.4vw, 47px);
+}
+
+#keyboard1 .arrow-key {
+  flex: 1.03 1 0;
+  font-size: clamp(21px, 2.2vw, 31px);
+}
+
+@media (orientation: portrait) {
+  #keyboard1.apple2-keyboard {
+    top: calc(max(4px, env(safe-area-inset-top)) + 42px + (100vw * var(--screen-ratio)) + 8px);
+  }
+  body.keyboard-mode #keyboard1.apple2-keyboard {
+    display: block !important;
+  }
+  body.keyboard-mode #keyboard0,
+  body.keyboard-mode #keyboard2 {
+    display: none !important;
+  }
+}
+
+@media (orientation: landscape) {
+  body.keyboard-mode #keyboard1.apple2-keyboard {
+    display: block !important;
+    top: 8px;
+  }
+  body.keyboard-mode #keyboard0,
+  body.keyboard-mode #keyboard2 {
+    display: none !important;
+  }
+}
+
+@media (max-width: 430px) and (orientation: portrait) {
+  #keyboard1.apple2-keyboard {
+    width: calc(100% - 8px);
+    left: 4px;
+    padding: 5px;
+    border-width: 3px;
+  }
+  #keyboard1 .kb-row { gap: 2px; margin-bottom: 3px; }
+  #keyboard1 .KBbutton {
+    height: clamp(38px, 11vw, 48px);
+    border-radius: 5px;
+    font-size: clamp(10px, 3vw, 14px);
+    box-shadow:
+      inset 2px 2px 0 rgba(255,255,255,.07),
+      inset -2px -2px 0 rgba(0,0,0,.32),
+      2px 3px 0 #0d0c0a;
+  }
+}
