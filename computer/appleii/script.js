@@ -81,6 +81,7 @@ var joyX=joyWidth/2,joyY=joyHeight/2;
 var joy0=joyWidth/2,joy1=joyHeight/2;
 var joyValues = {axis0:joyX,axis1:joyY,axis2:joyX,axis3:joyY,button0:val0,button1:val1};
 let joystickEnabled = false;
+let keyboardEnabled = false;
 var joyCenter = {joyX:joyWidth/2,joyY:joyHeight/2,on:true};
 var joyPad = document.getElementById("joyPadCanvas");
 var joyPadCtx = joyPad.getContext("2d");
@@ -578,6 +579,11 @@ window.addEventListener("pagehide",()=>diskPersistenceWriter.flush());
 
 function setJoystickEnabled(enabled) {
   joystickEnabled = !!enabled;
+  if(joystickEnabled && keyboardEnabled) {
+    keyboardEnabled = false;
+    buttonInput.innerText = "key off";
+    buttonInput.setAttribute("aria-pressed", "false");
+  }
   buttonJoystick.innerText = joystickEnabled ? "joy on" : "joy off";
   buttonJoystick.setAttribute("aria-pressed", joystickEnabled ? "true" : "false");
   if(!joystickEnabled) {
@@ -593,12 +599,23 @@ function setJoystickEnabled(enabled) {
   composeScreen();
 }
 
-function setInput(e) {
-  if (e=="keyboard") {
-    buttonInput.innerText = "joystick";
-  } else {
-    buttonInput.innerText = "keyboard";
+function setKeyboardEnabled(enabled) {
+  keyboardEnabled = !!enabled;
+  if(keyboardEnabled && joystickEnabled) {
+    joystickEnabled = false;
+    buttonJoystick.innerText = "joy off";
+    buttonJoystick.setAttribute("aria-pressed", "false");
+    joyPadPointer = null;
+    firePointers.clear();
+    joyX = posX = 127;
+    joyY = posY = 127;
+    val0 = val1 = 0;
+    joyValues.axis0 = joyValues.axis2 = 127;
+    joyValues.axis1 = joyValues.axis3 = 127;
+    joyValues.button0 = joyValues.button1 = 0;
   }
+  buttonInput.innerText = keyboardEnabled ? "key on" : "key off";
+  buttonInput.setAttribute("aria-pressed", keyboardEnabled ? "true" : "false");
   composeScreen();
 }
 
@@ -693,7 +710,7 @@ function setScanlines(e) {
   }
 }
 
-document.getElementById("buttonInput").addEventListener("click", () => {setInput(buttonInput.innerText)});
+document.getElementById("buttonInput").addEventListener("click", () => {setKeyboardEnabled(!keyboardEnabled)});
 document.getElementById("buttonJoystick").addEventListener("click", () => {setJoystickEnabled(!joystickEnabled)});
 document.getElementById("buttonColor").addEventListener("click", () => {setColor(buttonColor.innerText)});
 document.getElementById("buttonScanlines").addEventListener("click", () => {setScanlines(buttonScanlines.innerText)});
@@ -848,7 +865,7 @@ function setJoy() {
 function composeScreen() {
   const screenCanvas = document.getElementById("screen");
   const portrait = window.innerHeight >= window.innerWidth;
-  const keyboardMode = buttonInput.innerText.trim().toLowerCase() === "joystick";
+  const keyboardMode = keyboardEnabled;
   const symbols = buttonKeyboard.innerText.trim().toUpperCase() === "ABC";
 
   const keyboard0 = document.getElementById("keyboard0");
