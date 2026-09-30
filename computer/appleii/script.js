@@ -415,7 +415,8 @@ function stop() {
 function run() {
   buttonRunStop.innerText = "stop";
   if (interval) return;
-  motherboard.audio.init();
+  // Do not create WebAudio here. iPadOS Safari only reliably enables audio
+  // when AudioContext creation/resume occurs inside a direct user gesture.
   last_ms = performance.now();
   interval = window.requestAnimationFrame(on_interval);
 }
@@ -425,13 +426,23 @@ function run() {
 // picker gesture has ended. Unlock/resume audio on the next direct interaction.
 function unlockAudio() {
   if(!motherboard || !motherboard.audio) return;
-  motherboard.audio.unlock().catch(()=>{});
+  motherboard.audio.unlock().catch(err=>console.warn('[Apple audio] unlock failed',err));
 }
 document.addEventListener("pointerdown", unlockAudio, {passive:true});
 document.addEventListener("touchstart", unlockAudio, {passive:true});
 document.addEventListener("mousedown", unlockAudio, {passive:true});
 document.addEventListener("keydown", unlockAudio);
-document.addEventListener("visibilitychange",()=>{if(document.hidden)diskPersistenceWriter.flush();});
+document.addEventListener("visibilitychange",()=>{
+  if(document.hidden) {
+    diskPersistenceWriter.flush();
+    motherboard?.audio?.noteHidden();
+  } else {
+    // Safari may leave WebAudio interrupted, or report running while its
+    // destination clock is stalled. Try recovery now; the next tap also runs
+    // unlockAudio() if iOS requires a fresh user activation.
+    motherboard?.audio?.recoverAfterVisibility().catch(()=>{});
+  }
+});
 window.addEventListener("pagehide",()=>diskPersistenceWriter.flush());
 
 // Keyboard
