@@ -1,13 +1,29 @@
 // Battlezone rev 2 semantic provenance. See ASSETS.md for ROM/source evidence.
 export const ASSETS = Object.freeze({
-  unclassified: {color:"green"}, mountains: {color:"purple"}, horizon: {color:"darkPurple",displayIntensity:15},
-  moon: {color:"blue"}, obstacle: {color:"orange"},
-  crosshair: {color:"red"}, volcanoSpark: {color:"red",displayIntensity:15},
-  tank: {color:"green"}, playerLives: {color:"green"}, projectile: {color:"green"}, debris: {color:"green"},
-  missile: {color:"green"}, logo: {color:"blue"}, saucer: {color:"green"},
-  hudRadar: {color:"red"}, score: {color:"red"}, highScore: {color:"orange"},
-  enemyInRange: {color:"lightOrange"}, enemyDirection: {color:"lightOrange"},
-  motionBlocked: {color:"lightOrange"}
+  unclassified: {color:"green", brightness:1.00, glow:0.35},
+  mountains: {color:"purple", brightness:0.80, glow:0.25},
+  horizon: {color:"darkPurple", brightness:0.80, glow:0.30, displayIntensity:15},
+  moon: {color:"blue", brightness:0.90, glow:0.40},
+  obstacle: {color:"orange", brightness:0.90, glow:0.30},
+  crosshair: {color:"red", brightness:1.15, glow:0.55},
+  volcanoSpark: {color:"red", brightness:1.25, glow:0.70, displayIntensity:15},
+
+  tank: {color:"green", brightness:1.00, glow:0.35, coordinateSpace:"world"},
+  playerLives: {color:"green", brightness:1.00, glow:0.35, coordinateSpace:"hud"},
+  projectile: {color:"green", brightness:1.00, glow:0.35, coordinateSpace:"world"},
+  debris: {color:"green", brightness:0.95, glow:0.30, coordinateSpace:"world"},
+  missile: {color:"green", brightness:1.15, glow:0.55, coordinateSpace:"world"},
+  logo: {color:"blue", brightness:1.00, glow:0.40, coordinateSpace:"hud"},
+  saucer: {color:"green", brightness:1.05, glow:0.50, coordinateSpace:"world"},
+
+  hudRadar: {color:"green", brightness:0.90, glow:0.30, displayIntensity:15, coordinateSpace:"hud", sourcePC:0x6ae9},
+  enemyBlip: {color:"red", brightness:1.25, glow:0.70, displayIntensity:15, coordinateSpace:"hud", primitive:"point", sourcePC:0x6ae9},
+
+  score: {color:"red", brightness:1.00, glow:0.35, coordinateSpace:"hud"},
+  highScore: {color:"orange", brightness:1.05, glow:0.40, coordinateSpace:"hud"},
+  enemyInRange: {color:"lightOrange", brightness:1.05, glow:0.45, coordinateSpace:"hud"},
+  enemyDirection: {color:"lightOrange", brightness:1.05, glow:0.45, coordinateSpace:"hud"},
+  motionBlocked: {color:"lightOrange", brightness:1.05, glow:0.45, coordinateSpace:"hud"}
 });
 
 export function shapeAsset(type) {
@@ -19,6 +35,19 @@ export function shapeAsset(type) {
   if (type===0x20) return "saucer";
   if ((type>=0x10 && type<=0x1d) || (type>=0x24 && type<=0x2b)) return "debris";
   return "unclassified";
+}
+
+export function assetStyle(asset, sourceIntensity) {
+  const style=ASSETS[asset]??ASSETS.unclassified;
+  return {
+    asset,
+    color:style.color,
+    brightness:style.brightness??1,
+    glow:style.glow??0.35,
+    coordinateSpace:style.coordinateSpace??"world",
+    displayIntensity:style.displayIntensity??sourceIntensity,
+    primitive:style.primitive??null
+  };
 }
 
 export class AssetTrace {
@@ -97,4 +126,20 @@ export class AssetTrace {
       return {...inherited,asset:"moon",parentAsset:"mountains"};
     return inherited;
   }
+  styleInstruction(origin,primitive) {
+    if(!this.enabled) return primitive;
+    const dx=(primitive?.x2??0)-(primitive?.x1??0);
+    const dy=(primitive?.y2??0)-(primitive?.y1??0);
+    const length=Number.isFinite(dx)&&Number.isFinite(dy)?Math.hypot(dx,dy):Infinity;
+    const radarContact=
+      origin?.asset==="hudRadar" &&
+      primitive?.visible===true &&
+      primitive?.isMove!==true &&
+      length<=4.5;
+    const asset=radarContact?"enemyBlip":(origin?.asset??"unclassified");
+    const style=assetStyle(asset,primitive?.intensity);
+    return {...primitive,asset:style.asset,color:style.color,brightness:style.brightness,glow:style.glow,
+      coordinateSpace:style.coordinateSpace,primitiveStyle:style.primitive,displayIntensity:style.displayIntensity,length};
+  }
+
 }
