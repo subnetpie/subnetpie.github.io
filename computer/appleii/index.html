@@ -144,15 +144,25 @@
     <p id="driveName0" class="diskName">Empty</p>
     <label class="mediaChoice" for="filedialog1"><strong>Load and restart</strong><span>Boot a system disk or start a new game.</span></label>
     <label class="mediaChoice" for="filedialogInsert">Insert into Drive 1 — keep running</label>
+    <div id="hardDriveOptions0" hidden>
+      <label><input type="checkbox" id="protectDrive0"> Write protect</label>
+      <p id="writeStatus0" role="status"></p>
+      <button id="saveDrive0" type="button">Download image</button>
+    </div>
     <button id="ejectDrive0" type="button">Eject Drive 1</button>
   </section>
   <section class="diskDrive" aria-labelledby="driveTitle1">
     <h3 id="driveTitle1">Drive 2 · Application / data</h3>
     <p id="driveName1" class="diskName">Empty</p>
     <label class="mediaChoice" for="filedialogInsert2">Insert into Drive 2 — keep running</label>
+    <div id="hardDriveOptions1" hidden>
+      <label><input type="checkbox" id="protectDrive1"> Write protect</label>
+      <p id="writeStatus1" role="status"></p>
+      <button id="saveDrive1" type="button">Download image</button>
+    </div>
     <button id="ejectDrive1" type="button">Eject Drive 2</button>
   </section>
-  <p>DSK, WOZ, 2MG, HDV and ZIP supported. Eject the disk in the guest desktop before replacing it. Changes to disk data remain in memory only.</p>
+  <p>DSK, WOZ, 2MG, HDV and ZIP supported. Eject the disk in the guest desktop before replacing it. Hard-drive writes remain in memory until you download the image. Save in the guest application, then download before ejecting, replacing, or reloading. Downloads create a new file; the original file is unchanged.</p>
   <form method="dialog"><button>Cancel</button></form>
 </dialog>
 <dialog id="archiveDialog" aria-labelledby="archiveTitle">
@@ -213,7 +223,7 @@
   }, 1500);
 })();
 </script>
-<script src="./joystick.js"></script><script type="module" src="./script.js?v=20260930-trackpad"></script>
+<script src="./joystick.js"></script><script type="module" src="./script.js?v=20260930-disk-save"></script>
 
   </body>
   

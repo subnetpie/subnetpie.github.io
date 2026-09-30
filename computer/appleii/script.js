@@ -1,3 +1,4 @@
+import {exportHardDrive} from "./disk_export.js?v=20260930-disk-save";
 const machineParam = new URLSearchParams(location.search).get("machine");
 const machineType = machineParam === "iie" ? "iie" : "iigs";
 // IIgs is the default machine. Its 65816 speed changes dynamically through
@@ -164,11 +165,33 @@ function refreshDriveLabels() {
     const media=motherboard?.mountedMedia?.[i];
     document.getElementById('driveName'+i).textContent=media?.name.split('/').pop() || 'Empty';
     document.getElementById('ejectDrive'+i).disabled=!media;
+    const disk=motherboard?.prodosBlock.drives[i];
+    document.getElementById('hardDriveOptions'+i).hidden=!(disk?.image && disk.physical!=='35');
+    document.getElementById('protectDrive'+i).checked=!!disk?.writeProtected;
+    document.getElementById('writeStatus'+i).textContent=disk?.dirty ? 'Modified in this session — download to keep changes.' : 'No writes in this session.';
   }
 }
 for(let i=0;i<2;i++)document.getElementById('ejectDrive'+i).addEventListener('click',()=>{
   ejectMedia(motherboard,i);refreshDriveLabels();
 });
+for(let i=0;i<2;i++) {
+  document.getElementById('protectDrive'+i).addEventListener('change',e=>{
+    const disk=motherboard.prodosBlock.drives[i];
+    disk.writeProtected=e.target.checked;
+    refreshDriveLabels();
+  });
+  document.getElementById('saveDrive'+i).addEventListener('click',()=>{
+    try {
+      const snapshot=exportHardDrive(motherboard,i);
+      const url=URL.createObjectURL(new Blob([snapshot.data],{type:'application/octet-stream'}));
+      const link=document.createElement('a');link.href=url;link.download=snapshot.name;
+      document.body.append(link);link.click();link.remove();
+      setTimeout(()=>URL.revokeObjectURL(url),60000);
+      // The browser cannot confirm that a download was saved: retain dirty state.
+      document.getElementById('writeStatus'+i).textContent='Download requested. Keep the downloaded image to preserve your changes.';
+    } catch(err) { showBootStatus('SAVE ERROR\n'+err.message); }
+  });
+}
 document.getElementById('buttonLoad').addEventListener('click',()=>{
   refreshDriveLabels();document.getElementById('mediaDialog').showModal();
 });
