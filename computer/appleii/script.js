@@ -5,6 +5,7 @@ const machineType = machineParam === "iie" ? "iie" : "iigs";
 const khz = machineType === "iigs" ? 2800 : 1020.5;
 let motherboard;
 let screenMouse;
+import {attachHostKeyboard} from "./host_keyboard.js?v=20260930-keyboard";
 let emulatorSurface = null;
 let screenCanvas = null;
 
@@ -93,7 +94,7 @@ function chooseArchiveImage(name, entries) {
   });
 }
 
-import { Motherboard } from "https://subnetpie.github.io/computer/appleii/motherboard.js?v=20260930-gsos-drives";
+import { Motherboard } from "https://subnetpie.github.io/computer/appleii/motherboard.js?v=20260930-keyboard";
 
 class Drive {
   constructor(num, display, led, dialog, restart=true) {
@@ -261,6 +262,7 @@ function init() {
   emulatorSurface.width = 564;
   emulatorSurface.height = 390;
   motherboard = new Motherboard(khz, emulatorSurface, joyValues, (n, s) => {}, machineType);
+  attachHostKeyboard(motherboard.keyboard, motherboard.iigsEnabled ? motherboard.memory.adb : null, joyValues);
   if(motherboard.iigsEnabled) {
     screenMouse=attachTouchMouse(screenCanvas,motherboard.memory.adb);
     document.getElementById('mouseHint').hidden=false;

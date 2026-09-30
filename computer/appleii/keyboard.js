@@ -95,7 +95,12 @@ export class Keyboard
             code = this.key_map[code];
         }
 
-        this._key = code | 0x80;
+        this.pressAscii(code);
+    }
+
+    pressAscii(code) {
+        this._key_pressed = true;
+        this._key = (code & 0x7f) | 0x80;
         if(this.onChange)this.onChange(this._key,true);
     }
 

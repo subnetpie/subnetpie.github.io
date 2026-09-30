@@ -166,9 +166,9 @@ export class IOManager
                     if(this._iigsEnabled && this._video_iigs) return this._video_iigs.readNewVideo();
                     break;
                 case 0xc061: // js pb0
-                    return this._joystick.button0 ? 0x80 : 0;
+                    return (this._joystick.button0 || this._joystick.keyboardCommand) ? 0x80 : 0;
                 case 0xc062: // js pb1
-                    return this._joystick.button1 ? 0x80 : 0;
+                    return (this._joystick.button1 || this._joystick.keyboardOption) ? 0x80 : 0;
                 case 0xc063: // js pb2
                     return this._joystick.button2 ? 0x80 : 0;
                 case 0xc064: // js pdl-0
