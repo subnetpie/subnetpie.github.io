@@ -7,7 +7,7 @@
     <title>Apple 2ios</title>
     <script src="./touch-guard.js?v=20260930-gear"></script>
     <link rel='stylesheet' href='https://fonts.googleapis.com/css2?family=Rubik'>
-<link rel='stylesheet' href='https://fonts.googleapis.com/css2?family=Russo+One&amp;display=swap'><link rel="stylesheet" href="./style.css?v=20260930-landscape-top">
+<link rel='stylesheet' href='https://fonts.googleapis.com/css2?family=Russo+One&amp;display=swap'><link rel="stylesheet" href="./style.css?v=20260930-resolution">
 
   </head>
     
@@ -16,6 +16,7 @@
 <meta name="apple-touch-fullscreen" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <canvas class="screen" id="screen" height="390" width="564"></canvas>
+<output id="screenResolution" aria-label="Canvas resolution"></output>
 <div id="mouseHint" hidden style="text-align:center;font:12px sans-serif;padding:4px">Touch: slide to move · tap to click · hold to drag. Trackpad: move, click, or click and drag.</div>
 <div id="bootStatus" style="display:none;position:fixed;z-index:9999;left:8px;right:8px;top:290px;padding:8px;background:#200;color:#fff;font:12px monospace;white-space:pre-wrap;word-break:break-word;border:1px solid #f66"></div>
 <div class="keypad" id="keypad">
@@ -223,7 +224,7 @@
   }, 1500);
 })();
 </script>
-<script src="./joystick.js"></script><script type="module" src="./script.js?v=20260930-disk-save"></script>
+<script src="./joystick.js"></script><script type="module" src="./script.js?v=20260930-resolution"></script>
 
   </body>
   

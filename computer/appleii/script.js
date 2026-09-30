@@ -17,9 +17,8 @@ const SCREEN_RESOLUTIONS = Object.freeze([
   [1900, 1000]
 ]);
 
-function selectScreenResolution() {
+function selectScreenResolution(rect) {
   if(!screenCanvas) return SCREEN_RESOLUTIONS[1];
-  const rect = screenCanvas.getBoundingClientRect();
   const dpr = Math.max(1, window.devicePixelRatio || 1);
   const needW = Math.max(1, Math.round(rect.width * dpr));
   const needH = Math.max(1, Math.round(rect.height * dpr));
@@ -29,7 +28,8 @@ function selectScreenResolution() {
 
 function presentScreen(forceResize=false) {
   if(!screenCanvas || !emulatorSurface) return;
-  const [w,h] = selectScreenResolution();
+  const rect = screenCanvas.getBoundingClientRect();
+  const [w,h] = selectScreenResolution(rect);
   if(forceResize || screenCanvas.width !== w || screenCanvas.height !== h) {
     screenCanvas.width = w;
     screenCanvas.height = h;
@@ -41,6 +41,14 @@ function presentScreen(forceResize=false) {
   ctx.fillStyle = "#000";
   ctx.fillRect(0,0,w,h);
   ctx.drawImage(emulatorSurface, 0,0,emulatorSurface.width,emulatorSurface.height, 0,0,w,h);
+  const label=document.getElementById('screenResolution');
+  const text=w+' × '+h;
+  if(label.textContent!==text)label.textContent=text;
+  // Keep the badge at the visible lower-right edge if landscape crops the canvas.
+  const right=Math.max(4,window.innerWidth-Math.min(rect.right,window.innerWidth)+4)+'px';
+  const bottom=Math.max(4,window.innerHeight-Math.min(rect.bottom,window.innerHeight)+4)+'px';
+  if(label.style.right!==right)label.style.right=right;
+  if(label.style.bottom!==bottom)label.style.bottom=bottom;
 }
 import {attachTouchMouse} from "./touch_mouse.js?v=20260930-trackpad";
 let interval;

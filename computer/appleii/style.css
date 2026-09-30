@@ -624,3 +624,17 @@ button,
 #controls[hidden] { display: none !important; }
 #controls .button { width: 100%; min-height: 44px; opacity: 1; cursor: pointer; touch-action: manipulation; }
 #buttonSettings:focus-visible, #controls button:focus-visible { outline: 3px solid #ffdf80; outline-offset: 2px; }
+
+#screenResolution {
+  position: fixed;
+  z-index: 2;
+  right: 4px;
+  bottom: 4px;
+  padding: 3px 5px;
+  border-radius: 3px;
+  background: rgba(0, 0, 0, .65);
+  color: #fff;
+  font: 11px/1.2 monospace;
+  pointer-events: none;
+}
+#screenResolution:empty { display: none; }
