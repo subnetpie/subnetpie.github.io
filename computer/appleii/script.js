@@ -1,4 +1,6 @@
 import {exportHardDrive} from "./disk_export.js?v=20260930-disk-save";
+import {mediaPersistenceKey,restorePersistentBlocks,createBlockPersistenceWriter} from "./disk_persistence.js?v=20260930-persist1";
+const diskPersistenceWriter=createBlockPersistenceWriter();
 const machineParam = new URLSearchParams(location.search).get("machine");
 const machineType = machineParam === "iie" ? "iie" : "iigs";
 // IIgs is the default machine. Its 65816 speed changes dynamically through
@@ -115,8 +117,14 @@ class Drive {
     this.dialog.addEventListener('change', this.on_file_select.bind(this));
   }
 
-  load_media(name, buffer) {
-    const media = decodeMedia(name, buffer);
+  async load_media(name, buffer) {
+    const source = buffer instanceof Uint8Array ? buffer : new Uint8Array(buffer);
+    const media = decodeMedia(name, source);
+    if(media.kind === 'block' && !media.writeProtected) {
+      media.persistenceKey = mediaPersistenceKey(name, source);
+      const restored = await restorePersistentBlocks(media.persistenceKey, media.data);
+      media.restoredBlocks = restored;
+    }
     mountMedia(motherboard, media, this.num, {preserveSession:!this.restart});
     refreshDriveLabels();
     if(!this.restart) {
@@ -136,7 +144,7 @@ class Drive {
     const entries = readZipEntries(buffer);
     const selected = entries.length === 1 ? entries[0] : await chooseArchiveImage(name, entries);
     if(!selected) return false;
-    return this.load_media(selected.name, selected.data);
+    return await this.load_media(selected.name, selected.data);
   }
 
   on_file_select(e) {
@@ -149,7 +157,7 @@ class Drive {
         if(isZip(file.name, fr.result))
           await this.load_zip(file.name, fr.result);
         else
-          this.load_media(file.name, fr.result);
+          await this.load_media(file.name, fr.result);
       } catch(err) {
         console.error(err);
         showBootStatus('LOAD ERROR\n' + (err.message || 'Media load failed'));
@@ -176,7 +184,12 @@ function refreshDriveLabels() {
     const disk=motherboard?.prodosBlock.drives[i];
     document.getElementById('hardDriveOptions'+i).hidden=!(disk?.image && disk.physical!=='35');
     document.getElementById('protectDrive'+i).checked=!!disk?.writeProtected;
-    document.getElementById('writeStatus'+i).textContent=disk?.dirty ? 'Modified in this session — download to keep changes.' : 'No writes in this session.';
+    const status=document.getElementById('writeStatus'+i);
+    if(disk?.persistenceKey) {
+      const restored=media?.restoredBlocks || 0;
+      status.textContent=disk.dirty ? 'Changes are being saved automatically in this browser.'
+        : restored ? 'Restored saved changes from this browser.' : 'Writable — changes will be saved automatically.';
+    } else status.textContent=disk?.dirty ? 'Modified in this session — download to keep changes.' : 'No writes in this session.';
   }
 }
 for(let i=0;i<2;i++)document.getElementById('ejectDrive'+i).addEventListener('click',()=>{
@@ -293,6 +306,11 @@ function init() {
   emulatorSurface.width = 564;
   emulatorSurface.height = 390;
   motherboard = new Motherboard(khz, emulatorSurface, joyValues, (n, s) => {}, machineType);
+  motherboard.prodosBlock.setWriteListener((drive,disk,block)=>{
+    diskPersistenceWriter.write(drive,disk,block);
+    const status=document.getElementById('writeStatus'+drive);
+    if(status&&disk.persistenceKey)status.textContent='Changes are being saved automatically in this browser.';
+  });
   attachHostKeyboard(motherboard.keyboard, motherboard.iigsEnabled ? motherboard.memory.adb : null, joyValues);
   if(motherboard.iigsEnabled) {
     screenMouse=attachTouchMouse(screenCanvas,motherboard.memory.adb);
@@ -409,6 +427,8 @@ document.addEventListener("pointerdown", unlockAudio, {passive:true});
 document.addEventListener("touchstart", unlockAudio, {passive:true});
 document.addEventListener("mousedown", unlockAudio, {passive:true});
 document.addEventListener("keydown", unlockAudio);
+document.addEventListener("visibilitychange",()=>{if(document.hidden)diskPersistenceWriter.flush();});
+window.addEventListener("pagehide",()=>diskPersistenceWriter.flush());
 
 // Keyboard
 //
