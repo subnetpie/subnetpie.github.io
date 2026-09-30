@@ -62,7 +62,9 @@ function presentScreen(forceResize=false) {
     'DPR '+dpr,
     audio ? ('audio '+audio.state+' '+audio.sampleRate+'Hz'+
       ' unlock:'+(audio.unlocked?'yes':'no')+
-      ' worklet:'+(audio.worklet?'yes':'no')) : 'audio unavailable'
+      ' '+audio.backend+
+      ' frames:'+audio.frames+
+      ' peak:'+audio.peak) : 'audio unavailable'
   ].join('\\n');
   if(label.textContent!==text)label.textContent=text;
   // Keep the badge at the visible lower-right edge if landscape crops the canvas.
