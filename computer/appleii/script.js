@@ -41,7 +41,7 @@ function presentScreen(forceResize=false) {
   ctx.fillRect(0,0,w,h);
   ctx.drawImage(emulatorSurface, 0,0,emulatorSurface.width,emulatorSurface.height, 0,0,w,h);
 }
-import {attachTouchMouse} from "./touch_mouse.js?v=20260929-mouse";
+import {attachTouchMouse} from "./touch_mouse.js?v=20260930-trackpad";
 let interval;
 let last_ms;
 let bootWatchdog = 0;

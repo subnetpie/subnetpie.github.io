@@ -37,3 +37,30 @@ test('second pointer is ignored and blur releases drag',()=>{
  const f=fixture();f.fire('pointerdown');f.hold();f.fire('pointerdown',10,10,{pointerId:2});f.fire('pointerup',10,10,{pointerId:2});
  f.fire('blur');assert.deepEqual(f.events,[[0,0,true],[0,0,false]]);
 });
+test('Magic Keyboard hover moves without a click and reentry never jumps',()=>{
+ const f=fixture(),mouse={pointerType:'mouse'};
+ f.fire('pointerenter',100,100,mouse);
+ f.fire('pointermove',120,120,mouse);
+ f.fire('pointermove',130,100,mouse);
+ assert.deepEqual(f.events,[[20,10,false],[10,-10,false]]);
+ f.fire('pointerleave',130,100,mouse);
+ f.fire('pointerenter',500,300,mouse);
+ f.fire('pointermove',510,310,mouse);
+ assert.deepEqual(f.events.at(-1),[10,5,false]);
+ f.fire('blur');
+ const count=f.events.length;
+ f.fire('pointermove',10,10,mouse);
+ assert.equal(f.events.length,count);
+});
+test('trackpad click-drag captures movement and releases outside screen',()=>{
+ const f=fixture(),mouse={pointerType:'mouse'};
+ f.fire('pointerenter',10,10,mouse);
+ f.fire('pointerdown',10,10,mouse);
+ f.fire('pointermove',30,50,mouse);
+ f.fire('pointerleave',30,50,mouse);
+ f.fire('pointermove',40,60,mouse);
+ f.fire('pointerup',40,60,mouse);
+ assert.deepEqual(f.events,[[0,0,true],[20,20,true],[10,5,true],[0,0,false]]);
+ f.fire('pointermove',42,62,mouse);
+ assert.deepEqual(f.events.at(-1),[2,1,false]);
+});
