@@ -556,7 +556,7 @@ button,
 #mediaDialog button:disabled { opacity: .45; }
 
 
-/* 2026-09-30: keep the emulator chrome/display 30px below the viewport top. */
+/* Portrait spacing and the floating controls retain a 30px top inset. */
 :root { --emulator-top: max(30px, env(safe-area-inset-top)); }
 
 #controls {
@@ -587,7 +587,7 @@ button,
     top: var(--emulator-top) !important;
   }
   .screen {
-    top: var(--emulator-top) !important;
+    top: 0 !important;
   }
 }
 
