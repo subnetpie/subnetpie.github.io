@@ -52,13 +52,17 @@ function presentScreen(forceResize=false) {
   const dpr=Math.round((window.devicePixelRatio||1)*100)/100;
   const vvW=Math.round((vv?.width??window.innerWidth)*100)/100;
   const vvH=Math.round((vv?.height??window.innerHeight)*100)/100;
+  const audio=motherboard?.audio?.diagnostics?.();
   const text=[
     'canvas '+w+' × '+h+' px',
     'display '+cssW+' × '+cssH+' CSS px',
     'window '+window.innerWidth+' × '+window.innerHeight+' CSS px',
     'viewport '+vvW+' × '+vvH+' CSS px',
     'screen '+screen.width+' × '+screen.height+' CSS px',
-    'DPR '+dpr
+    'DPR '+dpr,
+    audio ? ('audio '+audio.state+' '+audio.sampleRate+'Hz'+
+      ' unlock:'+(audio.unlocked?'yes':'no')+
+      ' worklet:'+(audio.worklet?'yes':'no')) : 'audio unavailable'
   ].join('\\n');
   if(label.textContent!==text)label.textContent=text;
   // Keep the badge at the visible lower-right edge if landscape crops the canvas.
