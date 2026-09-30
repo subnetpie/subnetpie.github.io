@@ -492,8 +492,11 @@ export class IIgsVideo {
       if(!this.dirtyLines[y]) continue;
       const scb=this.decodeSCB(y);
       if(scb.mode640) {
+        // Preserve the IIgs' native 640-mode pixel pattern exactly. System
+        // 6 deliberately uses alternating palette pixels for desktop fills;
+        // averaging those pairs turns the reference vertical dither into a
+        // flat lavender field.
         this.render640Line(y,scb,data);
-        this.blend640Line(y,data);
       } else {
         this.render320Line(y,scb,data);
       }
@@ -513,11 +516,21 @@ export class IIgsVideo {
     this.offscreenContext.putImageData(
       this.image,0,0,0,firstDirty,640,lastDirty-firstDirty+1
     );
+    // SHR is 640 logical pixels wide. Do not squeeze it into the legacy
+    // 560-pixel Apple II aperture: that resampling aliases one-pixel dither
+    // columns and makes System 6 fills look uneven/solid. The canvas backing
+    // store follows SHR at 640x400 (2x vertical) for square-looking IIgs
+    // pixels while retaining every horizontal source pixel.
+    if(this.canvas.width !== 640 || this.canvas.height !== 400) {
+      this.canvas.width = 640;
+      this.canvas.height = 400;
+      this.context = this.canvas.getContext("2d", {alpha:false});
+    }
     this.context.save();
     this.context.imageSmoothingEnabled=false;
     this.context.fillStyle="#000";
-    this.context.fillRect(0,0,this.canvas.width,this.canvas.height);
-    this.context.drawImage(this.offscreen,0,0,640,200,2,3,560,384);
+    this.context.fillRect(0,0,640,400);
+    this.context.drawImage(this.offscreen,0,0,640,200,0,0,640,400);
     this.context.restore();
     this.dirty=false;
     return true;
