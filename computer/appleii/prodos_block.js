@@ -18,6 +18,7 @@ export class ProDOSBlockDevice {
             get:()=>this.drives[0][key], set:value=>{this.drives[0][key]=value;}
         });
         this.trace = null;
+        this.writeListener = null;
 
         this.romBase = 0xc000 | (this.slot << 8);
         this.ioBase = 0xc080 | (this.slot << 4);
@@ -106,6 +107,7 @@ export class ProDOSBlockDevice {
         disk.blockCount = blocks;
         disk.dirty = false;
         disk.changed = true;
+        disk.persistenceKey = options.persistenceKey || null;
         console.log("mounted ProDOS block device:", name, blocks, "blocks");
         return true;
     }
@@ -127,6 +129,10 @@ export class ProDOSBlockDevice {
     }
 
     setTrace(fn) { this.trace = fn; }
+    setWriteListener(fn) { this.writeListener = typeof fn === 'function' ? fn : null; }
+    notifyWrite(drive, disk, block) {
+        if(this.writeListener) this.writeListener(drive, disk, block);
+    }
 
     read(addr) {
         if (addr >= this.romBase && addr <= this.romBase + 0xff) {
@@ -213,7 +219,10 @@ export class ProDOSBlockDevice {
             if(command===1)this.memory.write(bufferAddress(i),disk.image[block*512+i]);
             else disk.image[block*512+i]=read(bufferAddress(i));
         }
-        if(command===2)disk.dirty=true;
+        if(command===2) {
+            disk.dirty=true;
+            this.notifyWrite(unit-1,disk,block);
+        }
         this.smartCount=512;return 0;
     }
 
@@ -247,6 +256,7 @@ export class ProDOSBlockDevice {
             for (let i = 0; i < 512; i++)
                 disk.image[offset + i] = this.memory.read((buffer + i) & 0xffff);
             disk.dirty = true;
+            this.notifyWrite(this.statusDrive,disk,block);
         }
         return 0;
     }
