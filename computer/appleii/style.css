@@ -639,7 +639,9 @@ button,
   text-align: right;
   pointer-events: none;
 }
-#screenResolution:empty { display: none; }
+#screenResolution[hidden],
+#screenResolution:empty { display: none !important; }
+#buttonDiagnostics[aria-pressed="false"] { opacity: .32; }
 
 
 /* Main controls can disable the touch joystick independently of keyboard mode. */
