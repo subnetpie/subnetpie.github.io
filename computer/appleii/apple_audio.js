@@ -41,6 +41,10 @@ export class AppleAudio
         this.lastVisibleContextTime = 0;
         this.recovering = null;
         this.browserUnlocked = false;
+        this.isIPadOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+            (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+        this.framesSubmitted = 0;
+        this.outputPeak = 0;
     }
 
     init() {
@@ -57,6 +61,11 @@ export class AppleAudio
     }
 
     async initDocWorklet() {
+        // Safari on iPadOS can successfully construct an AudioWorkletNode yet
+        // render silence. Use the scheduled AudioBuffer backend there; it runs
+        // through the same unlocked AudioContext and is considerably more
+        // reliable on WebKit/iOS.
+        if(this.isIPadOS) return;
         if(this.docWorklet || this.docWorkletStarting || !this.ac?.audioWorklet ||
            typeof AudioWorkletNode === "undefined") return;
         this.docWorkletStarting=true;
@@ -168,9 +177,12 @@ export class AppleAudio
             time:this.ac ? Math.round(this.ac.currentTime*100)/100 : 0,
             sampleRate:this.ac?.sampleRate || 0,
             worklet:!!this.docWorklet,
+            backend:this.docWorklet ? "worklet" : (this.isIPadOS ? "buffer-ipad" : "buffer"),
             unlocked:this.browserUnlocked,
             queued:this.docSources.size,
-            pcm:this.docPcmCount
+            pcm:this.docPcmCount,
+            frames:this.framesSubmitted,
+            peak:Math.round(this.outputPeak*1000)/1000
         };
     }
 
@@ -232,6 +244,10 @@ export class AppleAudio
     flushDocPcm() {
         const n=this.docPcmCount;
         if(!n || !this.ac) return;
+        this.framesSubmitted += n;
+        let peak=0;
+        for(let i=0;i<n;i++) peak=Math.max(peak,Math.abs(this.docPcmLeft[i]),Math.abs(this.docPcmRight[i]));
+        this.outputPeak=Math.max(peak,this.outputPeak*0.95);
         if(this.ac.state !== "running") {
             this.docPcmCount=0;
             this.docQueueTime=this.ac.currentTime;
