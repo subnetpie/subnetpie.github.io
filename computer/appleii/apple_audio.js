@@ -38,13 +38,12 @@ export class AppleAudio
         this.docWorklet = null;
         this.docWorkletStarting = false;
         this.docSources = new Set();
+        this.lastVisibleContextTime = 0;
+        this.recovering = null;
     }
 
     init() {
-        if(this.ac) {
-            if(this.ac.state === "suspended") void this.ac.resume();
-            return this.ac;
-        }
+        if(this.ac) return this.ac;
         this.ac = new (window.AudioContext || window.webkitAudioContext)();
         // Unlocking after a silent boot must not turn a held DC level into a pop.
         this.speakerPrevious = this.state ? this.level : 0;
@@ -52,7 +51,7 @@ export class AppleAudio
         this.docOutput = this.ac.createGain({channelCount:2, channelCountMode:"explicit", gain:1});
         this.docOutput.connect(this.ac.destination);
         void this.initDocWorklet();
-        if(this.ac.state === "suspended") void this.ac.resume();
+        this.lastVisibleContextTime = this.ac.currentTime || 0;
         return this.ac;
     }
 
@@ -76,10 +75,66 @@ export class AppleAudio
         }
     }
 
-    unlock() {
+    async unlock() {
+        // IMPORTANT: this is the only normal browser path that creates WebAudio.
+        // iOS/iPadOS requires AudioContext creation/resume to originate from a
+        // direct user activation; automatic emulator boot must remain silent.
         const ac=this.init();
-        if(ac && ac.state === "suspended") return ac.resume();
-        return Promise.resolve();
+        try {
+            if(ac.state !== "running") await ac.resume();
+            // WebKit can report "running" while its audio clock is stalled after
+            // an interruption. A direct gesture is our strongest opportunity to
+            // kick the destination back into service.
+            if(ac.state === "running" && this.lastVisibleContextTime &&
+               ac.currentTime <= this.lastVisibleContextTime) {
+                await ac.suspend();
+                await ac.resume();
+            }
+        } finally {
+            this.resetBrowserQueue();
+            this.lastVisibleContextTime=ac.currentTime || 0;
+        }
+    }
+
+    resetBrowserQueue() {
+        if(!this.ac) return;
+        for(const source of this.docSources) {
+            try { source.stop(); } catch(_) {}
+        }
+        this.docSources.clear();
+        this.docPcmCount=0;
+        this.docQueueTime=this.ac.currentTime || 0;
+        if(this.docWorklet) this.docWorklet.port.postMessage({type:'clear'});
+    }
+
+    async recoverAfterVisibility() {
+        const ac=this.ac;
+        if(!ac || document.hidden || this.recovering) return this.recovering || Promise.resolve();
+        this.recovering=(async()=>{
+            try {
+                // iOS WebKit exposes the non-standard "interrupted" state.
+                // Resume suspended/interrupted contexts. If it claims to be
+                // running but the clock did not advance while hidden, perform
+                // the suspend/resume cycle known to revive Safari audio.
+                if(ac.state !== "running") {
+                    await ac.resume();
+                } else if(ac.currentTime <= this.lastVisibleContextTime) {
+                    await ac.suspend();
+                    await ac.resume();
+                }
+                this.resetBrowserQueue();
+                this.lastVisibleContextTime=ac.currentTime || 0;
+            } catch(err) {
+                console.warn('[Apple audio] Safari resume deferred until next user gesture',err);
+            } finally {
+                this.recovering=null;
+            }
+        })();
+        return this.recovering;
+    }
+
+    noteHidden() {
+        if(this.ac) this.lastVisibleContextTime=this.ac.currentTime || 0;
     }
 
     begin_segment(clock) {
