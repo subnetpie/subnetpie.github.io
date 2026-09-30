@@ -648,3 +648,9 @@ body.joystick-disabled #joyControls {
 #buttonJoystick[aria-pressed="false"] {
   opacity: .32;
 }
+
+
+/* Keyboard toggle mirrors the joystick toggle in the emulator controls. */
+#buttonInput[aria-pressed="false"] {
+  opacity: .32;
+}
