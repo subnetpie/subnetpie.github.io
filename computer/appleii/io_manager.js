@@ -638,6 +638,8 @@ export class IOManager
             return this.present_latched_display();
         }
         if(this._video_iigs && this._video_iigs.isSuperHires()) return false;
+        if(this._video_iigs && this._video_iigs.restoreLegacyCanvas)
+            this._video_iigs.restoreLegacyCanvas();
 
         if(s.text) {
             if(s.col80) this._display_text_80.set_active_page(s.page);
