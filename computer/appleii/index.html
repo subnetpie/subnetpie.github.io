@@ -46,31 +46,32 @@
   <button id="-buttonDarr">&darr;</button>
   <button id="-buttonRarr">&rarr;</button>
 </div>
-<div id="keyboard0">
-  <div id="row0">
-    <div class="SPbutton" id="buttonEsc">esc</div>
-    <div class="SPbutton" id="buttonTab">tab</div>
-    <div class="SPbutton" id="buttonCtrl">ctrl</div>
-    <div class="SPbutton" id="buttonDel">del</div>
-    <div class="SPbutton" id="buttonKeyboard">123</div>
-  </div>
+<div id="keyboard0" aria-hidden="true">
+  <div id="buttonKeyboard">123</div>
 </div>
-<div id="keyboard1">
-  <div id="row1">
-    <div class="KBbutton" id="button1">1</div>
-    <div class="KBbutton" id="button2">2</div>
-    <div class="KBbutton" id="button3">3</div>
-    <div class="KBbutton" id="button4">4</div>
-    <div class="KBbutton" id="button5">5</div>
-    <div class="KBbutton" id="button6">6</div>
-    <div class="KBbutton" id="button7">7</div>
-    <div class="KBbutton" id="button8">8</div>
-    <div class="KBbutton" id="button9">9</div>
-    <div class="KBbutton" id="button0">0</div>
+
+<div id="keyboard1" class="apple2-keyboard" aria-label="Apple II keyboard">
+  <div class="kb-row">
+    <div class="KBbutton key-wide-esc" id="buttonEsc">ESC</div>
+    <div class="KBbutton dual" id="button1"><span>!</span><span>1</span></div>
+    <div class="KBbutton dual" id="button2"><span>@</span><span>2</span></div>
+    <div class="KBbutton dual" id="button3"><span>#</span><span>3</span></div>
+    <div class="KBbutton dual" id="button4"><span>$</span><span>4</span></div>
+    <div class="KBbutton dual" id="button5"><span>%</span><span>5</span></div>
+    <div class="KBbutton dual" id="button6"><span>^</span><span>6</span></div>
+    <div class="KBbutton dual" id="button7"><span>&amp;</span><span>7</span></div>
+    <div class="KBbutton dual" id="button8"><span>*</span><span>8</span></div>
+    <div class="KBbutton dual" id="button9"><span>(</span><span>9</span></div>
+    <div class="KBbutton dual" id="button0"><span>)</span><span>0</span></div>
+    <div class="KBbutton dual" id="buttonMinus"><span>_</span><span>-</span></div>
+    <div class="KBbutton dual" id="buttonEquals"><span>+</span><span>=</span></div>
+    <div class="KBbutton key-wide-delete" id="buttonDel">DELETE</div>
   </div>
-  <div id="row2">
+
+  <div class="kb-row">
+    <div class="KBbutton key-wide-tab" id="buttonTab">TAB</div>
     <div class="KBbutton" id="buttonQ">Q</div>
-    <div class="KBbutton" id="buttonW">W</div>  
+    <div class="KBbutton" id="buttonW">W</div>
     <div class="KBbutton" id="buttonE">E</div>
     <div class="KBbutton" id="buttonR">R</div>
     <div class="KBbutton" id="buttonT">T</div>
@@ -79,10 +80,15 @@
     <div class="KBbutton" id="buttonI">I</div>
     <div class="KBbutton" id="buttonO">O</div>
     <div class="KBbutton" id="buttonP">P</div>
+    <div class="KBbutton dual" id="buttonLbrack"><span>{</span><span>[</span></div>
+    <div class="KBbutton dual" id="buttonRbrack"><span>}</span><span>]</span></div>
+    <div class="KBbutton dual" id="buttonBackslash"><span>|</span><span>\\</span></div>
   </div>
-    <div id="row3">
+
+  <div class="kb-row">
+    <div class="KBbutton key-wide-ctrl modifier-key" id="buttonCtrl">CTRL</div>
     <div class="KBbutton" id="buttonA">A</div>
-    <div class="KBbutton" id="buttonS">S</div>  
+    <div class="KBbutton" id="buttonS">S</div>
     <div class="KBbutton" id="buttonD">D</div>
     <div class="KBbutton" id="buttonF">F</div>
     <div class="KBbutton" id="buttonG">G</div>
@@ -90,66 +96,41 @@
     <div class="KBbutton" id="buttonJ">J</div>
     <div class="KBbutton" id="buttonK">K</div>
     <div class="KBbutton" id="buttonL">L</div>
+    <div class="KBbutton dual" id="buttonSemi"><span>:</span><span>;</span></div>
+    <div class="KBbutton dual" id="buttonApos"><span>&quot;</span><span>'</span></div>
+    <div class="KBbutton key-wide-return" id="buttonCR">RETURN</div>
   </div>
-  <div id="row4">
+
+  <div class="kb-row">
+    <div class="KBbutton key-wide-shift modifier-key" id="buttonShift">SHIFT</div>
     <div class="KBbutton" id="buttonZ">Z</div>
-    <div class="KBbutton" id="buttonX">X</div>  
+    <div class="KBbutton" id="buttonX">X</div>
     <div class="KBbutton" id="buttonC">C</div>
     <div class="KBbutton" id="buttonV">V</div>
     <div class="KBbutton" id="buttonB">B</div>
     <div class="KBbutton" id="buttonN">N</div>
     <div class="KBbutton" id="buttonM">M</div>
-    <div class="Dbutton" id="buttonUarr">&uarr;</div>
+    <div class="KBbutton dual" id="buttonComma"><span>&lt;</span><span>,</span></div>
+    <div class="KBbutton dual" id="buttonPeriod"><span>&gt;</span><span>.</span></div>
+    <div class="KBbutton dual" id="buttonSlash"><span>?</span><span>/</span></div>
+    <div class="KBbutton key-wide-shift modifier-key" id="buttonShiftRight">SHIFT</div>
   </div>
-  <div id="row5">
-    <div class="KBbutton" id="buttonCaps">caps</br>lock</div>
-    <div class="KBbutton" id="buttonShift">shift</div>
-    <div class="KBbutton" id="buttonSpace">space</div>
-    <div class="KBbutton" id="buttonCR">return</div>
-    <div class="Dbutton" id="buttonLarr">&larr;</div>
-    <div class="Dbutton" id="buttonDarr">&darr;</div>
-    <div class="Dbutton" id="buttonRarr">&rarr;</div>
-  </div>
-</div>
-<div id="keyboard2">
 
-  <div id="row2">
-    <div class="KBbutton" id="buttonExcl">&excl;</div>
-    <div class="KBbutton" id="buttonCommat">&commat;</div>
-    <div class="KBbutton" id="buttonNum">&num;</div>
-    <div class="KBbutton" id="buttonDollar">&dollar;</div>
-    <div class="KBbutton" id="buttonPercnt">&percnt;</div>
-    <div class="KBbutton" id="buttonHat">&Hat;</div>
-    <div class="KBbutton" id="buttonAmp">&amp;</div>
-    <div class="KBbutton" id="buttonAst">&ast;</div>
-    <div class="KBbutton" id="buttonLpar">&lpar;</div>
-    <div class="KBbutton" id="buttonRpar">&rpar;</div>
-  </div>
-  <div id="row3">
-    <div class="KBbutton" id="buttonLt">&lt;</div>
-    <div class="KBbutton" id="buttonGt">&gt;</div>
-    <div class="KBbutton" id="buttonColon">&colon;</div>
-    <div class="KBbutton" id="buttonSemi">&semi;</div>
-    <div class="KBbutton" id="buttonMinus">&minus;</div>
-    <div class="KBbutton" id="buttonPlus">&plus;</div>
-    <div class="KBbutton" id="buttonEquals">&equals;</div>
-    <div class="KBbutton" id="buttonUarr">&uarr;</div>
-    <div class="KBbutton" id="buttonLbrack">&lbrack;</div>
-    <div class="KBbutton" id="buttonRbrack">&rbrack;</div>
-  </div>
-  <div id="row4">
-    <div class="KBbutton" id="buttonQuot">&quot;</div>
-    <div class="KBbutton" id="buttonQuot">&quot;</div>
-    <div class="KBbutton" id="buttonQuot">&quot;</div>
-    <div class="KBbutton" id="buttonComma">&comma;</div>
-    <div class="KBbutton" id="buttonPeriod">&period;</div>
-    <div class="KBbutton" id="buttonApos">&apos;</div>
-    <div class="KBbutton" id="buttonLarr">&larr;</div>
-    <div class="KBbutton" id="buttonDarr">&darr;</div>
-    <div class="KBbutton" id="buttonRarr">&rarr;</div>
-    <div class="KBbutton" id="buttonQuot">&quot;</div>
+  <div class="kb-row">
+    <div class="KBbutton caps-key" id="buttonCaps"><span>CAPS</span><span>LOCK</span></div>
+    <div class="KBbutton dual" id="buttonGrave"><span>~</span><span>`</span></div>
+    <div class="KBbutton indicator-key" id="buttonIndicator"><span class="key-led"></span></div>
+    <div class="KBbutton apple-key" id="buttonOpenApple"></div>
+    <div class="KBbutton key-space" id="buttonSpace"></div>
+    <div class="KBbutton apple-key" id="buttonSolidApple"></div>
+    <div class="KBbutton arrow-key" id="buttonLarr">←</div>
+    <div class="KBbutton arrow-key" id="buttonRarr">→</div>
+    <div class="KBbutton arrow-key" id="buttonDarr">↓</div>
+    <div class="KBbutton arrow-key" id="buttonUarr">↑</div>
   </div>
 </div>
+
+<div id="keyboard2" aria-hidden="true"></div>
 <!-- Leave accept unset: iOS can disable unknown disk-image extensions.
      The media loader validates the selected file after reading it. -->
 <dialog id="mediaDialog" aria-labelledby="mediaTitle">
