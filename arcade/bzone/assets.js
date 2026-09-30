@@ -17,7 +17,7 @@ export const ASSETS = Object.freeze({
   saucer: {color:"green", brightness:1.05, glow:0.50, coordinateSpace:"world"},
 
   hudRadar: {color:"green", brightness:0.90, glow:0.30, displayIntensity:15, coordinateSpace:"hud", sourcePC:0x6ae9},
-  enemyBlip: {color:"red", brightness:1.25, glow:0.70, displayIntensity:15, coordinateSpace:"hud", primitive:"point", sourcePC:0x6ae9},
+  enemyBlip: {color:"red", brightness:1.25, glow:1.25, displayIntensity:15, coordinateSpace:"hud", primitive:"point", sourcePC:0x6ae9},
 
   score: {color:"red", brightness:1.00, glow:0.35, coordinateSpace:"hud"},
   highScore: {color:"orange", brightness:1.05, glow:0.40, coordinateSpace:"hud"},
