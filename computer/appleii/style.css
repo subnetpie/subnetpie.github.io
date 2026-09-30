@@ -39,7 +39,7 @@ body {
 #controls {
   position: absolute;
   z-index: 3;
-  top: max(3px, env(safe-area-inset-top));
+  top: max(30px, env(safe-area-inset-top));
   left: max(3px, env(safe-area-inset-left));
   right: max(3px, env(safe-area-inset-right));
   display: flex;
