@@ -12,11 +12,13 @@ import {attachHostKeyboard} from "./host_keyboard.js?v=20260930-gear";
 let emulatorSurface = null;
 let screenCanvas = null;
 
+// Presentation tiers use the 4:3 geometry of the IIgs RGB display.
+// The VGC remains native 640x200 internally; these are display/backing sizes.
 const SCREEN_RESOLUTIONS = Object.freeze([
-  [320, 200],
-  [640, 400],
-  [1280, 800],
-  [1920, 1200]
+  [320, 240],
+  [640, 480],
+  [1280, 960],
+  [1920, 1440]
 ]);
 
 function selectScreenResolution(rect) {
@@ -907,11 +909,20 @@ function composeScreen() {
   }
 
   document.body.style.backgroundColor = "#0f0000";
-  screenCanvas.style.left = "50%";
-  screenCanvas.style.top = "";
-  const screenRatio = screenCanvas.height / Math.max(1, screenCanvas.width);
-  screenCanvas.style.height = window.innerHeight + "px";
-  screenCanvas.style.width = (window.innerHeight / screenRatio) + "px";
+  // Fit an authentic 4:3 IIgs RGB display inside Safari's *visible* viewport.
+  // visualViewport excludes the portion obscured by Safari chrome and also
+  // tracks iPadOS viewport changes without involving the Retina backing size.
+  const vv = window.visualViewport;
+  const viewW = vv?.width ?? window.innerWidth;
+  const viewH = vv?.height ?? window.innerHeight;
+  const viewX = vv?.offsetLeft ?? 0;
+  const viewY = vv?.offsetTop ?? 0;
+  const cssW = Math.min(viewW, viewH * (4 / 3));
+  const cssH = cssW * (3 / 4);
+  screenCanvas.style.left = (viewX + viewW / 2) + "px";
+  screenCanvas.style.top = (viewY + Math.max(0, (viewH - cssH) / 2)) + "px";
+  screenCanvas.style.width = cssW + "px";
+  screenCanvas.style.height = cssH + "px";
 }
 
 // MAIN FUNCTION //
