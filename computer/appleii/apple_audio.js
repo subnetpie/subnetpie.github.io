@@ -142,9 +142,11 @@ export class AppleAudio
                     await ac.suspend();
                     await ac.resume();
                 }
-                this.resetBrowserQueue();
+                this.browserUnlocked = ac.state === "running";
+                if(this.browserUnlocked) this.resetBrowserQueue();
                 this.lastVisibleContextTime=ac.currentTime || 0;
             } catch(err) {
+                this.browserUnlocked=false;
                 console.warn('[Apple audio] Safari resume deferred until next user gesture',err);
             } finally {
                 this.recovering=null;
