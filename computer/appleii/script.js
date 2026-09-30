@@ -40,7 +40,7 @@ var joyButtons = document.getElementById("joyButtonsCanvas");
 var joyButtonsCtx = joyButtons.getContext("2d");
 document.oncontextmenu = new Function("return false;");
 
-import {decodeMedia, isZip, readZipEntries, mountMedia} from './media.js?v=20260929-floppyspeed';
+import {decodeMedia, isZip, readZipEntries, mountMedia} from './media.js?v=20260930-diskswap';
 
 function chooseArchiveImage(name, entries) {
   const dialog = document.getElementById('archiveDialog');
@@ -61,8 +61,9 @@ function chooseArchiveImage(name, entries) {
 import { Motherboard } from "https://subnetpie.github.io/computer/appleii/motherboard.js?v=20260930-beep";
 
 class Drive {
-  constructor(num, display, led, dialog) {
+  constructor(num, display, led, dialog, restart=true) {
     this.num = num;
+    this.restart = restart;
     this.display = document.querySelector("canvas");
     this.led = document.getElementById(led);
     this.dialog = document.getElementById(dialog);
@@ -71,7 +72,11 @@ class Drive {
 
   load_media(name, buffer) {
     const media = decodeMedia(name, buffer);
-    mountMedia(motherboard, media, this.num);
+    mountMedia(motherboard, media, this.num, {preserveSession:!this.restart});
+    if(!this.restart) {
+      showBootStatus('');
+      return true;
+    }
     stop();
     clearTimeout(bootWatchdog);
     showBootStatus('');
@@ -89,6 +94,7 @@ class Drive {
   }
 
   on_file_select(e) {
+    document.getElementById('mediaDialog').close();
     const file = e.target.files[0];
     if(!file) return;
     const fr = new FileReader();
@@ -101,7 +107,7 @@ class Drive {
       } catch(err) {
         console.error(err);
         showBootStatus('LOAD ERROR\n' + (err.message || 'Media load failed'));
-        motherboard.message(err.message || 'media load failed');
+        if(this.restart)motherboard.message(err.message || 'media load failed');
       }
     };
     fr.onerror = () => showBootStatus('LOAD ERROR\nUnable to read ' + file.name);
@@ -110,9 +116,11 @@ class Drive {
   }
 }
 
-// The single picker mounts drive 1 only. Registering it for both drives
-// starts two asynchronous loads and resets the machine twice.
-const drives = [new Drive(0, "drivetitle1", "led1", "filedialog1")];
+// Both actions target drive 1, with separate pickers so cancellation cannot
+// accidentally leave the next load in the wrong mode.
+const drives = [new Drive(0, "drivetitle1", "led1", "filedialog1"),
+                new Drive(0, "drivetitle1", "led1", "filedialogInsert", false)];
+document.getElementById('buttonLoad').addEventListener('click',()=>document.getElementById('mediaDialog').showModal());
 
 const perfMode = new URLSearchParams(location.search).get("perf") === "1";
 let perfHud=null, perfFrames=0, perfDropped=0, perfWindowStart=performance.now();

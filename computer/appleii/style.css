@@ -344,3 +344,10 @@ button,
 #archiveImages { display: block; width: 100%; min-height: 44px; margin-top: .5rem; font-size: 1rem; }
 .archiveActions { display: flex; justify-content: flex-end; gap: .75rem; margin-top: 1rem; }
 .archiveActions button { min-height: 44px; padding: .5rem 1rem; font-size: 1rem; }
+
+#mediaDialog { width:min(90vw,32rem); box-sizing:border-box; padding:1.2rem; border-radius:12px; background:var(--apple-beige); color:#211b17; font:1rem system-ui,sans-serif; }
+#mediaDialog::backdrop { background:#0009; }
+#mediaDialog, #mediaDialog * { touch-action:manipulation; }
+#mediaDialog h2 { margin-top:0; }
+#mediaDialog .mediaChoice { display:block; padding:1rem; margin:.75rem 0; border:2px solid #695247; border-radius:8px; cursor:pointer; }
+#mediaDialog button { min-height:44px; padding:.5rem 1rem; font-size:1rem; }

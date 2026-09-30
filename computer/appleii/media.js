@@ -79,9 +79,10 @@ export function decodeMedia(name,value) {
   return {kind:'block',name,data,writeProtected,physical};
 }
 
-export function mountMedia(board, media, drive=0) {
+export function mountMedia(board, media, drive=0, {preserveSession=false}={}) {
   let ok;
   if(media.kind==='rom') {
+    if(preserveSession)throw new Error('ROM images require Load and restart');
     if(!board.iigsEnabled)throw new Error('IIgs ROM requires IIgs mode');
     board.loadIIgsROM(media.data);
     return true;
@@ -95,9 +96,9 @@ export function mountMedia(board, media, drive=0) {
   }
   else ok=board.floppy525.load_image(drive,media.name,media.data,media);
   if(!ok)throw new Error('Unable to mount '+media.name);
-  if(board.iigsEnabled && board.memory)
+  if(!preserveSession && board.iigsEnabled && board.memory)
     board.memory.legacyFloppySpeed = media.kind==='floppy';
   // Otherwise slot 7 keeps booting the previously selected hard disk.
-  if(media.kind==='floppy')board.prodosBlock.eject();
+  if(!preserveSession && media.kind==='floppy')board.prodosBlock.eject();
   return true;
 }

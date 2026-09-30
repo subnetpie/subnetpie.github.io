@@ -5,9 +5,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
     <title>Apple 2ios</title>
-    <script src="./touch-guard.js"></script>
+    <script src="./touch-guard.js?v=20260930-diskswap"></script>
     <link rel='stylesheet' href='https://fonts.googleapis.com/css2?family=Rubik'>
-<link rel='stylesheet' href='https://fonts.googleapis.com/css2?family=Russo+One&amp;display=swap'><link rel="stylesheet" href="./style.css">
+<link rel='stylesheet' href='https://fonts.googleapis.com/css2?family=Russo+One&amp;display=swap'><link rel="stylesheet" href="./style.css?v=20260930-diskswap">
 
   </head>
     
@@ -153,6 +153,15 @@
 <!-- Leave accept unset: iOS can disable unknown disk-image extensions.
      The media loader validates the selected file after reading it. -->
 <input type="file" id="filedialog1" style="display:none"/>
+<input type="file" id="filedialogInsert" style="display:none"/>
+<dialog id="mediaDialog" aria-labelledby="mediaTitle">
+  <h2 id="mediaTitle">Disk controls</h2>
+  <p>Insert a replacement disk when a program asks for the next disk.</p>
+  <label class="mediaChoice" for="filedialogInsert">Insert disk — keep running</label>
+  <label class="mediaChoice" for="filedialog1">Load and restart</label>
+  <p>DSK, WOZ, 2MG, HDV and ZIP supported. The selected disk replaces the media in its drive.</p>
+  <form method="dialog"><button>Cancel</button></form>
+</dialog>
 <dialog id="archiveDialog" aria-labelledby="archiveTitle">
   <form method="dialog">
     <h2 id="archiveTitle">Choose a disk image</h2>
@@ -170,7 +179,7 @@
   <div class="button" id="buttonInput">keyboard</div>
   <div class="button" id="buttonColor">color</div>
   <div class="button" id="buttonScanlines">scanlines</div>
-  <label class="button" id="buttonLoad" for="filedialog1">load</label>
+  <button class="button" id="buttonLoad" type="button">load</button>
   <div class="button" id="buttonRunStop">run</div>
   <div class="button" id="buttonReset">reset</div>
 </div>
@@ -206,7 +215,7 @@
   }, 1500);
 })();
 </script>
-<script src="./joystick.js"></script><script type="module" src="./script.js?v=20260930-beep"></script>
+<script src="./joystick.js"></script><script type="module" src="./script.js?v=20260930-diskswap"></script>
 
   </body>
   

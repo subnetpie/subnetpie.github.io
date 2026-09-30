@@ -23,21 +23,24 @@ for(const [width,height] of [[390,844],[844,390]]) {
     assert.equal(browserScreen.style, undefined);
   });
 }
-test('native Load label is exempt from touch cancellation', () => {
+test('disk menu and native picker labels are exempt from touch cancellation', () => {
   const html = readFileSync(new URL('./index.html', import.meta.url), 'utf8');
-  assert.match(html, /<label[^>]*id="buttonLoad"[^>]*for="filedialog1"/);
+  assert.match(html, /<button[^>]*id="buttonLoad"/);
+  assert.match(html, /<label[^>]*for="filedialog1"/);
+  assert.match(html, /<label[^>]*for="filedialogInsert"/);
   const handlers = new Map();
   class Element {
     constructor(kind) {this.kind = kind;}
     closest(selector) { return (this.kind === 'load' && selector.includes('#buttonLoad')) ||
       (this.kind === 'input' && selector.includes('input')) ||
-      (this.kind === 'archive' && selector.includes('#archiveDialog')); }
+      (this.kind === 'archive' && selector.includes('#archiveDialog')) ||
+      (this.kind === 'media' && selector.includes('#mediaDialog')); }
   }
   vm.runInNewContext(readFileSync(new URL('./touch-guard.js', import.meta.url), 'utf8'), {
     Element, document: {addEventListener(type, handler) {handlers.set(type, handler);}}
   });
   for(const type of ['pointerdown','touchend']) {
-    for(const kind of ['load','input','archive','stick']) {
+    for(const kind of ['load','input','archive','media','stick']) {
       let prevented = false;
       handlers.get(type)({target: new Element(kind), pointerType: 'touch', cancelable: true,
         preventDefault() {prevented = true;}});

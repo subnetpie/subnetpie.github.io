@@ -5,7 +5,7 @@
   const options = {capture: true, passive: false};
   const preventGesture = (event) => {
     // Allow native label activation to open the file picker on iOS.
-    if(event.target instanceof Element && event.target.closest('input, #buttonLoad, #archiveDialog')) return;
+    if(event.target instanceof Element && event.target.closest('input, #buttonLoad, #archiveDialog, #mediaDialog')) return;
     if(event.cancelable) event.preventDefault();
   };
   for(const type of ['touchend', 'dblclick', 'gesturestart', 'gesturechange', 'gestureend']) {
