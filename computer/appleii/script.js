@@ -52,7 +52,7 @@ function presentScreen(forceResize=false) {
   if(label.style.right!==right)label.style.right=right;
   if(label.style.bottom!==bottom)label.style.bottom=bottom;
 }
-import {attachTouchMouse} from "./touch_mouse.js?v=20260930-trackpad";
+import {attachTouchMouse} from "./touch_mouse.js?v=20260930-pointer-align";
 let interval;
 let last_ms;
 let bootWatchdog = 0;
