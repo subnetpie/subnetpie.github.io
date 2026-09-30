@@ -120,7 +120,10 @@ class Drive {
   async load_media(name, buffer) {
     const source = buffer instanceof Uint8Array ? buffer : new Uint8Array(buffer);
     const media = decodeMedia(name, source);
-    if(media.kind === 'block' && !media.writeProtected) {
+    if(media.kind === 'block') {
+      // Give every block image a stable identity, even if its 2MG header starts
+      // write-protected. If the user later clears protection in the drive UI,
+      // subsequent guest writes still have a persistence destination.
       media.persistenceKey = mediaPersistenceKey(name, source);
       const restored = await restorePersistentBlocks(media.persistenceKey, media.data);
       media.restoredBlocks = restored;
