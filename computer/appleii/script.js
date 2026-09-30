@@ -927,10 +927,16 @@ function composeScreen() {
 
 // MAIN FUNCTION //
 $(function() {
-  $(window).on('resize', function() {
+  const reflowDisplay = () => {
     composeScreen();
     presentScreen(true);
-  });
+  };
+  $(window).on('resize', reflowDisplay);
+  // Safari can resize or offset the visual viewport as its toolbar changes
+  // without changing the layout viewport. Keep the 4:3 GS/OS display fitted
+  // to the pixels the user can actually see.
+  window.visualViewport?.addEventListener('resize', reflowDisplay);
+  window.visualViewport?.addEventListener('scroll', reflowDisplay);
   composeScreen();
   joyPadCtx.joyWidth = joyWidth;
   joyPadCtx.joyHeight = joyHeight;
