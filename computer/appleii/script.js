@@ -323,12 +323,51 @@ document.addEventListener("mousedown", unlockAudio, {passive:true});
 document.addEventListener("keydown", unlockAudio);
 
 // Keyboard
-
-// Wrapped in an IIFE so that the Map declaration and for-of loop are in a
-// single block scope. CodePen's script concatenation/parsing breaks when a
-// for-of loop appears at the top level between var declarations and function
-// definitions, producing "Can't find variable: keys" and unexpected-token errors.
+//
+// The full on-screen keyboard uses one-shot SHIFT/CTRL latches. This works
+// better on phones than requiring two fingers to remain down simultaneously:
+// tap SHIFT or CTRL, then tap the target key. The modifier clears after use.
 (function() {
+  var shiftActive = false;
+  var ctrlActive = false;
+
+  function setModifierVisual() {
+    document.querySelectorAll("#buttonShift,#buttonShiftRight")
+      .forEach(el => el.classList.toggle("active", shiftActive));
+    const ctrl = document.getElementById("buttonCtrl");
+    if(ctrl) ctrl.classList.toggle("active", ctrlActive);
+  }
+
+  function toggleShift(e) {
+    e.preventDefault();
+    shiftActive = !shiftActive;
+    if(shiftActive) ctrlActive = false;
+    setModifierVisual();
+  }
+
+  function toggleCtrl(e) {
+    e.preventDefault();
+    ctrlActive = !ctrlActive;
+    if(ctrlActive) shiftActive = false;
+    setModifierVisual();
+  }
+
+  document.querySelectorAll("#buttonShift,#buttonShiftRight")
+    .forEach(el => el.addEventListener("pointerdown", toggleShift));
+  const ctrl = document.getElementById("buttonCtrl");
+  if(ctrl) ctrl.addEventListener("pointerdown", toggleCtrl);
+
+  // CAPS LOCK on an Apple II does not need a software case conversion here:
+  // alphabet keys already generate the machine's uppercase ASCII. Keep the
+  // physical-style key and lamp state for touch feedback.
+  const caps = document.getElementById("buttonCaps");
+  const indicator = document.getElementById("buttonIndicator");
+  if(caps) caps.addEventListener("pointerdown", e => {
+    e.preventDefault();
+    caps.classList.toggle("active");
+    if(indicator) indicator.classList.toggle("caps-on", caps.classList.contains("active"));
+  });
+
   var keys = new Map();
   keys.set('#button0', 0x30);
   keys.set('#button1', 0x31);
@@ -366,8 +405,8 @@ document.addEventListener("keydown", unlockAudio);
   keys.set('#buttonX', 0x58);
   keys.set('#buttonY', 0x59);
   keys.set('#buttonZ', 0x5a);
+
   keys.set('#buttonLarr', 0x08);
-  keys.set('#buttonBS', 0x08);
   keys.set('#buttonTab', 0x09);
   keys.set('#buttonUarr', 0x0b);
   keys.set('#buttonDarr', 0x0a);
@@ -375,40 +414,38 @@ document.addEventListener("keydown", unlockAudio);
   keys.set('#buttonRarr', 0x15);
   keys.set('#buttonEsc', 0x1b);
   keys.set('#buttonSpace', 0xa0);
-  keys.set('#buttonExcl', 0xa1);
-  keys.set('#buttonQuot', 0xa2);
-  keys.set('#buttonNum', 0xa3);
-  keys.set('#buttonDollar', 0xa4);
-  keys.set('#buttonPercnt', 0xa5);
-  keys.set('#buttonAmp', 0xa6);
-  keys.set('#buttonApos', 0xa7);
-  keys.set('#buttonLpar', 0xa8);
-  keys.set('#buttonRpar', 0xa9);
-  keys.set('#buttonAst', 0xaa);
-  keys.set('#buttonPlus', 0xab);
-  keys.set('#buttonMinus', 0xad);
-  keys.set('#buttonComma', 0xbc);
-  keys.set('#buttonEquals', 0xbd);
-  keys.set('#buttonPeriod', 0xbe);
-  keys.set('#buttonColon', 0x3a);
-  keys.set('#buttonSemi', 0x3b);
-  keys.set('#buttonLt', 0x3c);
-  keys.set('#buttonGt', 0x3e);
-  keys.set('#buttonCommat', 0x40);
-  keys.set('#buttonLbrack', 0x5b);
-  keys.set('#buttonRbrack', 0x5d);
-  keys.set('#buttonHat', 0x5e);
   keys.set('#buttonDel', 0x7f);
+
+  // Browser-style key codes are used for keys whose shifted glyph differs.
+  keys.set('#buttonMinus', 0xad);
+  keys.set('#buttonEquals', 0x3d);
+  keys.set('#buttonSemi', 0x3b);
+  keys.set('#buttonApos', 0xde);
+  keys.set('#buttonComma', 0xbc);
+  keys.set('#buttonPeriod', 0xbe);
+  keys.set('#buttonSlash', 0xbf);
+  keys.set('#buttonGrave', 0xc0);
+  keys.set('#buttonLbrack', 0xdb);
+  keys.set('#buttonBackslash', 0xdc);
+  keys.set('#buttonRbrack', 0xdd);
+
   for (const [selector, val] of keys.entries()) {
     document.querySelectorAll(selector).forEach((key) => {
       key.addEventListener("pointerdown", (e) => {
         e.preventDefault();
         key.setPointerCapture?.(e.pointerId);
-        motherboard.keyboard.key_down(val, false, false, false);
+        key.classList.add("pressed");
+        motherboard.keyboard.key_down(val, shiftActive, ctrlActive, false);
       });
       const release = (e) => {
         e.preventDefault();
+        key.classList.remove("pressed");
         motherboard.keyboard.key_up();
+        if(shiftActive || ctrlActive) {
+          shiftActive = false;
+          ctrlActive = false;
+          setModifierVisual();
+        }
       };
       key.addEventListener("pointerup", release);
       key.addEventListener("pointercancel", release);
