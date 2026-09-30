@@ -638,3 +638,13 @@ button,
   pointer-events: none;
 }
 #screenResolution:empty { display: none; }
+
+
+/* Main controls can disable the touch joystick independently of keyboard mode. */
+body.joystick-disabled #joyStick,
+body.joystick-disabled #joyControls {
+  display: none !important;
+}
+#buttonJoystick[aria-pressed="false"] {
+  opacity: .32;
+}
