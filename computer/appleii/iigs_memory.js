@@ -701,6 +701,10 @@ export class IIgsMemory {
       if(v !== undefined) return v & 0xff;
     }
 
+    // Unpopulated slot I/O floats on the Mega II bus (MAME c080_r).
+    // Returning constant $FF makes drivers wait forever for absent hardware.
+    if(addr>=0xc090 && addr<=0xc0ff)return this.floatingBus();
+
     const rv=this.romRead(addr);
     if(rv !== undefined) return rv;
 

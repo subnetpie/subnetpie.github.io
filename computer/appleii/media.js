@@ -37,10 +37,29 @@ export function prodosToDOS(data) {
   return out;
 }
 
+// Some distributions label a raw ProDOS volume .2mg. Require a valid root
+// volume header before accepting that mismatch; never reinterpret broken 2IMG.
+function rawProDOSBlocks(data) {
+  if(data.length<1536 || data.length%512)return 0;
+  const h=1024, n=data[h+4]&15;
+  const blocks=data[h+41]|(data[h+42]<<8);
+  const bitmap=data[h+39]|(data[h+40]<<8);
+  if(data[h] || data[h+1] || (data[h+4]>>4)!==15 || !n ||
+     data[h+35]!==39 || data[h+36]!==13 || bitmap<3 || bitmap>=blocks ||
+     blocks<3 || blocks*512>data.length)return 0;
+  for(let i=0;i<n;i++)if(data[h+5+i]<0x20 || data[h+5+i]>0x7e)return 0;
+  return blocks;
+}
+
 export function decodeMedia(name,value) {
   let data=bytesOf(value),format,writeProtected=false,volume=254,physical=null;
   const lower=name.toLowerCase();
-  if(hasMagic(data,'2IMG') || /\.(2mg|2img)$/.test(lower)) {
+  const rawBlocks=rawProDOSBlocks(data);
+  if(!hasMagic(data,'2IMG') && rawBlocks && /\.(2mg|2img)$/.test(lower)) {
+    if(data.length===65536*512 && rawBlocks===65535)data=data.subarray(0,65535*512);
+    format=1;
+    if(data.length===819200)physical='35';
+  } else if(hasMagic(data,'2IMG') || /\.(2mg|2img)$/.test(lower)) {
     const parsed=parse2MG(data);
     ({data,format,writeProtected,volume}=parsed);
     // 800K IIgs 3.5 images are logical 512-byte block media. Most writers

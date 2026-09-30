@@ -40,7 +40,7 @@ var joyButtons = document.getElementById("joyButtonsCanvas");
 var joyButtonsCtx = joyButtons.getContext("2d");
 document.oncontextmenu = new Function("return false;");
 
-import {decodeMedia, isZip, readZipEntries, mountMedia, ejectMedia} from './media.js?v=20260930-twodrives';
+import {decodeMedia, isZip, readZipEntries, mountMedia, ejectMedia} from './media.js?v=20260930-gsos-drives';
 
 function chooseArchiveImage(name, entries) {
   const dialog = document.getElementById('archiveDialog');
@@ -58,7 +58,7 @@ function chooseArchiveImage(name, entries) {
   });
 }
 
-import { Motherboard } from "https://subnetpie.github.io/computer/appleii/motherboard.js?v=20260930-twodrives";
+import { Motherboard } from "https://subnetpie.github.io/computer/appleii/motherboard.js?v=20260930-gsos-drives";
 
 class Drive {
   constructor(num, display, led, dialog, restart=true) {

@@ -59,6 +59,7 @@ test('main-bank ProDOS requests continue to work', () => {
 test('legacy firmware advertises the drive pair that the block interface accepts',()=>{
   const {memory,device}=fixture();
   assert.equal(device.read(0xc7fe)&0x10,0x10);
+  device.load_image('second.hdv',new Uint8Array(device.image),{},1);
   for(const unit of [0x70,0xf0]) {
     request(memory,1);memory.write(0x43,unit);
     assert.equal(device.execute(),0);

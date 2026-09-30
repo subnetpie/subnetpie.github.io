@@ -55,7 +55,7 @@ test('two block drives route reads, writes and status independently',()=>{
  assert.equal(command(0xf0,0),0);assert.equal(m.prodosBlock.read(0xc0f1),3);
  m.memory.write(0x800,0x55);assert.equal(command(0xf0,2),0);
  assert.equal(m.prodosBlock.drives[1].image[0],0x55);assert.equal(m.prodosBlock.image[0],0x11);
- m.prodosBlock.eject(1);assert.equal(command(0xf0,1),0x28);
+ m.prodosBlock.eject(1);assert.equal(command(0xf0,1),0x2f);
  assert.equal(command(0x70,1),0);
 });
 
