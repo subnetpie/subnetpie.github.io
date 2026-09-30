@@ -15,11 +15,10 @@ export class AppleAudio
 {
     constructor(khz) {
         this.ac;
-        this.gn;
         this.cpu_hz = khz * 1000;
-        this.seg_time = 0;
-        this.seg_clock = 0;
         this.state = false;
+        this.speakerPrevious = 0;
+        this.speakerFiltered = 0;
         this.level = 0.6;
         this.docLastLeft = 0;
         this.docLastRight = 0;
@@ -47,19 +46,11 @@ export class AppleAudio
             return this.ac;
         }
         this.ac = new (window.AudioContext || window.webkitAudioContext)();
-        const osc = this.ac.createOscillator({channelCount:1, channelCountMode:"explicit", frequency:0});
-        const ws = this.ac.createWaveShaper({channelCount:1, channelCountMode:"explicit"});
-        ws.curve = new Float32Array([-1, -1]);
-        this.gn = this.ac.createGain({channelCount:1, channelCountMode:"explicit", gain:0});
-
-        this.gn.gain.value = 0;
-        osc.frequency.value = 0;
-        osc.connect(ws);
-        ws.connect(this.gn);
-        this.gn.connect(this.ac.destination);
+        // Unlocking after a silent boot must not turn a held DC level into a pop.
+        this.speakerPrevious = this.state ? this.level : 0;
+        this.speakerFiltered = 0;
         this.docOutput = this.ac.createGain({channelCount:2, channelCountMode:"explicit", gain:1});
         this.docOutput.connect(this.ac.destination);
-        osc.start();
         void this.initDocWorklet();
         if(this.ac.state === "suspended") void this.ac.resume();
         return this.ac;
@@ -92,19 +83,18 @@ export class AppleAudio
     }
 
     begin_segment(clock) {
-        if((this.level == 0) || !this.ac) return;
-        this.seg_time = this.ac.currentTime + 0.04;
-        this.seg_clock = clock;
+        if(!this.ac) return;
         if(!this.docNextClock || this.docNextClock < clock - this.docStep)
             this.docNextClock = clock;
         this.docPcmCount = 0;
     }
 
     click(clock) {
-        if((this.level == 0) || !this.gn) return;
+        // C030 edges share the emulated PCM clock with DOC audio. Scheduling
+        // AudioParam changes against currentTime each frame distorted the
+        // boot tone whenever browser frames arrived late or unevenly.
+        this.emitDocUntil(clock);
         this.state = !this.state;
-        const time = (clock - this.seg_clock) / this.cpu_hz;
-        this.gn.gain.setValueAtTime(this.state ? this.level : 0, time + this.seg_time);
     }
 
     emitDocUntil(clock) {
@@ -112,8 +102,12 @@ export class AppleAudio
         while(this.docNextClock <= clock) {
             if(this.docPcmCount >= this.docPcmLeft.length) this.flushDocPcm();
             const n=this.docPcmCount++;
-            this.docPcmLeft[n]=this.docSignalLeft;
-            this.docPcmRight[n]=this.docSignalRight;
+            const speaker=this.state ? this.level : 0;
+            // AC coupling removes the held speaker's DC level after a beep.
+            this.speakerFiltered=speaker-this.speakerPrevious+0.995*this.speakerFiltered;
+            this.speakerPrevious=speaker;
+            this.docPcmLeft[n]=this.docSignalLeft+this.speakerFiltered;
+            this.docPcmRight[n]=this.docSignalRight+this.speakerFiltered;
             this.docNextClock += this.docStep;
         }
     }
@@ -186,10 +180,8 @@ export class AppleAudio
 
     reset() {
         this.state = false;
-        if(this.gn) {
-            this.gn.gain.cancelScheduledValues(0);
-            this.gn.gain.value = 0;
-        }
+        this.speakerPrevious=0;
+        this.speakerFiltered=0;
         for(const source of this.docSources)source.stop();
         this.docSources.clear();
         this.docSignalLeft=this.docSignalRight=0;

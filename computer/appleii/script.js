@@ -58,7 +58,7 @@ function chooseArchiveImage(name, entries) {
   });
 }
 
-import { Motherboard } from "https://subnetpie.github.io/computer/appleii/motherboard.js?v=20260929-mouse";
+import { Motherboard } from "https://subnetpie.github.io/computer/appleii/motherboard.js?v=20260930-beep";
 
 class Drive {
   constructor(num, display, led, dialog) {

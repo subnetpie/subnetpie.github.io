@@ -30,7 +30,7 @@ for(const [name,path,frames,zip] of [
     if(i===1200)m.keyboard.key_up();
   }
   assert.ok(samples>1000000);assert.ok(nonzero>10000);assert.ok(changes>10000);
-  assert.ok(peak>0.001&&peak<0.6,'game mix must be audible without clipping');
+  assert.ok(peak>0.001&&peak<1,'game mix must be audible without clipping');
   assert.equal(m.video_iigs.isSuperHires(),true);
   assert.equal(m.cpu.register.e,false);
 });

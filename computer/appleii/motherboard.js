@@ -21,7 +21,7 @@ import {LoresDisplay} from "https://subnetpie.github.io/computer/appleii/display
 import {DoubleHiresDisplay} from "https://subnetpie.github.io/computer/appleii/display_double_hires.js?v=20260928-pageflipram1";
 import {Keyboard} from "https://subnetpie.github.io/computer/appleii/keyboard.js?v=20260928-blend";
 import {Floppy525} from "https://subnetpie.github.io/computer/appleii/FloppyWoz525.js";
-import {AppleAudio} from "https://subnetpie.github.io/computer/appleii/apple_audio.js?v=20260929-docfix";
+import {AppleAudio} from "https://subnetpie.github.io/computer/appleii/apple_audio.js?v=20260930-beep";
 import {ProDOSBlockDevice} from "https://subnetpie.github.io/computer/appleii/prodos_block.js?v=20260928-drivepair";
 import {IIgsVideo} from "https://subnetpie.github.io/computer/appleii/video_iigs.js?v=20260928-shrready1";
 import {MachineTrace} from "https://subnetpie.github.io/computer/appleii/machine_trace.js";
@@ -227,11 +227,9 @@ export class Motherboard
             }
         }
         this.flushDeferredPeripherals();
-        if(this.iigsEnabled) {
-            const timed=this.perfEnabled ? performance.now() : 0;
-            this.audio.end_segment(this.cycles);
-            if(this.perfEnabled) this.perf.audio += performance.now()-timed;
-        }
+        const timed=this.perfEnabled ? performance.now() : 0;
+        this.audio.end_segment(this.cycles);
+        if(this.perfEnabled) this.perf.audio += performance.now()-timed;
     }
 
     startTrace() {
