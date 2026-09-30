@@ -31,7 +31,6 @@ class BzoneAudio{
   // POKEY state
   this.poly4=0x0f;this.poly5=0x1f;this.poly9=0x1ff;this.poly17=0x1ffff;
   this.pokeyCounters=new Float64Array(4);this.pokeyOut=new Float64Array(4);
-  this.pokeyRc=0;this.pokeyDc=0;
 
   // 6 kHz LFSR pseudo-random noise generator
   this.noiseReg=0x0001;this.noisePhase=0;this.noiseDiv31=0;this.noiseDiv34=0;this.noiseNand=1;
@@ -39,7 +38,14 @@ class BzoneAudio{
   // Discrete circuits
   this.shellGate=0;this.shellLP=0;this.shellDC=0;
   this.explosionGate=0;this.explosionLP=0;this.explosionDC=0;
-  this.enginePhase=0;this.engineCount4=4;this.engineCount6=6;this.engineLP=0;this.engineDC=0;
+
+  // Engine Subsystem (MAME 0.289 bzone_a.cpp: 555 VCO + dual 4-bit counters + R-ladder)
+  this.enginePhase=0;
+  this.engineCount4=4;
+  this.engineCount6=6;
+  this.engineLP0=0;
+  this.engineLP1=0;
+  this.engineDC=0;
  }
  start(){
   if(!this.ctx){
@@ -131,9 +137,11 @@ class BzoneAudio{
    this.explosionDC+=coupling*(this.explosionLP-this.explosionDC);
    const explOut=(this.explosionLP-this.explosionDC)*((d&2)?.75:.25);
 
-   // 4. Tank Engine (4..15 and 6..15 synchronous counter ladder)
-   this.enginePhase+=(rev?430:300)/sr;
-   if(this.enginePhase>=1){
+   // 4. Tank Engine (MAME 0.289 bzone_a.cpp: 555 VCO at 300/430 Hz clocking dual 4-bit counters)
+   // Counter A (4..15, modulo 12) & Counter B (6..15, modulo 10)
+   const vcoFreq=(rev?430:300);
+   this.enginePhase+=vcoFreq*dt;
+   while(this.enginePhase>=1){
     this.enginePhase-=1;
     if(motor){
      this.engineCount4=(this.engineCount4===15)?4:this.engineCount4+1;
@@ -141,12 +149,23 @@ class BzoneAudio{
     }
    }
    if(!motor){this.engineCount4=4;this.engineCount6=6}
-   const a=this.engineCount4,b=this.engineCount6;
-   const raw=((a>7)?1:-1)*.55+((a===15)?1:-1)*.28+((b>7)?1:-1)*.12+((b===15)?1:-1)*.08;
-   this.engineLP+=.025*((motor?raw:0)-this.engineLP);
-   const engineOut=motor?this.engineLP*.12:0;
 
-   // 5. POKEY Audio Core (MAME 0.289 pokey.cpp: Radar sonar blips, saucer siren, pure tones)
+   // Resistor ladder taps: R20=100k, R21=180k, R22=390k, R23=680k
+   const a=this.engineCount4,b=this.engineCount6;
+   const tapA_QD = (a & 8) ? 1.0 : -1.0;
+   const tapA_RCO = (a === 15) ? 1.0 : -1.0;
+   const tapB_QD = (b & 8) ? 1.0 : -1.0;
+   const tapB_RCO = (b === 15) ? 1.0 : -1.0;
+   const engineRaw = motor ? (tapA_QD * 0.48 + tapA_RCO * 0.27 + tapB_QD * 0.15 + tapB_RCO * 0.10) : 0;
+
+   // 2-pole op-amp active low-pass filter (cutoff ~65 Hz) modeling R31/C17 to eliminate pops/clicks
+   const engAlpha = 2 * Math.PI * 65 * dt;
+   this.engineLP0 += engAlpha * (engineRaw - this.engineLP0);
+   this.engineLP1 += engAlpha * (this.engineLP0 - this.engineLP1);
+   this.engineDC += (1 - Math.exp(-dt / 0.05)) * (this.engineLP1 - this.engineDC);
+   const engineOut = motor ? (this.engineLP1 - this.engineDC) * 0.28 : 0;
+
+   // 5. POKEY Audio Core (Radar sonar blips, UFO saucer siren, pure tones)
    const audctl=this.synthReg[8];
    this.stepPoly();
    let pokeyOut=0;
@@ -158,7 +177,6 @@ class BzoneAudio{
     const hz=CPU_CLOCK/(2*div*(freq+(div===1?4:1)));
     this.pokeyCounters[ch]=(this.pokeyCounters[ch]+hz/sr)%1;
     let bit=1;const dist=audc>>5;
-    // Distortion modes from MAME pokey.cpp
     if(dist===0||dist===4)bit=(this.poly17&1)?1:-1;
     else if(dist===1||dist===3)bit=(this.poly5&1)?1:-1;
     else if(dist===2||dist===6)bit=(this.poly4&1)?1:-1;
@@ -168,7 +186,7 @@ class BzoneAudio{
 
    // 6. Final output mix
    const s=shellOut+explOut+engineOut+pokeyOut;
-   out[i]=soundEnabled?Math.max(-1,Math.min(1,s)):0;
+   out[i]=soundEnabled?Math.max(-1.0,Math.min(1.0,s)):0;
    this.audioCycle+=cyclesPerSample;
   }
   if(this.eventHead>512){this.events.splice(0,this.eventHead);this.eventHead=0}
