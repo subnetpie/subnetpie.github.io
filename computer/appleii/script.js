@@ -14,7 +14,7 @@ const SCREEN_RESOLUTIONS = Object.freeze([
   [320, 200],
   [640, 400],
   [1280, 800],
-  [1920, 1000]
+  [1920, 1200]
 ]);
 
 function selectScreenResolution(rect) {
