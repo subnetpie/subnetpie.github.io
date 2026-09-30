@@ -729,6 +729,15 @@ document.getElementById("buttonInput").addEventListener("click", () => {setKeybo
 document.getElementById("buttonJoystick").addEventListener("click", () => {setJoystickEnabled(!joystickEnabled)});
 document.getElementById("buttonColor").addEventListener("click", () => {setColor(buttonColor.innerText)});
 document.getElementById("buttonScanlines").addEventListener("click", () => {setScanlines(buttonScanlines.innerText)});
+document.getElementById("buttonDiagnostics").addEventListener("click", () => {
+  const button = document.getElementById("buttonDiagnostics");
+  const diagnostics = document.getElementById("screenResolution");
+  const enabled = button.getAttribute("aria-pressed") !== "true";
+  button.setAttribute("aria-pressed", enabled ? "true" : "false");
+  button.innerText = enabled ? "diag on" : "diag off";
+  diagnostics.hidden = !enabled;
+  if(enabled) presentScreen();
+});
 
 document.getElementById("buttonRunStop").addEventListener("click", ()=>{(interval?stop:run)()});
 document.getElementById("buttonReset").addEventListener("click", buttonReset);
