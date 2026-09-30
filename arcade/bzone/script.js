@@ -211,7 +211,14 @@ class Battlezone{
   let origin=null,callOrigin=null,instructionPC=0;
   const originStack=new Array(4).fill(null);
   const point=(nx,ny,z)=>{let x1=x/65536,y1=y/65536,x2=nx/65536,y2=ny/65536;
-   if(z>0)out.push([x1,y1,x2,y2,z,clip.slice(),ASSETS[origin?.asset??"unclassified"].color,instructionPC,origin]);
+   if(z>0){
+    const primitive={x1,y1,x2,y2,intensity:z,visible:true,isMove:false};
+    const styled=this.assetTrace?.styleInstruction?this.assetTrace.styleInstruction(origin,primitive):primitive;
+    const asset=styled.asset??origin?.asset??"unclassified";
+    const vectorOrigin=origin?{...origin,asset}:Object.freeze({asset});
+    out.push([x1,y1,x2,y2,z,clip.slice(),styled.color??ASSETS[asset]?.color??ASSETS.unclassified.color,instructionPC,vectorOrigin,
+      styled.brightness??ASSETS[asset]?.brightness??1,styled.glow??ASSETS[asset]?.glow??0.35,styled.displayIntensity??ASSETS[asset]?.displayIntensity??z]);
+   }
    x=nx;y=ny};
   while(steps++<200000&&!halt){
     state=(state&0x10)|(this.avgProm[(((state>>4)^1)<<7)|(op<<4)|(state&15)]&15);
@@ -282,11 +289,11 @@ class Battlezone{
   const layers=[[7,.035],[4,.09],[2,.24],[1,1]],hudAssets=new Set(["hudRadar","playerLives","score","highScore","enemyInRange","enemyDirection","motionBlocked"]),horizonAsset="horizon";
   for(const [spread,gain] of layers){
   for(const v of this.vectors){
-   const x1=v[0],y1=v[1],x2=v[2],y2=v[3],z=this.colorized?(ASSETS[v[8]?.asset]?.displayIntensity??v[4]):v[4];if(v[4]<=0||!Number.isFinite(x1+y1+x2+y2))continue;
-   const asset=v[8]?.asset,hudRed=asset==="hudRadar"||asset==="playerLives"||asset==="score"||asset==="highScore"||asset==="enemyInRange"||asset==="enemyDirection"||asset==="motionBlocked",originalRed=hudRed;
-   const alpha=Math.min(1,Math.max(.18,z/15)),color=this.colorized?(asset==="highScore"?rgb.orange:(rgb[v[6]]||rgb.green)):(originalRed?rgb.red:rgb.green);
-   const ink="rgba("+color+","+(alpha*gain)+")";
-   const distanceGlow=hudAssets.has(asset)?1:Math.max(.28,Math.min(1,z/15));const horizonGlow=this.colorized&&asset===horizonAsset&&spread>1?1.65:1;c.strokeStyle=ink;c.lineWidth=(.75+z/20)*(hudAssets.has(asset)?Math.min(spread,1.7):spread)*(spread>1?distanceGlow:1)*horizonGlow;
+   const x1=v[0],y1=v[1],x2=v[2],y2=v[3],asset=v[8]?.asset,style=ASSETS[asset]??ASSETS.unclassified,z=this.colorized?(v[11]??style.displayIntensity??v[4]):v[4],brightness=this.colorized?(v[9]??style.brightness??1):1,glow=this.colorized?(v[10]??style.glow??0.35):0.35;if(v[4]<=0||!Number.isFinite(x1+y1+x2+y2))continue;
+   const hudRed=asset==="hudRadar"||asset==="playerLives"||asset==="score"||asset==="highScore"||asset==="enemyInRange"||asset==="enemyDirection"||asset==="motionBlocked",originalRed=hudRed;
+   const alpha=Math.min(1,Math.max(.18,(z/15)*brightness)),color=this.colorized?(asset==="highScore"?rgb.orange:(rgb[v[6]]||rgb.green)):(originalRed?rgb.red:rgb.green);
+   const haloScale=spread>1?Math.max(0,glow/0.35):1,ink="rgba("+color+","+(alpha*gain*haloScale)+")";
+   const distanceGlow=hudAssets.has(asset)?1:Math.max(.28,Math.min(1,z/15));const horizonGlow=this.colorized&&asset===horizonAsset&&spread>1?1.65:1;c.strokeStyle=ink;c.lineWidth=(.75+z/20)*(hudAssets.has(asset)?Math.min(spread,1.7):spread)*(spread>1?distanceGlow*(0.65+glow):1)*horizonGlow;
    c.beginPath();
    // AVG points (including lava sparks) need a disk, even with identical endpoints.
    if(x1===x2&&y1===y2){c.fillStyle=ink;c.arc(x1,y1,c.lineWidth/2,0,Math.PI*2);c.fill()}
@@ -296,12 +303,12 @@ class Battlezone{
   // both adjoining vectors; keep the bloom compact so straight edges stay crisp.
   for(const v of this.vectors){
    const x1=v[0],y1=v[1],x2=v[2],y2=v[3];if(v[4]<=0||!Number.isFinite(x1+y1+x2+y2))continue;
-   const z=this.colorized?(ASSETS[v[8]?.asset]?.displayIntensity??v[4]):v[4];
-   const asset=v[8]?.asset,hudRed=asset==="hudRadar"||asset==="playerLives"||asset==="score"||asset==="highScore"||asset==="enemyInRange"||asset==="enemyDirection"||asset==="motionBlocked",originalRed=hudRed;
-   const alpha=Math.min(1,Math.max(.18,z/15)),color=this.colorized?(asset==="highScore"?rgb.orange:(rgb[v[6]]||rgb.green)):(originalRed?rgb.red:rgb.green);
+   const asset=v[8]?.asset,style=ASSETS[asset]??ASSETS.unclassified,z=this.colorized?(v[11]??style.displayIntensity??v[4]):v[4],brightness=this.colorized?(v[9]??style.brightness??1):1,glow=this.colorized?(v[10]??style.glow??0.35):0.35;
+   const hudRed=asset==="hudRadar"||asset==="playerLives"||asset==="score"||asset==="highScore"||asset==="enemyInRange"||asset==="enemyDirection"||asset==="motionBlocked",originalRed=hudRed;
+   const alpha=Math.min(1,Math.max(.18,(z/15)*brightness)),color=this.colorized?(asset==="highScore"?rgb.orange:(rgb[v[6]]||rgb.green)):(originalRed?rgb.red:rgb.green);
    const radius=(.75+z/20)/2;
    const endpoints=x1===x2&&y1===y2?[[x1,y1]]:[[x1,y1],[x2,y2]];
-   const distanceGlow=hudAssets.has(asset)?1:Math.max(.28,Math.min(1,z/15));for(const [spread,gain] of (hudAssets.has(asset)?[[1.4,.08],[1,.5]]:[[1+2*distanceGlow,.12*distanceGlow],[1.1,.65]])){
+   const distanceGlow=hudAssets.has(asset)?1:Math.max(.28,Math.min(1,z/15));for(const [spread,gain] of (hudAssets.has(asset)?[[1+glow,.08*Math.max(0,glow/0.35)],[1,.5]]:[[1+2*distanceGlow*(0.65+glow),.12*distanceGlow*Math.max(0,glow/0.35)],[1.1,.65]])){
     c.fillStyle="rgba("+color+","+(alpha*gain)+")";
     for(const [px,py] of endpoints){c.beginPath();c.arc(px,py,radius*spread,0,Math.PI*2);c.fill()}
    }
