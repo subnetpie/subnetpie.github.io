@@ -12,7 +12,7 @@ export function attachTouchMouse(screen,adb,host=window) {
  const move=(dx,dy,down)=>{
   const box=screen.getBoundingClientRect();
   fx+=dx*640/Math.max(1,box.width);
-  fy+=dy*400/Math.max(1,box.height);
+  fy+=dy*200/Math.max(1,box.height);
   const mx=Math.trunc(fx),my=Math.trunc(fy);fx-=mx;fy-=my;
   if(mx||my)adb.mouseInput(mx,my,down);
  };
