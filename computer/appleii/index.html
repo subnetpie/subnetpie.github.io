@@ -7,7 +7,7 @@
     <title>Apple 2ios</title>
     <script src="./touch-guard.js?v=20260930-gear"></script>
     <link rel='stylesheet' href='https://fonts.googleapis.com/css2?family=Rubik'>
-<link rel='stylesheet' href='https://fonts.googleapis.com/css2?family=Russo+One&amp;display=swap'><link rel="stylesheet" href="./style.css?v=20260930-resolution">
+<link rel='stylesheet' href='https://fonts.googleapis.com/css2?family=Russo+One&amp;display=swap'><link rel="stylesheet" href="./style.css?v=20260930-joystick-toggle">
 
   </head>
     
@@ -184,6 +184,7 @@
 </button>
 <div id="controls" role="group" aria-label="Emulator controls" hidden>
   <button type="button" class="button" id="buttonInput">keyboard</button>
+  <button type="button" class="button" id="buttonJoystick" aria-pressed="true" title="Show or hide joystick controls">joy on</button>
   <button type="button" class="button" id="buttonColor">color</button>
   <button type="button" class="button" id="buttonScanlines">scanlines</button>
   <button class="button" id="buttonLoad" type="button">load</button>
@@ -224,7 +225,7 @@
   }, 1500);
 })();
 </script>
-<script src="./joystick.js"></script><script type="module" src="./script.js?v=20260930-persist2"></script>
+<script src="./joystick.js"></script><script type="module" src="./script.js?v=20260930-joystick-toggle"></script>
 
   </body>
   
