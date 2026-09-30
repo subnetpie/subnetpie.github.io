@@ -554,3 +554,39 @@ button,
 #mediaDialog h3 { font-size: 1rem; margin: .25rem 0; }
 #mediaDialog .diskName { overflow-wrap: anywhere; font-weight: 600; }
 #mediaDialog button:disabled { opacity: .45; }
+
+
+/* 2026-09-30: keep the emulator chrome/display 30px below the viewport top. */
+:root { --emulator-top: max(30px, env(safe-area-inset-top)); }
+
+#controls {
+  top: var(--emulator-top) !important;
+}
+
+@media (orientation: portrait) {
+  #controls {
+    top: var(--emulator-top) !important;
+  }
+  .screen {
+    top: calc(var(--emulator-top) + 42px) !important;
+  }
+  #keyboard0 {
+    top: calc(var(--emulator-top) + 42px + (100vw * var(--screen-ratio)) + 8px) !important;
+  }
+  #keyboard1,
+  #keyboard2 {
+    top: calc(var(--emulator-top) + 42px + (100vw * var(--screen-ratio)) + 48px) !important;
+  }
+  #joyStick {
+    top: calc(var(--emulator-top) + 42px + (100vw * var(--screen-ratio)) + 12px) !important;
+  }
+}
+
+@media (orientation: landscape) {
+  #controls {
+    top: var(--emulator-top) !important;
+  }
+  .screen {
+    top: var(--emulator-top) !important;
+  }
+}
