@@ -5,6 +5,40 @@ const machineType = machineParam === "iie" ? "iie" : "iigs";
 const khz = machineType === "iigs" ? 2800 : 1020.5;
 let motherboard;
 let screenMouse;
+let emulatorSurface = null;
+let screenCanvas = null;
+
+const SCREEN_RESOLUTIONS = Object.freeze([
+  [320, 200],
+  [640, 400],
+  [1280, 800],
+  [1900, 1000]
+]);
+
+function selectScreenResolution() {
+  if(!screenCanvas) return SCREEN_RESOLUTIONS[1];
+  const rect = screenCanvas.getBoundingClientRect();
+  const dpr = Math.max(1, window.devicePixelRatio || 1);
+  const needW = Math.max(1, Math.round(rect.width * dpr));
+  const needH = Math.max(1, Math.round(rect.height * dpr));
+  return SCREEN_RESOLUTIONS.find(([w,h]) => w >= needW && h >= needH) ||
+         SCREEN_RESOLUTIONS[SCREEN_RESOLUTIONS.length - 1];
+}
+
+function presentScreen(forceResize=false) {
+  if(!screenCanvas || !emulatorSurface) return;
+  const [w,h] = selectScreenResolution();
+  if(forceResize || screenCanvas.width !== w || screenCanvas.height !== h) {
+    screenCanvas.width = w;
+    screenCanvas.height = h;
+    screenCanvas.dataset.resolution = w + "x" + h;
+  }
+  const ctx = screenCanvas.getContext("2d", {alpha:false});
+  ctx.imageSmoothingEnabled = false;
+  ctx.fillStyle = "#000";
+  ctx.fillRect(0,0,w,h);
+  ctx.drawImage(emulatorSurface, 0,0,emulatorSurface.width,emulatorSurface.height, 0,0,w,h);
+}
 import {attachTouchMouse} from "./touch_mouse.js?v=20260929-mouse";
 let interval;
 let last_ms;
@@ -185,6 +219,7 @@ function on_interval(now_ms) {
       motherboard.display_double_hires.refresh();
       if(io._mixed_mode) io.draw_mixed_text();
     }
+    presentScreen();
     if(perfMode) {
       perfAccum.render += performance.now()-renderStart;
       const p=motherboard.consumePerf();
@@ -220,12 +255,16 @@ function on_interval(now_ms) {
 
 function init() {
   showBootStatus(machineType === "iigs" ? "IIgs startup: constructing motherboard..." : "Apple II startup: constructing motherboard...");
-  let canvas = document.querySelector("canvas");
-  motherboard = new Motherboard(khz, canvas, joyValues, (n, s) => {}, machineType);
+  screenCanvas = document.getElementById("screen");
+  emulatorSurface = document.createElement("canvas");
+  emulatorSurface.width = 564;
+  emulatorSurface.height = 390;
+  motherboard = new Motherboard(khz, emulatorSurface, joyValues, (n, s) => {}, machineType);
   if(motherboard.iigsEnabled) {
-    screenMouse=attachTouchMouse(canvas,motherboard.memory.adb);
+    screenMouse=attachTouchMouse(screenCanvas,motherboard.memory.adb);
     document.getElementById('mouseHint').hidden=false;
   }
+  presentScreen(true);
   showBootStatus(machineType === "iigs" ? "IIgs startup: motherboard constructed" : "Apple II startup: motherboard constructed");
 
 async function loadBuiltInIIgsROM() {
@@ -754,7 +793,7 @@ function composeScreen() {
   controlsEl.style.display = "none";
   document.body.style.backgroundColor = "#0f0000";
   screenCanvas.style.left = "50%";
-  screenCanvas.style.top = "0px";
+  screenCanvas.style.top = "";
   screenCanvas.style.height = window.innerHeight + "px";
   screenCanvas.style.width = (window.innerHeight * 564 / 390) + "px";
 }
@@ -763,6 +802,7 @@ function composeScreen() {
 $(function() {
   $(window).on('resize', function() {
     composeScreen();
+    presentScreen(true);
   });
   composeScreen();
   joyPadCtx.joyWidth = joyWidth;
