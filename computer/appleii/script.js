@@ -4,6 +4,8 @@ const machineType = machineParam === "iie" ? "iie" : "iigs";
 // $C036 SPEED; the browser scheduler always supplies 2.8 MHz master-time.
 const khz = machineType === "iigs" ? 2800 : 1020.5;
 let motherboard;
+let screenMouse;
+import {attachTouchMouse} from "./touch_mouse.js?v=20260929-mouse";
 let interval;
 let last_ms;
 let bootWatchdog = 0;
@@ -56,7 +58,7 @@ function chooseArchiveImage(name, entries) {
   });
 }
 
-import { Motherboard } from "https://subnetpie.github.io/computer/appleii/motherboard.js?v=20260929-floppyspeed";
+import { Motherboard } from "https://subnetpie.github.io/computer/appleii/motherboard.js?v=20260929-mouse";
 
 class Drive {
   constructor(num, display, led, dialog) {
@@ -197,6 +199,10 @@ function init() {
   showBootStatus(machineType === "iigs" ? "IIgs startup: constructing motherboard..." : "Apple II startup: constructing motherboard...");
   let canvas = document.querySelector("canvas");
   motherboard = new Motherboard(khz, canvas, joyValues, (n, s) => {}, machineType);
+  if(motherboard.iigsEnabled) {
+    screenMouse=attachTouchMouse(canvas,motherboard.memory.adb);
+    document.getElementById('mouseHint').hidden=false;
+  }
   showBootStatus(machineType === "iigs" ? "IIgs startup: motherboard constructed" : "Apple II startup: motherboard constructed");
 
 async function loadBuiltInIIgsROM() {
@@ -278,6 +284,7 @@ async function loadBuiltInIIgsROM() {
 }
 
 function stop() {
+  screenMouse?.release();
   if(motherboard?.audio) motherboard.audio.reset();
   buttonRunStop.innerText = "run";
   

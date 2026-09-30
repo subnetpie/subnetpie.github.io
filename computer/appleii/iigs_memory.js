@@ -1,5 +1,5 @@
 import {Floppy35} from './floppy35.js?v=20260928-trackcache1';
-import {IIgsADB} from "./iigs_adb.js";
+import {IIgsADB} from "./iigs_adb.js?v=20260929-mouse";
 import {IIgsDOC} from "./iigs_doc.js?v=20260929-docfix";
 import {IIgsSCC} from "./iigs_scc.js?v=20260928-2mg";
 // Apple IIgs 24-bit memory/bus.
