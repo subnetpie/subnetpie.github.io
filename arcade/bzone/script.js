@@ -22,6 +22,7 @@ class Mathbox{
  mulB(){let r=this.r,t,q;t=(r[1]*r[4])|0;this.set(12,t>>16);this.set(9,t);t=(r[0]*r[5])|0;this.set(8,t>>16);q=s16(t);this.set(8,r[8]+r[12]);this.set(9,(r[9]>>1)&32767);this.set(12,(q>>1)&32767);this.set(9,r[9]+r[12]);if(r[9]<0)this.set(8,r[8]+1);this.set(9,r[9]<<1);this.result=r[8];if(r[15]<0)return;this.set(8,r[8]+r[3]);this.set(9,r[9]&0xff00);this.divide(r[9],r[8])}
  divide(c,q){let r=this.r,qq=s16(q);this.set(14,r[7]^qq);this.set(13,qq);if(qq>=0)qq=s16(c);else{this.set(13,-qq-1);qq=s16(-c-1);if(qq<0&&s16(qq+1)<0)this.set(13,r[13]+1);qq=s16(qq+1)}this.set(12,r[7]>=0?r[7]:-r[7]);this.set(15,r[6]);do{this.set(13,r[13]-r[12]);let msb=qq&32768;qq=s16(qq<<1);if(r[13]>=0)qq=s16(qq+1);else this.set(13,r[13]+r[12]);this.set(13,r[13]<<1);this.set(13,r[13]+(msb?1:0))}while(this.set(15,r[15]-1)>=0);this.result=s16(r[14]>=0?qq:-qq)}
  lo(){return this.result&255}hi(){return(this.result>>8)&255}}
+
 class BzoneAudio{
  constructor(game){
   this.game=game;this.ctx=null;this.node=null;this.gain=null;
@@ -39,7 +40,7 @@ class BzoneAudio{
   this.shellGate=0;this.shellLP=0;this.shellDC=0;
   this.explosionGate=0;this.explosionLP=0;this.explosionDC=0;
 
-  // Engine Subsystem (Spectrally matched to arcade recording: 43 Hz idle fundamental / 62 Hz rev)
+  // Engine Subsystem (Spectrally matched to arcade reference: 43.1 Hz fundamental + 86.1 Hz 2nd harmonic)
   this.enginePhase=0;
   this.engineCount4=4;
   this.engineCount6=6;
@@ -111,7 +112,7 @@ class BzoneAudio{
    const soundEnabled=(d&0x20)!==0;
    const motor=(d&0x80)!==0,rev=(d&0x10)!==0;
 
-   // 1. Advance 6 kHz LFSR Pseudo-Random Noise Generator (MAME 0.289 bzone_a.cpp)
+   // 1. Advance 6 kHz LFSR Pseudo-Random Noise Generator (MAME bzone_a.cpp)
    this.noisePhase+=6000*dt;
    while(this.noisePhase>=1){
     this.noisePhase-=1;
@@ -137,8 +138,7 @@ class BzoneAudio{
    this.explosionDC+=coupling*(this.explosionLP-this.explosionDC);
    const explOut=(this.explosionLP-this.explosionDC)*((d&2)?.75:.25);
 
-   // 4. Tank Engine (Matched to 43.1 Hz idle and 62.5 Hz driving peaks in reference audio)
-   // VCO runs at 430 Hz (idle) / 625 Hz (revving)
+   // 4. Tank Engine (MAME 0.289 bzone_a.cpp: 430 Hz idle / 625 Hz rev VCO clocking 4..15 & 6..15 counters)
    const vcoFreq=(rev?625:430);
    this.enginePhase+=vcoFreq*dt;
    while(this.enginePhase>=1){
@@ -155,14 +155,14 @@ class BzoneAudio{
    const tapA_RCO = (a === 15) ? 1.0 : -1.0;
    const tapB_QD = (b & 8) ? 1.0 : -1.0;
    const tapB_RCO = (b === 15) ? 1.0 : -1.0;
-   const engineRaw = motor ? (tapA_QD * 0.48 + tapA_RCO * 0.27 + tapB_QD * 0.15 + tapB_RCO * 0.10) : 0;
+   const engineRaw = motor ? (tapA_QD * 0.44 + tapA_RCO * 0.32 + tapB_QD * 0.14 + tapB_RCO * 0.10) : 0;
 
-   // 2-pole op-amp active lowpass filter (cutoff tuned to 85 Hz for rich motor body)
-   const engAlpha = 2 * Math.PI * 85 * dt;
+   // 2-pole op-amp active low-pass filter (cutoff 110 Hz) for authentic 2nd harmonic bite
+   const engAlpha = 2 * Math.PI * 110 * dt;
    this.engineLP0 += engAlpha * (engineRaw - this.engineLP0);
    this.engineLP1 += engAlpha * (this.engineLP0 - this.engineLP1);
    this.engineDC += (1 - Math.exp(-dt / 0.05)) * (this.engineLP1 - this.engineDC);
-   const engineOut = motor ? (this.engineLP1 - this.engineDC) * 0.35 : 0;
+   const engineOut = motor ? (this.engineLP1 - this.engineDC) * 0.38 : 0;
 
    // 5. POKEY Audio Core (MAME 0.289 pokey.cpp: Radar sonar blips, UFO saucer siren, pure tones)
    const audctl=this.synthReg[8];
@@ -191,6 +191,8 @@ class BzoneAudio{
   if(this.eventHead>512){this.events.splice(0,this.eventHead);this.eventHead=0}
  }
 }
+
+
 class Battlezone{
  constructor(){this.cv=document.querySelector("#gameCanvas");this.cx=this.cv.getContext("2d");this.cv.width=W;this.cv.height=H;this.mem=new Uint8Array(32768);this.math=new Mathbox();this.pokeyRandom=new PokeyRandom();this.i={coin1:0,start1:0,fire:0,lu:0,ld:0,ru:0,rd:0};this.sound=0;this.audio=new BzoneAudio(this);this.avgDone=1;this.vectors=[];this.colorized=true;this.paused=false;this.bind()}
  async rom(n){const r=await fetch("../bzone-old/roms/"+n);if(!r.ok)throw Error("ROM "+n);return new Uint8Array(await r.arrayBuffer())}
