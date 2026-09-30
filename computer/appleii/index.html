@@ -7,7 +7,7 @@
     <title>Apple 2ios</title>
     <script src="./touch-guard.js?v=20260930-diskfix"></script>
     <link rel='stylesheet' href='https://fonts.googleapis.com/css2?family=Rubik'>
-<link rel='stylesheet' href='https://fonts.googleapis.com/css2?family=Russo+One&amp;display=swap'><link rel="stylesheet" href="./style.css?v=20260930-keyboard1">
+<link rel='stylesheet' href='https://fonts.googleapis.com/css2?family=Russo+One&amp;display=swap'><link rel="stylesheet" href="./style.css?v=20260930-twodrives">
 
   </head>
     
@@ -136,10 +136,23 @@
 <dialog id="mediaDialog" aria-labelledby="mediaTitle">
   <input type="file" id="filedialog1" hidden/>
   <input type="file" id="filedialogInsert" hidden/>
+  <input type="file" id="filedialogInsert2" hidden/>
   <h2 id="mediaTitle">Disk controls</h2>
-  <label class="mediaChoice" for="filedialog1"><strong>Load and restart</strong><span>Start a game or boot a different disk.</span></label>
-  <label class="mediaChoice" for="filedialogInsert"><strong>Insert disk — keep running</strong><span>Swap disks when the running program asks.</span></label>
-  <p>DSK, WOZ, 2MG, HDV and ZIP supported. The selected disk replaces the media in its drive.</p>
+  <p>Boot your system in Drive 1, then insert an application in Drive 2.</p>
+  <section class="diskDrive" aria-labelledby="driveTitle0">
+    <h3 id="driveTitle0">Drive 1 · System / boot</h3>
+    <p id="driveName0" class="diskName">Empty</p>
+    <label class="mediaChoice" for="filedialog1"><strong>Load and restart</strong><span>Boot a system disk or start a new game.</span></label>
+    <label class="mediaChoice" for="filedialogInsert">Insert into Drive 1 — keep running</label>
+    <button id="ejectDrive0" type="button">Eject Drive 1</button>
+  </section>
+  <section class="diskDrive" aria-labelledby="driveTitle1">
+    <h3 id="driveTitle1">Drive 2 · Application / data</h3>
+    <p id="driveName1" class="diskName">Empty</p>
+    <label class="mediaChoice" for="filedialogInsert2">Insert into Drive 2 — keep running</label>
+    <button id="ejectDrive1" type="button">Eject Drive 2</button>
+  </section>
+  <p>DSK, WOZ, 2MG, HDV and ZIP supported. Eject the disk in the guest desktop before replacing it. Changes to disk data remain in memory only.</p>
   <form method="dialog"><button>Cancel</button></form>
 </dialog>
 <dialog id="archiveDialog" aria-labelledby="archiveTitle">
@@ -195,7 +208,7 @@
   }, 1500);
 })();
 </script>
-<script src="./joystick.js"></script><script type="module" src="./script.js?v=20260930-shrclean1"></script>
+<script src="./joystick.js"></script><script type="module" src="./script.js?v=20260930-twodrives"></script>
 
   </body>
   

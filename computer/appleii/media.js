@@ -80,6 +80,7 @@ export function decodeMedia(name,value) {
 }
 
 export function mountMedia(board, media, drive=0, {preserveSession=false}={}) {
+  if(drive!==0 && drive!==1)throw new Error("Invalid drive");
   let ok;
   if(media.kind==='rom') {
     if(preserveSession)throw new Error('ROM images require Load and restart');
@@ -88,23 +89,36 @@ export function mountMedia(board, media, drive=0, {preserveSession=false}={}) {
     return true;
   }
   if(media.kind==='block') {
-    ok=board.prodosBlock.load_image(media.name,media.data,media);
+    ok=board.prodosBlock.load_image(media.name,media.data,media,drive);
     if(board.iigsEnabled && board.memory && media.physical==='35') {
-      board.memory.floppy35Media=media;
-      board.memory.floppy35.mount(media);
+      board.memory.floppy35Drives[drive].mount(media);
     }
   }
   else ok=board.floppy525.load_image(drive,media.name,media.data,media);
   if(!ok)throw new Error('Unable to mount '+media.name);
   if(!preserveSession && board.iigsEnabled && board.memory)
     board.memory.legacyFloppySpeed = media.kind==='floppy';
-  // A fresh boot must not find the previous 3.5-inch image before slot 6.
-  // Disk insertion deliberately keeps other drives mounted.
-  if(!preserveSession && board.iigsEnabled && media.physical!=='35') {
-    board.memory.floppy35Media=null;
-    board.memory.floppy35.eject();
+  // Each menu drive owns one image. Clear stale media of a different type
+  // in this drive only; the other drive stays mounted.
+  if(board.iigsEnabled && media.physical!=='35') {
+    board.memory.floppy35Drives[drive].eject();
   }
   // Otherwise slot 7 keeps booting the previously selected hard disk.
-  if(!preserveSession && media.kind==='floppy')board.prodosBlock.eject();
+  if(media.kind==='floppy')board.prodosBlock.eject(drive);
+  else {
+    board.floppy525._disks[drive].medium=null;
+    board.floppy525._disks[drive].name='';
+  }
+  board.mountedMedia ??= [null,null];
+  board.mountedMedia[drive]=media;
   return true;
+}
+
+export function ejectMedia(board,drive) {
+  if(drive!==0 && drive!==1)throw new Error('Invalid drive');
+  board.prodosBlock.eject(drive);
+  if(board.iigsEnabled)board.memory.floppy35Drives[drive].eject();
+  board.floppy525._disks[drive].medium=null;
+  board.floppy525._disks[drive].name='';
+  if(board.mountedMedia)board.mountedMedia[drive]=null;
 }

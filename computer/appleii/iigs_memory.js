@@ -56,7 +56,12 @@ export class IIgsMemory {
     this.iwmRw = 0; // MAME MODE_IDLE / MODE_READ / MODE_WRITE
     this.iwmPhases = 0;
     this.iwmDevSel = 0;
-    this.floppy35 = new Floppy35();
+    this.floppy35Drives = [new Floppy35(), new Floppy35()];
+    Object.defineProperty(this,'floppy35',{get:()=>this.floppy35Drives[this.iwmControlDrive2?1:0]});
+    Object.defineProperty(this,'floppy35Media',{
+      get:()=>this.floppy35.media,
+      set:media=>{if(media)this.floppy35.mount(media);else this.floppy35.eject();}
+    });
     this.iwmReadShift=0; this.iwmReadBits=0;
     this.iwmReadState=0; this.iwmReadClock=0; this.iwmNextWindow=0;
     this.iwmSyncUpdate=0; this.iwmAsyncUpdate=0;
@@ -1051,6 +1056,6 @@ export class IIgsMemory {
     this.iwmReadShift=0; this.iwmReadBits=0; this.iwmReadState=0;
     this.iwmReadClock=0; this.iwmNextWindow=0;
     this.iwmSyncUpdate=0; this.iwmAsyncUpdate=0;
-    this.floppy35.reset();
+    for(const drive of this.floppy35Drives)drive.reset();
   }
 }

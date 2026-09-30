@@ -40,7 +40,7 @@ var joyButtons = document.getElementById("joyButtonsCanvas");
 var joyButtonsCtx = joyButtons.getContext("2d");
 document.oncontextmenu = new Function("return false;");
 
-import {decodeMedia, isZip, readZipEntries, mountMedia} from './media.js?v=20260930-diskfix';
+import {decodeMedia, isZip, readZipEntries, mountMedia, ejectMedia} from './media.js?v=20260930-twodrives';
 
 function chooseArchiveImage(name, entries) {
   const dialog = document.getElementById('archiveDialog');
@@ -58,7 +58,7 @@ function chooseArchiveImage(name, entries) {
   });
 }
 
-import { Motherboard } from "https://subnetpie.github.io/computer/appleii/motherboard.js?v=20260930-shrclean1";
+import { Motherboard } from "https://subnetpie.github.io/computer/appleii/motherboard.js?v=20260930-twodrives";
 
 class Drive {
   constructor(num, display, led, dialog, restart=true) {
@@ -73,6 +73,7 @@ class Drive {
   load_media(name, buffer) {
     const media = decodeMedia(name, buffer);
     mountMedia(motherboard, media, this.num, {preserveSession:!this.restart});
+    refreshDriveLabels();
     if(!this.restart) {
       showBootStatus('');
       return true;
@@ -116,11 +117,25 @@ class Drive {
   }
 }
 
-// Both actions target drive 1, with separate pickers so cancellation cannot
+// Independent pickers keep the target drive fixed through file and ZIP selection.
+// Cancellation cannot
 // accidentally leave the next load in the wrong mode.
 const drives = [new Drive(0, "drivetitle1", "led1", "filedialog1"),
-                new Drive(0, "drivetitle1", "led1", "filedialogInsert", false)];
-document.getElementById('buttonLoad').addEventListener('click',()=>document.getElementById('mediaDialog').showModal());
+                new Drive(0, "drivetitle1", "led1", "filedialogInsert", false),
+                new Drive(1, "drivetitle2", "led2", "filedialogInsert2", false)];
+function refreshDriveLabels() {
+  for(let i=0;i<2;i++) {
+    const media=motherboard?.mountedMedia?.[i];
+    document.getElementById('driveName'+i).textContent=media?.name.split('/').pop() || 'Empty';
+    document.getElementById('ejectDrive'+i).disabled=!media;
+  }
+}
+for(let i=0;i<2;i++)document.getElementById('ejectDrive'+i).addEventListener('click',()=>{
+  ejectMedia(motherboard,i);refreshDriveLabels();
+});
+document.getElementById('buttonLoad').addEventListener('click',()=>{
+  refreshDriveLabels();document.getElementById('mediaDialog').showModal();
+});
 
 const perfMode = new URLSearchParams(location.search).get("perf") === "1";
 let perfHud=null, perfFrames=0, perfDropped=0, perfWindowStart=performance.now();

@@ -8,11 +8,12 @@ export class ProDOSBlockDevice {
     constructor(slot, memory) {
         this.slot = slot & 7;
         this.memory = memory;
-        this.image = null;
-        this.name = "";
-        this.dirty = false;
-        this.writeProtected = false;
-        this.blockCount = 0;
+        this.drives = Array.from({length:2}, () => ({image:null,name:'',dirty:false,writeProtected:false,blockCount:0}));
+        this.statusDrive = 0;
+        // Preserve the drive-1 API used by boot code and diagnostics.
+        for(const key of Object.keys(this.drives[0])) Object.defineProperty(this,key,{
+            get:()=>this.drives[0][key], set:value=>{this.drives[0][key]=value;}
+        });
         this.trace = null;
 
         this.romBase = 0xc000 | (this.slot << 8);
@@ -64,14 +65,16 @@ export class ProDOSBlockDevice {
 
         // ProDOS device metadata. FC/FD are supplied dynamically.
         // Keep the legacy second-drive flag consistent with execute(), which
-        // accepts both $70 and $F0 for the mounted image. ProDOS 16 v1.3
+        // exposes distinct $70 and $F0 units. ProDOS 16 v1.3
         // assumes the boot slot has a pair when reordering its device list;
         // advertising only one entry leaves a byte on its return stack.
         this.rom[0xfe] = 0x17; // legacy drive pair + status/read/write
         this.rom[0xff] = 0x80; // driver entry Cn80
     }
 
-    load_image(name, bin, options = {}) {
+    load_image(name, bin, options = {}, drive = 0) {
+        const disk = this.drives[drive];
+        if(!disk) throw new Error("Invalid drive");
         const src = bin instanceof Uint8Array ? bin : new Uint8Array(bin);
         if (!src.length || (src.length & 0x1ff)) {
             console.error("ProDOS block image must be a multiple of 512 bytes");
@@ -82,21 +85,22 @@ export class ProDOSBlockDevice {
             console.error("ProDOS 8 block image exceeds 65535 blocks");
             return false;
         }
-        this.image = new Uint8Array(src);
-        this.writeProtected = !!options.writeProtected;
-        this.name = name;
-        this.blockCount = blocks;
-        this.dirty = false;
+        disk.image = new Uint8Array(src);
+        disk.writeProtected = !!options.writeProtected;
+        disk.name = name;
+        disk.blockCount = blocks;
+        disk.dirty = false;
         console.log("mounted ProDOS block device:", name, blocks, "blocks");
         return true;
     }
 
-    eject() {
-        this.image = null;
-        this.name = '';
-        this.blockCount = 0;
-        this.dirty = false;
-        this.writeProtected = false;
+    eject(drive = 0) {
+        const disk = this.drives[drive];
+        disk.image = null;
+        disk.name = '';
+        disk.blockCount = 0;
+        disk.dirty = false;
+        disk.writeProtected = false;
     }
 
     reset() {
@@ -110,7 +114,7 @@ export class ProDOSBlockDevice {
             // The system ROM scans slot 7 before Disk II in slot 6. An empty
             // hard drive must not advertise a boot signature: its failed boot
             // cannot RTS because the firmware enters slot ROMs with JMP.
-            if (!this.image) return 0;
+            if (!this.drives.some(d=>d.image)) return 0;
             const off = addr & 0xff;
             if (off === 0xfc) return this.blockCount & 0xff;
             if (off === 0xfd) return (this.blockCount >>> 8) & 0xff;
@@ -118,8 +122,8 @@ export class ProDOSBlockDevice {
         }
 
         if (addr === 0xc0f0) return this.execute();
-        if (addr === 0xc0f1) return this.blockCount & 0xff;
-        if (addr === 0xc0f2) return (this.blockCount >>> 8) & 0xff;
+        if (addr === 0xc0f1) return this.drives[this.statusDrive].blockCount & 0xff;
+        if (addr === 0xc0f2) return (this.drives[this.statusDrive].blockCount >>> 8) & 0xff;
         return undefined;
     }
 
@@ -130,34 +134,35 @@ export class ProDOSBlockDevice {
     }
 
     execute() {
-        if (!this.image) return 0x28; // no device
 
         // ProDOS block-device entry uses the zero-page parameter list at
-        // $42-$47. Some boot loaders (including the Arkanoid 800K 2MG)
-        // preserve the slot in the high nibble but set the drive bit as well.
+        // $42-$47. Bit 7 selects the independent second drive.
         const command = this.memory.read(0x42);
         const unit = this.memory.read(0x43);
+        this.statusDrive = unit >>> 7;
+        const disk = this.drives[this.statusDrive];
+        if(!disk.image) return 0x28; // empty drive
         const buffer = this.memory.read(0x44) | (this.memory.read(0x45) << 8);
         const block = this.memory.read(0x46) | (this.memory.read(0x47) << 8);
 
         // Unit bits 4-6 select the slot; bit 7 is the drive number and must
         // not participate in slot validation.
-        if (this.trace) this.trace({command, unit, buffer, block, blocks:this.blockCount});
+        if (this.trace) this.trace({command, unit, buffer, block, blocks:disk.blockCount});
         if ((unit & 0x70) !== ((this.slot & 7) << 4)) return 0x28;
 
         if (command === 0) return 0; // STATUS
         if (command !== 1 && command !== 2) return 0x27;
-        if (command === 2 && this.writeProtected) return 0x2b;
-        if (block >= this.blockCount) return 0x27;
+        if (command === 2 && disk.writeProtected) return 0x2b;
+        if (block >= disk.blockCount) return 0x27;
 
         const offset = block << 9;
         if (command === 1) {
             for (let i = 0; i < 512; i++)
-                this.memory.write((buffer + i) & 0xffff, this.image[offset + i]);
+                this.memory.write((buffer + i) & 0xffff, disk.image[offset + i]);
         } else {
             for (let i = 0; i < 512; i++)
-                this.image[offset + i] = this.memory.read((buffer + i) & 0xffff);
-            this.dirty = true;
+                disk.image[offset + i] = this.memory.read((buffer + i) & 0xffff);
+            disk.dirty = true;
         }
         return 0;
     }

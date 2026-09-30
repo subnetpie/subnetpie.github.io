@@ -549,3 +549,8 @@ button,
       2px 3px 0 #0d0c0a;
   }
 }
+
+#mediaDialog .diskDrive { border-top: 1px solid #887467; padding: .6rem 0; }
+#mediaDialog h3 { font-size: 1rem; margin: .25rem 0; }
+#mediaDialog .diskName { overflow-wrap: anywhere; font-weight: 600; }
+#mediaDialog button:disabled { opacity: .45; }
