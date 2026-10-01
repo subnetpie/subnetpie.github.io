@@ -223,13 +223,11 @@ button,
     display: none !important;
   }
 
-  body.joystick-mode #joyStick,
-  body.joystick-mode #joyControls {
+  body.joystick-mode #joyStick {
     display: grid !important;
   }
 
-  body.keyboard-mode #joyStick,
-  body.keyboard-mode #joyControls {
+  body.keyboard-mode #joyStick {
     display: none !important;
   }
 
@@ -288,8 +286,7 @@ button,
 
 /* Touch controls are fail-safe visible: joystick is the default portrait mode. */
 @media (orientation: portrait) {
-  #joyStick,
-  #joyControls {
+  #joyStick {
     display: grid !important;
   }
 
@@ -300,8 +297,7 @@ button,
     display: none !important;
   }
 
-  body.keyboard-mode #joyStick,
-  body.keyboard-mode #joyControls {
+  body.keyboard-mode #joyStick {
     display: none !important;
   }
 
@@ -651,8 +647,7 @@ button,
 
 
 /* Main controls can disable the touch joystick independently of keyboard mode. */
-body.joystick-disabled #joyStick,
-body.joystick-disabled #joyControls {
+body.joystick-disabled #joyStick {
   display: none !important;
 }
 #buttonJoystick[aria-pressed="false"] {
@@ -667,12 +662,11 @@ body.joystick-disabled #joyControls {
 
 /* Keep joystick options tucked behind their own gear. */
 #buttonJoySettings {
-  position: absolute;
+  position: fixed;
   z-index: 24;
-  right: 0;
-  /* Keep this control in the joystick region and away from the emulator gear,
-     which is fixed at the upper-right of the viewport. */
-  bottom: calc(100% + 8px);
+  right: max(8px, env(safe-area-inset-right));
+  /* Dedicated lower-right control zone. The emulator gear owns upper-right. */
+  bottom: max(12px, env(safe-area-inset-bottom));
   width: 44px;
   height: 44px;
   display: grid;
@@ -690,8 +684,9 @@ body.joystick-disabled #joyControls {
 #joyControls {
   position: absolute;
   z-index: 25;
-  bottom: calc(100% + 60px);
-  right: 0;
+  position: fixed;
+  bottom: calc(max(12px, env(safe-area-inset-bottom)) + 52px);
+  right: max(8px, env(safe-area-inset-right));
   left: auto;
   transform: none;
   width: min(300px, calc(100vw - 32px));
