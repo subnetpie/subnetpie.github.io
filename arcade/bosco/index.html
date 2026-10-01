@@ -1,37 +1,25 @@
-<!DOCTYPE html>
-<html lang="en">
-
-  <head>
-    <meta charset="UTF-8">
-    <title>JSBosco</title>
-    <link rel="stylesheet" href="./style.css">
-
-  </head>
-    
-  <body>
-  <div id="gameContainer">
-  <canvas id="gameCanvas"></canvas>
-
-  <!-- Touch Controls -->
-  <button id="btnCoin" class="touch-button system-button" aria-label="Insert Coin">COIN</button>
-  <button id="btnStart" class="touch-button system-button" aria-label="Start Game">START</button>
-</div>
-
-<!-- D-pad -->
-<div id="dpad">
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>Bosconian</title>
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <main>
+    <canvas id="gameCanvas"></canvas>
+    <div id="top">
+      <button data-btn="coin1">COIN</button>
+      <button data-btn="start1">START</button>
+    </div>
+    <div id="dpad">
   <div id="dpad-ring">
     <canvas id="dpad-canvas" width="250" height="250"></canvas>
   </div>
 </div>
-
-<!-- Fire / Bomb -->
-<div id="button-pad">
-  <div id="btn-fire">FIRE</div>
-</div>
-</div>
-    <script type="module" src="./script.js"></script>
-
-  </body>
-  
+    <button id="fire" data-btn="fire">FIRE</button>
+  </main>
+  <script type="module" src="./script.js"></script>
+</body>
 </html>
-
