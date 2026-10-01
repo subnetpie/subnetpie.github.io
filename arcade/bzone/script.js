@@ -1,3 +1,4 @@
+import { BzoneAudio } from "./audio.js?v=20260930-mame289";
 import { M6502 } from "../../cpu/m6502.js";
 import { AssetTrace, ASSETS } from "./assets.js";
 import { PokeyRandom } from "./pokey-random.js";
@@ -22,176 +23,6 @@ class Mathbox{
  mulB(){let r=this.r,t,q;t=(r[1]*r[4])|0;this.set(12,t>>16);this.set(9,t);t=(r[0]*r[5])|0;this.set(8,t>>16);q=s16(t);this.set(8,r[8]+r[12]);this.set(9,(r[9]>>1)&32767);this.set(12,(q>>1)&32767);this.set(9,r[9]+r[12]);if(r[9]<0)this.set(8,r[8]+1);this.set(9,r[9]<<1);this.result=r[8];if(r[15]<0)return;this.set(8,r[8]+r[3]);this.set(9,r[9]&0xff00);this.divide(r[9],r[8])}
  divide(c,q){let r=this.r,qq=s16(q);this.set(14,r[7]^qq);this.set(13,qq);if(qq>=0)qq=s16(c);else{this.set(13,-qq-1);qq=s16(-c-1);if(qq<0&&s16(qq+1)<0)this.set(13,r[13]+1);qq=s16(qq+1)}this.set(12,r[7]>=0?r[7]:-r[7]);this.set(15,r[6]);do{this.set(13,r[13]-r[12]);let msb=qq&32768;qq=s16(qq<<1);if(r[13]>=0)qq=s16(qq+1);else this.set(13,r[13]+r[12]);this.set(13,r[13]<<1);this.set(13,r[13]+(msb?1:0))}while(this.set(15,r[15]-1)>=0);this.result=s16(r[14]>=0?qq:-qq)}
  lo(){return this.result&255}hi(){return(this.result>>8)&255}}
-
-class BzoneAudio{
- constructor(game){
-  this.game=game;this.ctx=null;this.node=null;this.gain=null;
-  this.reg=new Uint8Array(16);this.synthReg=new Uint8Array(16);
-  this.latch=0;this.pendingLatch=0;this.events=[];this.eventHead=0;this.audioCycle=null;
-
-  // POKEY state
-  this.poly4=0x0f;this.poly5=0x1f;this.poly9=0x1ff;this.poly17=0x1ffff;
-  this.pokeyCounters=new Float64Array(4);this.pokeyOut=new Float64Array(4);
-
-  // 6 kHz LFSR pseudo-random noise generator
-  this.noiseReg=0x0001;this.noisePhase=0;this.noiseDiv31=0;this.noiseDiv34=0;this.noiseNand=1;
-
-  // Discrete circuits
-  this.shellGate=0;this.shellLP=0;this.shellDC=0;
-  this.explosionGate=0;this.explosionLP=0;this.explosionDC=0;
-
-  // Engine Subsystem (Spectrally matched to arcade reference: 43.1 Hz fundamental + 86.1 Hz 2nd harmonic)
-  this.enginePhase=0;
-  this.engineCount4=4;
-  this.engineCount6=6;
-  this.engineLP0=0;
-  this.engineLP1=0;
-  this.engineDC=0;
- }
- start(){
-  if(!this.ctx){
-   const AudioCtx=window.AudioContext||window.webkitAudioContext;
-   this.ctx=new AudioCtx();
-   this.node=this.ctx.createScriptProcessor(1024,0,1);
-   this.node.onaudioprocess=e=>this.render(e.outputBuffer.getChannelData(0));
-   this.gain=this.ctx.createGain();
-   this.gain.gain.value=.85;
-   this.node.connect(this.gain);
-   this.gain.connect(this.ctx.destination);
-
-   try{
-    const buf=this.ctx.createBuffer(1,1,22050);
-    const src=this.ctx.createBufferSource();
-    src.buffer=buf;
-    src.connect(this.ctx.destination);
-    src.start(0);
-   }catch(err){}
-  }
-  if(this.ctx.state==="suspended"||this.ctx.state==="interrupted"){
-   this.ctx.resume().catch(()=>{});
-  }
- }
- read(r){r&=15;if(r===8)return window.battlezone?window.battlezone.in3():0;return this.reg[r]}
- event(e){this.events.push({cycle:this.game.cpu?.cycles??0,...e})}
- write(r,d){
-  r&=15;d&=255;this.reg[r]=d;
-  if(!this.ctx){this.synthReg[r]=d;return}
-  this.event({type:1,r,d});
- }
- control(d){
-  d&=255;this.pendingLatch=d;
-  if(!this.ctx){this.latch=d;return}
-  this.event({type:0,d});
- }
- applyEvent(e){if(e.type===0)this.latch=e.d;else this.synthReg[e.r]=e.d}
-
- stepPoly(){
-  const fb4=((this.poly4>>3)^(this.poly4>>2))&1;this.poly4=((this.poly4<<1)|fb4)&0x0f;
-  const fb5=((this.poly5>>4)^(this.poly5>>2))&1;this.poly5=((this.poly5<<1)|fb5)&0x1f;
-  const fb9=((this.poly9>>8)^(this.poly9>>3))&1;this.poly9=((this.poly9<<1)|fb9)&0x1ff;
-  const fb17=((this.poly17>>16)^(this.poly17>>11))&1;this.poly17=((this.poly17<<1)|fb17)&0x1ffff;
- }
-
- render(out){
-  const sr=this.ctx.sampleRate,dt=1/sr,cyclesPerSample=CPU_CLOCK/sr;
-  const filter=1-Math.exp(-1/(sr*.001551)),coupling=1-Math.exp(-1/(sr*.075));
-  const shellRelease=Math.exp(-1/(sr*.1081)),explosionRelease=Math.exp(-1/(sr*.23));
-
-  if(this.audioCycle===null){
-   this.audioCycle=Math.max(0,(this.game.cpu?.cycles??0)-CPU_CLOCK/FPS);
-   while(this.eventHead<this.events.length&&this.events[this.eventHead].cycle<this.audioCycle)
-    this.applyEvent(this.events[this.eventHead++]);
-  }
-  const cpuHorizon=this.game.cpu?.cycles??0;
-  for(let i=0;i<out.length;i++){
-   if(this.audioCycle+cyclesPerSample>cpuHorizon){out.fill(0,i);break}
-   while(this.eventHead<this.events.length&&this.events[this.eventHead].cycle<=this.audioCycle)
-    this.applyEvent(this.events[this.eventHead++]);
-
-   const d=this.latch;
-   const soundEnabled=(d&0x20)!==0;
-   const motor=(d&0x80)!==0,rev=(d&0x10)!==0;
-
-   // 1. Advance 6 kHz LFSR Pseudo-Random Noise Generator (MAME bzone_a.cpp)
-   this.noisePhase+=6000*dt;
-   while(this.noisePhase>=1){
-    this.noisePhase-=1;
-    const oldMsb=(this.noiseReg>>15)&1;
-    const feedback=1^(((this.noiseReg>>3)^(this.noiseReg>>14))&1);
-    this.noiseReg=((this.noiseReg<<1)|feedback)&0xffff;
-    const newMsb=(this.noiseReg>>15)&1;
-    if(!oldMsb&&newMsb)this.noiseDiv31^=1;
-    const nand=(((this.noiseReg>>11)&0x0f)===0x0f)?0:1;
-    if(!this.noiseNand&&nand)this.noiseDiv34^=1;
-    this.noiseNand=nand;
-   }
-
-   // 2. Shell Shot Circuit (NODE_31 divided noise + op-amp bandpass filter)
-   this.shellGate=(d&4)?1:this.shellGate*shellRelease;
-   this.shellLP+=filter*((this.noiseDiv31?1:0)*this.shellGate-this.shellLP);
-   this.shellDC+=coupling*(this.shellLP-this.shellDC);
-   const shellOut=(this.shellLP-this.shellDC)*((d&2)?.24:.09);
-
-   // 3. Explosion Circuit (NODE_34 divided noise + op-amp lowpass filter)
-   this.explosionGate=(d&1)?1:this.explosionGate*explosionRelease;
-   this.explosionLP+=filter*((this.noiseDiv34?1:0)*this.explosionGate-this.explosionLP);
-   this.explosionDC+=coupling*(this.explosionLP-this.explosionDC);
-   const explOut=(this.explosionLP-this.explosionDC)*((d&2)?.75:.25);
-
-   // 4. Tank Engine (MAME 0.289 bzone_a.cpp: 430 Hz idle / 625 Hz rev VCO clocking 4..15 & 6..15 counters)
-   const vcoFreq=(rev?625:430);
-   this.enginePhase+=vcoFreq*dt;
-   while(this.enginePhase>=1){
-    this.enginePhase-=1;
-    if(motor){
-     this.engineCount4=(this.engineCount4===15)?4:this.engineCount4+1;
-     this.engineCount6=(this.engineCount6===15)?6:this.engineCount6+1;
-    }
-   }
-   if(!motor){this.engineCount4=4;this.engineCount6=6}
-
-   const a=this.engineCount4,b=this.engineCount6;
-   const tapA_QD = (a & 8) ? 1.0 : -1.0;
-   const tapA_RCO = (a === 15) ? 1.0 : -1.0;
-   const tapB_QD = (b & 8) ? 1.0 : -1.0;
-   const tapB_RCO = (b === 15) ? 1.0 : -1.0;
-   const engineRaw = motor ? (tapA_QD * 0.44 + tapA_RCO * 0.32 + tapB_QD * 0.14 + tapB_RCO * 0.10) : 0;
-
-   // 2-pole op-amp active low-pass filter (cutoff 110 Hz) for authentic 2nd harmonic bite
-   const engAlpha = 2 * Math.PI * 110 * dt;
-   this.engineLP0 += engAlpha * (engineRaw - this.engineLP0);
-   this.engineLP1 += engAlpha * (this.engineLP0 - this.engineLP1);
-   this.engineDC += (1 - Math.exp(-dt / 0.05)) * (this.engineLP1 - this.engineDC);
-   const engineOut = motor ? (this.engineLP1 - this.engineDC) * 0.38 : 0;
-
-   // 5. POKEY Audio Core (MAME 0.289 pokey.cpp: Radar sonar blips, UFO saucer siren, pure tones)
-   const audctl=this.synthReg[8];
-   this.stepPoly();
-   let pokeyOut=0;
-   for(let ch=0;ch<4;ch++){
-    const freq=this.synthReg[ch*2],audc=this.synthReg[ch*2+1],vol=audc&0x0f;
-    if(!vol)continue;
-    if(audc&0x10){pokeyOut+=(vol/15)*.040;continue}
-    let div=((ch===0&&(audctl&0x40))||(ch===2&&(audctl&0x20)))?1:((audctl&1)?114:28);
-    const hz=CPU_CLOCK/(2*div*(freq+(div===1?4:1)));
-    this.pokeyCounters[ch]=(this.pokeyCounters[ch]+hz/sr)%1;
-    let bit=1;const dist=audc>>5;
-    if(dist===0||dist===4)bit=(this.poly17&1)?1:-1;
-    else if(dist===1||dist===3)bit=(this.poly5&1)?1:-1;
-    else if(dist===2||dist===6)bit=(this.poly4&1)?1:-1;
-    else bit=(this.pokeyCounters[ch]<.5)?1:-1;
-    pokeyOut+=bit*(vol/15)*.075;
-   }
-
-   // 6. Final output mix
-   const s=shellOut+explOut+engineOut+pokeyOut;
-   out[i]=soundEnabled?Math.max(-1.0,Math.min(1.0,s)):0;
-   this.audioCycle+=cyclesPerSample;
-  }
-  if(this.eventHead>512){this.events.splice(0,this.eventHead);this.eventHead=0}
- }
-}
-
 
 class Battlezone{
  constructor(){this.cv=document.querySelector("#gameCanvas");this.cx=this.cv.getContext("2d");this.cv.width=W;this.cv.height=H;this.mem=new Uint8Array(32768);this.math=new Mathbox();this.pokeyRandom=new PokeyRandom();this.i={coin1:0,start1:0,fire:0,lu:0,ld:0,ru:0,rd:0};this.sound=0;this.audio=new BzoneAudio(this);this.avgDone=1;this.vectors=[];this.colorized=true;this.paused=false;this.bind()}
@@ -314,7 +145,34 @@ class Battlezone{
    }
   }
   c.restore();}
-  frame(){let per=CPU_CLOCK/FPS/6;for(let n=0;n<6;n++){let left=per;while(left>0){this.assetTrace.beforeStep(this.cpu);let pc=this.cpu.pc,used=this.cpu.step();left-=used;if(this.cpu.pc===pc){console.error("[BZONE] CPU stalled",pc.toString(16));break}}this.cpu.nmi()}if(!this.vectors.length)this.draw()}
- run(){let last=0,loop=t=>{if(!this.paused&&t-last>=1000/FPS){last=t;this.frame()}else if(this.paused)last=t;requestAnimationFrame(loop)};requestAnimationFrame(loop)}
+  frame(){
+   this.nextIRQ??=this.cpu.cycles;
+   for(let n=0;n<6;n++){
+    this.nextIRQ+=CPU_CLOCK/IRQ_HZ;
+    while(this.cpu.cycles<this.nextIRQ){
+     this.assetTrace.beforeStep(this.cpu);
+     const pc=this.cpu.pc;this.cpu.step();
+     if(this.cpu.pc===pc){console.error("[BZONE] CPU stalled",pc.toString(16));break;}
+    }
+    this.cpu.nmi();
+   }
+   this.audio.sync();
+   if(!this.vectors.length)this.draw();
+  }
+ run(){
+  let last=null,accumulated=0;
+  const period=1000/FPS;
+  const loop=t=>{
+   if(last===null)last=t;
+   const elapsed=Math.max(0,Math.min(100,t-last));last=t;
+   if(this.paused)accumulated=0;
+   else {
+    accumulated+=elapsed;
+    while(accumulated>=period){this.frame();accumulated-=period;}
+   }
+   requestAnimationFrame(loop);
+  };
+  requestAnimationFrame(loop);
+ }
  bind(){const colorToggle=document.querySelector("#colorToggle"),pauseToggle=document.querySelector("#pauseToggle");if(colorToggle){colorToggle.onclick=e=>{e.preventDefault();this.colorized=!this.colorized;colorToggle.textContent=this.colorized?"COLORIZED":"ORIGINAL";this.draw()}}if(pauseToggle){pauseToggle.onclick=e=>{e.preventDefault();this.paused=!this.paused;pauseToggle.textContent=this.paused?"RUN":"PAUSE";if(this.paused){this.i.fire=this.i.lu=this.i.ld=this.i.ru=this.i.rd=0}}}let lastTouch=0;document.addEventListener("touchend",e=>{if(!e.target.closest("#top,.tank-controls"))return;const now=Date.now();if(now-lastTouch<350)e.preventDefault();lastTouch=now},{passive:false});const unlock=()=>this.audio.start();addEventListener("pointerdown",unlock,{passive:true});addEventListener("touchstart",unlock,{passive:true});addEventListener("keydown",unlock);const set=(n,v)=>this.i[n]=v,pulse=n=>{set(n,1);setTimeout(()=>set(n,0),140)},km={KeyQ:"lu",KeyA:"ld",KeyE:"ru",KeyD:"rd",Space:"fire"};addEventListener("keydown",e=>{if(km[e.code])set(km[e.code],1);if(e.code==="Digit1")pulse("start1");if(e.code==="Digit5")pulse("coin1")});addEventListener("keyup",e=>km[e.code]&&set(km[e.code],0));document.querySelectorAll("[data-btn]").forEach(el=>{let n=el.dataset.btn;el.onpointerdown=e=>{e.preventDefault();this.audio.start();n==="coin1"||n==="start1"?pulse(n):set(n,1)};el.onpointerup=()=>set(n,0)});const firePointers=new Set(),controlPointers=new Set(),fireDown=e=>{if(e.pointerType!=="touch")return;if(e.target.closest("#top,.tank-controls")){controlPointers.add(e.pointerId);return}if(controlPointers.has(e.pointerId))return;e.preventDefault();this.audio.start();firePointers.add(e.pointerId);set("fire",1)},fireUp=e=>{controlPointers.delete(e.pointerId);if(!firePointers.delete(e.pointerId))return;set("fire",firePointers.size?1:0)};document.addEventListener("pointerdown",fireDown,{passive:false});document.addEventListener("pointerup",fireUp);document.addEventListener("pointercancel",fireUp);const stick=(id,up,down)=>{let el=document.querySelector(id),knob=el.querySelector(".stick-knob"),move=e=>{let r=el.getBoundingClientRect(),half=r.height/2,y=e.clientY-r.top-half,max=half-knob.offsetHeight/2-6,pos=Math.max(-max,Math.min(max,y));knob.style.transition="none";knob.style.transform="translateY(calc(-50% + "+pos+"px))";set(up,y<-12);set(down,y>12)},release=()=>{set(up,0);set(down,0);knob.style.transition="transform .12s ease-out";knob.style.transform="translateY(-50%)"};el.onpointerdown=e=>{e.preventDefault();this.audio.start();el.setPointerCapture(e.pointerId);move(e)};el.onpointermove=e=>el.hasPointerCapture(e.pointerId)&&move(e);el.onpointerup=release;el.onpointercancel=release};stick("#leftStick","lu","ld");stick("#rightStick","ru","rd")}}
 const game=new Battlezone();await game.init();game.run();window.battlezone=game;
