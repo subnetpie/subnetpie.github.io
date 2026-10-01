@@ -720,20 +720,6 @@ function setGrid(e) {
   }
 }
 
-function setDebug(e) {
-  if (e=="off") {
-    buttonDebug.innerText = "on";
-    motherboard.startTrace();
-  } else {
-    buttonDebug.innerText = "off";
-    motherboard.stopTrace();
-    // Keep the last bounded trace reachable from Safari/Web Inspector without
-    // leaving instrumentation active during normal emulation.
-    window.appleTrace = motherboard.traceText();
-    console.log(window.appleTrace);
-  }
-}
-
 function setColor(e) {
   var rgbText = {tg:0x00ff66, ta:0xffd429, tw:0xeeeeee};       
   var rgbHires = {gc:0, gg:0x00ff66, ga:0xffd429};
@@ -792,7 +778,6 @@ document.getElementById("buttonKeyboard").addEventListener("pointerdown", ()=>{s
 document.getElementById("buttonMode").addEventListener("pointerdown", ()=>{setMode(buttonMode.innerText)});
 document.getElementById("buttonCenter").addEventListener("pointerdown", ()=>{setCenter(buttonCenter.innerText)});
 document.getElementById("buttonGrid").addEventListener("pointerdown", ()=>{setGrid(buttonGrid.innerText)});
-document.getElementById("buttonDebug").addEventListener("pointerdown", ()=>{setDebug(buttonDebug.innerText)});
 
 init();
 
@@ -993,8 +978,6 @@ $(function() {
       if (joyY<joyHeight/Z) joyRender.up(joyPadCtx);
       if (joyY>(joyHeight/Z)*(Z-1)) joyRender.down(joyPadCtx);
     }
-    if (buttonDebug.innerText=="on")
-      joyRender.debug(joyPadCtx,joyX,joyY,joyPadPointer===null?0:1,val0,val1);
     joyRender.buttons(joyButtonsCtx,val0,val1);
     window.requestAnimationFrame(renderJoystickUI);
   }

@@ -1,23 +1,31 @@
-// Keep controls reachable even while the emulator module is loading.
+// Menus work even while the emulator module is loading.
 (() => {
-  for (const [buttonId, panelId] of [['buttonSettings','controls'], ['buttonJoySettings','joyControls']]) {
-  const button=document.getElementById(buttonId);
-  const panel=document.getElementById(panelId);
-  if (!button || !panel) continue;
-  const setOpen=open=>{
-    panel.hidden=!open;
-    button.setAttribute('aria-expanded',String(open));
+  const menus = [['buttonSettings', 'controls'], ['buttonJoySettings', 'joyControls']]
+    .map(([button, panel]) => ({button: document.getElementById(button), panel: document.getElementById(panel)}))
+    .filter(menu => menu.button && menu.panel);
+  const close = menu => {
+    menu.panel.hidden = true;
+    menu.button.setAttribute('aria-expanded', 'false');
   };
-  button.addEventListener('click',()=>setOpen(panel.hidden));
-  document.addEventListener('pointerdown',event=>{
-    if(!panel.hidden && !panel.contains(event.target) && !button.contains(event.target))
-      setOpen(false);
-  });
-  document.addEventListener('keydown',event=>{
-    if(event.key==='Escape' && !panel.hidden) {
-      event.preventDefault(); event.stopImmediatePropagation();
-      setOpen(false); button.focus();
-    }
-  },true);
+  for (const menu of menus) {
+    menu.button.addEventListener('click', () => {
+      const open = menu.panel.hidden;
+      menus.forEach(close);
+      if (open) {
+        menu.panel.hidden = false;
+        menu.button.setAttribute('aria-expanded', 'true');
+      }
+    });
   }
+  document.addEventListener('pointerdown', event => {
+    for (const menu of menus)
+      if (!menu.panel.contains(event.target) && !menu.button.contains(event.target)) close(menu);
+  });
+  document.addEventListener('keydown', event => {
+    const open = menus.find(menu => !menu.panel.hidden);
+    if (event.key === 'Escape' && open) {
+      event.preventDefault(); event.stopImmediatePropagation();
+      close(open); open.button.focus();
+    }
+  }, true);
 })();

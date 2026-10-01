@@ -72,18 +72,6 @@ var joyRender = {
     ctx.setLineDash([]);
     ctx.closePath();
   },
-  debug(ctx, X, Y, I, A, B, hex) {
-    ctx.beginPath();
-    ctx.shadowBlur = 0;
-    ctx.strokeStyle = "#fff";
-    ctx.strokeText(X + "," + Y, 5, 20);
-    ctx.strokeText(I, 127, 20);
-    ctx.strokeText(A + "," + B, 222, 20);
-    ctx.strokeText(innerWidth + "x" + innerHeight, 5, 250);
-    ctx.strokeText(hex, 180, 250);
-    ctx.stroke();
-    ctx.closePath();
-  },
   buttons(ctx, fire1 = false, fire2 = false) {
     ctx.clearRect(0, 0, 256, 256);
     [fire1, fire2].forEach((pressed, index) => {
