@@ -465,6 +465,7 @@ class InputManager {
   setupTouchControls(containerElement) {var _this$config, _this$config$input;
     const coin = document.getElementById("coin1");
     const start = document.getElementById("start1");
+    const start2 = document.getElementById("start2");
 
     if (!coin && !start) return false;
 
@@ -478,6 +479,7 @@ class InputManager {
 
     if (coin) this._setupButton(coin, "COIN1", true);
     if (start) this._setupButton(start, "START1", true);
+    if (start2) this._setupButton(start2, "START2", true);
 
     return true;
   }
@@ -655,64 +657,32 @@ class Touchpads {
   }
 
   bindEvents() {
-    const opts = { passive: false };
-
-    if (this.dpadEl) {
-      this.dpadEl.style.touchAction = "none";
-      this.dpadEl.addEventListener("touchstart", this._bound.dpadStart, opts);
-      this.dpadEl.addEventListener("touchmove", this._bound.dpadMove, opts);
-      this.dpadEl.addEventListener("touchend", this._bound.dpadEnd, opts);
-      this.dpadEl.addEventListener("touchcancel", this._bound.dpadEnd, opts);
-      this.dpadEl.addEventListener(
-      "contextmenu",
-      this._bound.preventContextMenu);
-
+    this.pointerBindings = [];
+    for (const [element, prefix] of [[this.dpadEl, 'dpad'], [this.fireEl, 'fire']]) {
+      if (!element) continue;
+      const dispatch = (event, phase) => {
+        if (phase === 'Start' && event.button !== 0) return;
+        const adapted = {preventDefault: () => event.preventDefault(),
+          changedTouches: [{identifier: event.pointerId, clientX: event.clientX, clientY: event.clientY}]};
+        this['_' + prefix + phase](adapted);
+        if (phase === 'Start') element.setPointerCapture(event.pointerId);
+      };
+      for (const [name, phase] of [['pointerdown','Start'],['pointerup','End'],['pointercancel','End'],['lostpointercapture','End'], ...(prefix === 'dpad' ? [['pointermove','Move']] : [])]) {
+        const handler = event => dispatch(event, phase);
+        element.addEventListener(name, handler, {passive:false});
+        this.pointerBindings.push([element,name,handler]);
+      }
     }
-
-    if (this.fireEl) {
-      this.fireEl.style.touchAction = "none";
-      this.fireEl.addEventListener("touchstart", this._bound.fireStart, opts);
-      this.fireEl.addEventListener("touchend", this._bound.fireEnd, opts);
-      this.fireEl.addEventListener("touchcancel", this._bound.fireEnd, opts);
-      this.fireEl.addEventListener(
-      "contextmenu",
-      this._bound.preventContextMenu);
-
-    }
+    this.onBlur = () => this.releaseAll();
+    this.onHidden = () => { if (document.hidden) this.releaseAll(); };
+    window.addEventListener('blur', this.onBlur);
+    document.addEventListener('visibilitychange', this.onHidden);
   }
 
   destroy() {
-    const opts = { passive: false };
-
-    if (this.dpadEl) {
-      this.dpadEl.removeEventListener(
-      "touchstart",
-      this._bound.dpadStart,
-      opts);
-
-      this.dpadEl.removeEventListener("touchmove", this._bound.dpadMove, opts);
-      this.dpadEl.removeEventListener("touchend", this._bound.dpadEnd, opts);
-      this.dpadEl.removeEventListener("touchcancel", this._bound.dpadEnd, opts);
-      this.dpadEl.removeEventListener(
-      "contextmenu",
-      this._bound.preventContextMenu);
-
-    }
-
-    if (this.fireEl) {
-      this.fireEl.removeEventListener(
-      "touchstart",
-      this._bound.fireStart,
-      opts);
-
-      this.fireEl.removeEventListener("touchend", this._bound.fireEnd, opts);
-      this.fireEl.removeEventListener("touchcancel", this._bound.fireEnd, opts);
-      this.fireEl.removeEventListener(
-      "contextmenu",
-      this._bound.preventContextMenu);
-
-    }
-
+    for (const [element,name,handler] of this.pointerBindings) element.removeEventListener(name,handler);
+    window.removeEventListener('blur', this.onBlur);
+    document.removeEventListener('visibilitychange', this.onHidden);
     this.releaseAll();
   }
 
@@ -802,8 +772,8 @@ class Touchpads {
 
     const rect = this.dpadEl.getBoundingClientRect();
 
-    const dx = touch.clientX - (rect.left + rect.width / 2);
-    const dy = touch.clientY - (rect.top + rect.height / 2);
+    const dx = (touch.clientX - (rect.left + rect.width / 2)) * this.canvasW / rect.width;
+    const dy = (touch.clientY - (rect.top + rect.height / 2)) * this.canvasH / rect.height;
     const distance = Math.hypot(dx, dy);
 
     if (distance < this.deadzone) {
@@ -880,7 +850,7 @@ class Touchpads {
 
     const visualLimit = Math.min(
     distance,
-    Math.min(this.dpadRadius, Math.min(rect.width, rect.height) / 2));
+    Math.min(this.dpadRadius, Math.min(this.canvasW, this.canvasH) / 2));
 
     this.drawTouchRing(
     Math.cos(angle) * visualLimit,

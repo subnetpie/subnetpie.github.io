@@ -1,218 +1,29 @@
-
-/* ==========================================
-   JSBOSCO v1.0 - Complete Styles
-   ========================================== */
-to* {
-  box-sizing: border-box;
-}
-
-html,
-body {
-  width: 100%;
-  height: 100%;
-  margin: 0;
-  overflow: hidden;
-  overscroll-behavior: none;
-  background: #000;
-  color: #fff;
-  font-family: monospace;
-  -webkit-touch-callout: none;
-  -webkit-user-select: none;
-  user-select: none;
-  touch-action: none;
-}
-
-@keyframes statusPulse {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.7;
-  }
-}
-
-main {
-  height: 100dvh;
-  display: grid;
-  place-items: center;
-  overflow: hidden;
-  overscroll-behavior: none;
-  -webkit-touch-callout: none;
-  -webkit-user-select: none;
-  user-select: none;
-  touch-action: none;
-}
-
-#gameCanvas {
-  position: absolute;
-  aspect-ratio: 288 / 224;
-  width: min(100vw, 100vh * (288 / 224));
-  height: calc(min(100dvh, 100vw * 224 / 288) - 55px);
-  background: #000;
-  transform-origin: top left;
-  transform: rotate(0deg) translateX(-50%) translateY(0%);
-  image-rendering: pixelated;
-  image-rendering: crisp-edges;
-  -webkit-touch-callout: none;
-  -webkit-user-select: none;
-  user-select: none;
-  touch-action: none;
-  top: 100px;
-  left: 50%;
-}
-
-button,
-#dpad {
-  position: fixed;
-  z-index: 3;
-  color: #ff4c00;
-  background: #ffffff18;
-  border: 2px solid #c832c880;
-  -webkit-appearance: none;
-  appearance: none;
-  -webkit-touch-callout: none;
-  -webkit-user-select: none;
-  user-select: none;
-  touch-action: none;
-  -webkit-tap-highlight-color: transparent;
-}
-
-button {
-  cursor: pointer;
-}
-
-#top {
-  position: fixed;
-  top: max(0px, env(safe-area-inset-top));
-  left: 50%;
-  z-index: 4;
-  display: flex;
-  gap: 60px;
-  transform: translateX(-50%);
-  -webkit-touch-callout: none;
-  -webkit-user-select: none;
-  user-select: none;
-  touch-action: none;
-}
-
-#top button {
-  position: static;
-  padding: 10px 18px;
-  border-radius: 8px;
-}
-
-#leftTop,
-#rightTop {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  pointer-events: auto;
-}
-
-#dpad {
-  left: 14px;
-  bottom: max(0px, env(safe-area-inset-bottom));
-  display: grid;
-  width: 150px;
-  height: 150px;
-  place-items: center;
-  border-radius: 50%;
-  font-size: 48px;
-}
-
-#fire {
-  right: 24px;
-  bottom: max(20px, env(safe-area-inset-bottom));
-  width: 110px;
-  height: 110px;
-  border-radius: 50%;
-}
-
-/* Responsive Adjustments */
-@media (max-width: 480px) {
-  #gameCanvas {
-    max-width: 85vw;
-  }
-
-  .dpad-button {
-    width: 60px;
-    height: 60px;
-    font-size: 24px;
-  }
-
-  #btnLeft {
-    left: 10px;
-    bottom: 50px;
-  }
-
-  #btnRight {
-    left: 80px;
-    bottom: 50px;
-  }
-
-  .fire-button {
-    right: 10px;
-    bottom: 45px;
-  }
-}
-@media (max-height: 600px) {
-  #gameCanvas {
-    max-height: calc(100vh - 150px);
-  }
-  .dpad-button;
-}
-
-/* Landscape Warning */
-@media (orientation: landscape) and (max-height: !500px) {
-  #gameContainer::before {
-    content: "⟲ Please rotate to portrait mode";
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: rgba(255, 0, 0, 0.95);
-    color: white;
-    padding: 20px 30px;
-    border-radius: 12px;
-    font-size: 16px;
-    font-weight: bold;
-    z-index: 9999;
-    text-align: center;
-    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.5);
-    animation: shake 0.5s infinite;
-  }
-
-  @keyframes shake {
-    0%,
-    100% {
-      transform: translate(-50%, -50%) rotate(0deg);
-    }
-    25% {
-      transform: translate(-50%, -50%) rotate(-2deg);
-    }
-    75% {
-      transform: translate(-50%, -50%) rotate(2deg);
-    }
-  }
-}
-#dpad-ring {
-  position: relative; /* ← add this so canvas positions against it */
-  width: 250px;
-  height: 250px;
-  margin-left: 0px;
-  margin-bottom: 0px;
-  border-radius: 50%;
-  background: rgba(200, 200, 200, 0.1);
-  border: 2px solid rgba(200, 50, 200, 0.5);
-}
-
-/* Loading Animation */
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+* { box-sizing: border-box; }
+html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: #050609; color: #eee; font-family: system-ui, sans-serif; overscroll-behavior: none; }
+main { height: 100vh; height: 100dvh; padding: max(8px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left)); display: grid; grid-template-rows: auto minmax(0, 1fr) auto; gap: 10px; }
+#top { display: flex; justify-content: center; gap: 8px; }
+button { min-height: 44px; padding: 10px 16px; border: 1px solid #87528b; border-radius: 10px; background: #201824; color: #ffb076; font: 700 13px system-ui, sans-serif; cursor: pointer; }
+button small { margin-left: 6px; opacity: .65; font-weight: 400; }
+button:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+button.pressed, button:active { background: #733478; color: #fff; box-shadow: 0 0 18px #c832c850; }
+button, #dpad-ring { touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; }
+#screen { min-height: 0; min-width: 0; display: grid; place-items: center; container-type: size; }
+#gameCanvas { display: block; width: min(100cqw, calc(100cqh * 288 / 224)); height: auto; aspect-ratio: 288 / 224; max-width: 100%; max-height: 100%; image-rendering: pixelated; background: #000; }
+#controls { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+#dpad-ring { width: clamp(120px, 30vw, 200px); aspect-ratio: 1; position: relative; border: 2px solid #87528b; border-radius: 50%; background: radial-gradient(circle, #a552aa35 0 14%, transparent 15%), linear-gradient(transparent 49.5%, #87528b55 50%, transparent 50.5%), linear-gradient(90deg, transparent 49.5%, #87528b55 50%, transparent 50.5%), #131017; }
+#dpad-canvas { display: block; width: 100%; height: 100%; pointer-events: none; }
+#btn-fire { width: clamp(80px, 23vw, 120px); aspect-ratio: 1; border-radius: 50%; border: 2px solid #cf6538; background: #5b221b; font-size: 18px; }
+#btn-fire.pressed, #btn-fire:active { background: #b74729; }
+#key-help { color: #a397a7; font-size: 11px; line-height: 1.8; text-align: center; }
+@media (max-width: 500px) { #key-help, button small { display: none; } #top button { padding-inline: 12px; } }
+@media (orientation: landscape) and (max-height: 600px) {
+ main { grid-template-columns: 120px minmax(0, 1fr) 100px; grid-template-rows: 1fr; gap: 10px; }
+ #screen { grid-column: 2; grid-row: 1; align-items: start; }
+ #top { grid-column: 1; grid-row: 1; flex-direction: column; align-self: start; gap: 5px; }
+ #top button { min-height: 36px; padding: 6px; font-size: 11px; }
+ #controls { display: contents; }
+ #dpad { grid-column: 1; grid-row: 1; align-self: end; }
+ #dpad-ring { width: min(120px, 38dvh); }
+ #btn-fire { grid-column: 3; grid-row: 1; align-self: end; width: 90px; }
+ #key-help, button small { display: none; }
 }

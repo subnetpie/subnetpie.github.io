@@ -1,29 +1,27 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <title>Bosconian</title>
-  <link rel="stylesheet" href="./style.css">
+  <link rel="stylesheet" href="./style.css?v=20261001-controls">
 </head>
 <body>
   <main>
-    <canvas id="gameCanvas"></canvas>
-    <div id="top">
-       <div id="leftTop">
-         <button data-btn="coin1">COIN</button>
-       </div>
-       <div id="rightTop">
-         <button data-btn="start1">START</button>
-       </div>
+    <nav id="top" aria-label="Game controls">
+      <button id="coin1" data-btn="coin1" title="Insert coin (5)">COIN <small>5</small></button>
+      <button id="start1" data-btn="start1" title="Start one player (1)">1 PLAYER <small>1</small></button>
+      <button id="start2" data-btn="start2" title="Start two players (2)">2 PLAYERS <small>2</small></button>
+    </nav>
+    <section id="screen" aria-label="Game display"><canvas id="gameCanvas" aria-label="Bosconian game"></canvas></section>
+    <div id="controls">
+      <div id="dpad"><div id="dpad-ring" aria-label="Eight-way joystick">
+        <canvas id="dpad-canvas" width="250" height="250"></canvas>
+      </div></div>
+      <p id="key-help">MOVE · ARROWS / WASD<br>FIRE · SPACE / Z / X</p>
+      <button id="btn-fire" data-btn="fire" title="Fire (Space, Z or X)">FIRE</button>
     </div>
-    <div id="dpad">
-  <div id="dpad-ring">
-    <canvas id="dpad-canvas" width="250" height="250"></canvas>
-  </div>
-</div>
-    <button id="fire" data-btn="fire">FIRE</button>
   </main>
-  <script type="module" src="./script.js"></script>
+  <script type="module" src="./script.js?v=20261001-controls"></script>
 </body>
 </html>
