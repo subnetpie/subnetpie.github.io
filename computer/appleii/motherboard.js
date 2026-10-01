@@ -137,7 +137,7 @@ export class Motherboard
     clock(count) {
         if(this.iigsEnabled && !this.memory.doc.onSample) {
             this.memory.doc.onSample=(left,right,remaining)=>this.audio.doc_sample(
-                this.cycles-remaining,left,right,this.memory.doc.getVolume());
+                this.cycles-remaining,left,right);
         }
         this.audio.begin_segment(this.cycles);
         const total = this.cycles + count;
