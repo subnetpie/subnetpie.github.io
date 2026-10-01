@@ -1,32 +1,25 @@
+
 /* ==========================================
    JSBOSCO v1.0 - Complete Styles
    ========================================== */
-
-* {
+to* {
   box-sizing: border-box;
-  -webkit-tap-highlight-color: transparent;
-  margin: 0;
-  padding: 0;
 }
 
 html,
 body {
   width: 100%;
   height: 100%;
+  margin: 0;
   overflow: hidden;
-  position: fixed;
-}
-
-body {
+  overscroll-behavior: none;
   background: #000;
-  color: #f08;
-  font-family: "Courier New", Courier, monospace;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  user-select: none;
-  -webkit-user-select: none;
+  color: #fff;
+  font-family: monospace;
   -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: none;
 }
 
 @keyframes statusPulse {
@@ -37,6 +30,52 @@ body {
   50% {
     opacity: 0.7;
   }
+}
+
+main {
+  height: 100dvh;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  overscroll-behavior: none;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: none;
+}
+
+#gameCanvas {
+  position: absolute;
+  aspect-ratio: 288 / 224;
+  width: min(100vw, 100vh * (288 / 224));
+  height: calc(min(100dvh, 100vw * 224 / 288) - 55px);
+  background: #000;
+  transform-origin: top left;
+  transform: rotate(0deg) translateX(-50%) translateY(0%);
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: none;
+  top: 100px;
+  left: 50%;
+}
+
+button,
+#dpad {
+  position: fixed;
+  z-index: 3;
+  color: #ff4c00;
+  background: #ffffff18;
+  border: 2px solid #c832c880;
+  -webkit-appearance: none;
+  appearance: none;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 button {
@@ -63,96 +102,23 @@ button {
   border-radius: 8px;
 }
 
-#gameContainer {
-  width: 100%;
-  height: 100%;
-  touch-action: none;
-  user-select: none;
-  -webkit-user-select: none;
-  left: 100px;
+#dpad {
+  left: 14px;
+  bottom: max(0px, env(safe-area-inset-bottom));
+  display: grid;
+  width: 150px;
+  height: 150px;
+  place-items: center;
+  border-radius: 50%;
+  font-size: 48px;
 }
 
-/* Canvas - Portrait Mode (224x288) */
-#gameCanvas {
-  position: absolute;
-  aspect-ratio: 288 / 224;
-  width: min(100vw, 100vh * (288 / 224));
-  height: calc(min(100dvh, 100vw * 224 / 288) - 55px);
-  background: #000;
-  transform-origin: top left;
-  transform: rotate(0deg) translateX(-50%) translateY(0%);
-  image-rendering: pixelated;
-  image-rendering: crisp-edges;
-  top: 55px;
-  left: 50%;
-}
-/* Touch Control Buttons */
-.touch-button {
-  position: absolute;
-  background: rgba(255, 255, 255, 0.08);
-  border: 2px solid rgba(255, 255, 255, 0.25);
-  border-radius: 8px;
-  color: rgba(255, 255, 255, 0.9);
-  font-family: "Courier New", Courier, monospace;
-  font-size: 14px;
-  font-weight: bold;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  touch-action: none;
-  user-select: none;
-  -webkit-user-select: none;
-  cursor: pointer;
-  transition: all 0.1s ease-out;
-  z-index: 100;
-  backdrop-filter: blur(0.5px);
-  -webkit-backdrop-filter: blur(0.5px);
-  text-shadow: 0 0 3px rgba(0, 0, 0, 0.8);
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
-}
-
-.touch-button:active,
-.touch-button.pressed {
-  background: rgba(0, 255, 0, 0.35);
-  border-color: rgba(0, 255, 0, 0.6);
-  transform: scale(0.92);
-  box-shadow: inset 0 0 15px rgba(0, 255, 0, 0.4), 0 1px 2px rgba(0, 0, 0, 0.5);
-}
-
-/* System Buttons */
-.system-button {
-  width: 95px;
-  height: 35px;
-  top: 10px;
-  right: 20px;
-  font-size: 11px;
-  border-radius: 6px;
-}
-
-#btnCoin {
-  top: 10px;
-  right: 105px;
-  background: rgba(255, 255, 0, 0.12);
-  border-color: rgba(255, 255, 0, 0.3);
-}
-
-#btnCoin:active,
-#btnCoin.pressed {
-  background: rgba(255, 255, 0, 0.4);
-  border-color: rgba(255, 255, 0, 0.6);
-}
-
-#btnStart {
-  top: 10px;
-  right: 5px;
-  background: rgba(0, 255, 255, 0.12);
-  border-color: rgba(0, 255, 255, 0.3);
-}
-
-#btnStart:active,
-#btnStart.pressed {
-  background: rgba(0, 255, 255, 0.4);
-  border-color: rgba(0, 255, 255, 0.6);
+#fire {
+  right: 24px;
+  bottom: max(20px, env(safe-area-inset-bottom));
+  width: 110px;
+  height: 110px;
+  border-radius: 50%;
 }
 
 /* Responsive Adjustments */
@@ -248,46 +214,6 @@ button {
   display: block;
 }
 
-#button-pad {
-  position: fixed;
-  bottom: 0px;
-  right: 0px;
-  width: 200px;
-  height: 250px;
-  border-radius: 0px;
-  border: 1px solid rgba(255, 0, 255, 0);
-  touch-action: none;
-  user-select: none;
-  display: flex;
-  align-items: right;
-  justify-content: space-between;
-  pointer-events: auto;
-  z-index: 200;
-}
-
-#btn-fire {
-  width: 250px;
-  height: 200px;
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.15);
-  border: 3px solid rgba(200, 0, 200, 0.4);
-  touch-action: none;
-  user-select: none;
-  -webkit-user-select: none;
-  -webkit-touch-callout: none;
-  pointer-events: auto;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  z-index: 250;
-}
-#btn-fire:active,
-#btn-fire.pressed {
-  background: rgba(255, 0, 0, 0.45);
-  border-color: rgba(255, 0, 0, 0.75);
-  box-shadow: inset 0 0 20px rgba(255, 0, 0, 0.5), 0 0 15px rgba(255, 0, 0, 0.3);
-}
 /* Loading Animation */
 @keyframes fadeIn {
   from {
@@ -296,8 +222,4 @@ button {
   to {
     opacity: 1;
   }
-}
-
-body {
-  animation: fadeIn 0.3s ease-in;
 }
