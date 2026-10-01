@@ -102,6 +102,14 @@ button {
   border-radius: 8px;
 }
 
+#leftTop,
+#rightTop {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  pointer-events: auto;
+}
+
 #dpad {
   left: 14px;
   bottom: max(0px, env(safe-area-inset-bottom));
@@ -188,14 +196,6 @@ button {
     }
   }
 }
-#dpad {
-  position: fixed;
-  bottom: 50px;
-  left: 10px;
-  touch-action: none;
-  user-select: none;
-  z-index: 20;
-}
 #dpad-ring {
   position: relative; /* ← add this so canvas positions against it */
   width: 250px;
@@ -205,13 +205,6 @@ button {
   border-radius: 50%;
   background: rgba(200, 200, 200, 0.1);
   border: 2px solid rgba(200, 50, 200, 0.5);
-}
-#dpad-canvas {
-  position: absolute;
-  top: 0;
-  left: 0;
-  pointer-events: none; /* touches pass through to #dpad-ring */
-  display: block;
 }
 
 /* Loading Animation */
