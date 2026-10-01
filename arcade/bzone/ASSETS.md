@@ -78,8 +78,8 @@ its vectors land on screen.
 
 Vectors are `[x1,y1,x2,y2,intensity,clip,color,avgInstructionPC,origin]`.
 `origin` is null or contains `{id,asset,cpuPC,...}` plus the record/type/shape,
-landscape segment, or particle record as appropriate. The renderer reads
-only the supplied color. `battlezone.debugObjectColors=true` logs asset counts.
+landscape segment, or particle record as appropriate. The renderer resolves appearance from the asset identity and current settings
+on each draw; the tuple’s style fields are diagnostic snapshots only. `battlezone.debugObjectColors=true` logs asset counts.
 
 The renderer draws four additive layers, from a faint broad halo to a narrow
 bright core, in each asset's color. All halos precede the cores. Point vectors
@@ -136,3 +136,39 @@ sweep/cone segments and compass ticks green, with only actual contacts red.
 
 Run `node --test arcade/bzone/radar.test.mjs` to verify all four tick identities,
 contact scope lifetime, and unchanged raw vectors in a 600-frame ROM run.
+
+## Shared appearance settings
+
+`ASSETS` in `assets.js` is the default appearance table. `assetStyle` is the
+single resolver; `vector-renderer.js` uses its result for strokes, point disks,
+halos, endpoint highlights, and optional object fills. There are no hardcoded
+high-score colors, HUD glow caps, horizon glow multipliers, obstacle fill colors,
+or minimum brightness floors in the renderer.
+
+| Setting | Meaning |
+| --- | --- |
+| `color` | Palette alias (`green`, `red`, `blue`, `purple`, `darkPurple`, `orange`, `lightOrange`) or a browser-supported CSS color |
+| `brightness` | Light multiplier, 0–4. Zero hides the whole asset, including its fill. Values above one amplify unsaturated halo/highlight passes. |
+| `glow` | Halo strength and spread, 0–4. Zero leaves only the sharp beam and solid endpoint dwell. |
+| `displayIntensity` | Optional 0–15 display override. `null` restores the original vector intensity. Beam-blanked vectors stay invisible. |
+| `fillOpacity` | Optional 0–1 opacity for the existing projected convex-hull fill. Defaults to .32 for obstacles and zero otherwise. |
+
+Live console updates take effect on existing vectors without a new game frame:
+
+```js
+battlezone.setAssetStyle('enemyBlip', {color: 'red', brightness: 1.2, glow: 0.5});
+battlezone.setAssetStyle('radarTicks', {color: 'green', brightness: 0.8, glow: 0.1});
+battlezone.setAssetStyle('highScore', {color: '#70a0ff', brightness: 0.9});
+battlezone.resetAssetStyles();
+```
+
+These overrides last for the current page session. Edit the default table for
+permanent defaults. Original mode uses source intensity, standard brightness/glow,
+and the table’s `originalColor` (green unless explicitly red for a HUD asset);
+colorized settings resume when color mode is restored. Invalid numeric live
+patches are rejected, finite values are bounded, and unsupported CSS colors
+fall back to green rather than borrowing the previous asset’s paint.
+
+Validation: `node --test arcade/bzone/asset-style.test.mjs arcade/bzone/radar.test.mjs`.
+Tests cover every asset, lines and points, zero brightness/glow, fill color,
+high-score color changes, live updates, original mode, and the radar ROM run.

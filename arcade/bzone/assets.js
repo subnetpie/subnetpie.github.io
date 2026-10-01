@@ -4,27 +4,27 @@ export const ASSETS = Object.freeze({
   mountains: {color:"purple", brightness:0.80, glow:0.25},
   horizon: {color:"darkPurple", brightness:0.80, glow:0.30, displayIntensity:15},
   moon: {color:"blue", brightness:0.90, glow:0.40},
-  obstacle: {color:"orange", brightness:0.90, glow:0.30},
+  obstacle: {color:"orange", brightness:0.90, glow:0.30, fillOpacity:0.32},
   crosshair: {color:"red", brightness:1.15, glow:0.55},
   volcanoSpark: {color:"red", brightness:1.25, glow:0.70, displayIntensity:15},
 
   tank: {color:"green", brightness:1.00, glow:0.35, coordinateSpace:"world"},
-  playerLives: {color:"green", brightness:1.00, glow:0.35, coordinateSpace:"hud"},
+  playerLives: {originalColor:"red", color:"green", brightness:1.00, glow:0.35, coordinateSpace:"hud"},
   projectile: {color:"green", brightness:1.00, glow:0.35, coordinateSpace:"world"},
   debris: {color:"green", brightness:0.95, glow:0.30, coordinateSpace:"world"},
   missile: {color:"green", brightness:1.15, glow:0.55, coordinateSpace:"world"},
   logo: {color:"blue", brightness:1.00, glow:0.40, coordinateSpace:"hud"},
   saucer: {color:"green", brightness:1.05, glow:0.50, coordinateSpace:"world"},
 
-  hudRadar: {color:"green", brightness:0.90, glow:0.30, displayIntensity:15, coordinateSpace:"hud", sourcePC:0x6ae9},
-  radarTicks: {color:"green", brightness:0.90, glow:0.30, displayIntensity:15, coordinateSpace:"hud", sourcePC:0x6ae9},
-  enemyBlip: {color:"red", brightness:0.90, glow:0.30, displayIntensity:15, coordinateSpace:"hud", primitive:"point", sourcePC:0x6c33},
+  hudRadar: {originalColor:"red", color:"green", brightness:0.90, glow:0.30, displayIntensity:15, coordinateSpace:"hud", sourcePC:0x6ae9},
+  radarTicks: {originalColor:"red", color:"green", brightness:0.90, glow:0.30, displayIntensity:15, coordinateSpace:"hud", sourcePC:0x6ae9},
+  enemyBlip: {originalColor:"red", color:"red", brightness:0.90, glow:0.30, displayIntensity:15, coordinateSpace:"hud", primitive:"point", sourcePC:0x6c33},
 
-  score: {color:"red", brightness:0.80, glow:0.25, coordinateSpace:"hud"},
-  highScore: {color:"orange", brightness:1.05, glow:0.40, coordinateSpace:"hud"},
-  enemyInRange: {color:"lightOrange", brightness:1.05, glow:0.45, coordinateSpace:"hud"},
-  enemyDirection: {color:"lightOrange", brightness:1.05, glow:0.45, coordinateSpace:"hud"},
-  motionBlocked: {color:"lightOrange", brightness:1.05, glow:0.45, coordinateSpace:"hud"}
+  score: {originalColor:"red", color:"red", brightness:0.80, glow:0.25, coordinateSpace:"hud"},
+  highScore: {originalColor:"red", color:"orange", brightness:1.05, glow:0.40, coordinateSpace:"hud"},
+  enemyInRange: {originalColor:"red", color:"lightOrange", brightness:1.05, glow:0.45, coordinateSpace:"hud"},
+  enemyDirection: {originalColor:"red", color:"lightOrange", brightness:1.05, glow:0.45, coordinateSpace:"hud"},
+  motionBlocked: {originalColor:"red", color:"lightOrange", brightness:1.05, glow:0.45, coordinateSpace:"hud"}
 });
 
 export function shapeAsset(type) {
@@ -38,17 +38,42 @@ export function shapeAsset(type) {
   return "unclassified";
 }
 
-export function assetStyle(asset, sourceIntensity) {
-  const style=ASSETS[asset]??ASSETS.unclassified;
+export const PALETTE = Object.freeze({
+  green:"rgb(80,255,80)", purple:"rgb(190,70,255)", darkPurple:"rgb(95,30,140)",
+  orange:"rgb(255,145,35)", lightOrange:"rgb(255,190,105)", red:"rgb(255,45,45)", blue:"rgb(70,135,255)"
+});
+const bounded=(value,fallback,max)=>Number.isFinite(value)?Math.max(0,Math.min(max,value)):fallback;
+export function assetStyle(asset, sourceIntensity, overrides={}, colorized=true) {
+  const name=Object.hasOwn(ASSETS,asset)?asset:"unclassified";
+  const defaults=ASSETS[name];
+  const style={...defaults,...overrides[name]};
+  const source=bounded(sourceIntensity,0,15);
   return {
-    asset,
-    color:style.color,
-    brightness:style.brightness??1,
-    glow:style.glow??0.35,
-    coordinateSpace:style.coordinateSpace??"world",
-    displayIntensity:style.displayIntensity??sourceIntensity,
-    primitive:style.primitive??null
+    asset:name,
+    color:colorized?(style.color??defaults.color):(defaults.originalColor??"green"),
+    brightness:colorized?bounded(style.brightness,defaults.brightness,4):1,
+    glow:colorized?bounded(style.glow,defaults.glow,4):0.35,
+    coordinateSpace:defaults.coordinateSpace??"world",
+    displayIntensity:colorized?bounded(style.displayIntensity,source,15):source,
+    fillOpacity:colorized?bounded(style.fillOpacity,0,1):0,
+    primitive:defaults.primitive??null
   };
+}
+
+// Supported live presentation edits; provenance and original-mode behavior stay
+// separate from appearance. Null displayIntensity restores the ROM intensity.
+export function updateAssetSettings(settings,asset,patch) {
+  if(!Object.hasOwn(ASSETS,asset))throw new Error("Unknown asset: "+asset);
+  const allowed=["color","brightness","glow","displayIntensity","fillOpacity"];
+  for(const [key,value] of Object.entries(patch)) {
+    if(!allowed.includes(key))throw new Error("Unknown asset setting: "+key);
+    if(key==="color") {
+      if(typeof value!=="string"||!value.trim())throw new Error("Color must be a nonempty string");
+    } else if(!(key==="displayIntensity"&&value===null)&&!Number.isFinite(value))
+      throw new Error(key+" must be a finite number");
+  }
+  settings[asset]={...settings[asset],...patch};
+  return settings[asset];
 }
 
 export class AssetTrace {

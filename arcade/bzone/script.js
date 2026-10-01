@@ -1,6 +1,7 @@
 import { BzoneAudio } from "./audio.js?v=20260930-mame289";
 import { M6502 } from "../../cpu/m6502.js";
-import { AssetTrace, ASSETS } from "./assets.js?v=20261001-radar";
+import { AssetTrace, ASSETS, updateAssetSettings } from "./assets.js?v=20261001-styles";
+import { renderVectors } from "./vector-renderer.js?v=20261001-styles";
 import { PokeyRandom } from "./pokey-random.js";
 const CPU_CLOCK=12096000/8,IRQ_HZ=(12096000/4096)/12,FPS=IRQ_HZ/6,W=580,H=400;
 // MAME 0.289 DIP banks: 3 tanks; 1 coin / 1 play, x1 coin multipliers, no bonus coins.
@@ -25,7 +26,7 @@ class Mathbox{
  lo(){return this.result&255}hi(){return(this.result>>8)&255}}
 
 class Battlezone{
- constructor(){this.cv=document.querySelector("#gameCanvas");this.cx=this.cv.getContext("2d");this.cv.width=W;this.cv.height=H;this.mem=new Uint8Array(32768);this.math=new Mathbox();this.pokeyRandom=new PokeyRandom();this.i={coin1:0,start1:0,fire:0,lu:0,ld:0,ru:0,rd:0};this.sound=0;this.audio=new BzoneAudio(this);this.avgDone=1;this.vectors=[];this.colorized=true;this.paused=false;this.bind()}
+ constructor(){this.cv=document.querySelector("#gameCanvas");this.cx=this.cv.getContext("2d");this.cv.width=W;this.cv.height=H;this.mem=new Uint8Array(32768);this.math=new Mathbox();this.pokeyRandom=new PokeyRandom();this.i={coin1:0,start1:0,fire:0,lu:0,ld:0,ru:0,rd:0};this.sound=0;this.audio=new BzoneAudio(this);this.avgDone=1;this.vectors=[];this.colorized=true;this.assetSettings={};this.paused=false;this.bind()}
  async rom(n){const r=await fetch("../bzone-old/roms/"+n);if(!r.ok)throw Error("ROM "+n);return new Uint8Array(await r.arrayBuffer())}
  async init(){const files=["036408-01.k7","036414-02.e1","036413-01.h1","036412-01.j1","036411-01.k1","036410-01.lm1","036409-01.n1","036422-01.bc3","036421-01.a3"],a=Object.fromEntries(await Promise.all(files.map(async n=>[n,await this.rom(n)])));[["036414-02.e1",20480],["036413-01.h1",22528],["036412-01.j1",24576],["036411-01.k1",26624],["036410-01.lm1",28672],["036409-01.n1",30720],["036422-01.bc3",12288],["036421-01.a3",14336]].forEach(([n,o])=>this.mem.set(a[n],o));this.avgProm=a["036408-01.k7"];this.assetTrace=new AssetTrace(this.mem);this.cpu=new M6502(x=>this.read(x),(x,d)=>this.write(x,d));this.cpu.reset();console.log("[BZONE] reset PC",this.cpu.pc.toString(16),"vector",this.read(0x7ffc).toString(16),this.read(0x7ffd).toString(16))}
  in0(){let v=255;if(this.i.coin1)v&=254;if(this.avgDone)v|=64;else v&=191;if(this.cpu.cycles&256)v|=128;else v&=127;return v}
@@ -94,57 +95,12 @@ class Battlezone{
   }
   this.avgDone=1;this.draw();
  }
- draw(){const c=this.cx;c.save();c.globalCompositeOperation="source-over";c.fillStyle="#000";c.fillRect(0,0,W,H);c.lineCap="round";
-    // Object-level obstacle fill from projected AVG vertices.
-  if(this.colorized){
-   const groups=new Map();
-   for(const v of this.vectors){const o=v[8];if(o?.asset!=="obstacle"||o.id==null)continue;let g=groups.get(o.id);if(!g){g=[];groups.set(o.id,g)};if(Number.isFinite(v[0]+v[1]))g.push([v[0],v[1]]);if(Number.isFinite(v[2]+v[3]))g.push([v[2],v[3]])}
-   c.save();c.globalCompositeOperation="source-over";c.fillStyle="rgba(255,145,35,.32)";
-   for(const g of groups.values()){
-    const seen=new Set(),p=[];for(const q of g){const k=Math.round(q[0]*16)+","+Math.round(q[1]*16);if(!seen.has(k)){seen.add(k);p.push(q)}}if(p.length<3)continue;
-    p.sort((a,b)=>a[0]-b[0]||a[1]-b[1]);const cross=(a,b,d)=>(b[0]-a[0])*(d[1]-a[1])-(b[1]-a[1])*(d[0]-a[0]),lo=[],hi=[];
-    for(const q of p){while(lo.length>1&&cross(lo[lo.length-2],lo[lo.length-1],q)<=0)lo.pop();lo.push(q)}
-    for(let i=p.length-1;i>=0;i--){const q=p[i];while(hi.length>1&&cross(hi[hi.length-2],hi[hi.length-1],q)<=0)hi.pop();hi.push(q)}
-    const h=lo.slice(0,-1).concat(hi.slice(0,-1));if(h.length<3)continue;c.beginPath();c.moveTo(h[0][0],h[0][1]);for(let i=1;i<h.length;i++)c.lineTo(h[i][0],h[i][1]);c.closePath();c.fill();
-   }c.restore();
-  }
-  // Tank fill intentionally disabled.  The Atari TNKTBL supplies the model
-  // vertices, but the original game does not supply a polygon/face mesh.  Do not
-  // synthesize faces from the vector draw order or coordinate planes.
-  /* Render only the color carried by each emitted AVG vector. There are no
-     coordinate, region, shape, or screen-overlay color rules here. */
-  const rgb={green:"80,255,80",purple:"190,70,255",darkPurple:"95,30,140",orange:"255,145,35",lightOrange:"255,190,105",red:"255,45,45",blue:"70,135,255"};
-  // Additive, concentric strokes approximate phosphor bloom around a sharp beam.
-  // Draw all halos before the cores so intersections accumulate light naturally.
-  c.globalCompositeOperation="lighter";
-  const layers=[[7,.035],[4,.09],[2,.24],[1,1]],hudAssets=new Set(["hudRadar","playerLives","score","highScore","enemyInRange","enemyDirection","motionBlocked"]),horizonAsset="horizon";
-  for(const [spread,gain] of layers){
-  for(const v of this.vectors){
-   const x1=v[0],y1=v[1],x2=v[2],y2=v[3],asset=v[8]?.asset,style=ASSETS[asset]??ASSETS.unclassified,z=this.colorized?(v[11]??style.displayIntensity??v[4]):v[4],brightness=this.colorized?(v[9]??style.brightness??1):1,glow=this.colorized?(v[10]??style.glow??0.35):0.35;if(v[4]<=0||!Number.isFinite(x1+y1+x2+y2))continue;
-   const hudRed=asset==="hudRadar"||asset==="playerLives"||asset==="score"||asset==="highScore"||asset==="enemyInRange"||asset==="enemyDirection"||asset==="motionBlocked",originalRed=hudRed;
-   const alpha=Math.min(1,Math.max(.18,(z/15)*brightness)),color=this.colorized?(asset==="highScore"?rgb.orange:(rgb[v[6]]||rgb.green)):(originalRed?rgb.red:rgb.green);
-   const haloScale=spread>1?Math.max(0,glow/0.35):1,ink="rgba("+color+","+(alpha*gain*haloScale)+")";
-   const distanceGlow=hudAssets.has(asset)?1:Math.max(.28,Math.min(1,z/15));const horizonGlow=this.colorized&&asset===horizonAsset&&spread>1?1.65:1;c.strokeStyle=ink;c.lineWidth=(.75+z/20)*(hudAssets.has(asset)?Math.min(spread,1.7):spread)*(spread>1?distanceGlow*(0.65+glow):1)*horizonGlow;
-   c.beginPath();
-   // AVG points (including lava sparks) need a disk, even with identical endpoints.
-   if(x1===x2&&y1===y2){c.fillStyle=ink;c.arc(x1,y1,c.lineWidth/2,0,Math.PI*2);c.fill()}
-   else{c.moveTo(x1,y1);c.lineTo(x2,y2);c.stroke()}
-  }}
-  // Simulate extra beam dwell at endpoints. Shared corners receive light from
-  // both adjoining vectors; keep the bloom compact so straight edges stay crisp.
-  for(const v of this.vectors){
-   const x1=v[0],y1=v[1],x2=v[2],y2=v[3];if(v[4]<=0||!Number.isFinite(x1+y1+x2+y2))continue;
-   const asset=v[8]?.asset,style=ASSETS[asset]??ASSETS.unclassified,z=this.colorized?(v[11]??style.displayIntensity??v[4]):v[4],brightness=this.colorized?(v[9]??style.brightness??1):1,glow=this.colorized?(v[10]??style.glow??0.35):0.35;
-   const hudRed=asset==="hudRadar"||asset==="playerLives"||asset==="score"||asset==="highScore"||asset==="enemyInRange"||asset==="enemyDirection"||asset==="motionBlocked",originalRed=hudRed;
-   const alpha=Math.min(1,Math.max(.18,(z/15)*brightness)),color=this.colorized?(asset==="highScore"?rgb.orange:(rgb[v[6]]||rgb.green)):(originalRed?rgb.red:rgb.green);
-   const radius=(.75+z/20)/2;
-   const endpoints=x1===x2&&y1===y2?[[x1,y1]]:[[x1,y1],[x2,y2]];
-   const distanceGlow=hudAssets.has(asset)?1:Math.max(.28,Math.min(1,z/15));for(const [spread,gain] of (hudAssets.has(asset)?[[1+glow,.08*Math.max(0,glow/0.35)],[1,.5]]:[[1+2*distanceGlow*(0.65+glow),.12*distanceGlow*Math.max(0,glow/0.35)],[1.1,.65]])){
-    c.fillStyle="rgba("+color+","+(alpha*gain)+")";
-    for(const [px,py] of endpoints){c.beginPath();c.arc(px,py,radius*spread,0,Math.PI*2);c.fill()}
-   }
-  }
-  c.restore();}
+ setAssetStyle(asset,patch){
+  updateAssetSettings(this.assetSettings,asset,patch);
+  this.draw();
+ }
+ resetAssetStyles(){this.assetSettings={};this.draw();}
+ draw(){renderVectors(this.cx,this.vectors,{width:W,height:H,colorized:this.colorized,settings:this.assetSettings});}
   frame(){
    this.nextIRQ??=this.cpu.cycles;
    for(let n=0;n<6;n++){
