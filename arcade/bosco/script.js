@@ -463,8 +463,8 @@ class InputManager {
   /* ---------------- discrete on-screen buttons ---------------- */
 
   setupTouchControls(containerElement) {var _this$config, _this$config$input;
-    const coin = document.getElementById("btnCoin");
-    const start = document.getElementById("btnStart");
+    const coin = document.getElementById("coin1");
+    const start = document.getElementById("start1");
 
     if (!coin && !start) return false;
 
