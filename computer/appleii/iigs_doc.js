@@ -14,7 +14,7 @@ export class IIgsDOC {
 
   reset() {
     this.address=0; this.control=0; this.irqPending=false; this.irqQueue=[];
-    this.systemVolume=0; this.readLatch=0; this.irqStatus=0xff;
+    this.readLatch=0; this.irqStatus=0xff;
     this.enabledOscillators=1; this.masterAccum=0; this.lastSample=0;
     this.lastLeft=0; this.lastRight=0;
     this.cpuHz=2800000; this.masterHz=7159090;
@@ -27,9 +27,10 @@ export class IIgsDOC {
   setAddressLow(v){this.address=(this.address&0xff00)|(v&255);}
   setAddressHigh(v){this.address=(this.address&255)|((v&255)<<8);}
   addressLow(){return this.address&255;} addressHigh(){return this.address>>>8;}
-  setControl(v){this.control=v&0x7f;this.systemVolume=v&0x0f;if(!(v&0x40))this.address&=0xff;}
+  setControl(v){this.control=v&0x7f;if(!(v&0x40))this.address&=0xff;}
   getControl(){return this.control|0x1f;}
-  getVolume(){return this.systemVolume;}
+  // SOUNDCTL bits 0-3 set the legacy $C030 speaker level, not DOC gain.
+  getSpeakerVolume(){return this.control&0x0f;}
   // SOUNDCTL bit 5 selects automatic address increment after DOC data access.
   advance(){if(this.control&0x20)this.address=(this.address+1)&0xffff;}
 
