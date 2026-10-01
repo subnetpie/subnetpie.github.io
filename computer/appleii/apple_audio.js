@@ -19,6 +19,7 @@ export class AppleAudio
         this.state = false;
         this.speakerPrevious = 0;
         this.speakerFiltered = 0;
+        this.speakerLevel = 0;
         this.level = 0.6;
         this.docLastLeft = 0;
         this.docLastRight = 0;
@@ -51,7 +52,7 @@ export class AppleAudio
         if(this.ac) return this.ac;
         this.ac = new (window.AudioContext || window.webkitAudioContext)();
         // Unlocking after a silent boot must not turn a held DC level into a pop.
-        this.speakerPrevious = this.state ? this.level : 0;
+        this.speakerPrevious = this.state ? this.speakerLevel : 0;
         this.speakerFiltered = 0;
         this.docOutput = this.ac.createGain({channelCount:2, channelCountMode:"explicit", gain:1});
         this.docOutput.connect(this.ac.destination);
@@ -193,11 +194,16 @@ export class AppleAudio
         this.docPcmCount = 0;
     }
 
-    click(clock) {
-        // C030 edges share the emulated PCM clock with DOC audio. Scheduling
-        // AudioParam changes against currentTime each frame distorted the
-        // boot tone whenever browser frames arrived late or unevenly.
+    click(clock, volume = 15) {
+        // IIgs SOUNDCTL bits 0-3 select the legacy speaker amplitude. Match
+        // MAME's 16-level table; this gain applies only to $C030 speaker
+        // toggles and never to the Ensoniq DOC.
+        const levels=[
+            0x0000,0x03ff,0x04ff,0x05ff,0x06ff,0x07ff,0x08ff,0x09ff,
+            0x0aff,0x0bff,0x0cff,0x0fff,0x1fff,0x3fff,0x5fff,0x7fff
+        ];
         this.emitDocUntil(clock);
+        this.speakerLevel=levels[volume&15]/32768;
         this.state = !this.state;
     }
 
@@ -206,7 +212,7 @@ export class AppleAudio
         while(this.docNextClock <= clock) {
             if(this.docPcmCount >= this.docPcmLeft.length) this.flushDocPcm();
             const n=this.docPcmCount++;
-            const speaker=this.state ? this.level : 0;
+            const speaker=this.state ? this.speakerLevel : 0;
             // AC coupling removes the held speaker's DC level after a beep.
             this.speakerFiltered=speaker-this.speakerPrevious+0.995*this.speakerFiltered;
             this.speakerPrevious=speaker;
@@ -216,11 +222,10 @@ export class AppleAudio
         }
     }
 
-    doc_sample(clock, left, right = left, systemVolume = 15) {
+    doc_sample(clock, left, right = left) {
         if(!this.ac) return;
-        const master = (systemVolume & 15) / 15;
-        const nextLeft = Math.max(-1, Math.min(1, left / 128)) * this.level * master;
-        const nextRight = Math.max(-1, Math.min(1, right / 128)) * this.level * master;
+        const nextLeft = Math.max(-1, Math.min(1, left / 128)) * this.level;
+        const nextRight = Math.max(-1, Math.min(1, right / 128)) * this.level;
         // Most DOC updates leave the held DAC level unchanged. end_segment()
         // fills that constant run, so avoid walking the PCM clock here.
         if(Math.abs(nextLeft-this.docSignalLeft)<0.00001 &&
@@ -290,6 +295,7 @@ export class AppleAudio
         this.state = false;
         this.speakerPrevious=0;
         this.speakerFiltered=0;
+        this.speakerLevel=0;
         for(const source of this.docSources)source.stop();
         this.docSources.clear();
         this.docSignalLeft=this.docSignalRight=0;
