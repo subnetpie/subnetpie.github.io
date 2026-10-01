@@ -247,7 +247,9 @@ export class Motherboard
     traceText() { return this.trace.text(); }
 
     audio_click() {
-        this.audio.click(this.cycles);
+        const volume=this.iigsEnabled && this.memory.doc?.getSpeakerVolume
+            ? this.memory.doc.getSpeakerVolume() : 15;
+        this.audio.click(this.cycles,volume);
     }
 
     reset(cold) {
