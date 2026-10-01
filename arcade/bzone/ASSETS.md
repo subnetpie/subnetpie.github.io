@@ -40,7 +40,9 @@ All addresses below are 6502 byte addresses, except the vector tuple's AVG PC
 | Logo | Types `$17,1e,1f` | Blue |
 | Saucer | Type `$20` | Green |
 | Debris | Other defined types in `$10–1d`, plus `$24–2b` | Green |
-| HUD radar | `DrawRadar` `$6ae9`: compass/vision marks, sweep, enemy blip | Red |
+| HUD radar | `DrawRadar` `$6ae9`: vision cone and sweep | Green |
+| Radar ticks | Static AVG strokes at `$3542`, `$3548`, `$354e`, `$355c`: 3, 6, 9, 12 o’clock | Green |
+| Enemy blip | CPU scope `$6c33–6c3a`: two `VgDrawPoint` calls | Red |
 | Score label and digits | Text `$18`, RAM `$b8–b9`; scope `$6d59–6d6b` | Red |
 | High-score label and digits | Text `$0e`, RAM `$0300–0301`; scope `$6d6c–6d8d` | Orange |
 | ENEMY IN RANGE | Text `$10` through `$6c98` | Light orange |
@@ -121,3 +123,16 @@ positions (five observed), with the camera directed at the volcano in the last
 400 frames. `node arcade/bzoneii/pokey-random.test.mjs` compares both complete
 polynomial periods against independent bit-array wiring and checks reset,
 resume, wraparound, and repeated reads at the same emulated time.
+
+## Radar contact versus compass ticks
+
+Enemy contacts now use the CPU emission scope at `$6c33`, ending at `$6c3b`
+with the same stack pointer. Both point writes inherit `enemyBlip`; NMI
+interruptions retain the existing stack-aware provenance handling. Static
+compass strokes inherit `radarTicks` from their four ROM instruction addresses.
+The AVG high-byte fetch address is normalized to its word address. No vector
+length or screen position is used to classify a contact. This keeps small
+sweep/cone segments and compass ticks green, with only actual contacts red.
+
+Run `node --test arcade/bzone/radar.test.mjs` to verify all four tick identities,
+contact scope lifetime, and unchanged raw vectors in a 600-frame ROM run.

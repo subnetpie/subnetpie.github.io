@@ -1,6 +1,6 @@
 import { BzoneAudio } from "./audio.js?v=20260930-mame289";
 import { M6502 } from "../../cpu/m6502.js";
-import { AssetTrace, ASSETS } from "./assets.js";
+import { AssetTrace, ASSETS } from "./assets.js?v=20261001-radar";
 import { PokeyRandom } from "./pokey-random.js";
 const CPU_CLOCK=12096000/8,IRQ_HZ=(12096000/4096)/12,FPS=IRQ_HZ/6,W=580,H=400;
 // MAME 0.289 DIP banks: 3 tanks; 1 coin / 1 play, x1 coin multipliers, no bonus coins.

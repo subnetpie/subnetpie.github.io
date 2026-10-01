@@ -17,7 +17,8 @@ export const ASSETS = Object.freeze({
   saucer: {color:"green", brightness:1.05, glow:0.50, coordinateSpace:"world"},
 
   hudRadar: {color:"green", brightness:0.90, glow:0.30, displayIntensity:15, coordinateSpace:"hud", sourcePC:0x6ae9},
-  enemyBlip: {color:"red", brightness:0.90, glow:0.30, displayIntensity:15, coordinateSpace:"hud", primitive:"point", sourcePC:0x6ae9},
+  radarTicks: {color:"green", brightness:0.90, glow:0.30, displayIntensity:15, coordinateSpace:"hud", sourcePC:0x6ae9},
+  enemyBlip: {color:"red", brightness:0.90, glow:0.30, displayIntensity:15, coordinateSpace:"hud", primitive:"point", sourcePC:0x6c33},
 
   score: {color:"red", brightness:0.80, glow:0.25, coordinateSpace:"hud"},
   highScore: {color:"orange", brightness:1.05, glow:0.40, coordinateSpace:"hud"},
@@ -83,6 +84,9 @@ export class AssetTrace {
         shape:this.mem[0x7472+type*2]|(this.mem[0x7473+type*2]<<8)};
     } else if(pc===0x6ae9) {
       asset="hudRadar";
+    } else if(pc===0x6c33 && this.scopes.at(-1)?.origin.asset==="hudRadar") {
+      // Two VgDrawPoint calls emit the contact, then return to radar/text drawing.
+      asset="enemyBlip";end=0x6c3b;sp=cpu.s;
     } else if(pc===0x6d59 || pc===0x6d6c) {
       // One scope includes the label, fixed zeroes, and changing BCD digits.
       asset=pc===0x6d59?"score":"highScore";
@@ -124,6 +128,11 @@ export class AssetTrace {
     // Atari BZMTNS.MAC explicitly marks MOON through END OF MOON here.
     if(inherited?.asset==="mountains" && pc>=0x1054 && pc<0x10c4)
       return {...inherited,asset:"moon",parentAsset:"mountains"};
+    // AVG fetch tags the high byte; normalize to the instruction's word address.
+    // The four short compass strokes are static ROM vectors, not enemy contacts.
+    const tick={0x1542:"3",0x1548:"6",0x154e:"9",0x155c:"12"}[pc&~1];
+    if(inherited?.asset==="hudRadar" && tick)
+      return {...inherited,asset:"radarTicks",parentAsset:"hudRadar",clockPosition:tick};
     return inherited;
   }
   styleInstruction(origin,primitive) {
@@ -131,12 +140,7 @@ export class AssetTrace {
     const dx=(primitive?.x2??0)-(primitive?.x1??0);
     const dy=(primitive?.y2??0)-(primitive?.y1??0);
     const length=Number.isFinite(dx)&&Number.isFinite(dy)?Math.hypot(dx,dy):Infinity;
-    const radarContact=
-      origin?.asset==="hudRadar" &&
-      primitive?.visible===true &&
-      primitive?.isMove!==true &&
-      length<=4.5;
-    const asset=radarContact?"enemyBlip":(origin?.asset??"unclassified");
+    const asset=origin?.asset??"unclassified";
     const style=assetStyle(asset,primitive?.intensity);
     return {...primitive,asset:style.asset,color:style.color,brightness:style.brightness,glow:style.glow,
       coordinateSpace:style.coordinateSpace,primitiveStyle:style.primitive,displayIntensity:style.displayIntensity,length};
