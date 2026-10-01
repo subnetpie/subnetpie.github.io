@@ -258,10 +258,9 @@ button,
   .button { flex: 1 1 0; width: auto; max-width: 68px; }
 
   .screen {
-    top: calc(max(4px, env(safe-area-inset-top)) + 42px) !important;
-    left: 50% !important;
-    width: 100vw !important;
-    height: calc(100vw * var(--screen-ratio)) !important;
+    /* JS chooses an integer SHR scale in physical pixels. Do not force the
+       canvas to 100vw: fractional Safari scaling creates GS/OS dither bands. */
+    left: 50%;
   }
 
   #keyboard0 {
