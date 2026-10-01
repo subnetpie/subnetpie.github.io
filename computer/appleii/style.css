@@ -664,3 +664,42 @@ body.joystick-disabled #joyControls {
 #buttonInput[aria-pressed="false"] {
   opacity: .32;
 }
+
+/* Keep joystick options tucked behind their own gear. */
+#buttonJoySettings {
+  grid-column: 2;
+  grid-row: 1;
+  justify-self: center;
+  align-self: center;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  background: var(--control-brown);
+  color: #fff;
+  cursor: pointer;
+  pointer-events: auto;
+  touch-action: manipulation;
+}
+#buttonJoySettings[aria-expanded="true"] { background: #382920; }
+#buttonJoySettings:focus-visible { outline: 3px solid #ffdf80; outline-offset: 2px; }
+#joyPadCanvas { grid-column: 1; grid-row: 1; }
+#joyButtonsCanvas { grid-column: 3; grid-row: 1; }
+#joyControls {
+  position: absolute;
+  z-index: 25;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(300px, calc(100vw - 32px));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--key-border);
+  border-radius: 10px;
+  background: var(--apple-beige);
+  box-shadow: 0 6px 24px #0008;
+  pointer-events: auto;
+}
+#joyControls .joy-setting { color: #42362f; text-shadow: none; }
+#joyControls[hidden] { display: none !important; }

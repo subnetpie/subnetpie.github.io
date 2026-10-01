@@ -1,7 +1,9 @@
 // Keep controls reachable even while the emulator module is loading.
 (() => {
-  const button=document.getElementById('buttonSettings');
-  const panel=document.getElementById('controls');
+  for (const [buttonId, panelId] of [['buttonSettings','controls'], ['buttonJoySettings','joyControls']]) {
+  const button=document.getElementById(buttonId);
+  const panel=document.getElementById(panelId);
+  if (!button || !panel) continue;
   const setOpen=open=>{
     panel.hidden=!open;
     button.setAttribute('aria-expanded',String(open));
@@ -17,4 +19,5 @@
       setOpen(false); button.focus();
     }
   },true);
+  }
 })();

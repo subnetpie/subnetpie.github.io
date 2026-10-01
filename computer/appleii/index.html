@@ -7,7 +7,7 @@
     <title>Apple 2ios</title>
     <script src="./touch-guard.js?v=20260930-gear"></script>
     <link rel='stylesheet' href='https://fonts.googleapis.com/css2?family=Rubik'>
-<link rel='stylesheet' href='https://fonts.googleapis.com/css2?family=Russo+One&amp;display=swap'><link rel="stylesheet" href="./style.css?v=20260930-controls-grid">
+<link rel='stylesheet' href='https://fonts.googleapis.com/css2?family=Russo+One&amp;display=swap'><link rel="stylesheet" href="./style.css?v=20261001-joystick-gear">
 
   </head>
     
@@ -194,11 +194,14 @@
   <button type="button" class="button" id="buttonScanlines">scanlines</button>
 </div>
 
-<script src="./controls-menu.js?v=20260930-gear"></script>
+
 
 <div id="joyStick">
   <canvas id="joyPadCanvas" aria-label="Analog joystick" width="256" height="256"></canvas>
-  <div id="joyControls">
+  <button id="buttonJoySettings" type="button" aria-label="Joystick settings" title="Joystick settings" aria-expanded="false" aria-controls="joyControls">
+  <svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="m9 3 1-2h4l1 2 2 1 2 0 2 3-1 2v3l1 2-2 3h-2l-2 1-1 3h-4l-1-3-2-1H5l-2-3 1-2V9L3 7l2-3h2Z"/><circle cx="12" cy="11" r="3"/></svg>
+  </button>
+  <div id="joyControls" role="group" aria-label="Joystick settings" hidden>
     <label class="joy-setting"><span>mode</span><button type="button" class="button" id="buttonMode">analog</button></label>
     <label class="joy-setting"><span>recenter</span><button type="button" class="button" id="buttonCenter">on</button></label>
     <label class="joy-setting"><span>grid</span><button type="button" class="button" id="buttonGrid">off</button></label>
@@ -206,6 +209,7 @@
   </div>
   <canvas id="joyButtonsCanvas" aria-label="Fire 1 above, Fire 2 below" width="256" height="256"></canvas>
 </div>
+<script src="./controls-menu.js?v=20261001-joystick-gear"></script>
     <script src='https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js'></script>
 
 <script>
