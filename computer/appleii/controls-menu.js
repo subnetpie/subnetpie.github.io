@@ -1,31 +1,51 @@
-// Menus work even while the emulator module is loading.
+// Independent emulator and joystick settings menus.
 (() => {
-  const menus = [['buttonSettings', 'controls'], ['buttonJoySettings', 'joyControls']]
-    .map(([button, panel]) => ({button: document.getElementById(button), panel: document.getElementById(panel)}))
-    .filter(menu => menu.button && menu.panel);
-  const close = menu => {
-    menu.panel.hidden = true;
-    menu.button.setAttribute('aria-expanded', 'false');
+  const definitions = [
+    ['buttonSettings', 'controls'],
+    ['buttonJoySettings', 'joyControls']
+  ];
+  const menus = definitions
+    .map(([buttonId,panelId]) => ({
+      button: document.getElementById(buttonId),
+      panel: document.getElementById(panelId)
+    }))
+    .filter(({button,panel}) => button && panel);
+
+  const close = ({button,panel}) => {
+    panel.hidden = true;
+    button.setAttribute('aria-expanded','false');
   };
-  for (const menu of menus) {
-    menu.button.addEventListener('click', () => {
-      const open = menu.panel.hidden;
-      menus.forEach(close);
-      if (open) {
-        menu.panel.hidden = false;
-        menu.button.setAttribute('aria-expanded', 'true');
-      }
+  const open = menu => {
+    menus.forEach(other => { if(other !== menu) close(other); });
+    menu.panel.hidden = false;
+    menu.button.setAttribute('aria-expanded','true');
+  };
+
+  menus.forEach(menu => {
+    close(menu);
+    menu.button.addEventListener('click', event => {
+      event.preventDefault();
+      event.stopPropagation();
+      if(menu.panel.hidden) open(menu);
+      else close(menu);
     });
-  }
-  document.addEventListener('pointerdown', event => {
-    for (const menu of menus)
-      if (!menu.panel.contains(event.target) && !menu.button.contains(event.target)) close(menu);
   });
+
+  document.addEventListener('pointerdown', event => {
+    menus.forEach(menu => {
+      if(!menu.panel.hidden &&
+         !menu.panel.contains(event.target) &&
+         !menu.button.contains(event.target)) close(menu);
+    });
+  });
+
   document.addEventListener('keydown', event => {
-    const open = menus.find(menu => !menu.panel.hidden);
-    if (event.key === 'Escape' && open) {
-      event.preventDefault(); event.stopImmediatePropagation();
-      close(open); open.button.focus();
-    }
+    if(event.key !== 'Escape') return;
+    const menu=menus.find(({panel}) => !panel.hidden);
+    if(!menu) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    close(menu);
+    menu.button.focus();
   }, true);
 })();
