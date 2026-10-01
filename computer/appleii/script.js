@@ -641,10 +641,10 @@ function setJoystickEnabled(enabled) {
   joystickEnabled = !!enabled;
   if(joystickEnabled && keyboardEnabled) {
     keyboardEnabled = false;
-    buttonInput.innerText = "key off";
+    buttonInput.innerText = "key";
     buttonInput.setAttribute("aria-pressed", "false");
   }
-  buttonJoystick.innerText = joystickEnabled ? "joy on" : "joy off";
+  buttonJoystick.innerText = joystickEnabled ? "joy" : "joy";
   buttonJoystick.setAttribute("aria-pressed", joystickEnabled ? "true" : "false");
   if(!joystickEnabled) {
     joyPadPointer = null;
@@ -663,7 +663,7 @@ function setKeyboardEnabled(enabled) {
   keyboardEnabled = !!enabled;
   if(keyboardEnabled && joystickEnabled) {
     joystickEnabled = false;
-    buttonJoystick.innerText = "joy off";
+    buttonJoystick.innerText = "joy";
     buttonJoystick.setAttribute("aria-pressed", "false");
     joyPadPointer = null;
     firePointers.clear();
@@ -674,7 +674,7 @@ function setKeyboardEnabled(enabled) {
     joyValues.axis1 = joyValues.axis3 = 127;
     joyValues.button0 = joyValues.button1 = 0;
   }
-  buttonInput.innerText = keyboardEnabled ? "key on" : "key off";
+  buttonInput.innerText = keyboardEnabled ? "key" : "key";
   buttonInput.setAttribute("aria-pressed", keyboardEnabled ? "true" : "false");
   composeScreen();
 }
@@ -779,7 +779,7 @@ document.getElementById("buttonDiagnostics").addEventListener("click", () => {
   const diagnostics = document.getElementById("screenResolution");
   const enabled = button.getAttribute("aria-pressed") !== "true";
   button.setAttribute("aria-pressed", enabled ? "true" : "false");
-  button.innerText = enabled ? "diag on" : "diag off";
+  button.innerText = enabled ? "diag" : "diag";
   diagnostics.hidden = !enabled;
   if(enabled) presentScreen();
 });
