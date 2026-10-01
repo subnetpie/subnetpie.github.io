@@ -17,8 +17,9 @@ export const ASSETS = Object.freeze({
   saucer: {color:"green", brightness:1.05, glow:0.50, coordinateSpace:"world"},
 
   hudRadar: {originalColor:"red", color:"green", brightness:0.90, glow:0.30, displayIntensity:15, coordinateSpace:"hud", sourcePC:0x6ae9},
+  radarSweep: {originalColor:"red", color:"green", brightness:1.00, glow:0.65, displayIntensity:15, coordinateSpace:"hud", sourcePC:0x6b34},
   radarTicks: {originalColor:"red", color:"green", brightness:0.90, glow:0.30, displayIntensity:15, coordinateSpace:"hud", sourcePC:0x6ae9},
-  enemyBlip: {originalColor:"red", color:"red", brightness:0.90, glow:0.30, displayIntensity:15, coordinateSpace:"hud", primitive:"point", sourcePC:0x6c33},
+  enemyBlip: {originalColor:"red", color:"red", brightness:1.20, glow:1.00, displayIntensity:15, coordinateSpace:"hud", primitive:"point", sourcePC:0x6c33},
 
   score: {originalColor:"red", color:"red", brightness:0.80, glow:0.25, coordinateSpace:"hud"},
   highScore: {originalColor:"red", color:"orange", brightness:1.05, glow:0.40, coordinateSpace:"hud"},
@@ -109,9 +110,12 @@ export class AssetTrace {
         shape:this.mem[0x7472+type*2]|(this.mem[0x7473+type*2]<<8)};
     } else if(pc===0x6ae9) {
       asset="hudRadar";
+    } else if(pc===0x6b34 && this.scopes.at(-1)?.origin.asset==="hudRadar") {
+      asset="radarSweep";end=0x6b37;sp=cpu.s;
     } else if(pc===0x6c33 && this.scopes.at(-1)?.origin.asset==="hudRadar") {
       // Two VgDrawPoint calls emit the contact, then return to radar/text drawing.
       asset="enemyBlip";end=0x6c3b;sp=cpu.s;
+      fields={radarStrength:Math.min(1,this.mem[0x02e9]/0xf0)};
     } else if(pc===0x6d59 || pc===0x6d6c) {
       // One scope includes the label, fixed zeroes, and changing BCD digits.
       asset=pc===0x6d59?"score":"highScore";

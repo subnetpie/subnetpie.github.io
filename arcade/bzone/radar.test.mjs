@@ -34,7 +34,7 @@ test('ROM radar has four green compass ticks and separate red contacts without g
  vm.createContext(context);vm.runInContext(source+'\nBattlezone.prototype.bind=()=>{};Battlezone.prototype.draw=()=>{};globalThis.Battlezone=Battlezone;',context);
  context.Battlezone.prototype.rom=async n=>new Uint8Array(readFileSync(new URL('../bzone-old/roms/'+n,import.meta.url)));
  const game=new context.Battlezone();await game.init();
- const positions=new Set();let blips=0,ticks=0;
+ const positions=new Set();let blips=0,ticks=0,sweeps=0;const strengths=new Set();
  for(let f=0;f<600;f++) {
   game.i.coin1=f>=45&&f<51?1:0;game.i.start1=f>=70&&f<76?1:0;
   game.i.lu=f>200?1:0;game.i.rd=f>200?1:0;
@@ -44,7 +44,9 @@ test('ROM radar has four green compass ticks and separate red contacts without g
     ticks++;positions.add(v[8].clockPosition);assert.equal(v[6],'green');
     assert.ok([0x1542,0x1548,0x154e,0x155c].includes(v[7]&~1));
    }
+   if(v[8].asset==='radarSweep'){sweeps++;assert.equal(v[8].cpuPC,0x6b34);}
    if(v[8].asset==='enemyBlip'){
+    strengths.add(v[8].radarStrength);
     blips++;assert.equal(v[6],'red');assert.equal(v[8].cpuPC,0x6c33);
     assert.equal(v[0],v[2]);assert.equal(v[1],v[3]);
    }
@@ -58,6 +60,7 @@ test('ROM radar has four green compass ticks and separate red contacts without g
   }
  }
  assert.deepEqual([...positions].sort(),['12','3','6','9']);
+ assert.ok(sweeps>100);assert.ok(strengths.has(1));assert.ok(Math.min(...strengths)<.5);
  assert.ok(ticks>100);assert.ok(blips>0,'the run must actually encounter contacts');
  console.log({ticks,blips,positions:[...positions]});
 });

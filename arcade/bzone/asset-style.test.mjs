@@ -61,3 +61,28 @@ test('original mode uses source intensity and table-defined original colors',()=
  assert.equal(s.ink,PALETTE.red);assert.equal(s.displayIntensity,6);assert.equal(s.brightness,1);assert.equal(s.fillOpacity,0);
  const c=context();renderVectors(c,[v],{settings,colorized:false});assert.ok(c.calls.length>0);
 });
+
+test('radar contact glow follows the ROM sweep envelope and respects live settings',()=>{
+ const v=vector('enemyBlip');v[8].radarStrength=1;
+ const full=vectorStyle(v);
+ v[8].radarStrength=.25;
+ const faded=vectorStyle(v);
+ assert.equal(faded.alpha,full.alpha/4);assert.equal(faded.glow,full.glow/4);
+ v[8].radarStrength=1;assert.deepEqual(vectorStyle(v),full);
+ assert.equal(vectorStyle(v,{enemyBlip:{glow:0}}).glow,0);
+ assert.equal(vectorStyle(v,{enemyBlip:{brightness:0}}).alpha,0);
+});
+
+test('sweep trails decay with emulated time without copying ticks or multiplying paused redraws',async()=>{
+ const {RadarPersistence}=await import('./vector-renderer.js');
+ const p=new RadarPersistence(),a=[vector('radarSweep'),vector('radarTicks')],b=[vector('radarSweep',10,10,20,30)];
+ assert.equal(p.vectors(a,0).length,2);
+ const second=p.vectors(b,.025);assert.equal(second.length,2);
+ const initial=second[0][8].trailStrength;
+ assert.ok(initial>0&&initial<1);
+ assert.deepEqual(p.vectors(b,.025),second);
+ const later=p.vectors(b,.1);assert.ok(later[0][8].trailStrength<initial);
+ assert.equal(p.vectors(b,.3).length,1);
+ assert.equal(p.vectors(a,.4,false),a);assert.equal(p.history.length,0);
+ assert.equal(p.vectors([],1).length,0);
+});

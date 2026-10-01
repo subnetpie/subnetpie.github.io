@@ -1,4 +1,4 @@
-import {assetStyle,PALETTE} from './assets.js?v=20261001-styles';
+import {assetStyle,PALETTE} from './assets.js?v=20261001-radar-trail';
 const clamp=v=>Math.max(0,Math.min(1,v));
 function colorValue(name) {
  const value=PALETTE[name]??name;
@@ -10,7 +10,8 @@ function colorValue(name) {
 }
 export function vectorStyle(vector,settings={},colorized=true) {
  const style=assetStyle(vector[8]?.asset,vector[4],settings,colorized);
- return {...style,ink:colorValue(style.color),alpha:style.displayIntensity/15*style.brightness,
+ const signal=colorized?clamp(vector[8]?.radarStrength??1)*clamp(vector[8]?.trailStrength??1):1;
+ return {...style,glow:style.glow*signal,ink:colorValue(style.color),alpha:style.displayIntensity/15*style.brightness*signal,
    width:.75+style.displayIntensity/20};
 }
 function hull(points) {
@@ -69,4 +70,34 @@ export function renderVectors(ctx,vectors,{width=580,height=400,colorized=true,s
   }
  }
  ctx.restore();
+}
+
+// Only the sweep has persistence. No compass ticks, text or world geometry are
+// retained. Use emulated seconds so pause and repeated settings redraws freeze it.
+export class RadarPersistence {
+ constructor(){this.history=[];this.lastVectors=null;this.lastTime=0;}
+ clear(){this.history=[];this.lastVectors=null;}
+ vectors(vectors,time,colorized=true) {
+  if(!colorized||time<this.lastTime){this.clear();this.lastTime=time;return vectors;}
+  this.lastTime=time;
+  const sweeps=vectors.filter(v=>v[8]?.asset==='radarSweep');
+  if(!sweeps.length){this.clear();return vectors;}
+  this.history=this.history.filter(entry=>time-entry.time<.24);
+  if(vectors!==this.lastVectors) {
+   this.history.push({time,vectors:sweeps});this.lastVectors=vectors;
+   if(this.history.length>24)this.history.shift();
+  }
+  const trails=[];
+  for(const entry of this.history) {
+   const age=time-entry.time;
+   if(entry.vectors===sweeps||age<=0)continue;
+   for(const v of entry.vectors) {
+    // The newest sweep is already in vectors; only retain older emissions.
+    if(sweeps.includes(v))continue;
+    const ghost=v.slice();ghost[8]={...v[8],trailStrength:.45*Math.exp(-age/.07)};
+    trails.push(ghost);
+   }
+  }
+  return [...trails,...vectors];
+ }
 }
