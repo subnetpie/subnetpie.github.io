@@ -17,9 +17,9 @@ export const ASSETS = Object.freeze({
   saucer: {color:"green", brightness:1.05, glow:0.50, coordinateSpace:"world"},
 
   hudRadar: {originalColor:"red", color:"green", brightness:0.90, glow:0.30, displayIntensity:15, coordinateSpace:"hud", sourcePC:0x6ae9},
-  radarSweep: {originalColor:"red", color:"green", brightness:1.00, glow:0.65, displayIntensity:15, coordinateSpace:"hud", sourcePC:0x6b34},
+  radarSweep: {originalColor:"red", color:"green", brightness:1.20, glow:0.90, displayIntensity:15, coordinateSpace:"hud", sourcePC:0x6b34},
   radarTicks: {originalColor:"red", color:"green", brightness:0.90, glow:0.30, displayIntensity:15, coordinateSpace:"hud", sourcePC:0x6ae9},
-  enemyBlip: {originalColor:"red", color:"red", brightness:1.20, glow:1.00, displayIntensity:15, coordinateSpace:"hud", primitive:"point", sourcePC:0x6c33},
+  enemyBlip: {originalColor:"red", color:"red", brightness:1.20, glow:1.00, displayIntensity:15, coordinateSpace:"hud", primitive:"point", ringRadius:8, sourcePC:0x6c33},
 
   score: {originalColor:"red", color:"red", brightness:0.80, glow:0.25, coordinateSpace:"hud"},
   highScore: {originalColor:"red", color:"orange", brightness:1.05, glow:0.40, coordinateSpace:"hud"},
@@ -57,6 +57,7 @@ export function assetStyle(asset, sourceIntensity, overrides={}, colorized=true)
     coordinateSpace:defaults.coordinateSpace??"world",
     displayIntensity:colorized?bounded(style.displayIntensity,source,15):source,
     fillOpacity:colorized?bounded(style.fillOpacity,0,1):0,
+    ringRadius:colorized?bounded(style.ringRadius,0,32):0,
     primitive:defaults.primitive??null
   };
 }
@@ -65,7 +66,7 @@ export function assetStyle(asset, sourceIntensity, overrides={}, colorized=true)
 // separate from appearance. Null displayIntensity restores the ROM intensity.
 export function updateAssetSettings(settings,asset,patch) {
   if(!Object.hasOwn(ASSETS,asset))throw new Error("Unknown asset: "+asset);
-  const allowed=["color","brightness","glow","displayIntensity","fillOpacity"];
+  const allowed=["color","brightness","glow","displayIntensity","fillOpacity","ringRadius"];
   for(const [key,value] of Object.entries(patch)) {
     if(!allowed.includes(key))throw new Error("Unknown asset setting: "+key);
     if(key==="color") {

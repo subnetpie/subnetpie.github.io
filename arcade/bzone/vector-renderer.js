@@ -1,4 +1,4 @@
-import {assetStyle,PALETTE} from './assets.js?v=20261001-radar-trail';
+import {assetStyle,PALETTE} from './assets.js?v=20261001-radar-fan';
 const clamp=v=>Math.max(0,Math.min(1,v));
 function colorValue(name) {
  const value=PALETTE[name]??name;
@@ -48,8 +48,27 @@ export function renderVectors(ctx,vectors,{width=580,height=400,colorized=true,s
   ctx.beginPath();ctx.moveTo(...polygon[0]);for(const p of polygon.slice(1))ctx.lineTo(...p);ctx.closePath();ctx.fill();
  }
  ctx.globalCompositeOperation='lighter';
+ // Fill narrow angular slices between observed sweep positions. The slices
+ // share edges, producing a continuous fan instead of disconnected spokes.
+ for(const {v,style:s} of prepared) {
+  const edge=v[8]?.trailEdge;
+  if(!edge||s.glow===0)continue;
+  const strength=v[8].trailStrength,next=v[8].trailNextStrength??strength;
+  const steps=16;
+  ctx.fillStyle=s.ink;
+  for(let i=0;i<steps;i++) {
+   const a=i/steps,b=(i+1)/steps;
+   const fade=strength+(next-strength)*(a+b)/2;
+   ctx.globalAlpha=clamp(s.alpha/Math.max(strength,1e-9)*fade*.38*(s.glow/Math.max(strength,1e-9)/.9));
+   ctx.beginPath();ctx.moveTo(v[0],v[1]);
+   ctx.lineTo(v[2]+(edge[0]-v[2])*a,v[3]+(edge[1]-v[3])*a);
+   ctx.lineTo(v[2]+(edge[0]-v[2])*b,v[3]+(edge[1]-v[3])*b);
+   ctx.closePath();ctx.fill();
+  }
+ }
  for(const [spread,gain] of [[7,.035],[4,.09],[2,.24],[1,1]]) {
   for(const {v,style:s} of prepared) {
+   if(v[8]?.trailEdge)continue;
    const halo=spread>1;if(halo&&s.glow===0)continue;
    ctx.globalAlpha=clamp(s.alpha*gain*(halo?s.glow/.35:1));
    ctx.strokeStyle=ctx.fillStyle=s.ink;
@@ -61,6 +80,7 @@ export function renderVectors(ctx,vectors,{width=580,height=400,colorized=true,s
  }
  // The same resolved ink/alpha/glow controls endpoint dwell and point bloom.
  for(const {v,style:s} of prepared) {
+  if(v[8]?.trailEdge)continue;
   const points=v[0]===v[2]&&v[1]===v[3]?[[v[0],v[1]]]:[[v[0],v[1]],[v[2],v[3]]];
   for(const halo of [true,false]) {
    if(halo&&s.glow===0)continue;
@@ -68,6 +88,17 @@ export function renderVectors(ctx,vectors,{width=580,height=400,colorized=true,s
    const radius=s.width/2*(halo?1+2*s.glow:1.1);
    for(const p of points){ctx.beginPath();ctx.arc(...p,radius,0,Math.PI*2);ctx.fill();}
   }
+ }
+ // One expanding contact ring per point, despite the ROM drawing it twice.
+ const rings=new Set();
+ if(colorized)for(const {v,style:s} of prepared) {
+  if(!s.ringRadius||!s.glow||v[0]!==v[2]||v[1]!==v[3])continue;
+  const key=s.asset+':'+v[0]+':'+v[1];if(rings.has(key))continue;rings.add(key);
+  const signal=clamp(v[8]?.radarStrength??1);
+  const radius=2+(1-signal)*s.ringRadius;
+  ctx.save();ctx.strokeStyle=s.ink;ctx.shadowColor=s.ink;ctx.shadowBlur=4*s.glow;
+  ctx.globalAlpha=clamp(s.alpha*.45);ctx.lineWidth=.65+s.glow*.5;
+  ctx.beginPath();ctx.arc(v[0],v[1],radius,0,Math.PI*2);ctx.stroke();ctx.restore();
  }
  ctx.restore();
 }
@@ -88,13 +119,14 @@ export class RadarPersistence {
    if(this.history.length>24)this.history.shift();
   }
   const trails=[];
-  for(const entry of this.history) {
-   const age=time-entry.time;
-   if(entry.vectors===sweeps||age<=0)continue;
-   for(const v of entry.vectors) {
-    // The newest sweep is already in vectors; only retain older emissions.
-    if(sweeps.includes(v))continue;
-    const ghost=v.slice();ghost[8]={...v[8],trailStrength:.45*Math.exp(-age/.07)};
+  for(let i=0;i<this.history.length-1;i++) {
+   const entry=this.history[i],next=this.history[i+1],age=time-entry.time;
+   if(age<=0)continue;
+   for(let j=0;j<entry.vectors.length;j++) {
+    const v=entry.vectors[j],end=next.vectors[j];
+    if(!end||Math.hypot(v[0]-end[0],v[1]-end[1])>1)continue;
+    const ghost=v.slice();ghost[8]={...v[8],trailStrength:Math.exp(-age/.09),
+     trailNextStrength:Math.exp(-(time-next.time)/.09),trailEdge:[end[2],end[3]]};
     trails.push(ghost);
    }
   }

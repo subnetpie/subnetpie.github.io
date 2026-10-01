@@ -151,6 +151,7 @@ or minimum brightness floors in the renderer.
 | `brightness` | Light multiplier, 0–4. Zero hides the whole asset, including its fill. Values above one amplify unsaturated halo/highlight passes. |
 | `glow` | Halo strength and spread, 0–4. Zero leaves only the sharp beam and solid endpoint dwell. |
 | `displayIntensity` | Optional 0–15 display override. `null` restores the original vector intensity. Beam-blanked vectors stay invisible. |
+| `ringRadius` | Contact ring expansion in canvas pixels, 0–32. Defaults to 8 for enemy contacts; zero disables the ring. |
 | `fillOpacity` | Optional 0–1 opacity for the existing projected convex-hull fill. Defaults to .32 for obstacles and zero otherwise. |
 
 Live console updates take effect on existing vectors without a new game frame:
@@ -176,7 +177,7 @@ high-score color changes, live updates, original mode, and the radar ROM run.
 ## Radar phosphor persistence
 
 The sweep has its own `radarSweep` asset, tagged at CPU `$6b34–6b36`. In
-colorized mode only sweep vectors leave a 240 ms exponential trail; compass
+colorized mode only sweep vectors leave a continuous green fan with 240 ms exponential persistence; compass
 ticks and vision lines are never retained. Trail time uses CPU cycles, so pause
 and repeated settings redraws do not advance or duplicate the history.
 
@@ -184,5 +185,7 @@ Enemy point metadata captures the ROM's `$02e9` intensity (normalized against
 `$f0`) at `$6c33`. This multiplies both configured brightness and glow: the next
 sweep restores full bloom, then the original game reduces it between passes.
 Defaults are red, brightness 1.2, glow 1.0 for the contact; sweep defaults are
-green, brightness 1.0, glow .65. Color/brightness/glow live settings still apply
-to current and retained vectors. Original mode has no added trails/modulation.
+green, brightness 1.2, glow .9. A bright leading beam caps the smooth fan.
+A red contact ring expands and fades with the same ROM envelope; duplicate
+point writes produce only one ring. Color/brightness/glow live settings still apply
+to current and retained vectors. Original mode has no added trails, rings, or modulation.
