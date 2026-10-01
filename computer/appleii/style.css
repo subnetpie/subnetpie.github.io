@@ -664,9 +664,10 @@ body.joystick-disabled #joyStick {
 #buttonJoySettings {
   position: fixed;
   z-index: 24;
-  right: max(8px, env(safe-area-inset-right));
-  /* Dedicated lower-right control zone. The emulator gear owns upper-right. */
-  bottom: max(12px, env(safe-area-inset-bottom));
+  left: max(8px, env(safe-area-inset-left));
+  right: auto;
+  top: var(--emulator-top);
+  bottom: auto;
   width: 44px;
   height: 44px;
   display: grid;
@@ -685,9 +686,10 @@ body.joystick-disabled #joyStick {
   position: absolute;
   z-index: 25;
   position: fixed;
-  bottom: calc(max(12px, env(safe-area-inset-bottom)) + 52px);
-  right: max(8px, env(safe-area-inset-right));
-  left: auto;
+  top: calc(var(--emulator-top) + 52px);
+  bottom: auto;
+  left: max(8px, env(safe-area-inset-left));
+  right: auto;
   transform: none;
   width: min(300px, calc(100vw - 32px));
   grid-template-columns: repeat(3, minmax(0, 1fr));
