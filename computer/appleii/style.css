@@ -622,6 +622,13 @@ button,
 }
 #controls[hidden] { display: none !important; }
 #controls .button { width: 100%; min-height: 44px; opacity: 1; cursor: pointer; touch-action: manipulation; }
+#controls {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-auto-rows: minmax(44px, auto);
+}
+#controls:not([hidden]) { display: grid; }
+#buttonColor { grid-column: 1; }
+#buttonScanlines { grid-column: 2 / 4; }
 #buttonSettings:focus-visible, #controls button:focus-visible { outline: 3px solid #ffdf80; outline-offset: 2px; }
 
 #screenResolution {
