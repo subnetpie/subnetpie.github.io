@@ -670,7 +670,9 @@ body.joystick-disabled #joyControls {
   position: absolute;
   z-index: 24;
   right: 0;
-  bottom: 0;
+  /* Keep this control in the joystick region and away from the emulator gear,
+     which is fixed at the upper-right of the viewport. */
+  bottom: calc(100% + 8px);
   width: 44px;
   height: 44px;
   display: grid;
@@ -688,7 +690,7 @@ body.joystick-disabled #joyControls {
 #joyControls {
   position: absolute;
   z-index: 25;
-  bottom: 54px;
+  bottom: calc(100% + 60px);
   right: 0;
   left: auto;
   transform: none;
