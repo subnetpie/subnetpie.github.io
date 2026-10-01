@@ -667,10 +667,10 @@ body.joystick-disabled #joyControls {
 
 /* Keep joystick options tucked behind their own gear. */
 #buttonJoySettings {
-  grid-column: 3;
-  grid-row: 2;
-  justify-self: end;
-  align-self: center;
+  position: absolute;
+  z-index: 24;
+  right: 0;
+  bottom: 0;
   width: 44px;
   height: 44px;
   display: grid;
