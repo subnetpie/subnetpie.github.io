@@ -104,7 +104,7 @@ function presentScreen(forceResize=false) {
       ' '+audio.backend+
       ' frames:'+audio.frames+
       ' peak:'+audio.peak) : 'audio unavailable'
-  ].join('\\n');
+  ].join(String.fromCharCode(10));
   if(label.textContent!==text)label.textContent=text;
   // Keep the badge at the visible lower-right edge if landscape crops the canvas.
   const right=Math.max(4,window.innerWidth-Math.min(rect.right,window.innerWidth)+4)+'px';
