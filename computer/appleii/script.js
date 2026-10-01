@@ -379,7 +379,8 @@ function init() {
   attachHostKeyboard(motherboard.keyboard, motherboard.iigsEnabled ? motherboard.memory.adb : null, joyValues);
   if(motherboard.iigsEnabled) {
     screenMouse=attachTouchMouse(screenCanvas,motherboard.memory.adb);
-    document.getElementById('mouseHint').hidden=false;
+    const mouseHint = document.getElementById('mouseHint');
+    if (mouseHint) mouseHint.hidden = false;
   }
   presentScreen(true);
   showBootStatus(machineType === "iigs" ? "IIgs startup: motherboard constructed" : "Apple II startup: motherboard constructed");
