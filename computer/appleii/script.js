@@ -98,6 +98,7 @@ function presentScreen(forceResize=false) {
     'viewport '+vvW+' × '+vvH+' CSS px',
     'screen '+screen.width+' × '+screen.height+' CSS px',
     'DPR '+dpr,
+    'SHR scale '+(w/640)+'× integer · aspect 4:3',
     audio ? ('audio '+audio.state+' '+audio.sampleRate+'Hz'+
       ' unlock:'+(audio.unlocked?'yes':'no')+
       ' '+audio.backend+
