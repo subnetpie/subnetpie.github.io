@@ -12,28 +12,66 @@ import {attachHostKeyboard} from "./host_keyboard.js?v=20260930-gear";
 let emulatorSurface = null;
 let screenCanvas = null;
 
-// Presentation tiers use the 4:3 geometry of the IIgs RGB display.
-// The VGC remains native 640x200 internally; these are display/backing sizes.
+// GS/OS SHR is 640x200 logical video. The RGB monitor presents it as 4:3.
+// Keep the backing store at exact integer multiples of the 640-pixel raster;
+// fractional nearest-neighbour scaling of GS/OS dither creates visible bands.
 const SCREEN_RESOLUTIONS = Object.freeze([
-  [320, 240],
   [640, 480],
   [1280, 960],
-  [1920, 1440]
+  [1920, 1440],
+  [2560, 1920],
+  [3200, 2400]
 ]);
 
-function selectScreenResolution(rect) {
-  if(!screenCanvas) return SCREEN_RESOLUTIONS[1];
-  const dpr = Math.max(1, window.devicePixelRatio || 1);
-  const needW = Math.max(1, Math.round(rect.width * dpr));
-  const needH = Math.max(1, Math.round(rect.height * dpr));
-  return SCREEN_RESOLUTIONS.find(([w,h]) => w >= needW && h >= needH) ||
-         SCREEN_RESOLUTIONS[SCREEN_RESOLUTIONS.length - 1];
+function availableScreenBox() {
+  const vv=window.visualViewport;
+  const portrait=window.innerHeight>=window.innerWidth;
+  const width=vv?.width??window.innerWidth;
+  const height=vv?.height??window.innerHeight;
+  // Portrait keeps the screen below the 42px controls row.
+  const top=portrait ? Math.max(4,0)+42 : 0;
+  return {
+    width,
+    height:Math.max(1,height-top),
+    left:vv?.offsetLeft??0,
+    top:(vv?.offsetTop??0)+top,
+    portrait
+  };
+}
+
+function selectScreenResolutionForViewport() {
+  const box=availableScreenBox();
+  const dpr=Math.max(1,window.devicePixelRatio||1);
+  const maxW=box.width*dpr;
+  const maxH=box.height*dpr;
+  let chosen=SCREEN_RESOLUTIONS[0];
+  for(const tier of SCREEN_RESOLUTIONS) {
+    if(tier[0]<=maxW+0.5 && tier[1]<=maxH+0.5) chosen=tier;
+    else break;
+  }
+  return chosen;
+}
+
+function applyPixelPerfectScreenSize() {
+  if(!screenCanvas)return;
+  const box=availableScreenBox();
+  const dpr=Math.max(1,window.devicePixelRatio||1);
+  const [w,h]=selectScreenResolutionForViewport();
+  // One canvas backing pixel maps to one physical display pixel. Because every
+  // tier is N*640 by N*480, SHR columns remain uniform and the outer geometry
+  // is exactly 4:3.
+  const cssW=w/dpr, cssH=h/dpr;
+  screenCanvas.style.left=(box.left+box.width/2)+"px";
+  screenCanvas.style.top=(box.top+Math.max(0,(box.height-cssH)/2))+"px";
+  screenCanvas.style.width=cssW+"px";
+  screenCanvas.style.height=cssH+"px";
+  return [w,h];
 }
 
 function presentScreen(forceResize=false) {
   if(!screenCanvas || !emulatorSurface) return;
+  const [w,h] = applyPixelPerfectScreenSize() || SCREEN_RESOLUTIONS[0];
   const rect = screenCanvas.getBoundingClientRect();
-  const [w,h] = selectScreenResolution(rect);
   if(forceResize || screenCanvas.width !== w || screenCanvas.height !== h) {
     screenCanvas.width = w;
     screenCanvas.height = h;
@@ -913,31 +951,9 @@ function composeScreen() {
 
   document.body.style.backgroundColor = "#c4c1a0";
 
-  if (portrait) {
-    screenCanvas.style.left = "50%";
-    screenCanvas.style.top = "";
-    screenCanvas.style.width = "";
-    screenCanvas.style.height = "";
-
-    document.body.classList.toggle("symbols-mode", symbols);
-    return;
-  }
-
-  document.body.style.backgroundColor = "#0f0000";
-  // Fit an authentic 4:3 IIgs RGB display inside Safari's *visible* viewport.
-  // visualViewport excludes the portion obscured by Safari chrome and also
-  // tracks iPadOS viewport changes without involving the Retina backing size.
-  const vv = window.visualViewport;
-  const viewW = vv?.width ?? window.innerWidth;
-  const viewH = vv?.height ?? window.innerHeight;
-  const viewX = vv?.offsetLeft ?? 0;
-  const viewY = vv?.offsetTop ?? 0;
-  const cssW = Math.min(viewW, viewH * (4 / 3));
-  const cssH = cssW * (3 / 4);
-  screenCanvas.style.left = (viewX + viewW / 2) + "px";
-  screenCanvas.style.top = (viewY + Math.max(0, (viewH - cssH) / 2)) + "px";
-  screenCanvas.style.width = cssW + "px";
-  screenCanvas.style.height = cssH + "px";
+  document.body.classList.toggle("symbols-mode", portrait && symbols);
+  if(!portrait) document.body.style.backgroundColor = "#0f0000";
+  applyPixelPerfectScreenSize();
 }
 
 // MAIN FUNCTION //
