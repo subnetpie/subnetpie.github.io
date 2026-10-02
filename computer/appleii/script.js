@@ -146,7 +146,7 @@ function chooseArchiveImage(name, entries) {
   });
 }
 
-import { Motherboard } from "https://subnetpie.github.io/computer/appleii/motherboard.js?v=20260930-audio-hw1";
+import { Motherboard } from "https://subnetpie.github.io/computer/appleii/motherboard.js?v=20261002-iigs-dither-fit";
 
 class Drive {
   constructor(num, display, led, dialog, restart=true) {
