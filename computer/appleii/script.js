@@ -12,24 +12,15 @@ import {attachHostKeyboard} from "./host_keyboard.js?v=20260930-gear";
 let emulatorSurface = null;
 let screenCanvas = null;
 
-// GS/OS SHR is 640x200 logical video. The RGB monitor presents it as 4:3.
-// Keep the backing store at exact integer multiples of the 640-pixel raster;
-// fractional nearest-neighbour scaling of GS/OS dither creates visible bands.
-const SCREEN_RESOLUTIONS = Object.freeze([
-  [640, 480],
-  [1280, 960],
-  [1920, 1440],
-  [2560, 1920],
-  [3200, 2400]
-]);
-
+// IIgs SHR is 320/640 x 200 internally. 640-mode dither is resolved at
+// native resolution before presentation, so the final surface can use the
+// full available 4:3 monitor area without introducing LCD beat bands.
 function availableScreenBox() {
   const vv=window.visualViewport;
   const portrait=window.innerHeight>=window.innerWidth;
   const width=vv?.width??window.innerWidth;
   const height=vv?.height??window.innerHeight;
-  // Portrait keeps the screen below the 42px controls row.
-  const top=portrait ? Math.max(4,0)+42 : 0;
+  const top=portrait ? 46 : 0;
   return {
     width,
     height:Math.max(1,height-top),
@@ -39,28 +30,16 @@ function availableScreenBox() {
   };
 }
 
-function selectScreenResolutionForViewport() {
-  const box=availableScreenBox();
-  const dpr=Math.max(1,window.devicePixelRatio||1);
-  const maxW=box.width*dpr;
-  const maxH=box.height*dpr;
-  let chosen=SCREEN_RESOLUTIONS[0];
-  for(const tier of SCREEN_RESOLUTIONS) {
-    if(tier[0]<=maxW+0.5 && tier[1]<=maxH+0.5) chosen=tier;
-    else break;
-  }
-  return chosen;
-}
-
-function applyPixelPerfectScreenSize() {
+function applyScreenSize() {
   if(!screenCanvas)return;
   const box=availableScreenBox();
   const dpr=Math.max(1,window.devicePixelRatio||1);
-  const [w,h]=selectScreenResolutionForViewport();
-  // One canvas backing pixel maps to one physical display pixel. Because every
-  // tier is N*640 by N*480, SHR columns remain uniform and the outer geometry
-  // is exactly 4:3.
-  const cssW=w/dpr, cssH=h/dpr;
+  const cssW=Math.min(box.width,box.height*(4/3));
+  const cssH=cssW*(3/4);
+  // Match the canvas backing store directly to physical display pixels.
+  // There is no second browser rescale after this canvas.
+  const w=Math.max(1,Math.round(cssW*dpr));
+  const h=Math.max(1,Math.round(cssH*dpr));
   screenCanvas.style.left=(box.left+box.width/2)+"px";
   screenCanvas.style.top=(box.top+Math.max(0,(box.height-cssH)/2))+"px";
   screenCanvas.style.width=cssW+"px";
@@ -70,7 +49,7 @@ function applyPixelPerfectScreenSize() {
 
 function presentScreen(forceResize=false) {
   if(!screenCanvas || !emulatorSurface) return;
-  const [w,h] = applyPixelPerfectScreenSize() || SCREEN_RESOLUTIONS[0];
+  const [w,h] = applyScreenSize() || [640,480];
   const rect = screenCanvas.getBoundingClientRect();
   if(forceResize || screenCanvas.width !== w || screenCanvas.height !== h) {
     screenCanvas.width = w;
@@ -98,7 +77,7 @@ function presentScreen(forceResize=false) {
     'viewport '+vvW+' × '+vvH+' CSS px',
     'screen '+screen.width+' × '+screen.height+' CSS px',
     'DPR '+dpr,
-    'SHR scale '+(w/640)+'× integer · aspect 4:3',
+    'SHR 320/640 native · RGB dither blend · aspect 4:3',
     audio ? ('audio '+audio.state+' '+audio.sampleRate+'Hz'+
       ' unlock:'+(audio.unlocked?'yes':'no')+
       ' '+audio.backend+
@@ -940,7 +919,7 @@ function composeScreen() {
 
   document.body.classList.toggle("symbols-mode", portrait && symbols);
   if(!portrait) document.body.style.backgroundColor = "#0f0000";
-  applyPixelPerfectScreenSize();
+  applyScreenSize();
 }
 
 // MAIN FUNCTION //
