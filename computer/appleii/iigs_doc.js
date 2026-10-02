@@ -129,7 +129,11 @@ export class IIgsDOC {
         // Fixed mixer gain: starting/stopping one voice must not change
         // the volume of the others. The last enabled voice contributes 3x.
         const value=(sample-128)*o.volume*(n===this.enabledOscillators-1?3:1);
-        if(o.control&0x10)right+=value;else left+=value;
+        // ES5503 channel-select bit 4 selects the IIgs' channel 1 DAC.
+        // In the IIgs analog output ordering that is the left channel; channel
+        // 0 is right. Keep Web Audio channel 0/1 conventional by assigning
+        // the hardware channels here.
+        if(o.control&0x10)left+=value;else right+=value;
       }
       if(index>=length-1)this.finish(n,o,false);
     }
