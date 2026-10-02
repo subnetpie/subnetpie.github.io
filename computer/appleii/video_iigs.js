@@ -505,11 +505,12 @@ export class IIgsVideo {
       if(!this.dirtyLines[y]) continue;
       const scb=this.decodeSCB(y);
       if(scb.mode640) {
-        // Preserve the IIgs' native 640-mode pixel pattern exactly. System
-        // 6 deliberately uses alternating palette pixels for desktop fills;
-        // averaging those pairs turns the reference vertical dither into a
-        // flat lavender field.
         this.render640Line(y,scb,data);
+        // The AppleColor RGB monitor optically blended repeating adjacent
+        // 640-mode dither pixels. Modern LCD resampling exposes those columns
+        // as beat/banding patterns. Blend only stable repeating pairs; text,
+        // edges and isolated pixels remain at native 640-mode resolution.
+        this.blend640Line(y,data);
       } else {
         this.render320Line(y,scb,data);
       }
