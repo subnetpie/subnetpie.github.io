@@ -237,7 +237,7 @@ button,
   }
 
   #joyStick {
-    grid-template-columns: min(28vh, 180px) 1fr min(16vh, 100px);
+    grid-template-columns: min(56vh, 360px) 1fr min(32vh, 200px);
     align-items: end;
     pointer-events: none;
   }
@@ -272,8 +272,8 @@ button,
   #joyStick {
     top: calc(max(4px, env(safe-area-inset-top)) + 42px + (100vw * var(--screen-ratio)) + 12px);
   }
-  #joyPadCanvas { max-width: 300px; justify-self: start; }
-  #joyButtonsCanvas { max-width: 145px; justify-self: end; }
+  #joyPadCanvas { max-width: 600px; justify-self: start; }
+  #joyButtonsCanvas { max-width: 290px; justify-self: end; }
 
 }
 
