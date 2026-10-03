@@ -175,6 +175,7 @@ button,
   touch-action: none;
 }
 #joyPadCanvas {
+  opacity: 0.5;
   display: block;
   width: 100%;
   height: auto;
