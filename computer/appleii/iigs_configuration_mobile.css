@@ -1,0 +1,277 @@
+/* iPhone / touch-first presentation for the IIgs system configuration panel.
+   Hardware/configuration logic remains in iigs_configuration.js. */
+
+@media (hover: none) and (pointer: coarse), (max-width: 600px) {
+  body .iigs-config {
+    position: fixed !important;
+    inset: 0 !important;
+    width: 100vw !important;
+    max-width: none !important;
+    height: 100dvh !important;
+    max-height: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    overflow: hidden !important;
+    background: #b7bab9 !important;
+    font: 16px/1.3 -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif !important;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  body .iigs-config::backdrop {
+    background: #000 !important;
+  }
+
+  body .iigs-config form {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    height: 100dvh !important;
+    min-height: 0 !important;
+    padding:
+      max(8px, env(safe-area-inset-top))
+      max(10px, env(safe-area-inset-right))
+      0
+      max(10px, env(safe-area-inset-left)) !important;
+    overflow: hidden !important;
+  }
+
+  body .iigs-config-head {
+    flex: 0 0 auto;
+    display: grid !important;
+    grid-template-columns: auto 1fr auto !important;
+    align-items: center !important;
+    gap: 8px !important;
+    min-height: 54px !important;
+    margin: 0 !important;
+    padding: 4px 2px 10px !important;
+    border-bottom: 1px solid #7a7d7c;
+    background: #b7bab9;
+  }
+
+  body .iigs-config-head > div {
+    display: flex !important;
+    align-items: center !important;
+    gap: 5px !important;
+    font: 600 18px/1 -apple-system, BlinkMacSystemFont, system-ui, sans-serif !important;
+    white-space: nowrap;
+  }
+
+  body .iigs-config-head strong {
+    font-size: 27px !important;
+    line-height: 1 !important;
+  }
+
+  body .iigs-config-head h2 {
+    grid-column: 2 !important;
+    margin: 0 !important;
+    font-size: clamp(17px, 4.7vw, 21px) !important;
+    line-height: 1.1 !important;
+    text-align: center !important;
+  }
+
+  body .iigs-config-grid {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: block !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    padding: 12px 0 22px !important;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain;
+    scroll-padding-bottom: 120px;
+  }
+
+  body .iigs-config-grid > section {
+    margin: 0 0 14px !important;
+    padding: 12px !important;
+    border: 1px solid #838786;
+    border-radius: 12px;
+    background: #c8cbca;
+    box-shadow: inset 0 1px rgba(255,255,255,.45);
+  }
+
+  body .iigs-config h3 {
+    margin: 0 0 10px !important;
+    font-size: 18px !important;
+  }
+
+  body .iigs-slot-list {
+    padding: 7px !important;
+    border-radius: 10px !important;
+  }
+
+  body .iigs-slot-row {
+    display: grid !important;
+    grid-template-columns: 38px minmax(0, 1fr) !important;
+    align-items: center !important;
+    gap: 8px !important;
+    min-height: 58px !important;
+    margin: 5px 0 !important;
+  }
+
+  body .iigs-slot-row > span {
+    font-size: 18px !important;
+    font-weight: 800 !important;
+  }
+
+  body .iigs-slot-row select,
+  body .iigs-drive-route select {
+    width: 100% !important;
+    min-height: 52px !important;
+    padding: 8px 34px 8px 12px !important;
+    border-radius: 9px !important;
+    font-size: 16px !important; /* prevents Safari focus zoom */
+    line-height: 1.15 !important;
+    touch-action: manipulation !important;
+  }
+
+  body .iigs-slot-row select {
+    border: 2px solid #d8f5dc !important;
+    background: #078cc6 !important;
+    color: #fff !important;
+  }
+
+  body .iigs-slot-row.fixed select {
+    opacity: 1 !important;
+    background: #737b7c !important;
+    color: #fff !important;
+    -webkit-text-fill-color: #fff;
+  }
+
+  body .iigs-config-note,
+  body .iigs-config-warning {
+    font-size: 14px !important;
+    line-height: 1.35 !important;
+  }
+
+  body .iigs-drive-route {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 6px !important;
+    margin: 12px 0 !important;
+    font-weight: 700 !important;
+  }
+
+  body .iigs-storage-map {
+    margin-top: 14px !important;
+    padding: 8px !important;
+    gap: 7px !important;
+    border-radius: 10px;
+  }
+
+  body .iigs-storage-map div {
+    display: grid !important;
+    grid-template-columns: minmax(90px, .8fr) minmax(0, 1.2fr) !important;
+    align-items: center !important;
+    min-height: 50px !important;
+    gap: 8px !important;
+    padding: 9px 10px !important;
+    border-radius: 7px;
+  }
+
+  body .iigs-storage-map span {
+    text-align: right !important;
+    overflow-wrap: anywhere;
+  }
+
+  body .iigs-config-warning {
+    flex: 0 0 auto;
+    margin: 0 !important;
+    padding: 8px 4px !important;
+    background: #b7bab9;
+  }
+
+  body .iigs-config footer {
+    position: relative !important;
+    flex: 0 0 auto;
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+    margin: 0 !important;
+    padding:
+      10px
+      0
+      max(10px, env(safe-area-inset-bottom)) !important;
+    border-top: 1px solid #777 !important;
+    background: #b7bab9 !important;
+    box-shadow: 0 -8px 18px rgba(0,0,0,.12);
+  }
+
+  body .iigs-config footer > span {
+    display: none !important;
+  }
+
+  body .iigs-config button {
+    min-height: 52px !important;
+    padding: 9px 12px !important;
+    border-radius: 10px !important;
+    font-size: 16px !important;
+    font-weight: 700 !important;
+    touch-action: manipulation !important;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  body .iigs-config #iigsConfigDefaults {
+    grid-column: 1 !important;
+    grid-row: 1 !important;
+  }
+
+  body .iigs-config footer button[value="cancel"] {
+    grid-column: 2 !important;
+    grid-row: 1 !important;
+  }
+
+  body .iigs-config #iigsConfigSave {
+    grid-column: 1 / -1 !important;
+    grid-row: 2 !important;
+    min-height: 56px !important;
+    font-size: 17px !important;
+  }
+
+  body #buttonIIgsConfiguration {
+    min-height: 56px !important;
+    margin: .6rem 0 !important;
+    padding: 10px 12px !important;
+    border-radius: 10px !important;
+    font-size: 16px !important;
+    touch-action: manipulation !important;
+  }
+}
+
+/* Short landscape iPhones: keep the action bar reachable while maximizing
+   the scrollable configuration area. */
+@media (hover: none) and (pointer: coarse) and (orientation: landscape) and (max-height: 500px) {
+  body .iigs-config form {
+    padding-top: max(4px, env(safe-area-inset-top)) !important;
+  }
+  body .iigs-config-head {
+    min-height: 44px !important;
+    padding-bottom: 5px !important;
+  }
+  body .iigs-config-head > div {
+    font-size: 15px !important;
+  }
+  body .iigs-config-head strong {
+    font-size: 22px !important;
+  }
+  body .iigs-config-head h2 {
+    font-size: 17px !important;
+  }
+  body .iigs-config-grid {
+    padding-top: 8px !important;
+  }
+  body .iigs-config footer {
+    grid-template-columns: 1fr 1fr 1.35fr !important;
+  }
+  body .iigs-config #iigsConfigDefaults,
+  body .iigs-config footer button[value="cancel"],
+  body .iigs-config #iigsConfigSave {
+    grid-row: 1 !important;
+    grid-column: auto !important;
+    min-height: 48px !important;
+  }
+}
