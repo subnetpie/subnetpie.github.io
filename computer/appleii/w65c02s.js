@@ -952,7 +952,15 @@ export class W65C02S
 
     // step one instruction
     // returns cycles used for the operation
+    irq(state) { this.irqLine=!!state; }
     step() {
+        if(this.irqLine && !this.reg.flag.i) {
+            this.stack_push_word(this.reg.pc);
+            this.stack_push_byte((this.reg.flag.value|0x20)&~0x10);
+            this.reg.flag.i=true; this.reg.flag.d=false;
+            this.reg.pc=this.mem.read_word(0xfffe);
+            return 7;
+        }
         const pc=this.reg.pc;
         const opcode = this.mem.read(this.reg.pc++);
         if(this.trace) this.trace({pc,op:opcode,r:{a:this.reg.a,x:this.reg.x,y:this.reg.y,sp:this.reg.sp,p:this.reg.flag.value}});
@@ -1284,6 +1292,7 @@ export class W65C02S
     }
 
     reset() {
+        this.irqLine=false;
         //this.mem.reset();
         this.reg.reset();
     }

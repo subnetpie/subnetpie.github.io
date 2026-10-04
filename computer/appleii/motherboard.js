@@ -1,3 +1,4 @@
+import {Mockingboard} from "./mockingboard.js?v=20261004-mb1";
 //
 //  main class to tie components together
 //
@@ -9,7 +10,7 @@
 //  ref: https://en.wikipedia.org/wiki/Apple_II_character_set
 //
 
-import {W65C02S} from "https://subnetpie.github.io/computer/appleii/w65c02s.js?v=20260928-stacktiming1";
+import {W65C02S} from "https://subnetpie.github.io/computer/appleii/w65c02s.js?v=20261004-mb1";
 import {Memory} from "https://subnetpie.github.io/computer/appleii/memory.js";
 import {IIgsMemory} from "https://subnetpie.github.io/computer/appleii/iigs_memory.js?v=20260930-audio-hw1";
 import {W65C816} from "https://subnetpie.github.io/computer/appleii/w65c816.js?v=20260928-blend";
@@ -21,7 +22,7 @@ import {LoresDisplay} from "https://subnetpie.github.io/computer/appleii/display
 import {DoubleHiresDisplay} from "https://subnetpie.github.io/computer/appleii/display_double_hires.js?v=20260928-pageflipram1";
 import {Keyboard} from "https://subnetpie.github.io/computer/appleii/keyboard.js?v=20260930-keyboard";
 import {Floppy525} from "https://subnetpie.github.io/computer/appleii/FloppyWoz525.js";
-import {AppleAudio} from "https://subnetpie.github.io/computer/appleii/apple_audio.js?v=20260930-audio-hw1";
+import {AppleAudio} from "https://subnetpie.github.io/computer/appleii/apple_audio.js?v=20261004-mb1";
 import {ProDOSBlockDevice} from "https://subnetpie.github.io/computer/appleii/prodos_block.js?v=20260930-persist1";
 import {IIgsVideo} from "https://subnetpie.github.io/computer/appleii/video_iigs.js?v=20261002-dither-blend";
 import {MachineTrace} from "https://subnetpie.github.io/computer/appleii/machine_trace.js";
@@ -62,7 +63,7 @@ export class Motherboard
         if(this.iigsEnabled)this.keyboard.onChange=(value,down)=>this.memory.adb.setKeyData(value,down);
         this.cpu = this.iigsEnabled ? new W65C816(this.memory) : new W65C02S(this.memory);
         this.iigsIrq = {mega:false};
-        this.updateIIgsIRQ = () => this.cpu.irq(this.iigsIrq.mega);
+        this.updateIIgsIRQ = () => this.cpu.irq(this.iigsIrq.mega || this.iigsIrq.mockingboard);
         if(this.video_iigs) {
             this.video_iigs.scanlineIrq = state => this.memory.setExternalIrq("vgc",state);
         }
@@ -87,6 +88,13 @@ export class Motherboard
         this.prodosBlock = new ProDOSBlockDevice(7, this.iigsEnabled ? this.memory : this.legacyMemory);
 
         this.audio = new AppleAudio(khz);
+        this.mockingboard = new Mockingboard(this.memory, {
+            clock: () => this.cycles, hz: khz*1000,
+            flush: clock => this.audio.emitDocUntil(clock),
+            selected: () => this.iigsEnabled ? !!(this.memory.slotRom&16) && !this.memory.intCxRom : !this.io_manager?._cx_rom,
+            irq: state => { if(this.iigsEnabled) { this.iigsIrq.mockingboard=state; this.updateIIgsIRQ(); } else this.cpu.irq(state); }
+        });
+        this.audio.expansionSample = clock => this.mockingboard.sample(clock);
         this.io_manager = new IOManager(this.legacyMemory, this.keyboard,
                                         this.display_text, this.display_text_80,
                                         this.display_hires, this.display_double_hires, this.display_lores,
@@ -163,6 +171,8 @@ export class Motherboard
                 ? usedCpu * (IIGS_FAST_HZ / cpuHz) + slowWait
                 : usedCpu;
             this.cycles += usedMaster;
+            this.mockingboard.sync(this.cycles);
+            if(!this.audio.ac) this.mockingboard.audioClock=this.cycles;
 
             if(this.iigsEnabled && this.video_iigs) {
                 timed=this.perfEnabled ? performance.now() : 0;
@@ -267,6 +277,7 @@ export class Motherboard
         this.floppy525.reset();
         this.prodosBlock.reset();
         this.audio.reset();
+        this.mockingboard.reset();
         this.io_manager.reset();
 
         this.cycles = 0;

@@ -216,8 +216,9 @@ export class AppleAudio
             // AC coupling removes the held speaker's DC level after a beep.
             this.speakerFiltered=speaker-this.speakerPrevious+0.995*this.speakerFiltered;
             this.speakerPrevious=speaker;
-            this.docPcmLeft[n]=this.docSignalLeft+this.speakerFiltered;
-            this.docPcmRight[n]=this.docSignalRight+this.speakerFiltered;
+            const expansion=this.expansionSample?.(this.docNextClock);
+            this.docPcmLeft[n]=this.docSignalLeft+this.speakerFiltered+(expansion?.[0]||0);
+            this.docPcmRight[n]=this.docSignalRight+this.speakerFiltered+(expansion?.[1]||0);
             this.docNextClock += this.docStep;
         }
     }
