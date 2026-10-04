@@ -1,33 +1,20 @@
 // Load IIgs hardware configuration before the main module constructs the machine.
-// This script is parser-inserted before script.js, so a parser-inserted module
-// here executes first and can patch the controller prototypes deterministically.
-//
-// iPhone Safari: the emulator installs a document-level touch guard before this
-// file loads. Capture configuration-dialog gestures at window level first so
-// native select pickers and form buttons are never cancelled by that guard.
-(() => {
-  const allowConfigGesture = event => {
-    const target=event.target;
-    if(!(target instanceof Element) || !target.closest('#iigsConfigurationDialog')) return;
-    event.stopPropagation();
-  };
-  for(const type of ['pointerdown','touchstart','touchend','click'])
-    window.addEventListener(type,allowConfigGesture,{capture:true,passive:true});
-})();
-
+// The document-level touch guard explicitly exempts native controls and the
+// IIgs configuration dialog, so do not stop propagation here: a capture-phase
+// stop would prevent Safari from ever delivering taps to select/button targets.
 if(document.readyState === 'loading') {
-  document.write('<link rel="stylesheet" href="./iigs_configuration_mobile.css?v=20261004-touch2">');
-  document.write('<script type="module" src="./iigs_configuration.js?v=20261004-slots-drives2"><\/script>');
-  document.write('<script type="module" src="./iigs_slot4_devices.js?v=20261004-slot4-mouse-mb1"><\/script>');
+  document.write('<link rel="stylesheet" href="./iigs_configuration_mobile.css?v=20261004-touch3">');
+  document.write('<script type="module" src="./iigs_configuration.js?v=20261004-slots-drives3"><\/script>');
+  document.write('<script type="module" src="./iigs_slot4_devices.js?v=20261004-slot4-mouse-mb2"><\/script>');
 } else {
   if(!document.querySelector('link[href*="iigs_configuration_mobile.css"]')) {
     const link=document.createElement('link');
     link.rel='stylesheet';
-    link.href='./iigs_configuration_mobile.css?v=20261004-touch2';
+    link.href='./iigs_configuration_mobile.css?v=20261004-touch3';
     document.head.append(link);
   }
-  import('./iigs_configuration.js?v=20261004-slots-drives2').then(() =>
-    import('./iigs_slot4_devices.js?v=20261004-slot4-mouse-mb1'));
+  import('./iigs_configuration.js?v=20261004-slots-drives3').then(() =>
+    import('./iigs_slot4_devices.js?v=20261004-slot4-mouse-mb2'));
 }
 
 // Independent emulator and joystick settings menus.
