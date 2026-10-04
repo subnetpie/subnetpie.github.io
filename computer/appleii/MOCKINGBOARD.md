@@ -18,16 +18,20 @@ audio locked or muted. Speech is mixed with AY, speaker and DOC audio.
 
 The speech backend uses Chris Foxwell’s recordings distributed with AppleWin
 (GPL-2.0-or-later); see vendor/SSI263-NOTICE.md. Duration, rate, amplitude,
-power-down and completion interrupts are implemented. Inflection/articulation
-registers are stored but their analog response is not synthesized; filter
-frequency is approximated. Resampling phonemes to duration also changes their
-pitch. This is recognizable sample-based speech, not analog-chip fidelity.
+power-down and completion interrupts are implemented. Pitch is independent of
+phoneme duration and rate. Immediate inflection, transitioned pitch, articulation
+blending and filter-frequency controls affect the sampled output. Frame/phoneme
+modes and interrupt-disable mode preserve the chip’s mode-latching behavior.
+Pitch glides, articulation and filtering are approximations; this is recognizable
+sample-based speech, not analog-chip fidelity.
 Phoneme 1 substitutes phoneme 2, matching the source sample set.
 
 Scope limitations: SC-01 speech, a second card,
 VIA external pin handshakes/shift-register modes and T2 external pulse counting
-are not emulated. Timing is at instruction boundaries; this is not a claim of
-cycle-exact MAME equivalence or tested compatibility with every music player.
+are not emulated. The 65C02 timestamps card accesses within instructions and
+performs indexed-store dummy reads needed by speech software. IIgs card timing
+remains at instruction boundaries. This is not a claim of cycle-exact MAME
+equivalence or tested compatibility with every music player.
 
 Hardware references:
 - https://www.reactivemicro.com/product/mockingboard-assembled-or-kit/
@@ -37,4 +41,11 @@ Hardware references:
 
 Validation: `node --test computer/appleii/ssi263.test.mjs computer/appleii/mockingboard.test.mjs computer/appleii/w65c02_timing.test.mjs`.
 Tests cover chip independence, readback, IRQ acknowledgement/reload, stereo PCM,
-reset, and register/IRQ routing through both complete motherboard types.
+reset, speech pitch/duration separation, articulation, mode latching, indexed-store
+side effects, and register/IRQ routing through both complete motherboard types.
+
+Independent validation: mb-audit v1.61 passes the automated checks preceding its
+manual reset prompt and reaches the interactive tone tests. The reset prompt was
+skipped with Escape; manual reset and listening checks have not been verified.
+Diagnostic source and disk: https://github.com/tomcw/mb-audit/releases/tag/v1.61
+SSI-263 reference: https://downloads.reactivemicro.com/Electronics/Speech/SSI-263A%20Data%20Sheet%20v2.pdf

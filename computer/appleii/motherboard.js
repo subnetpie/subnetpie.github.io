@@ -1,4 +1,4 @@
-import {Mockingboard} from "./mockingboard.js?v=20261004-speech1";
+import {Mockingboard} from "./mockingboard.js?v=20261004-mb-complete1";
 //
 //  main class to tie components together
 //
@@ -10,7 +10,7 @@ import {Mockingboard} from "./mockingboard.js?v=20261004-speech1";
 //  ref: https://en.wikipedia.org/wiki/Apple_II_character_set
 //
 
-import {W65C02S} from "https://subnetpie.github.io/computer/appleii/w65c02s.js?v=20261004-mb1";
+import {W65C02S} from "https://subnetpie.github.io/computer/appleii/w65c02s.js?v=20261004-mb-complete1";
 import {Memory} from "https://subnetpie.github.io/computer/appleii/memory.js";
 import {IIgsMemory} from "https://subnetpie.github.io/computer/appleii/iigs_memory.js?v=20260930-audio-hw1";
 import {W65C816} from "https://subnetpie.github.io/computer/appleii/w65c816.js?v=20260928-blend";
@@ -89,7 +89,7 @@ export class Motherboard
 
         this.audio = new AppleAudio(khz);
         this.mockingboard = new Mockingboard(this.memory, {
-            clock: () => this.cycles, hz: khz*1000,
+            clock: () => this.cycles+(this.iigsEnabled?0:(this.cpu.busCycleOffset||0)), hz: khz*1000,
             flush: clock => this.audio.emitDocUntil(clock),
             selected: () => this.iigsEnabled ? !!(this.memory.slotRom&16) && !this.memory.intCxRom : !this.io_manager?._cx_rom,
             irq: state => { if(this.iigsEnabled) { this.iigsIrq.mockingboard=state; this.updateIIgsIRQ(); } else this.cpu.irq(state); }

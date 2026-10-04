@@ -48,3 +48,21 @@ test('Apple II and IIgs route slot registers and mix stereo PCM through existing
   board.reset();assert.equal(board.mockingboard.via[0].irq,false);
  }
 });
+
+test('AY reset invalidates the address latch until a new register is selected',()=>{
+ const c=card();ayWrite(c,0xc400,2,7);c.write(0xc400,0);c.write(0xc400,4);
+ c.write(0xc401,0x42);c.write(0xc400,6);c.write(0xc400,4);
+ assert.ok(c.m.ay[0].reg.every(value=>value===0));
+});
+test('one-shot T1 keeps reloading with visible FFFF but produces only one interrupt',()=>{
+ const c=card();c.write(0xc404,4);c.write(0xc405,0);c.write(0xc40e,192);
+ c.tick(6);assert.equal(c.read(0xc405),255);assert.equal(c.read(0xc404),255);assert.equal(c.irq(),false);
+ c.tick(1);assert.equal(c.read(0xc404),4);c.tick(6);assert.equal(c.read(0xc404),4);assert.equal(c.irq(),false);
+});
+test('indexed 65C02 stores acknowledge timer through the SSI/VIA alias dummy read',()=>{
+ const {m,write,read,tick}=card();const bytes=new Uint8Array(65536);
+ const bus={read:a=>read(a)??bytes[a],write:(a,v)=>{if(write(a,v)===undefined)bytes[a]=v;},read_word:a=>bytes[a]|bytes[a+1]<<8};
+ const cpu=new W65C02S(bus);cpu.reset();cpu.reg.pc=0x200;cpu.reg.x=4;bytes.set([0x9d,0x40,0xc4],0x200);
+ write(0xc404,0);write(0xc405,0);tick(2);assert.equal(m.via[0].r[13]&64,64);
+ assert.equal(cpu.step(),5);assert.equal(m.via[0].r[13]&64,0);
+});

@@ -954,6 +954,7 @@ export class W65C02S
     // returns cycles used for the operation
     irq(state) { this.irqLine=!!state; }
     step() {
+        this.busCycleOffset=0;
         if(this.irqLine && !this.reg.flag.i) {
             this.stack_push_word(this.reg.pc);
             this.stack_push_byte((this.reg.flag.value|0x20)&~0x10);
@@ -1263,7 +1264,20 @@ export class W65C02S
                         const fp = this[opname];
                         this.op[opnum] = () => {
                             memfn.init();
+                            // Timestamp the data access within this instruction for
+                            // clocked expansion cards (operand fetches precede it).
+                            this.busCycleOffset=memfn.cycles-1+
+                                ((opname==='sta'||opname==='stx'||opname==='sty'||opname==='stz') ? (memfn.store_extra_cycles||0) :
+                                (memfn.page_crossed?.() && pageCrossReadOps.has(opname) ? 1 : 0));
+                            if((opname==='sta'||opname==='stz') &&
+                               (memfn.name==='absolute_x'||memfn.name==='absolute_y')) {
+                                // Indexed stores perform a read before the write.
+                                // Mockingboard SSI aliases rely on its VIA timer
+                                // acknowledgement side effects (eg. Willy Byte).
+                                this.busCycleOffset--; memfn.read(); this.busCycleOffset++;
+                            }
                             let cycles = fp.call(this, memfn, opnum);
+                            this.busCycleOffset=0;
                             if(memfn.page_crossed && memfn.page_crossed() &&
                                pageCrossReadOps.has(opname))
                                 cycles++;

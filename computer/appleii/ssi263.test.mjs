@@ -51,3 +51,24 @@ test('speech reaches the shared stereo audio queue on Apple II and IIgs',async()
   board.reset();assert.equal(board.mockingboard.speech[1].poweredDown,true);
  }
 });
+
+test('frame timing stays latched while duration bits change, and IRQ-disable preserves mode',()=>{
+ const c=new SSI263();c.write(0,0x42,0);c.write(2,0xa8,0);c.write(3,15,0);
+ const frame=c.duration();c.write(0,0xc2,1);assert.equal(c.mode,1);assert.equal(c.duration(),frame);
+ c.write(3,128,2);c.write(0,2,2);c.write(3,15,2);assert.equal(c.enabled,false);assert.equal(c.mode,1);assert.equal(c.duration(),frame);
+});
+test('pitch is independent of duration and rate; immediate and transitioned inflection differ',()=>{
+ const c=new SSI263();speak(c);c.write(1,0x50,0);c.write(2,0xa8,0);c.sample(1);
+ const pitch=c.pitchHz();assert.ok(Math.abs(pitch-1023000/(8*(4096-0xa80)))<1e-9);
+ c.write(0,0x42,1);c.write(2,0xd8,1);c.sample(2);assert.equal(c.pitchHz(),pitch);
+ c.write(1,0x70,2);c.sample(3);assert.ok(c.pitchHz()>pitch);
+ c.write(3,128,4);c.write(0,0xc2,4);c.write(1,0x50,4);c.write(3,15,4);c.write(1,0x70,4);c.sample(1004);
+ assert.ok(c.pitchHz()>pitch);assert.ok(c.pitchCode<0xb80);
+});
+test('articulation blends phoneme transitions and filter frequency affects timbre',()=>{
+ const a=new SSI263(),b=new SSI263();speak(a);speak(b);a.sample(1000);b.sample(1000);
+ a.write(3,0x0f,1000);b.write(3,0x7f,1000);a.write(0,0x91,1000);b.write(0,0x91,1000);
+ assert.notEqual(a.sample(4000),b.sample(4000));
+ const c=new SSI263(),d=new SSI263();speak(c);speak(d);c.write(4,0xe9,0);d.write(4,0x80,0);
+ assert.notEqual(c.sample(1000),d.sample(1000));assert.equal(c.pitchHz(),d.pitchHz());
+});

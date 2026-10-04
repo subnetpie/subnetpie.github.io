@@ -1,10 +1,10 @@
-import {SSI263} from './ssi263.js?v=20261004-speech1';
+import {SSI263} from './ssi263.js?v=20261004-mb-complete1';
 // Mockingboard v2.2 with SSI-263 speech, slot 4.
 // Register wiring: MAME 0.289 a2mockingboard.cpp; AY-3-8913 and R6522 data sheets.
 const LEVELS=[0,.00999,.01445,.02106,.03070,.04555,.06450,.10736,.12659,.20499,.29221,.37284,.49253,.63532,.80558,1];
 export class AY8913 {
   constructor(){this.reset();}
-  reset(){this.reg=new Uint8Array(16);this.address=0;this.phase=0;this.count=[0,0,0];this.out=[0,0,0];this.noiseCount=0;this.noise=1;this.envCount=0;this.envStep=15;this.attack=0;this.holding=false;}
+  reset(){this.reg=new Uint8Array(16);this.address=255;this.phase=0;this.count=[0,0,0];this.out=[0,0,0];this.noiseCount=0;this.noise=1;this.envCount=0;this.envStep=15;this.attack=0;this.holding=false;}
   write(value){
     const r=this.address;if(r>15)return;
     const masks=[255,15,255,15,255,15,31,255,31,31,31,255,255,15,255,255];
@@ -82,12 +82,18 @@ export class VIA6522 {
     }
   }
   tick(cycles){
-    this.t1-=cycles;
-    if(this.t1<0){
-      if(this.active1){this.r[13]|=64;this.pb7^=1;}
-      if(this.active1&&(this.r[11]&64)){while(this.t1<0)this.t1+=this.latch1+2;}
-      else {this.active1=false;this.t1&=65535;}
+    const period=this.latch1+2;
+    const nextEvent=this.t1>=0?this.t1+1:period;
+    const events=cycles>=nextEvent?1+Math.floor((cycles-nextEvent)/period):0;
+    if(events && this.active1){
+      this.r[13]|=64;
+      if(this.r[11]&64)this.pb7^=events&1;
+      else {this.pb7=1;this.active1=false;}
     }
+    this.t1-=cycles;
+    // T1 reloads even in one-shot mode; only IRQ generation is one-shot.
+    // $FFFF is visible for one clock before the latch is reloaded.
+    if(this.t1< -1)this.t1+=Math.ceil((-1-this.t1)/period)*period;
     if(!(this.r[11]&32)){
       this.t2-=cycles;
       if(this.t2<0){if(this.active2)this.r[13]|=32;this.active2=false;this.t2&=65535;}
