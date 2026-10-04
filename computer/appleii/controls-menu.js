@@ -1,3 +1,12 @@
+// Load IIgs hardware configuration before the main module constructs the machine.
+// This script is parser-inserted before script.js, so a parser-inserted module
+// here executes first and can patch the controller prototypes deterministically.
+if(document.readyState === 'loading') {
+  document.write('<script type="module" src="./iigs_configuration.js?v=20261004-slots-drives1"><\/script>');
+} else {
+  import('./iigs_configuration.js?v=20261004-slots-drives1');
+}
+
 // Independent emulator and joystick settings menus.
 (() => {
   const definitions = [
