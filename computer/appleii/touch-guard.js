@@ -4,8 +4,12 @@
 (() => {
   const options = {capture: true, passive: false};
   const preventGesture = (event) => {
-    // Allow native label activation to open the file picker on iOS.
-    if(event.target instanceof Element && event.target.closest('input, #buttonSettings, #controls, #buttonLoad, #archiveDialog, #mediaDialog')) return;
+    // Allow native controls and dialogs to complete their normal Safari touch
+    // activation. In particular, preventing pointerdown/touchend on <select>
+    // suppresses the iOS picker and can also prevent form buttons from firing.
+    if(event.target instanceof Element && event.target.closest(
+      'input, select, button, label, #buttonSettings, #controls, #buttonLoad, #archiveDialog, #mediaDialog, #iigsConfigurationDialog'
+    )) return;
     if(event.cancelable) event.preventDefault();
   };
   for(const type of ['touchend', 'dblclick', 'gesturestart', 'gesturechange', 'gestureend']) {
