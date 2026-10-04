@@ -2,8 +2,15 @@
 // This script is parser-inserted before script.js, so a parser-inserted module
 // here executes first and can patch the controller prototypes deterministically.
 if(document.readyState === 'loading') {
+  document.write('<link rel="stylesheet" href="./iigs_configuration_mobile.css?v=20261004-touch1">');
   document.write('<script type="module" src="./iigs_configuration.js?v=20261004-slots-drives1"><\/script>');
 } else {
+  if(!document.querySelector('link[href*="iigs_configuration_mobile.css"]')) {
+    const link=document.createElement('link');
+    link.rel='stylesheet';
+    link.href='./iigs_configuration_mobile.css?v=20261004-touch1';
+    document.head.append(link);
+  }
   import('./iigs_configuration.js?v=20261004-slots-drives1');
 }
 
