@@ -18,6 +18,7 @@
 if(document.readyState === 'loading') {
   document.write('<link rel="stylesheet" href="./iigs_configuration_mobile.css?v=20261004-touch2">');
   document.write('<script type="module" src="./iigs_configuration.js?v=20261004-slots-drives2"><\/script>');
+  document.write('<script type="module" src="./iigs_slot4_devices.js?v=20261004-slot4-mouse-mb1"><\/script>');
 } else {
   if(!document.querySelector('link[href*="iigs_configuration_mobile.css"]')) {
     const link=document.createElement('link');
@@ -25,7 +26,8 @@ if(document.readyState === 'loading') {
     link.href='./iigs_configuration_mobile.css?v=20261004-touch2';
     document.head.append(link);
   }
-  import('./iigs_configuration.js?v=20261004-slots-drives2');
+  import('./iigs_configuration.js?v=20261004-slots-drives2').then(() =>
+    import('./iigs_slot4_devices.js?v=20261004-slot4-mouse-mb1'));
 }
 
 // Independent emulator and joystick settings menus.
