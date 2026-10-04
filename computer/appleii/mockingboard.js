@@ -1,4 +1,5 @@
-// Mockingboard v2.2 (unpopulated speech sockets), slot 4.
+import {SSI263} from './ssi263.js?v=20261004-speech1';
+// Mockingboard v2.2 with SSI-263 speech, slot 4.
 // Register wiring: MAME 0.289 a2mockingboard.cpp; AY-3-8913 and R6522 data sheets.
 const LEVELS=[0,.00999,.01445,.02106,.03070,.04555,.06450,.10736,.12659,.20499,.29221,.37284,.49253,.63532,.80558,1];
 export class AY8913 {
@@ -36,8 +37,13 @@ export class AY8913 {
 }
 export class VIA6522 {
   constructor(ay,changed){this.ay=ay;this.changed=changed;this.reset();}
-  reset(){this.r=new Uint8Array(16);this.t1=0xffff;this.t2=0xffff;this.latch1=0xffff;this.latch2=0xffff;this.active1=false;this.active2=false;this.pb7=1;this.changed?.();}
+  reset(){this.r=new Uint8Array(16);this.t1=0xffff;this.t2=0xffff;this.latch1=0xffff;this.latch2=0xffff;this.active1=false;this.active2=false;this.pb7=1;this.ca1Level=true;this.changed?.();}
   get irq(){return !!(this.r[13]&this.r[14]&0x7f);}
+  ca1(request){
+    const level=!request;
+    if(this.ca1Level!==level && level===!!(this.r[12]&1)) {this.r[13]|=2;this.changed();}
+    this.ca1Level=level;
+  }
   clear(mask){this.r[13]&=~mask;this.changed();}
   bus(){
     const control=(this.r[0]&this.r[2])|(~this.r[2]&255);
@@ -49,7 +55,7 @@ export class VIA6522 {
   read(reg){
     switch(reg){
       case 0:return ((this.r[0]&this.r[2])|(~this.r[2]&255))&~(this.r[11]&128) | ((this.r[11]&128)?this.pb7<<7:0);
-      case 1:case 15:{const control=(this.r[0]&this.r[2])|(~this.r[2]&255);const input=(control&7)===5?(this.ay.reg[this.ay.address]??255):255;return (this.r[1]&this.r[3])|(input&~this.r[3]);}
+      case 1:case 15:{if(reg===1)this.clear(2);const control=(this.r[0]&this.r[2])|(~this.r[2]&255);const input=(control&7)===5?(this.ay.reg[this.ay.address]??255):255;return (this.r[1]&this.r[3])|(input&~this.r[3]);}
       case 4:this.clear(64);return this.t1&255;
       case 5:return (this.t1>>>8)&255;
       case 6:return this.latch1&255;
@@ -64,7 +70,7 @@ export class VIA6522 {
   write(reg,value){
     value&=255;
     switch(reg){
-      case 0:case 1:case 2:case 3:case 15:this.r[reg===15?1:reg]=value;this.bus();break;
+      case 0:case 1:case 2:case 3:case 15:if(reg===1)this.clear(2);this.r[reg===15?1:reg]=value;this.bus();break;
       case 4:case 6:this.latch1=(this.latch1&0xff00)|value;break;
       case 5:this.latch1=(value<<8)|(this.latch1&255);this.t1=this.latch1+1;this.active1=true;this.pb7=0;this.clear(64);break;
       case 7:this.latch1=(value<<8)|(this.latch1&255);this.clear(64);break;
@@ -95,15 +101,21 @@ export class Mockingboard {
     this.ay=[new AY8913(),new AY8913()];
     this.via=[];
     for(const ay of this.ay)this.via.push(new VIA6522(ay,()=>this.updateIRQ()));
+    this.speech=this.via.map(via=>new SSI263({hz,request:state=>via.ca1(state)}));
     this.reset();
     memory.add_read_hook(addr=>{if(!this.handles(addr))return;this.sync(this.clock());return this.via[(addr>>7)&1].read(addr&15);});
-    memory.add_write_hook((addr,value)=>{if(!this.handles(addr))return;this.sync(this.clock());this.flush(this.clock());this.via[(addr>>7)&1].write(addr&15,value);return true;});
+    memory.add_write_hook((addr,value)=>{if(!this.handles(addr))return;this.sync(this.clock());this.flush(this.clock());this.via[(addr>>7)&1].write(addr&15,value);
+      // Speech address decoding is independent of the mirrored VIA registers.
+      // Primary speech at C440 drives the second VIA CA1; C420 drives the first.
+      if(addr&0x40)this.speech[1].write(addr&7,value,this.clock());
+      if(addr&0x20)this.speech[0].write(addr&7,value,this.clock());
+      return true;});
   }
   handles(addr){const bank=addr>>>16;return (bank===0||bank===1||bank===0xe0||bank===0xe1)&&(addr&0xff00)===0xc400&&this.selected();}
   updateIRQ(){this.irq(this.via.some(v=>v.irq));}
-  reset(){this.lastClock=0;this.audioClock=0;this.fraction=0;this.previous=[0,0];this.filtered=[0,0];for(const ay of this.ay)ay.reset();for(const via of this.via)via.reset();this.updateIRQ();}
-  sync(clock){const elapsed=Math.max(0,clock-this.lastClock);this.lastClock=clock;this.fraction+=elapsed*1020500/this.hz;const ticks=Math.floor(this.fraction);this.fraction-=ticks;if(ticks)for(const via of this.via)via.tick(ticks);}
+  reset(){this.lastClock=0;this.audioClock=0;this.fraction=0;this.previous=[0,0];this.filtered=[0,0];for(const ay of this.ay)ay.reset();for(const via of this.via)via.reset();for(const speech of this.speech)speech.reset();this.updateIRQ();}
+  sync(clock){const elapsed=Math.max(0,clock-this.lastClock);this.lastClock=clock;this.fraction+=elapsed*1020500/this.hz;const ticks=Math.floor(this.fraction);this.fraction-=ticks;if(ticks)for(const via of this.via)via.tick(ticks);for(const speech of this.speech)speech.sync(clock);}
   sample(clock){const elapsed=Math.max(0,clock-this.audioClock)*1020500/this.hz;this.audioClock=clock;
-    return this.ay.map((ay,i)=>{const raw=ay.advance(elapsed);this.filtered[i]=raw-this.previous[i]+.995*this.filtered[i];this.previous[i]=raw;return this.filtered[i];});
+    return this.ay.map((ay,i)=>{const raw=ay.advance(elapsed);this.filtered[i]=raw-this.previous[i]+.995*this.filtered[i];this.previous[i]=raw;return this.filtered[i]+this.speech[i].sample(clock);});
   }
 }

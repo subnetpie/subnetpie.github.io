@@ -1,4 +1,4 @@
-import {Mockingboard} from "./mockingboard.js?v=20261004-mb1";
+import {Mockingboard} from "./mockingboard.js?v=20261004-speech1";
 //
 //  main class to tie components together
 //
