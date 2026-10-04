@@ -1,17 +1,31 @@
 // Load IIgs hardware configuration before the main module constructs the machine.
 // This script is parser-inserted before script.js, so a parser-inserted module
 // here executes first and can patch the controller prototypes deterministically.
+//
+// iPhone Safari: the emulator installs a document-level touch guard before this
+// file loads. Capture configuration-dialog gestures at window level first so
+// native select pickers and form buttons are never cancelled by that guard.
+(() => {
+  const allowConfigGesture = event => {
+    const target=event.target;
+    if(!(target instanceof Element) || !target.closest('#iigsConfigurationDialog')) return;
+    event.stopPropagation();
+  };
+  for(const type of ['pointerdown','touchstart','touchend','click'])
+    window.addEventListener(type,allowConfigGesture,{capture:true,passive:true});
+})();
+
 if(document.readyState === 'loading') {
-  document.write('<link rel="stylesheet" href="./iigs_configuration_mobile.css?v=20261004-touch1">');
-  document.write('<script type="module" src="./iigs_configuration.js?v=20261004-slots-drives1"><\/script>');
+  document.write('<link rel="stylesheet" href="./iigs_configuration_mobile.css?v=20261004-touch2">');
+  document.write('<script type="module" src="./iigs_configuration.js?v=20261004-slots-drives2"><\/script>');
 } else {
   if(!document.querySelector('link[href*="iigs_configuration_mobile.css"]')) {
     const link=document.createElement('link');
     link.rel='stylesheet';
-    link.href='./iigs_configuration_mobile.css?v=20261004-touch1';
+    link.href='./iigs_configuration_mobile.css?v=20261004-touch2';
     document.head.append(link);
   }
-  import('./iigs_configuration.js?v=20261004-slots-drives1');
+  import('./iigs_configuration.js?v=20261004-slots-drives2');
 }
 
 // Independent emulator and joystick settings menus.
@@ -57,7 +71,7 @@ if(document.readyState === 'loading') {
 
   document.addEventListener('keydown', event => {
     if(event.key !== 'Escape') return;
-    const menu=menus.find(({panel}) => !panel.hidden);
+    const menu=menus.find(menu => !menu.panel.hidden);
     if(!menu) return;
     event.preventDefault();
     event.stopImmediatePropagation();
