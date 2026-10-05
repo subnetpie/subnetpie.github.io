@@ -20,10 +20,21 @@ function applySlot4(board){
   if(!board?.iigsEnabled || !board.memory)return;
   const mode=loadMode();
   board.iigsSlot4Device=mode;
-  // IIgs SLOTROM bit 4 selects the external slot-4 card ROM. Clearing it
-  // leaves ROM 03's built-in slot-4 mouse firmware visible.
+
+  // Persist the control-panel hardware choice even if ROM03 or compatibility
+  // software later rewrites SLOTROM ($C02D). A configured external Mockingboard
+  // must remain physically present at $C400-$C4FF for Apple II software probes.
   if(mode==="mockingboard") board.memory.slotRom|=0x10;
   else board.memory.slotRom&=~0x10;
+
+  // Motherboard's default IIgs Mockingboard gate also checks the live SLOTROM /
+  // INTCXROM state. That can make an explicitly configured card disappear after
+  // boot when compatibility software changes those firmware-selection latches.
+  // Once Slot 4 is configured as Mockingboard, make the actual card decode
+  // authoritative until the user changes the saved Slot 4 device.
+  if(board.mockingboard) {
+    board.mockingboard.selected=()=>board.iigsSlot4Device==="mockingboard";
+  }
 }
 
 const originalReset=Motherboard.prototype.reset;
