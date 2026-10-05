@@ -33,6 +33,29 @@ if(!Mockingboard.prototype.__iigsConfiguredSlot4Decode){
   };
 }
 
+function installLegacyMockingboardIrqVector(board){
+  if(!board?.iigsEnabled || !board.memory?.read_vector ||
+     board.memory.__legacyMockingboardIrqVector)return;
+
+  const readIIgsVector=board.memory.read_vector.bind(board.memory);
+  board.memory.__legacyMockingboardIrqVector=true;
+  board.memory.read_vector=function(addr){
+    // Apple II Mockingboard titles install a 6502 IRQ handler through the
+    // bank-$00 compatibility vector. ROM 03 normally vector-pulls an emulation
+    // mode IRQ from bank $FF instead; Skyfox then enters the native IIgs IRQ
+    // dispatcher and never reaches its VIA acknowledgement routine, leaving the
+    // level-triggered Timer-1 IRQ asserted forever. Only redirect the hardware
+    // IRQ vector while the 65816 is in emulation mode and Slot 4 Mockingboard is
+    // the source. Native IIgs DOC/SCC/VGC/ADB IRQs keep the normal ROM03 vector.
+    if((addr&0xffff)===0xfffe &&
+       board.iigsSlot4Device==="mockingboard" &&
+       board.iigsIrq?.mockingboard &&
+       board.cpu?.register?.e)
+      return this.read_word(addr&0xffff);
+    return readIIgsVector(addr);
+  };
+}
+
 function applySlot4(board){
   if(!board?.iigsEnabled || !board.memory)return;
   const mode=loadMode();
@@ -44,6 +67,7 @@ function applySlot4(board){
   if(board.mockingboard) {
     board.mockingboard.selected=()=>board.iigsSlot4Device==="mockingboard";
   }
+  installLegacyMockingboardIrqVector(board);
 }
 
 const originalReset=Motherboard.prototype.reset;
