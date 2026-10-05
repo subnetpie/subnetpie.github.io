@@ -1,4 +1,4 @@
-import {Motherboard} from "https://subnetpie.github.io/computer/appleii/motherboard.js?v=20261004-mb-complete1";
+import {Motherboard} from "https://subnetpie.github.io/computer/appleii/motherboard.js?v=20261004-speech1";
 import {ProDOSBlockDevice} from "https://subnetpie.github.io/computer/appleii/prodos_block.js?v=20260930-persist1";
 import {Floppy525} from "https://subnetpie.github.io/computer/appleii/FloppyWoz525.js";
 import {Floppy35} from "./floppy35.js?v=20260928-trackcache1";
