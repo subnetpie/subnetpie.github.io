@@ -1,4 +1,4 @@
-import {Motherboard} from "https://subnetpie.github.io/computer/appleii/motherboard.js?v=20261004-speech1";
+import {Motherboard} from "https://subnetpie.github.io/computer/appleii/motherboard.js?v=20261004-mb-complete1";
 import {ProDOSBlockDevice} from "https://subnetpie.github.io/computer/appleii/prodos_block.js?v=20260930-persist1";
 import {Floppy525} from "https://subnetpie.github.io/computer/appleii/FloppyWoz525.js";
 import {Floppy35} from "./floppy35.js?v=20260928-trackcache1";
@@ -258,109 +258,69 @@ function buildConfigurationDialog() {
         </section>
         <section>
           <h3>Storage / drive routing</h3>
-          <p class="iigs-config-note">Choose which emulated controller each Load dialog drive accepts.</p>
-          <label class="iigs-drive-route">Drive 1<select id="iigsDriveTarget0"></select></label>
-          <label class="iigs-drive-route">Drive 2<select id="iigsDriveTarget1"></select></label>
-          <div class="iigs-storage-map">
-            <div><b>SmartPort</b><span id="iigsSmartPortSummary"></span></div>
-            <div><b>3.5-inch</b><span>Slot 5 · drives 1/2</span></div>
-            <div><b>Disk II</b><span id="iigsDiskIISummary"></span></div>
-          </div>
+          <label>Drive 1<select id="iigsDriveTarget0"></select></label>
+          <label>Drive 2<select id="iigsDriveTarget1"></select></label>
         </section>
       </div>
-      <p class="iigs-config-warning">Saving restarts the emulator so ROM 03 scans the new slot layout. Mount disks after the restart.</p>
       <footer>
         <button type="button" id="iigsConfigDefaults">Defaults</button>
         <span></span>
         <button value="cancel">Cancel</button>
-        <button type="button" id="iigsConfigSave" class="primary">Save & Restart</button>
+        <button type="button" id="iigsConfigSave">Save & Restart</button>
       </footer>
     </form>`;
   document.body.append(dialog);
 
-  const style=document.createElement("style");
-  style.textContent=`
-    .iigs-config{width:min(900px,94vw);max-height:92dvh;overflow:auto;padding:0;border:2px solid #343434;border-radius:7px;background:#b7bab9;color:#111;font:16px/1.25 system-ui,sans-serif;box-shadow:0 14px 50px #000b}
-    .iigs-config::backdrop{background:#000b}
-    .iigs-config *{box-sizing:border-box;touch-action:manipulation}
-    .iigs-config form{padding:18px}
-    .iigs-config-head{display:grid;grid-template-columns:220px 1fr 220px;align-items:center;margin-bottom:18px}
-    .iigs-config-head>div{display:flex;align-items:center;gap:10px;font:28px Georgia,serif}.iigs-config-head strong{font-size:42px}.iigs-config-head h2{grid-column:2;text-align:center;margin:0;font-size:25px}
-    .iigs-config-grid{display:grid;grid-template-columns:minmax(280px,.8fr) minmax(330px,1.2fr);gap:28px}.iigs-config h3{margin:0 0 8px;font-size:18px}
-    .iigs-slot-list{padding:6px;background:#006332;border:1px solid #365c45}.iigs-slot-row{display:grid;grid-template-columns:28px 1fr;align-items:center;gap:6px;margin:5px 0}.iigs-slot-row>span{text-align:center;font-weight:700}.iigs-slot-row select{width:100%;min-height:42px;border:2px solid #d8f5dc;background:#078cc6;color:#fff;padding:5px;font-size:15px}.iigs-slot-row.fixed select{background:#737b7c}
-    .iigs-drive-route{display:grid;grid-template-columns:82px 1fr;align-items:center;gap:8px;margin:10px 0}.iigs-drive-route select{min-height:42px;font-size:15px;padding:5px}
-    .iigs-config-note,.iigs-config-warning{font-size:13px}.iigs-storage-map{margin-top:18px;padding:12px;background:#929594;display:grid;gap:10px}.iigs-storage-map div{display:flex;justify-content:space-between;gap:14px;padding:10px;background:#ecece8;border:1px solid #777}.iigs-storage-map span{text-align:right}
-    .iigs-config footer{display:grid;grid-template-columns:auto 1fr auto auto;gap:10px;margin-top:16px;padding-top:12px;border-top:1px solid #777}.iigs-config button{min-height:42px;padding:6px 16px;font-size:15px}.iigs-config .primary{background:#0c5;color:#021;border:2px outset #7f9;font-weight:700}
-    #buttonIIgsConfiguration{width:100%;margin:.45rem 0;min-height:46px;background:#315d48;color:#fff;border:2px solid #173b2b;border-radius:7px;font-weight:700}
-    @media(max-width:680px){.iigs-config-head{grid-template-columns:1fr}.iigs-config-head>div{justify-content:center}.iigs-config-head h2{grid-column:1}.iigs-config-grid{grid-template-columns:1fr}.iigs-config footer{grid-template-columns:1fr 1fr}.iigs-config footer span{display:none}}
-  `;
-  document.head.append(style);
-
-  const rows=document.getElementById("iigsSlotRows");
+  const rows=dialog.querySelector("#iigsSlotRows");
   for(let slot=7;slot>=1;slot--) {
     const row=document.createElement("label");
-    row.className="iigs-slot-row"+(slot===5?" fixed":"");
-    const options=slot===5
-      ? `<option value="iigs35">${DEVICE_LABELS.iigs35}</option>`
-      : `<option value="empty">${DEVICE_LABELS.empty}</option><option value="smartport">${DEVICE_LABELS.smartport}</option><option value="disk2">${DEVICE_LABELS.disk2}</option>`;
-    row.innerHTML=`<span>${slot}</span><select data-slot="${slot}" ${slot===5?"disabled":""}>${options}</select>`;
+    row.innerHTML=`<span>Slot ${slot}</span><select data-slot="${slot}"></select>`;
+    const select=row.querySelector("select");
+    for(const [value,label] of Object.entries(DEVICE_LABELS)) {
+      if(slot!==5 && value==="iigs35")continue;
+      const option=new Option(label,value);
+      if(slot===5 && value!=="iigs35")option.disabled=true;
+      select.add(option);
+    }
     rows.append(row);
   }
   for(let drive=0;drive<2;drive++) {
-    const select=document.getElementById("iigsDriveTarget"+drive);
+    const select=dialog.querySelector(`#iigsDriveTarget${drive}`);
     for(const [value,label] of Object.entries(TARGET_LABELS))select.add(new Option(label,value));
   }
 
-  const readForm=()=>{
-    const config=defaultConfiguration();
-    dialog.querySelectorAll("select[data-slot]").forEach(select=>config.slots[select.dataset.slot]=select.value);
-    config.slots[5]="iigs35";
-    config.driveTargets=[document.getElementById("iigsDriveTarget0").value,document.getElementById("iigsDriveTarget1").value];
-    return normalizeConfiguration(config);
+  const fill=()=>{
+    const config=loadIIgsConfiguration();
+    dialog.querySelectorAll("select[data-slot]").forEach(select=>{
+      select.value=config.slots[select.dataset.slot]||"empty";
+    });
+    config.driveTargets.forEach((value,index)=>{
+      dialog.querySelector(`#iigsDriveTarget${index}`).value=value;
+    });
   };
-  const render=config=>{
-    config=normalizeConfiguration(config);
-    dialog.querySelectorAll("select[data-slot]").forEach(select=>select.value=config.slots[select.dataset.slot]);
-    document.getElementById("iigsDriveTarget0").value=config.driveTargets[0];
-    document.getElementById("iigsDriveTarget1").value=config.driveTargets[1];
-    document.getElementById("iigsSmartPortSummary").textContent="Slot "+findSlot(config,"smartport",7);
-    document.getElementById("iigsDiskIISummary").textContent="Slot "+findSlot(config,"disk2",6)+" · drives 1/2";
-  };
-  dialog.addEventListener("change",event=>{
-    const select=event.target.closest("select[data-slot]");
-    if(select && (select.value==="smartport" || select.value==="disk2")) {
-      dialog.querySelectorAll(`select[data-slot]`).forEach(other=>{
-        if(other!==select && other.value===select.value)other.value="empty";
-      });
-    }
-    render(readForm());
+
+  dialog.openWithConfiguration=()=>{ fill(); dialog.showModal(); };
+
+  dialog.querySelector("#iigsConfigDefaults").addEventListener("click",()=>{
+    const defaults=defaultConfiguration();
+    dialog.querySelectorAll("select[data-slot]").forEach(select=>select.value=defaults.slots[select.dataset.slot]||"empty");
+    defaults.driveTargets.forEach((value,index)=>dialog.querySelector(`#iigsDriveTarget${index}`).value=value);
   });
-  document.getElementById("iigsConfigDefaults").addEventListener("click",()=>render(defaultConfiguration()));
-  document.getElementById("iigsConfigSave").addEventListener("click",()=>{
-    saveIIgsConfiguration(readForm());
+
+  dialog.querySelector("#iigsConfigSave").addEventListener("click",()=>{
+    const config={version:1,slots:{},driveTargets:[]};
+    dialog.querySelectorAll("select[data-slot]").forEach(select=>{config.slots[select.dataset.slot]=select.value;});
+    config.driveTargets[0]=dialog.querySelector("#iigsDriveTarget0").value;
+    config.driveTargets[1]=dialog.querySelector("#iigsDriveTarget1").value;
+    saveIIgsConfiguration(config);
+    dialog.close();
     location.reload();
   });
-  dialog.addEventListener("close",()=>{});
-  dialog.openWithConfiguration=()=>{render(loadIIgsConfiguration());dialog.showModal();};
-}
 
-function installConfigurationButton() {
-  buildConfigurationDialog();
-  const media=document.getElementById("mediaDialog");
-  if(!media || document.getElementById("buttonIIgsConfiguration"))return;
-  const button=document.createElement("button");
-  button.type="button";
-  button.id="buttonIIgsConfiguration";
-  button.textContent="IIgs System Configuration · Slots & Drives";
-  button.addEventListener("click",()=>{
-    media.close();
-    document.getElementById("iigsConfigurationDialog").openWithConfiguration();
-  });
-  const title=document.getElementById("mediaTitle");
-  title?.insertAdjacentElement("afterend",button);
+  fill();
 }
 
 if(new URLSearchParams(location.search).get("machine")!=="iie") {
-  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",installConfigurationButton,{once:true});
-  else installConfigurationButton();
+  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",buildConfigurationDialog,{once:true});
+  else buildConfigurationDialog();
 }
