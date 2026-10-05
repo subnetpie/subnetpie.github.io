@@ -1,4 +1,5 @@
 import {Motherboard} from "https://subnetpie.github.io/computer/appleii/motherboard.js?v=20261004-mb-complete1";
+import {Mockingboard} from "./mockingboard.js?v=20261004-mb-complete1";
 
 const STORAGE_KEY="subnetpie.apple2.iigs.slot4.v1";
 const VALID=new Set(["mouse","mockingboard","none"]);
@@ -16,22 +17,30 @@ function saveMode(mode){
   return mode;
 }
 
+// Make the physical card decode authoritative when Slot 4 is explicitly set to
+// Mockingboard. This is intentionally below the motherboard reset/firmware
+// latches: ROM03 and compatibility software are free to change SLOTROM/INTCXROM
+// without making a physically configured card disappear from $C400-$C4FF.
+const originalHandles=Mockingboard.prototype.handles;
+if(!Mockingboard.prototype.__iigsConfiguredSlot4Decode){
+  Mockingboard.prototype.__iigsConfiguredSlot4Decode=true;
+  Mockingboard.prototype.handles=function(addr){
+    const bank=addr>>>16;
+    const slot4=(bank===0||bank===1||bank===0xe0||bank===0xe1)&&
+      (addr&0xff00)===0xc400;
+    if(slot4 && loadMode()==="mockingboard")return true;
+    return originalHandles.call(this,addr);
+  };
+}
+
 function applySlot4(board){
   if(!board?.iigsEnabled || !board.memory)return;
   const mode=loadMode();
   board.iigsSlot4Device=mode;
 
-  // Persist the control-panel hardware choice even if ROM03 or compatibility
-  // software later rewrites SLOTROM ($C02D). A configured external Mockingboard
-  // must remain physically present at $C400-$C4FF for Apple II software probes.
   if(mode==="mockingboard") board.memory.slotRom|=0x10;
   else board.memory.slotRom&=~0x10;
 
-  // Motherboard's default IIgs Mockingboard gate also checks the live SLOTROM /
-  // INTCXROM state. That can make an explicitly configured card disappear after
-  // boot when compatibility software changes those firmware-selection latches.
-  // Once Slot 4 is configured as Mockingboard, make the actual card decode
-  // authoritative until the user changes the saved Slot 4 device.
   if(board.mockingboard) {
     board.mockingboard.selected=()=>board.iigsSlot4Device==="mockingboard";
   }
@@ -82,8 +91,6 @@ function installUI(){
   select.addEventListener("change",event=>{
     if(select.value==="mouse" || select.value==="mockingboard") {
       saveMode(select.value);
-      // The base slot configuration does not yet know these two values. Keep
-      // this choice local and prevent its normalizer from replacing it.
       event.stopImmediatePropagation();
     } else {
       saveMode("none");
