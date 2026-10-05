@@ -59,10 +59,29 @@ test('one-shot T1 keeps reloading with visible FFFF but produces only one interr
  c.tick(6);assert.equal(c.read(0xc405),255);assert.equal(c.read(0xc404),255);assert.equal(c.irq(),false);
  c.tick(1);assert.equal(c.read(0xc404),4);c.tick(6);assert.equal(c.read(0xc404),4);assert.equal(c.irq(),false);
 });
-test('indexed 65C02 stores acknowledge timer through the SSI/VIA alias dummy read',()=>{
+test('indexed 65C02 stores acknowledge timer through the mirrored VIA register',()=>{
  const {m,write,read,tick}=card();const bytes=new Uint8Array(65536);
  const bus={read:a=>read(a)??bytes[a],write:(a,v)=>{if(write(a,v)===undefined)bytes[a]=v;},read_word:a=>bytes[a]|bytes[a+1]<<8};
  const cpu=new W65C02S(bus);cpu.reset();cpu.reg.pc=0x200;cpu.reg.x=4;bytes.set([0x9d,0x40,0xc4],0x200);
  write(0xc404,0);write(0xc405,0);tick(2);assert.equal(m.via[0].r[13]&64,64);
  assert.equal(cpu.step(),5);assert.equal(m.via[0].r[13]&64,0);
+});
+test('SC-01A speech uses VIA1 PB, CB2 falling strobe and CB1 A/R like MAME 0.289',()=>{
+ const c=card(),v=c.m.via[0];
+ c.write(0xc402,0xff);                 // VIA1 DDRB output
+ c.write(0xc40e,0x90);                 // enable CB1 interrupt
+ c.write(0xc40c,0xf0);                 // CB1 positive edge, CB2 manual high
+ c.write(0xc400,0x80|0x20);            // inflection 2, phone A (0x20)
+ c.write(0xc40c,0xd0);                 // CB2 high->low: SC-01A strobe
+ assert.equal(c.m.speech.phone,0x20);
+ assert.equal(c.m.speech.inflection,2);
+ assert.equal(c.m.speech.arState,false);
+ assert.equal(v.r[13]&0x10,0,'falling A/R must not fire positive-edge CB1 IRQ');
+ c.tick(300000);
+ assert.equal(c.m.speech.arState,true);
+ assert.equal(v.r[13]&0x10,0x10,'speech completion must raise CB1 interrupt');
+ assert.equal(c.irq(),true);
+ c.read(0xc400);
+ assert.equal(v.r[13]&0x10,0,'ORB access acknowledges CB1');
+ assert.equal(c.irq(),false);
 });
