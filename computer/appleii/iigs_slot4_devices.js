@@ -1,4 +1,4 @@
-import {Motherboard} from "https://subnetpie.github.io/computer/appleii/motherboard.js?v=20261004-speech1";
+import {Motherboard} from "https://subnetpie.github.io/computer/appleii/motherboard.js?v=20261004-mb-complete1";
 
 const STORAGE_KEY="subnetpie.apple2.iigs.slot4.v1";
 const VALID=new Set(["mouse","mockingboard","none"]);
