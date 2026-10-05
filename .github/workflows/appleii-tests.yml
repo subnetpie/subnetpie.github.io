@@ -25,3 +25,8 @@ jobs:
           node-version: '20'
       - name: Run Apple II tests
         run: node --test computer/appleii/*.test.mjs
+      - name: Upload Apple II source for headless debugging
+        uses: actions/upload-artifact@v4
+        with:
+          name: appleii-source
+          path: computer/appleii
