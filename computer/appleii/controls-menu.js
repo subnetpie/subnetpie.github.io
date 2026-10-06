@@ -6,6 +6,7 @@ if(document.readyState === 'loading') {
   document.write('<link rel="stylesheet" href="./iigs_configuration_mobile.css?v=20261004-touch3">');
   document.write('<script type="module" src="./iigs_configuration.js?v=20261004-slots-drives3"><\/script>');
   document.write('<script type="module" src="./iigs_slot4_devices.js?v=20261004-slot4-skyfox1"><\/script>');
+  document.write('<script type="module" src="./iigs_keyboard_layout.js?v=20261005-iigs-kbd1"><\/script>');
 } else {
   if(!document.querySelector('link[href*="iigs_configuration_mobile.css"]')) {
     const link=document.createElement('link');
@@ -15,6 +16,7 @@ if(document.readyState === 'loading') {
   }
   import('./iigs_configuration.js?v=20261004-slots-drives3').then(() =>
     import('./iigs_slot4_devices.js?v=20261004-slot4-skyfox1'));
+  import('./iigs_keyboard_layout.js?v=20261005-iigs-kbd1');
 }
 
 // Independent emulator and joystick settings menus.
