@@ -8,6 +8,7 @@ if(document.readyState === 'loading') {
   document.write('<script type="module" src="./iigs_configuration.js?v=20261004-slots-drives3"><\/script>');
   document.write('<script type="module" src="./iigs_slot4_devices.js?v=20261004-slot4-skyfox1"><\/script>');
   if(iiGsMode) document.write('<script type="module" src="./iigs_extra_drives.js?v=20261006-smartport4"><\/script>');
+  if(iiGsMode) document.write('<script type="module" src="./iigs_persistent_boot.js?v=20261006-persistent-boot1"><\/script>');
   document.write('<script type="module" src="./iigs_keyboard_layout.js?v=20261005-iigs-kbd1"><\/script>');
 } else {
   if(!document.querySelector('link[href*="iigs_configuration_mobile.css"]')) {
@@ -18,7 +19,7 @@ if(document.readyState === 'loading') {
   }
   const hardware=import('./iigs_configuration.js?v=20261004-slots-drives3').then(() =>
     import('./iigs_slot4_devices.js?v=20261004-slot4-skyfox1'));
-  if(iiGsMode) hardware.then(() => import('./iigs_extra_drives.js?v=20261006-smartport4'));
+  if(iiGsMode) hardware.then(() => import('./iigs_extra_drives.js?v=20261006-smartport4')).then(() => import('./iigs_persistent_boot.js?v=20261006-persistent-boot1'));
   import('./iigs_keyboard_layout.js?v=20261005-iigs-kbd1');
 }
 
