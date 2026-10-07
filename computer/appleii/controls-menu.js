@@ -13,6 +13,7 @@ if(document.readyState === 'loading') {
   document.write('<script type="module" src="./display_speed_panel.js?v=20261006-speed-presets1"><\/script>');
   document.write('<script src="./display_color_panel.js?v=20261006-display-presets1"><\/script>');
   document.write('<script type="module" src="./iigs_keyboard_layout.js?v=20261005-iigs-kbd1"><\/script>');
+  document.write('<script src="./caps_lock_indicator.js?v=20261006-caps-led1"><\/script>');
 } else {
   if(!document.querySelector('link[href*="iigs_configuration_mobile.css"]')) {
     const link=document.createElement('link');
@@ -33,6 +34,11 @@ if(document.readyState === 'loading') {
     document.head.append(displayScript);
   }
   import('./iigs_keyboard_layout.js?v=20261005-iigs-kbd1');
+  if(!document.querySelector('script[src*="caps_lock_indicator.js"]')) {
+    const capsScript=document.createElement('script');
+    capsScript.src='./caps_lock_indicator.js?v=20261006-caps-led1';
+    document.head.append(capsScript);
+  }
 }
 
 // Independent emulator and joystick settings menus.
