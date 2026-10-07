@@ -1,0 +1,22 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "appleii-profile-api",
+  "main": "src/worker.js",
+  "compatibility_date": "2026-10-06",
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "appleii-profiles",
+      "database_id": "REPLACE_WITH_D1_DATABASE_ID"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "DISKS",
+      "bucket_name": "appleii-disks"
+    }
+  ],
+  "vars": {
+    "ALLOWED_ORIGIN": "https://subnetpie.github.io"
+  }
+}
