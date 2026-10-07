@@ -1,6 +1,17 @@
 // Load IIgs hardware configuration before the main module constructs the machine.
-const iiGsMode=new URLSearchParams(location.search).get('machine')!=='iie';
-const unifiedMode=new URLSearchParams(location.search).get('ui')==='unified';
+const params=new URLSearchParams(location.search);
+const iiGsMode=params.get('machine')!=='iie';
+const uiMode=params.get('ui');
+const unifiedMode=uiMode!=='legacy';
+
+// Unified controls are now the default on this feature branch. Preserve a
+// deliberate ?ui=legacy escape hatch without duplicating mode checks inside
+// every unified module; normalize the default URL before those modules load.
+if(unifiedMode&&uiMode!=='unified'){
+  const url=new URL(location.href);
+  url.searchParams.set('ui','unified');
+  history.replaceState(null,'',url);
+}
 
 const assets={
   configCss:'./iigs_configuration_mobile.css?v=20261004-touch3',
