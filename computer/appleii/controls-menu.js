@@ -7,6 +7,7 @@ const unifiedMode=params.get('ui')!=='legacy';
 const assets={
   configCss:'./iigs_configuration_mobile.css?v=20261007-panel-audit1',
   config:'./iigs_configuration.js?v=20261007-panel-audit1',
+  configCompat:'./iigs_configuration_compat.js?v=20261007-config-compat1',
   slot4:'./iigs_slot4_devices.js?v=20261007-panel-audit1',
   extraDrives:'./iigs_extra_drives.js?v=20261006-smartport4',
   persistent:'./iigs_persistent_boot.js?v=20261007-unified-persist1',
@@ -14,6 +15,7 @@ const assets={
   storage:'./iigs_storage_registry.js?v=20261007-physical2',
   storageConfig:'./iigs_storage_config_ui.js?v=20261007-physical2',
   unifiedBridge:'./unified_configuration_bridge.js?v=20261007-machine2',
+  displayToolbar:'./unified_display_toolbar.js?v=20261007-display-toolbar1',
   scanlines:'./display_scanline_overlay.js?v=20261007-shr-scanlines1',
   speed:'./display_speed_panel.js?v=20261006-speed-presets1',
   color:'./display_color_panel.js?v=20261007-direct-monitor1',
@@ -37,6 +39,7 @@ function addScript(src,{module=false,defer=false}={}){
 if(document.readyState==='loading'){
   document.write(`<link rel="stylesheet" href="${assets.configCss}">`);
   document.write(`<script type="module" src="${assets.config}"><\/script>`);
+  document.write(`<script src="${assets.configCompat}"><\/script>`);
   document.write(`<script type="module" src="${assets.slot4}"><\/script>`);
   if(iiGsMode){
     document.write(`<script type="module" src="${assets.extraDrives}"><\/script>`);
@@ -52,7 +55,7 @@ if(document.readyState==='loading'){
   document.write(`<script src="${assets.scanlines}"><\/script>`);
 }else{
   addStyle(assets.configCss);
-  const hardware=import(assets.config).then(()=>import(assets.slot4));
+  const hardware=import(assets.config).then(()=>{addScript(assets.configCompat);return import(assets.slot4);});
   if(iiGsMode)hardware.then(()=>import(assets.extraDrives)).then(()=>import(assets.persistent)).then(()=>import(assets.persistentUi)).then(()=>import(assets.storage)).then(()=>addScript(assets.storageConfig));
   import(assets.speed);
   addScript(assets.color);
@@ -88,4 +91,5 @@ if(unifiedMode){
   addScript(assets.unified,{defer:true});
   addScript(assets.drive,{defer:true});
   addScript(assets.unifiedBridge,{defer:true});
+  addScript(assets.displayToolbar,{defer:true});
 }
