@@ -39,11 +39,14 @@
     if(workstation)document.body.classList.add('unified-workstation');
 
     const launcher=make('div',{id:'unifiedLauncher','aria-label':'Apple II controls',class:'collapsed'});
-    const grip=make('button',{type:'button',class:'unified-grip','aria-label':'Move or expand controls',title:'Move or expand controls'},'•••');
+    const gear=make('button',{type:'button',class:'unified-grip','aria-label':'Open or close controls',title:'Open or close controls','aria-expanded':'false'},'⚙');
+    const drives=make('button',{type:'button',class:'unified-island-action','aria-label':'Drives',title:'Drives','aria-expanded':'false'});
+    drives.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h12l2 2v16H5z"/><path d="M8 3v6h8V3M8 15h8v6H8z"/></svg>';
     const key=make('button',{type:'button',class:'unified-island-action','aria-label':'Virtual keyboard','aria-pressed':'false'},'⌨');
     const joy=make('button',{type:'button',class:'unified-island-action','aria-label':'Virtual joystick','aria-pressed':'false'},'◉');
-    const machine=make('button',{type:'button',class:'unified-island-action','aria-label':'Machine controls','aria-expanded':'false'},'⚙');
-    launcher.append(grip,key,joy,machine);
+    const machine=make('button',{type:'button',class:'unified-island-action','aria-label':'Machine controls',title:'Machine controls','aria-expanded':'false'});
+    machine.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2"/><path d="M9 9h6v6H9zM9 2v4m6-4v4M9 18v4m6-4v4M2 9h4m-4 6h4m12-6h4m-4 6h4"/></svg>';
+    launcher.append(gear,drives,key,joy,machine);
     document.body.append(launcher);
 
     const panel=make('section',{id:'unifiedMachinePanel','aria-label':'Machine controls'});
@@ -93,13 +96,6 @@
       </div>`;
     document.body.append(panel);
 
-    const closePanel=()=>{panel.hidden=true;machine.setAttribute('aria-expanded','false');};
-    machine.addEventListener('click',()=>{
-      panel.hidden=!panel.hidden;
-      machine.setAttribute('aria-expanded',panel.hidden?'false':'true');
-    });
-    panel.querySelector('#unifiedPanelClose').addEventListener('click',closePanel);
-
     const tabs=[...panel.querySelectorAll('[data-tab]')];
     const panes=[...panel.querySelectorAll('[data-panel]')];
     const selectTab=name=>{
@@ -107,12 +103,27 @@
       tabs.forEach(b=>b.classList.toggle('active',b.dataset.tab===name));
       panes.forEach(p=>p.hidden=p.dataset.panel!==name);
       set(STORAGE.tab,name);
+      machine.setAttribute('aria-expanded',(!panel.hidden&&name==='machine')?'true':'false');
+      drives.setAttribute('aria-expanded',(!panel.hidden&&name==='drives')?'true':'false');
       if(name==='display')syncDisplay();
       if(name==='input')syncInput();
       if(name==='drives')window.dispatchEvent(new Event('unified-drives-show'));
     };
+    const closePanel=()=>{
+      panel.hidden=true;
+      machine.setAttribute('aria-expanded','false');
+      drives.setAttribute('aria-expanded','false');
+    };
+    const openPanel=name=>{
+      panel.hidden=false;
+      selectTab(name);
+    };
     tabs.forEach(b=>b.addEventListener('click',()=>selectTab(b.dataset.tab)));
     selectTab(get(STORAGE.tab,'machine'));
+
+    drives.addEventListener('click',()=>openPanel('drives'));
+    machine.addEventListener('click',()=>openPanel('machine'));
+    panel.querySelector('#unifiedPanelClose').addEventListener('click',closePanel);
 
     panel.querySelectorAll('[data-proxy]').forEach(b=>b.addEventListener('click',()=>click(b.dataset.proxy)));
     panel.querySelector('#unifiedConfiguration').addEventListener('click',()=>{
@@ -205,11 +216,11 @@
       try{const p=JSON.parse(saved);if(Number.isFinite(p.x)&&Number.isFinite(p.y)){launcher.style.left=p.x+'px';launcher.style.top=p.y+'px';launcher.style.right='auto';launcher.style.bottom='auto';}}catch(_){}
     }
     let drag=null,moved=false;
-    grip.addEventListener('pointerdown',e=>{
+    gear.addEventListener('pointerdown',e=>{
       moved=false;drag={id:e.pointerId,x:e.clientX,y:e.clientY,left:launcher.offsetLeft,top:launcher.offsetTop};
-      launcher.classList.add('dragging');grip.setPointerCapture?.(e.pointerId);e.preventDefault();
+      launcher.classList.add('dragging');gear.setPointerCapture?.(e.pointerId);e.preventDefault();
     });
-    grip.addEventListener('pointermove',e=>{
+    gear.addEventListener('pointermove',e=>{
       if(!drag||e.pointerId!==drag.id)return;
       const dx=e.clientX-drag.x,dy=e.clientY-drag.y;if(Math.abs(dx)+Math.abs(dy)>5)moved=true;
       const rect=launcher.getBoundingClientRect();
@@ -220,11 +231,15 @@
     const end=e=>{
       if(!drag||e.pointerId!==drag.id)return;
       launcher.classList.remove('dragging');
-      if(!moved)launcher.classList.toggle('collapsed');
-      else set(STORAGE.island,JSON.stringify({x:launcher.offsetLeft,y:launcher.offsetTop}));
+      if(!moved){
+        launcher.classList.toggle('collapsed');
+        const expanded=!launcher.classList.contains('collapsed');
+        gear.setAttribute('aria-expanded',expanded?'true':'false');
+        if(!expanded)closePanel();
+      }else set(STORAGE.island,JSON.stringify({x:launcher.offsetLeft,y:launcher.offsetTop}));
       drag=null;
     };
-    grip.addEventListener('pointerup',end);grip.addEventListener('pointercancel',end);
+    gear.addEventListener('pointerup',end);gear.addEventListener('pointercancel',end);
 
     addEventListener('resize',()=>{
       if(!launcher.style.left)return;
