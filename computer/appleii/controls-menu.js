@@ -8,7 +8,7 @@ if(document.readyState === 'loading') {
   document.write('<script type="module" src="./iigs_configuration.js?v=20261004-slots-drives3"><\/script>');
   document.write('<script type="module" src="./iigs_slot4_devices.js?v=20261004-slot4-skyfox1"><\/script>');
   if(iiGsMode) document.write('<script type="module" src="./iigs_extra_drives.js?v=20261006-smartport4"><\/script>');
-  if(iiGsMode) document.write('<script type="module" src="./iigs_persistent_boot.js?v=20261006-persistent-boot1"><\/script>');
+  if(iiGsMode) document.write('<script type="module" src="./iigs_persistent_boot.js?v=20261006-persistent-boot2"><\/script>');
   if(iiGsMode) document.write('<script type="module" src="./iigs_persistent_boot_ui.js?v=20261006-persistent-ui1"><\/script>');
   document.write('<script type="module" src="./display_speed_panel.js?v=20261006-speed-presets1"><\/script>');
   document.write('<script src="./display_color_panel.js?v=20261006-display-presets1"><\/script>');
@@ -25,7 +25,7 @@ if(document.readyState === 'loading') {
     import('./iigs_slot4_devices.js?v=20261004-slot4-skyfox1'));
   if(iiGsMode) hardware
     .then(() => import('./iigs_extra_drives.js?v=20261006-smartport4'))
-    .then(() => import('./iigs_persistent_boot.js?v=20261006-persistent-boot1'))
+    .then(() => import('./iigs_persistent_boot.js?v=20261006-persistent-boot2'))
     .then(() => import('./iigs_persistent_boot_ui.js?v=20261006-persistent-ui1'));
   import('./display_speed_panel.js?v=20261006-speed-presets1');
   if(!document.querySelector('script[src*="display_color_panel.js"]')) {
@@ -101,8 +101,18 @@ if(new URLSearchParams(location.search).get('ui') === 'unified') {
   unifiedCss.href='./unified_controls.css?v=20261006-unified1';
   document.head.append(unifiedCss);
 
+  const driveCss=document.createElement('link');
+  driveCss.rel='stylesheet';
+  driveCss.href='./unified_drive_manager.css?v=20261006-drive-manager1';
+  document.head.append(driveCss);
+
   const unifiedScript=document.createElement('script');
-  unifiedScript.src='./unified_controls.js?v=20261006-unified1';
+  unifiedScript.src='./unified_controls.js?v=20261006-unified2';
   unifiedScript.defer=true;
   document.head.append(unifiedScript);
+
+  const driveScript=document.createElement('script');
+  driveScript.src='./unified_drive_manager.js?v=20261006-drive-manager1';
+  driveScript.defer=true;
+  document.head.append(driveScript);
 }
