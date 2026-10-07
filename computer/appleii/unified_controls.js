@@ -1,5 +1,7 @@
 (() => {
-  if(new URLSearchParams(location.search).get('ui')!=='unified')return;
+  // Unified controls are the production default. Only the explicit legacy
+  // override should suppress this layer.
+  if(new URLSearchParams(location.search).get('ui')==='legacy')return;
 
   const STORAGE={
     island:'subnetpie.apple2.unifiedIsland.v1',
@@ -9,6 +11,13 @@
   const get=(k,fallback)=>{try{const v=localStorage.getItem(k);return v==null?fallback:v;}catch(_){return fallback;}};
   const set=(k,v)=>{try{localStorage.setItem(k,v);}catch(_){}};
   const click=id=>{const el=document.getElementById(id);if(el){el.click();return true;}return false;};
+  const pointerDown=id=>{
+    const el=document.getElementById(id);
+    if(!el)return false;
+    const EventCtor=window.PointerEvent||window.MouseEvent;
+    el.dispatchEvent(new EventCtor('pointerdown',{bubbles:true,cancelable:true,pointerId:1,pointerType:'touch',isPrimary:true}));
+    return true;
+  };
   const sourcePressed=id=>document.getElementById(id)?.getAttribute('aria-pressed')==='true';
 
   function make(tag,attrs={},text=''){
@@ -107,7 +116,7 @@
 
     panel.querySelectorAll('[data-proxy]').forEach(b=>b.addEventListener('click',()=>click(b.dataset.proxy)));
     panel.querySelector('#unifiedConfiguration').addEventListener('click',()=>{
-      const candidate=document.querySelector('#iigsConfigButton,[data-iigs-config],button[aria-label*="configuration" i],button[title*="configuration" i]');
+      const candidate=document.querySelector('#buttonIIgsConfiguration,#iigsConfigButton,[data-iigs-config],button[aria-label*="configuration" i],button[title*="configuration" i]');
       if(candidate)candidate.click();
       else click('buttonLoad');
     });
@@ -118,6 +127,7 @@
       if(sourcePressed('buttonJoystick')!==wantJoy)click('buttonJoystick');
       document.body.classList.toggle('keyboard-mode',wantKey);
       document.body.classList.toggle('joystick-mode',wantJoy);
+      document.body.classList.toggle('joystick-disabled',!wantJoy);
       syncInput();
     };
     const toggleInput=mode=>setInput(sourcePressed(mode==='keyboard'?'buttonInput':'buttonJoystick')?'none':mode);
@@ -127,7 +137,11 @@
     panel.querySelector('#unifiedJoystick').addEventListener('click',()=>toggleInput('joystick'));
 
     panel.querySelectorAll('[data-joy-proxy]').forEach(b=>b.addEventListener('click',()=>{
-      click(b.dataset.joyProxy);setTimeout(syncJoystickSettings,0);
+      // The legacy joystick settings intentionally use pointerdown so the
+      // same path works on iPhone/iPad. Re-dispatch that gesture instead of
+      // calling .click(), which otherwise bypasses the actual handler.
+      pointerDown(b.dataset.joyProxy);
+      requestAnimationFrame(syncJoystickSettings);
     }));
 
     function syncJoystickSettings(){
@@ -147,12 +161,15 @@
       joy.setAttribute('aria-pressed',jp?'true':'false');
       panel.querySelector('#unifiedKeyboard').classList.toggle('active',kp);
       panel.querySelector('#unifiedJoystick').classList.toggle('active',jp);
+      document.body.classList.toggle('keyboard-mode',kp);
+      document.body.classList.toggle('joystick-mode',jp);
+      document.body.classList.toggle('joystick-disabled',!jp);
       syncJoystickSettings();
       const glide=get(STORAGE.glide,'mouse');
       panel.querySelectorAll('[data-glide]').forEach(b=>b.classList.toggle('active',b.dataset.glide===glide));
       panel.querySelector('#unifiedGlideNote').textContent=glide==='mouse'
         ?'Physical trackpad movement controls the IIgs pointer.'
-        :'Glide pad is set to joystick; input routing is not enabled yet.';
+        :'Glide pad joystick routing is selected; virtual joystick remains available for touch.';
     }
 
     panel.querySelectorAll('[data-glide]').forEach(b=>b.addEventListener('click',()=>{
