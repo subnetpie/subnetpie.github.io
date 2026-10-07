@@ -1,18 +1,48 @@
-// Direct display-color presets for the emulator control panel.
-// This intentionally drives the existing #buttonColor/setColor path so the
-// renderer behavior remains unchanged; only the control surface changes.
+// Direct monitor-color presets for the emulator control panel.
+// Apply the selected phosphor/color treatment to the final presentation canvas
+// so the choice works in IIgs SHR as well as legacy Apple II video modes.
 (() => {
+  const STORAGE='subnetpie.apple2.displayMonitor.v2';
   const MODES = [
     {id:'color', label:'Color', cls:'display-preset-color'},
+    {id:'white', label:'White', cls:'display-preset-white'},
     {id:'green', label:'Green', cls:'display-preset-green'},
-    {id:'amber', label:'Amber', cls:'display-preset-amber'},
-    {id:'white', label:'White', cls:'display-preset-white'}
+    {id:'amber', label:'Amber', cls:'display-preset-amber'}
   ];
+  const FILTERS={
+    color:'none',
+    white:'grayscale(1) contrast(1.04) brightness(1.04)',
+    green:'grayscale(1) sepia(1) saturate(5.5) hue-rotate(72deg) brightness(.92) contrast(1.08)',
+    amber:'grayscale(1) sepia(1) saturate(5.2) hue-rotate(352deg) brightness(1.01) contrast(1.08)'
+  };
 
-  function currentMode(source) {
-    const value=(source?.innerText||source?.textContent||'color').trim().toLowerCase();
-    return MODES.some(mode=>mode.id===value)?value:'color';
+  function savedMode(){
+    try{const v=localStorage.getItem(STORAGE);return MODES.some(m=>m.id===v)?v:'color';}
+    catch(_){return 'color';}
   }
+  function saveMode(v){try{localStorage.setItem(STORAGE,v);}catch(_){}}
+  function applyMode(mode){
+    if(!FILTERS[mode])mode='color';
+    const screen=document.getElementById('screen');
+    if(screen)screen.style.filter=FILTERS[mode];
+    document.documentElement.dataset.displayMonitor=mode;
+    const source=document.getElementById('buttonColor');
+    if(source)source.dataset.displayColor=mode;
+    saveMode(mode);
+    window.dispatchEvent(new CustomEvent('apple-display-monitor-changed',{detail:{mode}}));
+    return mode;
+  }
+  function currentMode(){
+    const mode=document.documentElement.dataset.displayMonitor||savedMode();
+    return FILTERS[mode]?mode:'color';
+  }
+
+  // Small public bridge used by the unified panel and future display controls.
+  window.__appleIIDisplayMonitor={
+    modes:MODES.map(m=>m.id),
+    getMode:currentMode,
+    setMode:applyMode
+  };
 
   function install() {
     const controls=document.getElementById('controls');
@@ -20,8 +50,8 @@
     const scan=document.getElementById('buttonScanlines');
     if(!controls||!source||document.getElementById('displayColorPresets'))return;
 
-    // Keep the original control live but out of the layout. Its existing click
-    // listener is still the authoritative renderer state transition.
+    // The old button cycles states and cannot represent four independent
+    // monitor modes. Keep it out of the layout and use direct presets below.
     source.style.display='none';
     source.setAttribute('aria-hidden','true');
     source.tabIndex=-1;
@@ -30,7 +60,7 @@
     panel.id='displayColorPresets';
     panel.className='display-color-presets';
     panel.setAttribute('role','radiogroup');
-    panel.setAttribute('aria-label','Display color');
+    panel.setAttribute('aria-label','Display monitor');
 
     const buttons=new Map();
     for(const mode of MODES) {
@@ -61,7 +91,7 @@
     }
 
     function sync() {
-      const active=currentMode(source);
+      const active=currentMode();
       for(const [id,button] of buttons) {
         const selected=id===active;
         button.classList.toggle('selected',selected);
@@ -69,15 +99,8 @@
       }
     }
 
-    function choose(target) {
-      // The legacy button cycles color -> green -> amber -> white -> color.
-      // Cycling through that existing path avoids duplicating renderer logic.
-      for(let i=0;i<MODES.length && currentMode(source)!==target;i++)source.click();
-      sync();
-    }
-
-    for(const [id,button] of buttons)button.addEventListener('click',()=>choose(id));
-    source.addEventListener('click',()=>queueMicrotask(sync));
+    for(const [id,button] of buttons)button.addEventListener('click',()=>{applyMode(id);sync();});
+    window.addEventListener('apple-display-monitor-changed',sync);
 
     if(scan)controls.insertBefore(panel,scan);
     else controls.append(panel);
@@ -109,22 +132,12 @@
         gap:4px;
         touch-action:manipulation;
       }
-      .display-color-preset.selected{
-        outline:3px solid #35ff39;
-        outline-offset:1px;
-      }
-      .display-preset-rainbow,.display-preset-swatch{
-        display:block;
-        width:100%;
-        height:30px;
-        border:1px solid #222;
-      }
-      .display-preset-rainbow{
-        background:linear-gradient(to bottom,#35c95a 0 16%,#f4cf28 16% 32%,#f88a25 32% 48%,#ef5b74 48% 64%,#d35b93 64% 80%,#55a8ff 80% 100%);
-      }
+      .display-color-preset.selected{outline:3px solid #c7d0d8;outline-offset:1px}
+      .display-preset-rainbow,.display-preset-swatch{display:block;width:100%;height:30px;border:1px solid #222}
+      .display-preset-rainbow{background:linear-gradient(to bottom,#35c95a 0 16%,#f4cf28 16% 32%,#f88a25 32% 48%,#ef5b74 48% 64%,#d35b93 64% 80%,#55a8ff 80% 100%)}
+      .display-preset-white .display-preset-swatch{background:#f4f4f4}
       .display-preset-green .display-preset-swatch{background:#00e65c}
       .display-preset-amber .display-preset-swatch{background:#ffc21a}
-      .display-preset-white .display-preset-swatch{background:#f4f4f4}
       .display-preset-label{font-size:11px;line-height:1;font-weight:700}
       #buttonScanlines{grid-column:1 / -1}
       @media(max-width:430px){
@@ -134,6 +147,7 @@
       }
     `;
     document.head.append(style);
+    applyMode(savedMode());
     sync();
   }
 
