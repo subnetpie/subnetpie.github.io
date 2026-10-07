@@ -86,3 +86,17 @@ if(document.readyState === 'loading') {
     menu.button.focus();
   }, true);
 })();
+
+// Unified responsive controls are deliberately opt-in while the working IIgs
+// UI remains the production path. Use ?ui=unified on this feature branch.
+if(new URLSearchParams(location.search).get('ui') === 'unified') {
+  const unifiedCss=document.createElement('link');
+  unifiedCss.rel='stylesheet';
+  unifiedCss.href='./unified_controls.css?v=20261006-unified1';
+  document.head.append(unifiedCss);
+
+  const unifiedScript=document.createElement('script');
+  unifiedScript.src='./unified_controls.js?v=20261006-unified1';
+  unifiedScript.defer=true;
+  document.head.append(unifiedScript);
+}
