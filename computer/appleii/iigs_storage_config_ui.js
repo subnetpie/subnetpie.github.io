@@ -1,6 +1,15 @@
 (() => {
   const storage=()=>window.__appleIIgsStorage;
 
+  function disableLegacyRouting(){
+    const b=window.__appleIIgsBoard;
+    if(!b?.iigsEnabled)return false;
+    if(b.prodosBlock)b.prodosBlock._iigsDriveTargets=null;
+    if(b.floppy525)b.floppy525._iigsDriveTargets=null;
+    b.memory?.floppy35Drives?.forEach(d=>{d._iigsDriveTargets=null;});
+    return true;
+  }
+
   function render(){
     const dialog=document.getElementById('iigsConfigurationDialog'),svc=storage();
     if(!dialog||!svc)return false;
@@ -23,9 +32,11 @@
     return true;
   }
 
-  let tries=0;
-  const wait=()=>{if(render())return;if(++tries<100)setTimeout(wait,100);};
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',wait,{once:true});else wait();
-  window.addEventListener('iigs-storage-registry-ready',wait);
+  let uiTries=0,boardTries=0;
+  const waitUI=()=>{if(render())return;if(++uiTries<100)setTimeout(waitUI,100);};
+  const waitBoard=()=>{if(disableLegacyRouting())return;if(++boardTries<100)setTimeout(waitBoard,50);};
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>{waitUI();waitBoard();},{once:true});
+  else{waitUI();waitBoard();}
+  window.addEventListener('iigs-storage-registry-ready',waitUI);
   new MutationObserver(render).observe(document.documentElement,{childList:true,subtree:true});
 })();
