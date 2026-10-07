@@ -12,6 +12,7 @@ const assets={
   persistent:'./iigs_persistent_boot.js?v=20261007-unified-persist1',
   persistentUi:'./iigs_persistent_boot_ui.js?v=20261007-panel-audit1',
   storage:'./iigs_storage_registry.js?v=20261007-physical1',
+  storageConfig:'./iigs_storage_config_ui.js?v=20261007-physical1',
   speed:'./display_speed_panel.js?v=20261006-speed-presets1',
   color:'./display_color_panel.js?v=20261006-display-presets1',
   keyboard:'./iigs_keyboard_layout.js?v=20261005-iigs-kbd1',
@@ -40,6 +41,7 @@ if(document.readyState==='loading'){
     document.write(`<script type="module" src="${assets.persistent}"><\/script>`);
     document.write(`<script type="module" src="${assets.persistentUi}"><\/script>`);
     document.write(`<script type="module" src="${assets.storage}"><\/script>`);
+    document.write(`<script src="${assets.storageConfig}"><\/script>`);
   }
   document.write(`<script type="module" src="${assets.speed}"><\/script>`);
   document.write(`<script src="${assets.color}"><\/script>`);
@@ -48,7 +50,7 @@ if(document.readyState==='loading'){
 }else{
   addStyle(assets.configCss);
   const hardware=import(assets.config).then(()=>import(assets.slot4));
-  if(iiGsMode)hardware.then(()=>import(assets.extraDrives)).then(()=>import(assets.persistent)).then(()=>import(assets.persistentUi)).then(()=>import(assets.storage));
+  if(iiGsMode)hardware.then(()=>import(assets.extraDrives)).then(()=>import(assets.persistent)).then(()=>import(assets.persistentUi)).then(()=>import(assets.storage)).then(()=>addScript(assets.storageConfig));
   import(assets.speed);
   addScript(assets.color);
   import(assets.keyboard);
