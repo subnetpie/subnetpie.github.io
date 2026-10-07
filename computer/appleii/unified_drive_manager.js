@@ -3,16 +3,16 @@
 
   const inputFor={0:'filedialogInsert',1:'filedialogInsert2',2:'filedialogInsert3',3:'filedialogInsert4'};
   const routeLabel={
-    s5d1:'Slot 5 · 3.5-inch Drive 1',s5d2:'Slot 5 · 3.5-inch Drive 2',
-    s6d1:'Slot 6 · 5.25-inch Drive 1',s6d2:'Slot 6 · 5.25-inch Drive 2',
-    s7d1:'Slot 7 · SmartPort Drive 1',s7d2:'Slot 7 · SmartPort Drive 2',
-    s7d3:'Slot 7 · SmartPort Drive 3',s7d4:'Slot 7 · SmartPort Drive 4'
+    s5d1:'Slot 5 · 3.5-inch D1',s5d2:'Slot 5 · 3.5-inch D2',
+    s6d1:'Slot 6 · 5.25-inch D1',s6d2:'Slot 6 · 5.25-inch D2',
+    s7d1:'Slot 7 · SmartPort D1',s7d2:'Slot 7 · SmartPort D2',
+    s7d3:'Slot 7 · SmartPort D3',s7d4:'Slot 7 · SmartPort D4'
   };
-
+  const bootIds=['s5d1','s5d2','s6d1','s6d2','s7d1','s7d2','s7d3','s7d4'];
   const qs=(s,r=document)=>r.querySelector(s);
   const click=id=>{const e=document.getElementById(id);if(e){e.click();return true;}return false;};
-  function board(){return window.__appleIIgsBoard;}
-  function persistence(){return window.__appleIIgsPersistence;}
+  const board=()=>window.__appleIIgsBoard;
+  const persistence=()=>window.__appleIIgsPersistence;
 
   function routeFor(drive){
     if(drive>=2)return 's7d'+(drive+1);
@@ -35,28 +35,31 @@
     return 'Empty';
   }
 
-  function driveCard(drive){
-    const number=drive+1;
-    const boot=drive===0?'<button type="button" class="unified-drive-button" data-drive-boot="0">Boot / Restart</button>':'';
-    return `<article class="unified-drive-card" data-unified-drive="${drive}">
-      <div class="unified-drive-card-head">
-        <div class="unified-drive-led" aria-hidden="true"></div>
+  function driveRow(drive){
+    const n=drive+1;
+    const label=drive>=2?'SmartPort D'+n:'Drive '+n;
+    const boot=drive===0?'<button type="button" class="unified-drive-action" data-drive-boot="0">Load & Boot</button>':'';
+    return `<article class="unified-drive-row" data-unified-drive="${drive}">
+      <div class="unified-drive-summary">
+        <span class="unified-drive-led" aria-hidden="true"></span>
         <div class="unified-drive-copy">
-          <div class="unified-drive-route" data-drive-route>${drive>=2?'Slot 7 · SmartPort Drive '+number:'Drive '+number+' · Auto route'}</div>
+          <div class="unified-drive-title">${label}</div>
           <div class="unified-drive-file" ${drive<2?`id="unifiedDrive${drive}"`:''} data-drive-name>Empty</div>
+          <div class="unified-drive-route" data-drive-route>${drive>=2?'Slot 7 · SmartPort D'+n:'Auto route'}</div>
         </div>
       </div>
-      <div class="unified-drive-button-row">
+      <div class="unified-drive-actions">
         ${boot}
-        <button type="button" class="unified-drive-button" data-drive-insert="${drive}">${drive===0?'Insert / Change':'Insert'}</button>
-        <button type="button" class="unified-drive-button unified-drive-eject" data-drive-eject="${drive}">Eject</button>
+        <button type="button" class="unified-drive-action" data-drive-insert="${drive}">Insert</button>
+        <button type="button" class="unified-drive-action unified-drive-eject" data-drive-eject="${drive}">Eject</button>
+        <button type="button" class="unified-drive-action unified-drive-more" data-drive-more="${drive}" aria-expanded="false">Options</button>
       </div>
-      <div class="unified-drive-options" data-drive-options>
-        <label class="unified-switch-row"><span>Write protect</span><input type="checkbox" data-drive-protect="${drive}"></label>
-        <button type="button" class="unified-drive-button unified-drive-download" data-drive-download="${drive}">Download image</button>
+      <div class="unified-drive-details" data-drive-details hidden>
+        <label class="unified-setting-row"><span>Write protect</span><input type="checkbox" data-drive-protect="${drive}"></label>
+        <label class="unified-setting-row"><span>Keep mounted</span><input type="checkbox" data-drive-persist="${drive}"></label>
+        <button type="button" class="unified-action unified-drive-download" data-drive-download="${drive}">Download image</button>
+        <div class="unified-drive-status" data-drive-status></div>
       </div>
-      <label class="unified-switch-row unified-persist-row"><span><b>Keep mounted</b><small data-drive-persist-note>Restore this media after reload</small></span><input type="checkbox" data-drive-persist="${drive}"></label>
-      <div class="unified-drive-status" data-drive-status></div>
     </article>`;
   }
 
@@ -65,18 +68,15 @@
     if(!pane||pane.dataset.fullDriveManager==='1')return false;
     pane.dataset.fullDriveManager='1';
     pane.innerHTML=`
-      <div class="unified-section unified-boot-section">
-        <h3>Startup</h3>
-        <label class="unified-select-row"><span>Boot from</span><select id="unifiedBootFrom"></select></label>
-        <p class="unified-note">Drive 1 and Drive 2 auto-route by image type: 5.25-inch → Slot 6, 800K 3.5-inch → Slot 5, hard-disk/SmartPort → Slot 7.</p>
+      <div class="unified-section unified-drive-boot">
+        <label class="unified-setting-row"><span>Boot from</span><select id="unifiedBootFrom"></select></label>
       </div>
-      <div class="unified-section"><h3>Drives</h3><div id="unifiedDriveCards">
-        ${driveCard(0)}${driveCard(1)}${driveCard(2)}${driveCard(3)}
-      </div></div>`;
+      <div id="unifiedDriveRows">${driveRow(0)}${driveRow(1)}${driveRow(2)}${driveRow(3)}</div>
+      <p class="unified-note unified-drive-hint">Drive 1/2 route automatically: 5.25 → Slot 6, 3.5 → Slot 5, hard disk → Slot 7.</p>`;
 
     const boot=qs('#unifiedBootFrom',pane);
-    boot.add(new Option('Automatic — normal slot scan','auto'));
-    for(const id of ['s5d1','s5d2','s6d1','s6d2','s7d1','s7d2','s7d3','s7d4'])boot.add(new Option(routeLabel[id],id));
+    boot.add(new Option('Automatic','auto'));
+    for(const id of bootIds)boot.add(new Option(routeLabel[id],id));
     boot.addEventListener('change',()=>persistence()?.setBoot?.(boot.value));
 
     pane.addEventListener('click',e=>{
@@ -85,18 +85,24 @@
       if(b.dataset.driveInsert!==undefined){document.getElementById(inputFor[Number(b.dataset.driveInsert)])?.click();return;}
       if(b.dataset.driveEject!==undefined){click('ejectDrive'+b.dataset.driveEject);setTimeout(sync,0);return;}
       if(b.dataset.driveDownload!==undefined){click('saveDrive'+b.dataset.driveDownload);return;}
+      if(b.dataset.driveMore!==undefined){
+        const row=b.closest('[data-unified-drive]');
+        const details=qs('[data-drive-details]',row);
+        const open=details.hidden;
+        details.hidden=!open;b.setAttribute('aria-expanded',open?'true':'false');
+      }
     });
 
     pane.addEventListener('change',e=>{
-      const p=e.target.dataset.driveProtect;
-      if(p!==undefined){
-        const source=document.getElementById('protectDrive'+p);
+      const protect=e.target.dataset.driveProtect;
+      if(protect!==undefined){
+        const source=document.getElementById('protectDrive'+protect);
         if(source){source.checked=e.target.checked;source.dispatchEvent(new Event('change',{bubbles:true}));}
         sync();return;
       }
       const keep=e.target.dataset.drivePersist;
       if(keep!==undefined){
-        const d=Number(keep),target=routeFor(d);
+        const target=routeFor(Number(keep));
         if(target)persistence()?.setKeep?.(target,e.target.checked).finally?.(()=>sync());
       }
     });
@@ -117,28 +123,23 @@
     const boot=qs('#unifiedBootFrom',pane);if(boot&&boot.value!==settings.boot)boot.value=settings.boot||'auto';
 
     for(let drive=0;drive<4;drive++){
-      const card=qs(`[data-unified-drive="${drive}"]`,pane);if(!card)continue;
-      const target=routeFor(drive),name=mediaName(drive);
-      const route=qs('[data-drive-route]',card),file=qs('[data-drive-name]',card);
-      if(route)route.textContent=target?routeLabel[target]:(drive<2?'Drive '+(drive+1)+' · Auto route':'Slot 7 · SmartPort Drive '+(drive+1));
+      const row=qs(`[data-unified-drive="${drive}"]`,pane);if(!row)continue;
+      const target=routeFor(drive),name=mediaName(drive),mounted=name!=='Empty';
+      const route=qs('[data-drive-route]',row),file=qs('[data-drive-name]',row);
+      if(route)route.textContent=target?routeLabel[target]:(drive<2?'Auto route':'Slot 7 · SmartPort D'+(drive+1));
       if(file)file.textContent=name;
-      card.classList.toggle('mounted',name!=='Empty');
+      row.classList.toggle('mounted',mounted);
 
-      const eject=qs('[data-drive-eject]',card);if(eject)eject.disabled=name==='Empty';
+      const eject=qs('[data-drive-eject]',row);if(eject)eject.disabled=!mounted;
+      const more=qs('[data-drive-more]',row);if(more){more.hidden=!mounted;if(!mounted)more.setAttribute('aria-expanded','false');}
+      const details=qs('[data-drive-details]',row);if(details&&!mounted)details.hidden=true;
+
       const block=board()?.prodosBlock?.drives?.[drive];
-      const blockOptions=!!block?.image;
-      const options=qs('[data-drive-options]',card);if(options)options.hidden=!blockOptions;
-      const protect=qs('[data-drive-protect]',card);if(protect)protect.checked=!!block?.writeProtected;
-      const download=qs('[data-drive-download]',card);if(download)download.disabled=!blockOptions;
+      const protect=qs('[data-drive-protect]',row);if(protect){protect.checked=!!block?.writeProtected;protect.disabled=!block?.image;}
+      const download=qs('[data-drive-download]',row);if(download)download.disabled=!block?.image;
+      const keep=qs('[data-drive-persist]',row);if(keep){keep.disabled=!target;keep.checked=!!(target&&settings.keep?.[target]);}
 
-      const keep=qs('[data-drive-persist]',card),note=qs('[data-drive-persist-note]',card);
-      if(keep){
-        keep.disabled=!target;
-        keep.checked=!!(target&&settings.keep?.[target]);
-      }
-      if(note)note.textContent=target?'Restore '+routeLabel[target]+' after reload':'Mount media first to choose its physical drive';
-
-      const status=qs('[data-drive-status]',card);
+      const status=qs('[data-drive-status]',row);
       const sourceStatus=document.getElementById('writeStatus'+drive)?.textContent?.trim();
       if(status)status.textContent=sourceStatus||'';
     }
