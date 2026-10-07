@@ -1,7 +1,7 @@
-import {Motherboard} from "https://subnetpie.github.io/computer/appleii/motherboard.js?v=20261004-speech1";
+import {Motherboard} from "https://subnetpie.github.io/computer/appleii/motherboard.js?v=20261004-mb-complete1";
 import {ProDOSBlockDevice} from "https://subnetpie.github.io/computer/appleii/prodos_block.js?v=20260930-persist1";
 import {Floppy525} from "https://subnetpie.github.io/computer/appleii/FloppyWoz525.js";
-import {Floppy35} from "./floppy35.js?v=20260928-trackcache1";
+import {Floppy35} from "https://subnetpie.github.io/computer/appleii/floppy35.js?v=20260928-trackcache1";
 
 const STORAGE_KEY = "subnetpie.apple2.iigs.configuration.v1";
 const DEVICE_LABELS = Object.freeze({
@@ -19,8 +19,8 @@ const TARGET_LABELS = Object.freeze({
 
 function defaultConfiguration() {
   return {
-    version: 1,
-    slots: {1:"empty",2:"empty",3:"empty",4:"empty",5:"iigs35",6:"disk2",7:"smartport"},
+    version: 2,
+    slots: {1:"empty",2:"empty",3:"empty",4:"mouse",5:"iigs35",6:"disk2",7:"smartport"},
     driveTargets: ["auto","auto"]
   };
 }
@@ -32,6 +32,10 @@ function normalizeConfiguration(value) {
   const claimed=new Set();
   for(const slot of [7,6,4,3,2,1]) {
     const requested=input.slots?.[slot];
+    if(slot===4 && (requested==="mouse" || requested==="mockingboard")) {
+      out.slots[slot]=requested;
+      continue;
+    }
     if(!validSlotDevice.has(requested) || requested==="empty") {
       out.slots[slot]="empty";
       continue;
@@ -40,7 +44,10 @@ function normalizeConfiguration(value) {
     else { out.slots[slot]=requested; claimed.add(requested); }
   }
   out.slots[5]="iigs35";
-  if(!claimed.has("smartport")) out.slots[7]="smartport";
+  if(!claimed.has("smartport")) {
+    const free=[7,6,4,3,2,1].find(slot=>out.slots[slot]==="empty");
+    if(free) out.slots[free]="smartport";
+  }
   if(!claimed.has("disk2")) {
     if(out.slots[6]==="empty") out.slots[6]="disk2";
     else {
@@ -57,7 +64,16 @@ function normalizeConfiguration(value) {
 }
 
 export function loadIIgsConfiguration() {
-  try { return normalizeConfiguration(JSON.parse(localStorage.getItem(STORAGE_KEY)||"null")); }
+  try {
+    const value=JSON.parse(localStorage.getItem(STORAGE_KEY)||"null");
+    if(!value)return defaultConfiguration();
+    // Migrate the old separate slot-4 preference without overriding a controller.
+    if(value.version!==2 && value.slots?.[4]==="empty") {
+      const legacy=localStorage.getItem("subnetpie.apple2.iigs.slot4.v1")||"mouse";
+      if(legacy==="mouse" || legacy==="mockingboard")value.slots[4]=legacy;
+    }
+    return normalizeConfiguration(value);
+  }
   catch(_) { return defaultConfiguration(); }
 }
 
@@ -260,10 +276,11 @@ function buildConfigurationDialog() {
         </section>
       </div>
       <p class="iigs-config-warning">Saving restarts the emulator so ROM 03 scans the new slot layout. Mount disks after the restart.</p>
+      <p id="iigsConfigError" role="alert" hidden></p>
       <footer>
         <button type="button" id="iigsConfigDefaults">Defaults</button>
         <span></span>
-        <button value="cancel">Cancel</button>
+        <button type="button" value="cancel" id="iigsConfigClose">Close</button>
         <button type="button" id="iigsConfigSave" class="primary">Save & Restart</button>
       </footer>
     </form>`;
@@ -295,6 +312,11 @@ function buildConfigurationDialog() {
       ? `<option value="iigs35">${DEVICE_LABELS.iigs35}</option>`
       : `<option value="empty">${DEVICE_LABELS.empty}</option><option value="smartport">${DEVICE_LABELS.smartport}</option><option value="disk2">${DEVICE_LABELS.disk2}</option>`;
     row.innerHTML=`<span>${slot}</span><select data-slot="${slot}" ${slot===5?"disabled":""}>${options}</select>`;
+    if(slot===4) {
+      const select=row.querySelector("select");
+      select.add(new Option("Mouse · built-in ADB / slot 4 firmware","mouse"));
+      select.add(new Option("Mockingboard v2.2 + speech","mockingboard"));
+    }
     rows.append(row);
   }
   for(let drive=0;drive<2;drive++) {
@@ -324,15 +346,44 @@ function buildConfigurationDialog() {
         if(other!==select && other.value===select.value)other.value="empty";
       });
     }
+    if(!event.target.matches("select"))return;
     render(readForm());
   });
-  document.getElementById("iigsConfigDefaults").addEventListener("click",()=>render(defaultConfiguration()));
+  document.getElementById("iigsConfigDefaults").addEventListener("click",()=>{render(defaultConfiguration());dialog.dispatchEvent(new Event("iigs-config-defaults"));});
+  const error=document.getElementById("iigsConfigError");
+  document.getElementById("iigsConfigClose").addEventListener("click",()=>dialog.close("cancel"));
+  document.getElementById("iigsConfigurationForm").addEventListener("submit",event=>event.preventDefault());
   document.getElementById("iigsConfigSave").addEventListener("click",()=>{
-    saveIIgsConfiguration(readForm());
+    // Keep all panel changes as a draft until Save. Roll back prior writes if
+    // Safari denies storage or a quota error occurs; leave the dialog usable.
+    const writes=[[STORAGE_KEY,JSON.stringify(readForm())]];
+    if(dialog.readPersistentConfiguration)writes.push([
+      "subnetpie.apple2.iigs.persistentBoot.v1",
+      JSON.stringify(dialog.readPersistentConfiguration())
+    ]);
+    const previous=[];
+    try {
+      for(const [key,value] of writes) {
+        previous.push([key,localStorage.getItem(key)]);
+        localStorage.setItem(key,value);
+      }
+    } catch(err) {
+      for(const [key,value] of previous.reverse()) {
+        try { if(value===null)localStorage.removeItem(key);else localStorage.setItem(key,value); } catch(_) {}
+      }
+      error.textContent="Could not save settings. Allow browser storage and try again.";
+      error.hidden=false;
+      return;
+    }
+    dialog.close("saved");
     location.reload();
   });
-  dialog.addEventListener("close",()=>{});
-  dialog.openWithConfiguration=()=>{render(loadIIgsConfiguration());dialog.showModal();};
+  dialog.openWithConfiguration=()=>{
+    render(loadIIgsConfiguration());
+    error.hidden=true;
+    dialog.dispatchEvent(new Event("iigs-config-open"));
+    if(!dialog.open)dialog.showModal();
+  };
 }
 
 function installConfigurationButton() {

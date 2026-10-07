@@ -4,12 +4,12 @@
 // stop would prevent Safari from ever delivering taps to select/button targets.
 const iiGsMode = new URLSearchParams(location.search).get('machine') !== 'iie';
 if(document.readyState === 'loading') {
-  document.write('<link rel="stylesheet" href="./iigs_configuration_mobile.css?v=20261004-touch3">');
-  document.write('<script type="module" src="./iigs_configuration.js?v=20261004-slots-drives3"><\/script>');
-  document.write('<script type="module" src="./iigs_slot4_devices.js?v=20261004-slot4-skyfox1"><\/script>');
+  document.write('<link rel="stylesheet" href="./iigs_configuration_mobile.css?v=20261007-panel-audit1">');
+  document.write('<script type="module" src="./iigs_configuration.js?v=20261007-panel-audit1"><\/script>');
+  document.write('<script type="module" src="./iigs_slot4_devices.js?v=20261007-panel-audit1"><\/script>');
   if(iiGsMode) document.write('<script type="module" src="./iigs_extra_drives.js?v=20261006-smartport4"><\/script>');
-  if(iiGsMode) document.write('<script type="module" src="./iigs_persistent_boot.js?v=20261006-persistent-boot1"><\/script>');
-  if(iiGsMode) document.write('<script type="module" src="./iigs_persistent_boot_ui.js?v=20261006-persistent-ui1"><\/script>');
+  if(iiGsMode) document.write('<script type="module" src="./iigs_persistent_boot.js?v=20261007-panel-audit1"><\/script>');
+  if(iiGsMode) document.write('<script type="module" src="./iigs_persistent_boot_ui.js?v=20261007-panel-audit1"><\/script>');
   document.write('<script type="module" src="./display_speed_panel.js?v=20261006-speed-presets1"><\/script>');
   document.write('<script src="./display_color_panel.js?v=20261006-display-presets1"><\/script>');
   document.write('<script type="module" src="./iigs_keyboard_layout.js?v=20261005-iigs-kbd1"><\/script>');
@@ -17,15 +17,15 @@ if(document.readyState === 'loading') {
   if(!document.querySelector('link[href*="iigs_configuration_mobile.css"]')) {
     const link=document.createElement('link');
     link.rel='stylesheet';
-    link.href='./iigs_configuration_mobile.css?v=20261004-touch3';
+    link.href='./iigs_configuration_mobile.css?v=20261007-panel-audit1';
     document.head.append(link);
   }
-  const hardware=import('./iigs_configuration.js?v=20261004-slots-drives3').then(() =>
-    import('./iigs_slot4_devices.js?v=20261004-slot4-skyfox1'));
+  const hardware=import('./iigs_configuration.js?v=20261007-panel-audit1').then(() =>
+    import('./iigs_slot4_devices.js?v=20261007-panel-audit1'));
   if(iiGsMode) hardware
     .then(() => import('./iigs_extra_drives.js?v=20261006-smartport4'))
-    .then(() => import('./iigs_persistent_boot.js?v=20261006-persistent-boot1'))
-    .then(() => import('./iigs_persistent_boot_ui.js?v=20261006-persistent-ui1'));
+    .then(() => import('./iigs_persistent_boot.js?v=20261007-panel-audit1'))
+    .then(() => import('./iigs_persistent_boot_ui.js?v=20261007-panel-audit1'));
   import('./display_speed_panel.js?v=20261006-speed-presets1');
   if(!document.querySelector('script[src*="display_color_panel.js"]')) {
     const displayScript=document.createElement('script');

@@ -149,7 +149,9 @@ function installConfigBoot(){
   const section=dialog.querySelector('.iigs-config-grid section:last-child')||dialog.querySelector('section:last-child');if(!section)return;
   const wrap=document.createElement('label');wrap.className='iigs-drive-route';wrap.innerHTML='<span>Boot from</span><select id="iigsBootFrom"></select>';
   const select=wrap.querySelector('select');select.add(new Option('Automatic — normal slot scan','auto'));for(const id of targetIds)select.add(new Option(label(id),id));select.value=settings().boot;
-  select.addEventListener('change',()=>{const s=settings();s.boot=select.value;saveSettings(s);});section.prepend(wrap);
+  dialog.addEventListener('iigs-config-open',()=>{select.value=settings().boot;});
+  dialog.addEventListener('iigs-config-defaults',()=>{select.value='auto';});
+  section.prepend(wrap);
 }
 function addKeepControl(section,id){
   if(!section||section.querySelector('.persistent-mount-toggle'))return;

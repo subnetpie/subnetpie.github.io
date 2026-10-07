@@ -6,7 +6,6 @@ const drives=[
   ['s7d3','Slot 7 · SmartPort Drive 3'],['s7d4','Slot 7 · SmartPort Drive 4']
 ];
 function read(){try{const v=JSON.parse(localStorage.getItem(SETTINGS)||'{}');return {boot:v.boot||'auto',keep:v.keep&&typeof v.keep==='object'?v.keep:{}};}catch(_){return {boot:'auto',keep:{}};}}
-function write(v){try{localStorage.setItem(SETTINGS,JSON.stringify(v));}catch(_){}}
 function install(){
   const dialog=document.getElementById('iigsConfigurationDialog');
   if(!dialog||dialog.querySelector('#iigsPersistentDriveList'))return;
@@ -18,10 +17,21 @@ function install(){
     const row=document.createElement('label');row.style.cssText='display:flex;justify-content:space-between;gap:12px;align-items:center;padding:8px;background:#ecece8;border:1px solid #777';
     const text=document.createElement('span');text.textContent=name;text.style.textAlign='left';
     const cb=document.createElement('input');cb.type='checkbox';cb.checked=!!read().keep[id];cb.dataset.persistentDrive=id;
-    cb.addEventListener('change',()=>{const s=read();s.keep[id]=cb.checked;write(s);});
     row.append(text,cb);box.append(row);
   }
   section.append(box);
+  let draft=read();
+  const render=()=>box.querySelectorAll('input[data-persistent-drive]').forEach(cb=>{
+    cb.checked=!!draft.keep[cb.dataset.persistentDrive];
+  });
+  dialog.readPersistentConfiguration=()=>{
+    const keep={...draft.keep};
+    box.querySelectorAll('input[data-persistent-drive]').forEach(cb=>{keep[cb.dataset.persistentDrive]=cb.checked;});
+    return {...draft,boot:dialog.querySelector('#iigsBootFrom')?.value||draft.boot,keep};
+  };
+  dialog.addEventListener('iigs-config-open',()=>{draft=read();render();});
+  dialog.addEventListener('iigs-config-defaults',()=>{draft={boot:'auto',keep:{}};render();});
+  render();
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});else install();
 new MutationObserver(install).observe(document.documentElement,{childList:true,subtree:true});

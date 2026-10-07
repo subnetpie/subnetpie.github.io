@@ -275,3 +275,19 @@
     min-height: 48px !important;
   }
 }
+
+
+/* Explicitly allow vertical swipes through the entire ancestor chain. */
+#iigsConfigurationDialog,
+#iigsConfigurationDialog * { touch-action: pan-y; }
+#iigsConfigurationDialog input[type="checkbox"] { min-width: 24px; min-height: 24px; }
+#iigsConfigurationDialog button { opacity: 1; }
+#iigsConfigurationDialog #iigsConfigError { color: #800; margin: 4px; }
+@media (hover: none) and (pointer: coarse), (max-width: 600px) {
+  body .iigs-config,
+  body .iigs-config form { touch-action: pan-y !important; }
+  body .iigs-config form { height: 100% !important; }
+  body .iigs-config-grid,
+  body .iigs-config-grid * { touch-action: pan-y !important; }
+  body .iigs-config #iigsPersistentDriveList label { min-height: 44px; }
+}
