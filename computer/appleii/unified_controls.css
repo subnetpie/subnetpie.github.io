@@ -35,7 +35,7 @@ body.unified-ui #joyControls { display:none !important; }
   box-shadow:inset 0 1px 0 rgba(255,255,255,.12);
   touch-action:manipulation;
 }
-#unifiedLauncher button[aria-pressed="true"] { background:rgba(49,93,72,.94);border-color:rgba(202,230,207,.62); }
+#unifiedLauncher button[aria-pressed="true"] { background:rgba(82,92,103,.94);border-color:rgba(220,225,230,.58); }
 #unifiedLauncher .unified-grip { cursor:grab;font-size:17px;letter-spacing:-3px; }
 #unifiedLauncher.dragging .unified-grip { cursor:grabbing; }
 
@@ -59,7 +59,7 @@ body.unified-ui #joyControls { display:none !important; }
 #unifiedPanelClose { width:40px;height:40px;min-width:40px;border:1px solid #756255;border-radius:20px;background:rgba(109,79,68,.88);color:#fff;opacity:1;font-size:20px; }
 .unified-tabs { display:grid;grid-template-columns:repeat(4,1fr);gap:5px;padding:0 12px 10px;position:sticky;top:0;z-index:2;background:rgba(196,193,160,.93);backdrop-filter:blur(14px); }
 .unified-tabs button { min-width:0;height:42px;border:1px solid #877666;border-radius:9px;background:rgba(239,235,205,.72);color:#44382f;opacity:1;font-size:12px;font-weight:650; }
-.unified-tabs button.active { background:#315d48;color:#fff;border-color:#234434;font-weight:800;box-shadow:inset 0 1px 0 rgba(255,255,255,.18); }
+.unified-tabs button.active { background:#596774;color:#fff;border-color:#46515d;font-weight:800;box-shadow:inset 0 1px 0 rgba(255,255,255,.18); }
 .unified-tab { padding:4px 12px 18px; }
 .unified-tab[hidden] { display:none !important; }
 .unified-section { margin:10px 0 14px;padding:12px;border:1px solid rgba(103,87,71,.30);border-radius:13px;background:rgba(245,241,211,.55);box-shadow:inset 0 1px 0 rgba(255,255,255,.48); }
@@ -72,7 +72,7 @@ body.unified-ui #joyControls { display:none !important; }
 .unified-choice { min-width:0;min-height:46px;border:2px outset #66594e;border-radius:7px;background:#6d4f44;color:#fff;opacity:.94;padding:8px;font-size:13px;touch-action:manipulation;box-shadow:0 1px 2px rgba(52,37,28,.18); }
 .unified-action:active,
 .unified-choice:active { border-style:inset;transform:translateY(1px); }
-.unified-choice.active { outline:2px solid #2b6b45;outline-offset:1px;background:#315d48;border-color:#214332; }
+.unified-choice.active { outline:2px solid #6a7885;outline-offset:1px;background:#596774;border-color:#46515d; }
 .unified-danger { background:#7d2525;border-color:#5e1c1c; }
 .unified-setting-row { display:grid;grid-template-columns:minmax(0,1fr) minmax(112px,.8fr);align-items:center;gap:10px;margin:8px 0; }
 .unified-setting-row > span { color:#4c4036;font-size:13px;font-weight:700; }
