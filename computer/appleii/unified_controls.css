@@ -26,7 +26,13 @@ body.unified-ui #joyControls { display:none !important; }
   touch-action:none;
   user-select:none;
 }
-#unifiedLauncher.collapsed { width:46px; height:46px; border-radius:23px; padding:3px; overflow:hidden; }
+#unifiedLauncher.collapsed {
+  width:52px;
+  height:52px;
+  border-radius:18px;
+  padding:5px;
+  overflow:hidden;
+}
 #unifiedLauncher.collapsed .unified-island-action { display:none; }
 #unifiedLauncher button {
   width:42px;height:42px;min-width:42px;padding:0;
