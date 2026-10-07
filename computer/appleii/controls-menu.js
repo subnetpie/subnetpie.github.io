@@ -10,6 +10,7 @@ if(document.readyState === 'loading') {
   if(iiGsMode) document.write('<script type="module" src="./iigs_extra_drives.js?v=20261006-smartport4"><\/script>');
   if(iiGsMode) document.write('<script type="module" src="./iigs_persistent_boot.js?v=20261006-persistent-boot1"><\/script>');
   if(iiGsMode) document.write('<script type="module" src="./iigs_persistent_boot_ui.js?v=20261006-persistent-ui1"><\/script>');
+  document.write('<script src="./display_color_panel.js?v=20261006-display-presets1"><\/script>');
   document.write('<script type="module" src="./iigs_keyboard_layout.js?v=20261005-iigs-kbd1"><\/script>');
 } else {
   if(!document.querySelector('link[href*="iigs_configuration_mobile.css"]')) {
@@ -24,6 +25,11 @@ if(document.readyState === 'loading') {
     .then(() => import('./iigs_extra_drives.js?v=20261006-smartport4'))
     .then(() => import('./iigs_persistent_boot.js?v=20261006-persistent-boot1'))
     .then(() => import('./iigs_persistent_boot_ui.js?v=20261006-persistent-ui1'));
+  if(!document.querySelector('script[src*="display_color_panel.js"]')) {
+    const displayScript=document.createElement('script');
+    displayScript.src='./display_color_panel.js?v=20261006-display-presets1';
+    document.head.append(displayScript);
+  }
   import('./iigs_keyboard_layout.js?v=20261005-iigs-kbd1');
 }
 
