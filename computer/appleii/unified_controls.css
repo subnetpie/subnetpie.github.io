@@ -1,11 +1,11 @@
-/* Opt-in unified controls (?ui=unified). Existing emulator controls remain the backend. */
+/* Unified Apple IIgs controls. Existing emulator controls remain the backend. */
 body.unified-ui #buttonSettings,
 body.unified-ui #controls,
 body.unified-ui #buttonJoySettings,
 body.unified-ui #joyControls { display:none !important; }
 
 #unifiedLauncher,
-#unifiedMachinePanel { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+#unifiedMachinePanel { font-family:"Rubik",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
 
 #unifiedLauncher {
   position:fixed;
@@ -16,12 +16,12 @@ body.unified-ui #joyControls { display:none !important; }
   align-items:center;
   gap:6px;
   padding:5px;
-  border:1px solid rgba(255,255,255,.26);
+  border:1px solid rgba(111,91,72,.72);
   border-radius:18px;
-  background:rgba(32,32,32,.68);
-  -webkit-backdrop-filter:blur(16px) saturate(1.2);
-  backdrop-filter:blur(16px) saturate(1.2);
-  box-shadow:0 3px 16px rgba(0,0,0,.26);
+  background:rgba(109,79,68,.72);
+  -webkit-backdrop-filter:blur(16px) saturate(1.08);
+  backdrop-filter:blur(16px) saturate(1.08);
+  box-shadow:0 4px 18px rgba(32,20,12,.32),inset 0 1px 0 rgba(255,255,255,.18);
   touch-action:none;
   user-select:none;
 }
@@ -29,56 +29,60 @@ body.unified-ui #joyControls { display:none !important; }
 #unifiedLauncher.collapsed .unified-island-action { display:none; }
 #unifiedLauncher button {
   width:42px;height:42px;min-width:42px;padding:0;
-  border:0;border-radius:13px;background:rgba(255,255,255,.14);
-  color:white;opacity:1;font-size:19px;touch-action:manipulation;
+  border:1px solid rgba(255,255,255,.20);border-radius:13px;
+  background:rgba(71,48,39,.42);color:#fff;opacity:1;font-size:19px;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.12);
+  touch-action:manipulation;
 }
-#unifiedLauncher button[aria-pressed="true"] { background:rgba(87,158,255,.72); }
+#unifiedLauncher button[aria-pressed="true"] { background:rgba(49,93,72,.94);border-color:rgba(202,230,207,.62); }
 #unifiedLauncher .unified-grip { cursor:grab;font-size:17px;letter-spacing:-3px; }
 #unifiedLauncher.dragging .unified-grip { cursor:grabbing; }
 
 #unifiedMachinePanel {
   position:fixed;
   z-index:10010;
-  color:#f5f5f5;
-  background:rgba(28,28,30,.83);
-  -webkit-backdrop-filter:blur(22px) saturate(1.25);
-  backdrop-filter:blur(22px) saturate(1.25);
-  border:1px solid rgba(255,255,255,.2);
-  box-shadow:0 10px 36px rgba(0,0,0,.34);
+  color:#2e2722;
+  background:rgba(196,193,160,.91);
+  -webkit-backdrop-filter:blur(22px) saturate(1.02);
+  backdrop-filter:blur(22px) saturate(1.02);
+  border:1px solid rgba(86,70,57,.72);
+  box-shadow:0 12px 38px rgba(43,30,20,.34),inset 0 1px 0 rgba(255,255,255,.44);
   overflow:auto;
   overscroll-behavior:contain;
   touch-action:pan-y;
 }
 #unifiedMachinePanel[hidden] { display:none !important; }
 .unified-panel-head { display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 14px 9px; }
-.unified-panel-title { font-weight:700;font-size:17px; }
-.unified-panel-subtitle { color:#c7c7cc;font-size:12px;margin-top:2px; }
-#unifiedPanelClose { width:40px;height:40px;min-width:40px;border:0;border-radius:20px;background:rgba(255,255,255,.12);color:white;opacity:1;font-size:20px; }
-.unified-tabs { display:grid;grid-template-columns:repeat(4,1fr);gap:5px;padding:0 12px 10px;position:sticky;top:0;z-index:2;background:rgba(28,28,30,.88);backdrop-filter:blur(16px); }
-.unified-tabs button { min-width:0;height:42px;border:0;border-radius:10px;background:rgba(255,255,255,.09);color:#eee;opacity:1;font-size:12px; }
-.unified-tabs button.active { background:#3478f6;color:white;font-weight:700; }
+.unified-panel-title { font-weight:800;font-size:18px;color:#34291f; }
+.unified-panel-subtitle { color:#6f6255;font-size:12px;margin-top:2px; }
+#unifiedPanelClose { width:40px;height:40px;min-width:40px;border:1px solid #756255;border-radius:20px;background:rgba(109,79,68,.88);color:#fff;opacity:1;font-size:20px; }
+.unified-tabs { display:grid;grid-template-columns:repeat(4,1fr);gap:5px;padding:0 12px 10px;position:sticky;top:0;z-index:2;background:rgba(196,193,160,.93);backdrop-filter:blur(14px); }
+.unified-tabs button { min-width:0;height:42px;border:1px solid #877666;border-radius:9px;background:rgba(239,235,205,.72);color:#44382f;opacity:1;font-size:12px;font-weight:650; }
+.unified-tabs button.active { background:#315d48;color:#fff;border-color:#234434;font-weight:800;box-shadow:inset 0 1px 0 rgba(255,255,255,.18); }
 .unified-tab { padding:4px 12px 18px; }
 .unified-tab[hidden] { display:none !important; }
-.unified-section { margin:10px 0 14px;padding:12px;border-radius:14px;background:rgba(255,255,255,.08); }
-.unified-section h3 { margin:0 0 10px;font-size:13px;color:#d1d1d6;text-transform:uppercase;letter-spacing:.04em; }
+.unified-section { margin:10px 0 14px;padding:12px;border:1px solid rgba(103,87,71,.30);border-radius:13px;background:rgba(245,241,211,.55);box-shadow:inset 0 1px 0 rgba(255,255,255,.48); }
+.unified-section h3 { margin:0 0 10px;font-size:13px;color:#5a4b3f;text-transform:uppercase;letter-spacing:.04em; }
 .unified-grid { display:grid;gap:8px; }
 .unified-grid.two { grid-template-columns:repeat(2,minmax(0,1fr)); }
 .unified-grid.four { grid-template-columns:repeat(4,minmax(0,1fr)); }
 .unified-grid.five { grid-template-columns:repeat(5,minmax(0,1fr)); }
 .unified-action,
-.unified-choice { min-width:0;min-height:46px;border:1px solid rgba(255,255,255,.17);border-radius:11px;background:rgba(255,255,255,.09);color:white;opacity:1;padding:8px;font-size:13px;touch-action:manipulation; }
-.unified-choice.active { outline:2px solid #49e557;outline-offset:-2px;background:rgba(52,120,246,.34); }
-.unified-danger { background:rgba(180,42,42,.48); }
+.unified-choice { min-width:0;min-height:46px;border:2px outset #66594e;border-radius:7px;background:#6d4f44;color:#fff;opacity:.94;padding:8px;font-size:13px;touch-action:manipulation;box-shadow:0 1px 2px rgba(52,37,28,.18); }
+.unified-action:active,
+.unified-choice:active { border-style:inset;transform:translateY(1px); }
+.unified-choice.active { outline:2px solid #2b6b45;outline-offset:1px;background:#315d48;border-color:#214332; }
+.unified-danger { background:#7d2525;border-color:#5e1c1c; }
 .unified-setting-row { display:grid;grid-template-columns:minmax(0,1fr) minmax(112px,.8fr);align-items:center;gap:10px;margin:8px 0; }
-.unified-setting-row > span { color:#e7e7ea;font-size:13px;font-weight:600; }
+.unified-setting-row > span { color:#4c4036;font-size:13px;font-weight:700; }
 .unified-joystick-settings[hidden] { display:none !important; }
-.unified-drive { display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:9px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.11); }
+.unified-drive { display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:9px;padding:10px 0;border-bottom:1px solid rgba(86,70,57,.24); }
 .unified-drive:last-child { border-bottom:0; }
-.unified-drive-name { min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;font-weight:600; }
-.unified-drive-meta { color:#b9b9bf;font-size:11px;margin-top:3px; }
+.unified-drive-name { min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;font-weight:700;color:#352c25; }
+.unified-drive-meta { color:#746658;font-size:11px;margin-top:3px; }
 .unified-drive-actions { display:flex;gap:5px; }
-.unified-drive-actions button { min-height:40px;padding:7px 9px;border:1px solid rgba(255,255,255,.16);border-radius:9px;background:rgba(255,255,255,.09);color:white;opacity:1;font-size:12px; }
-.unified-note { color:#c7c7cc;font-size:12px;line-height:1.35; }
+.unified-drive-actions button { min-height:40px;padding:7px 9px;border:2px outset #66594e;border-radius:7px;background:#6d4f44;color:#fff;opacity:.94;font-size:12px; }
+.unified-note { color:#716457;font-size:12px;line-height:1.35; }
 
 /* Phone portrait: sheet rises from bottom, leaving the IIgs screen above it. */
 @media (max-width:600px) and (orientation:portrait) {
@@ -111,9 +115,10 @@ body.unified-ui.unified-workstation:not(.keyboard-mode):not(.joystick-mode) #key
 body.unified-ui.unified-workstation:not(.keyboard-mode):not(.joystick-mode) #keyboard2,
 body.unified-ui.unified-workstation:not(.keyboard-mode):not(.joystick-mode) #keypad,
 body.unified-ui.unified-workstation:not(.keyboard-mode):not(.joystick-mode) #joyStick { display:none !important; }
+body.unified-ui.joystick-disabled #joyStick { display:none !important; }
 
 /* Landscape virtual controls overlay the display rather than claim layout space. */
 @media (orientation:landscape) {
-  body.unified-ui.joystick-mode #joyStick { opacity:.68; }
-  body.unified-ui.keyboard-mode #keyboard1 { opacity:.72; }
+  body.unified-ui.joystick-mode:not(.joystick-disabled) #joyStick { opacity:.72; }
+  body.unified-ui.keyboard-mode #keyboard1 { opacity:.74; }
 }
