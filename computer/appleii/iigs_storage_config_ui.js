@@ -1,6 +1,16 @@
 (() => {
   const storage=()=>window.__appleIIgsStorage;
 
+  function sortGroupsDescending(){
+    const svc=storage();
+    if(!svc)return false;
+    if(svc.__descendingSlotGroups)return true;
+    const original=svc.groups.bind(svc);
+    svc.groups=()=>original().slice().sort((a,b)=>b.slot-a.slot);
+    svc.__descendingSlotGroups=true;
+    return true;
+  }
+
   function disableLegacyRouting(){
     const b=window.__appleIIgsBoard;
     if(!b?.iigsEnabled)return false;
@@ -15,6 +25,7 @@
   function render(){
     const dialog=document.getElementById('iigsConfigurationDialog'),svc=storage();
     if(!dialog||!svc)return false;
+    sortGroupsDescending();
 
     for(const id of ['iigsDriveTarget0','iigsDriveTarget1']){
       const select=document.getElementById(id),row=select?.closest('.iigs-drive-route');
@@ -35,7 +46,11 @@
   }
 
   let uiTries=0,boardTries=0;
-  const waitUI=()=>{if(render())return;if(++uiTries<100)setTimeout(waitUI,100);};
+  const waitUI=()=>{
+    sortGroupsDescending();
+    if(render())return;
+    if(++uiTries<100)setTimeout(waitUI,100);
+  };
   const waitBoard=()=>{if(disableLegacyRouting())return;if(++boardTries<100)setTimeout(waitBoard,50);};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>{waitUI();waitBoard();},{once:true});
   else{waitUI();waitBoard();}
