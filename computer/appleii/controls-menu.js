@@ -14,6 +14,7 @@ const assets={
   storage:'./iigs_storage_registry.js?v=20261007-physical2',
   storageConfig:'./iigs_storage_config_ui.js?v=20261007-physical2',
   unifiedBridge:'./unified_configuration_bridge.js?v=20261007-machine2',
+  scanlines:'./display_scanline_overlay.js?v=20261007-shr-scanlines1',
   speed:'./display_speed_panel.js?v=20261006-speed-presets1',
   color:'./display_color_panel.js?v=20261006-display-presets1',
   keyboard:'./iigs_keyboard_layout.js?v=20261005-iigs-kbd1',
@@ -48,6 +49,7 @@ if(document.readyState==='loading'){
   document.write(`<script src="${assets.color}"><\/script>`);
   document.write(`<script type="module" src="${assets.keyboard}"><\/script>`);
   document.write(`<script src="${assets.caps}"><\/script>`);
+  document.write(`<script src="${assets.scanlines}"><\/script>`);
 }else{
   addStyle(assets.configCss);
   const hardware=import(assets.config).then(()=>import(assets.slot4));
@@ -56,6 +58,7 @@ if(document.readyState==='loading'){
   addScript(assets.color);
   import(assets.keyboard);
   addScript(assets.caps);
+  addScript(assets.scanlines);
 }
 
 // Independent legacy menus remain available underneath the unified UI.
