@@ -1,0 +1,114 @@
+/* Opt-in unified controls (?ui=unified). Existing emulator controls remain the backend. */
+body.unified-ui #buttonSettings,
+body.unified-ui #controls { display:none !important; }
+
+#unifiedLauncher,
+#unifiedMachinePanel { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+
+#unifiedLauncher {
+  position:fixed;
+  z-index:10020;
+  right:max(10px,env(safe-area-inset-right));
+  top:max(10px,env(safe-area-inset-top));
+  display:flex;
+  align-items:center;
+  gap:6px;
+  padding:5px;
+  border:1px solid rgba(255,255,255,.26);
+  border-radius:18px;
+  background:rgba(32,32,32,.68);
+  -webkit-backdrop-filter:blur(16px) saturate(1.2);
+  backdrop-filter:blur(16px) saturate(1.2);
+  box-shadow:0 3px 16px rgba(0,0,0,.26);
+  touch-action:none;
+  user-select:none;
+}
+#unifiedLauncher.collapsed { width:46px; height:46px; border-radius:23px; padding:3px; overflow:hidden; }
+#unifiedLauncher.collapsed .unified-island-action { display:none; }
+#unifiedLauncher button {
+  width:42px;height:42px;min-width:42px;padding:0;
+  border:0;border-radius:13px;background:rgba(255,255,255,.14);
+  color:white;opacity:1;font-size:19px;touch-action:manipulation;
+}
+#unifiedLauncher button[aria-pressed="true"] { background:rgba(87,158,255,.72); }
+#unifiedLauncher .unified-grip { cursor:grab;font-size:17px;letter-spacing:-3px; }
+#unifiedLauncher.dragging .unified-grip { cursor:grabbing; }
+
+#unifiedMachinePanel {
+  position:fixed;
+  z-index:10010;
+  color:#f5f5f5;
+  background:rgba(28,28,30,.83);
+  -webkit-backdrop-filter:blur(22px) saturate(1.25);
+  backdrop-filter:blur(22px) saturate(1.25);
+  border:1px solid rgba(255,255,255,.2);
+  box-shadow:0 10px 36px rgba(0,0,0,.34);
+  overflow:auto;
+  overscroll-behavior:contain;
+  touch-action:pan-y;
+}
+#unifiedMachinePanel[hidden] { display:none !important; }
+.unified-panel-head { display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 14px 9px; }
+.unified-panel-title { font-weight:700;font-size:17px; }
+.unified-panel-subtitle { color:#c7c7cc;font-size:12px;margin-top:2px; }
+#unifiedPanelClose { width:40px;height:40px;min-width:40px;border:0;border-radius:20px;background:rgba(255,255,255,.12);color:white;opacity:1;font-size:20px; }
+.unified-tabs { display:grid;grid-template-columns:repeat(4,1fr);gap:5px;padding:0 12px 10px;position:sticky;top:0;z-index:2;background:rgba(28,28,30,.88);backdrop-filter:blur(16px); }
+.unified-tabs button { min-width:0;height:42px;border:0;border-radius:10px;background:rgba(255,255,255,.09);color:#eee;opacity:1;font-size:12px; }
+.unified-tabs button.active { background:#3478f6;color:white;font-weight:700; }
+.unified-tab { padding:4px 12px 18px; }
+.unified-tab[hidden] { display:none !important; }
+.unified-section { margin:10px 0 14px;padding:12px;border-radius:14px;background:rgba(255,255,255,.08); }
+.unified-section h3 { margin:0 0 10px;font-size:13px;color:#d1d1d6;text-transform:uppercase;letter-spacing:.04em; }
+.unified-grid { display:grid;gap:8px; }
+.unified-grid.two { grid-template-columns:repeat(2,minmax(0,1fr)); }
+.unified-grid.four { grid-template-columns:repeat(4,minmax(0,1fr)); }
+.unified-grid.five { grid-template-columns:repeat(5,minmax(0,1fr)); }
+.unified-action,
+.unified-choice { min-width:0;min-height:46px;border:1px solid rgba(255,255,255,.17);border-radius:11px;background:rgba(255,255,255,.09);color:white;opacity:1;padding:8px;font-size:13px;touch-action:manipulation; }
+.unified-choice.active { outline:2px solid #49e557;outline-offset:-2px;background:rgba(52,120,246,.34); }
+.unified-danger { background:rgba(180,42,42,.48); }
+.unified-drive { display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:9px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.11); }
+.unified-drive:last-child { border-bottom:0; }
+.unified-drive-name { min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;font-weight:600; }
+.unified-drive-meta { color:#b9b9bf;font-size:11px;margin-top:3px; }
+.unified-drive-actions { display:flex;gap:5px; }
+.unified-drive-actions button { min-height:40px;padding:7px 9px;border:1px solid rgba(255,255,255,.16);border-radius:9px;background:rgba(255,255,255,.09);color:white;opacity:1;font-size:12px; }
+.unified-note { color:#c7c7cc;font-size:12px;line-height:1.35; }
+
+/* Phone portrait: sheet rises from bottom, leaving the IIgs screen above it. */
+@media (max-width:600px) and (orientation:portrait) {
+  #unifiedLauncher { top:auto;bottom:max(10px,env(safe-area-inset-bottom)); }
+  #unifiedMachinePanel {
+    left:0;right:0;bottom:0;
+    width:100%;max-height:min(76dvh,720px);
+    border-radius:22px 22px 0 0;
+    padding-bottom:env(safe-area-inset-bottom);
+  }
+}
+
+/* Landscape phone and all larger layouts: temporary right overlay. */
+@media (orientation:landscape), (min-width:601px) {
+  #unifiedMachinePanel {
+    top:max(8px,env(safe-area-inset-top));
+    right:max(8px,env(safe-area-inset-right));
+    bottom:max(8px,env(safe-area-inset-bottom));
+    width:min(430px,54vw);
+    border-radius:18px;
+  }
+}
+@media (min-width:1025px) {
+  #unifiedMachinePanel { width:460px; }
+}
+
+/* In unified iPad/desktop mode, virtual controls are off until selected. */
+body.unified-ui.unified-workstation:not(.keyboard-mode):not(.joystick-mode) #keyboard0,
+body.unified-ui.unified-workstation:not(.keyboard-mode):not(.joystick-mode) #keyboard1,
+body.unified-ui.unified-workstation:not(.keyboard-mode):not(.joystick-mode) #keyboard2,
+body.unified-ui.unified-workstation:not(.keyboard-mode):not(.joystick-mode) #keypad,
+body.unified-ui.unified-workstation:not(.keyboard-mode):not(.joystick-mode) #joyStick { display:none !important; }
+
+/* Landscape virtual controls overlay the display rather than claim layout space. */
+@media (orientation:landscape) {
+  body.unified-ui.joystick-mode #joyStick { opacity:.68; }
+  body.unified-ui.keyboard-mode #keyboard1 { opacity:.72; }
+}
