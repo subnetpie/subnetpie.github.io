@@ -11,14 +11,15 @@ const assets={
   extraDrives:'./iigs_extra_drives.js?v=20261006-smartport4',
   persistent:'./iigs_persistent_boot.js?v=20261007-unified-persist1',
   persistentUi:'./iigs_persistent_boot_ui.js?v=20261007-panel-audit1',
+  storage:'./iigs_storage_registry.js?v=20261007-physical1',
   speed:'./display_speed_panel.js?v=20261006-speed-presets1',
   color:'./display_color_panel.js?v=20261006-display-presets1',
   keyboard:'./iigs_keyboard_layout.js?v=20261005-iigs-kbd1',
   caps:'./caps_lock_indicator.js?v=20261007-caps-led1',
   unifiedCss:'./unified_controls.css?v=20261007-unified11',
-  driveCss:'./unified_drive_manager.css?v=20261007-drive-manager5',
+  driveCss:'./unified_drive_manager.css?v=20261007-drive-manager6',
   unified:'./unified_controls.js?v=20261007-unified8',
-  drive:'./unified_drive_manager.js?v=20261007-drive-manager4'
+  drive:'./unified_drive_manager.js?v=20261007-drive-manager6'
 };
 
 function addStyle(href){
@@ -38,6 +39,7 @@ if(document.readyState==='loading'){
     document.write(`<script type="module" src="${assets.extraDrives}"><\/script>`);
     document.write(`<script type="module" src="${assets.persistent}"><\/script>`);
     document.write(`<script type="module" src="${assets.persistentUi}"><\/script>`);
+    document.write(`<script type="module" src="${assets.storage}"><\/script>`);
   }
   document.write(`<script type="module" src="${assets.speed}"><\/script>`);
   document.write(`<script src="${assets.color}"><\/script>`);
@@ -46,7 +48,7 @@ if(document.readyState==='loading'){
 }else{
   addStyle(assets.configCss);
   const hardware=import(assets.config).then(()=>import(assets.slot4));
-  if(iiGsMode)hardware.then(()=>import(assets.extraDrives)).then(()=>import(assets.persistent)).then(()=>import(assets.persistentUi));
+  if(iiGsMode)hardware.then(()=>import(assets.extraDrives)).then(()=>import(assets.persistent)).then(()=>import(assets.persistentUi)).then(()=>import(assets.storage));
   import(assets.speed);
   addScript(assets.color);
   import(assets.keyboard);
