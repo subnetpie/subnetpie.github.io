@@ -12,7 +12,7 @@ const assets={
   persistent:'./iigs_persistent_boot.js?v=20261007-unified-persist1',
   persistentUi:'./iigs_persistent_boot_ui.js?v=20261007-panel-audit1',
   storage:'./iigs_storage_registry.js?v=20261007-physical2',
-  storageConfig:'./iigs_storage_config_ui.js?v=20261007-physical2',
+  storageConfig:'./iigs_storage_config_ui.js?v=20261007-physical1',
   speed:'./display_speed_panel.js?v=20261006-speed-presets1',
   color:'./display_color_panel.js?v=20261006-display-presets1',
   keyboard:'./iigs_keyboard_layout.js?v=20261005-iigs-kbd1',
@@ -20,7 +20,7 @@ const assets={
   unifiedCss:'./unified_controls.css?v=20261007-unified11',
   driveCss:'./unified_drive_manager.css?v=20261007-drive-manager6',
   unified:'./unified_controls.js?v=20261007-unified8',
-  drive:'./unified_drive_manager.js?v=20261007-drive-manager6'
+  drive:'./unified_drive_manager.js?v=20261007-drive-manager7'
 };
 
 function addStyle(href){
