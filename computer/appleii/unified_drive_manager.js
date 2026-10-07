@@ -67,8 +67,15 @@
       if(button.hasAttribute('data-storage-eject')){svc.eject(id);sync();return;}
       if(button.hasAttribute('data-storage-download')){try{svc.download(id);}catch(err){alert(err?.message||String(err));}return;}
       if(button.hasAttribute('data-storage-boot')){
-        const ep=svc.endpoint(id);svc.setBoot(ep?.persistenceId||'auto');
-        document.getElementById('buttonReset')?.click();return;
+        const ep=svc.endpoint(id),target=ep?.persistenceId||'auto';
+        // Apply once before reset so the selected device is stored, then again
+        // in a microtask after the synchronous reset and before the first RAF.
+        // This preserves S5D2/S6D2 selections even when reset restores the
+        // controller's default drive register.
+        svc.setBoot(target);
+        document.getElementById('buttonReset')?.click();
+        queueMicrotask(()=>svc.setBoot(target));
+        return;
       }
       if(button.hasAttribute('data-storage-more')){
         const details=qs('[data-storage-details]',r);details.hidden=!details.hidden;
