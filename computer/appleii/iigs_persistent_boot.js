@@ -50,7 +50,7 @@ function targetFor(drive,media){
   return null;
 }
 async function decodeStored(record){
-  let source=new Uint8Array(record.data), name=record.name;
+  let source=new Uint8Array(record.data),name=record.name;
   if(isZip(name,source)){
     const entries=readZipEntries(source);
     const entry=record.entryName?entries.find(x=>x.name===record.entryName):entries.length===1?entries[0]:null;
@@ -82,9 +82,6 @@ async function mountRecord(board,record){
   return media;
 }
 
-// Legacy ProDOS boot entry is only two-unit aware. When a SmartPort unit is
-// selected as the startup disk, route legacy drive-1 boot calls to that unit;
-// native SmartPort calls retain units 1-4 exactly as mounted.
 const originalExecute=ProDOSBlockDevice.prototype.execute;
 if(!ProDOSBlockDevice.prototype.__persistentBootExecute){
   ProDOSBlockDevice.prototype.__persistentBootExecute=true;
@@ -114,8 +111,6 @@ if(!ProDOSBlockDevice.prototype.__persistentBootExecute){
 function applyBoot(board,boot){
   board.prodosBlock._bootSmartPortDrive=null;
   if(/^s7d[1-4]$/.test(boot))board.prodosBlock._bootSmartPortDrive=Number(boot.at(-1))-1;
-  // Slot 5/6 drive 2 boot selection is modeled by selecting drive 2 as the
-  // controller's initial unit. Firmware may subsequently select either drive.
   if(/^s6d[12]$/.test(boot)&&board.floppy525)board.floppy525._drive=Number(boot.at(-1))-1;
   if(/^s5d[12]$/.test(boot)&&board.memory)board.memory.iwmControlDrive2=boot.endsWith('2');
 }
@@ -124,21 +119,13 @@ async function restore(board){
   const s=settings(),items=await all();let mounted=0;
   for(const r of items){if(!s.keep[r.id])continue;try{await mountRecord(board,r);mounted++;}catch(err){console.warn('[persistent mount]',r.id,err);}}
   applyBoot(board,s.boot);
-  if(mounted){
-    board.reset(true);
-    applyBoot(board,s.boot);
-  }
+  if(mounted){board.reset(true);applyBoot(board,s.boot);}
   window.dispatchEvent(new CustomEvent('iigs-persistent-drives-restored',{detail:{mounted,boot:s.boot}}));
 }
-
 async function waitForBoard(){
   for(let i=0;i<100;i++){
     const b=window.__appleIIgsBoard;
-    if(b?.iigsEnabled){
-      // Let ROM03 finish loading before the restore/reset that boots media.
-      await new Promise(r=>setTimeout(r,350));
-      await restore(b);return;
-    }
+    if(b?.iigsEnabled){await new Promise(r=>setTimeout(r,350));await restore(b);return;}
     await new Promise(r=>setTimeout(r,50));
   }
 }
@@ -156,7 +143,7 @@ function installConfigBoot(){
 function addKeepControl(section,id){
   if(!section||section.querySelector('.persistent-mount-toggle'))return;
   const l=document.createElement('label');l.className='persistent-mount-toggle';const cb=document.createElement('input');cb.type='checkbox';cb.checked=!!settings().keep[id];l.append(cb,document.createTextNode(' Keep mounted after reload'));
-  cb.addEventListener('change',async()=>{const s=settings();s.keep[id]=cb.checked;saveSettings(s);if(!cb.checked){await remove(id);return;}const c=candidates.get(id);if(c)await put(c);});
+  cb.addEventListener('change',()=>setKeep(id,cb.checked));
   const choice=section.querySelector('.mediaChoice');(choice?.parentNode||section).insertBefore(l,choice?.nextSibling||null);
 }
 function installKeepUI(){
@@ -175,6 +162,30 @@ function installCapture(){
   const pairs=[['filedialog1',0],['filedialogInsert',0],['filedialogInsert2',1],['filedialogInsert3',2],['filedialogInsert4',3]];
   for(const [id,d] of pairs){const el=document.getElementById(id);if(el&&!el.__persistentCapture){el.__persistentCapture=true;el.addEventListener('change',()=>captureFile(el,d).catch(console.warn),true);}}
 }
+
+async function setKeep(id,value){
+  if(!targetIds.includes(id))return false;
+  const s=settings();s.keep[id]=!!value;saveSettings(s);
+  if(!value)await remove(id);else {const c=candidates.get(id);if(c)await put(c);}
+  document.querySelectorAll(`[data-persistent-drive="${id}"]`).forEach(cb=>{cb.checked=!!value;});
+  document.querySelectorAll('.persistent-mount-toggle input').forEach(cb=>{const section=cb.closest('section');if(section){const drive=Number(section.querySelector('[id^="driveTitle"]')?.id.replace('driveTitle',''));const candidate=window.__appleIIgsBoard?.mountedMedia?.[drive];if(candidate&&targetFor(drive,candidate)===id)cb.checked=!!value;}});
+  window.dispatchEvent(new CustomEvent('iigs-persistent-settings-changed',{detail:{id,keep:!!value,boot:s.boot}}));
+  return true;
+}
+function setBoot(id){
+  if(id!=='auto'&&!targetIds.includes(id))id='auto';
+  const s=settings();s.boot=id;saveSettings(s);
+  const b=window.__appleIIgsBoard;if(b?.iigsEnabled)applyBoot(b,id);
+  const select=document.getElementById('iigsBootFrom');if(select&&select.value!==id)select.value=id;
+  window.dispatchEvent(new CustomEvent('iigs-persistent-settings-changed',{detail:{boot:id}}));
+  return id;
+}
+window.__appleIIgsPersistence={
+  targets:[...targetIds],label,
+  settings:()=>{const s=settings();return {boot:s.boot,keep:{...s.keep}};},
+  setKeep,setBoot,targetFor
+};
+
 function install(){installConfigBoot();installKeepUI();installCapture();}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>{install();waitForBoard();},{once:true});else{install();waitForBoard();}
 new MutationObserver(install).observe(document.documentElement,{childList:true,subtree:true});

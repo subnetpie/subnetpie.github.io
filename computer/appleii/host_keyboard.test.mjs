@@ -34,10 +34,19 @@ test('host events reach IIgs registers and release modifiers without losing joys
   assert.equal(board.memory.read(0xc025),0);
   assert.equal(board.memory.read(0xc061)&128,128);
   assert.equal(board.memory.read(0xc062)&128,0);
-  send('keydown'); send('keydown',{key:'b',code:'KeyB'});send('keyup');
-  assert.equal(board.keyboard.key_pressed,true);
+
+  // Physical-key rollover: newest held key is active; releasing it restores
+  // the previous still-held key instead of falsely reporting keyboard-up.
+  send('keydown',{key:'a',code:'KeyA'});
+  assert.equal(board.memory.read(0xc000),0xe1);
+  send('keydown',{key:'b',code:'KeyB'});
+  assert.equal(board.memory.read(0xc000),0xe2);
   send('keyup',{key:'b',code:'KeyB'});
+  assert.equal(board.keyboard.key_pressed,true);
+  assert.equal(board.memory.read(0xc000),0xe1);
+  send('keyup',{key:'a',code:'KeyA'});
   assert.equal(board.keyboard.key_pressed,false);
+
   doc.closest=()=>true;
   assert.equal(send('keydown').defaultPrevented,false);
   assert.equal(board.keyboard.key_pressed,false);
