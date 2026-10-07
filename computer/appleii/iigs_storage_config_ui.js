@@ -10,24 +10,26 @@
     return true;
   }
 
+  function setText(el,value){if(el&&el.textContent!==value)el.textContent=value;}
+
   function render(){
     const dialog=document.getElementById('iigsConfigurationDialog'),svc=storage();
     if(!dialog||!svc)return false;
 
     for(const id of ['iigsDriveTarget0','iigsDriveTarget1']){
       const select=document.getElementById(id),row=select?.closest('.iigs-drive-route');
-      if(row)row.hidden=true;
+      if(row&&!row.hidden)row.hidden=true;
     }
 
     const storageSection=document.querySelector('#iigsSmartPortSummary')?.closest('section') || dialog.querySelector('.iigs-config-grid section:last-child');
     if(!storageSection)return false;
-    const heading=storageSection.querySelector('h3');if(heading)heading.textContent='Storage controllers and drives';
-    const note=storageSection.querySelector('.iigs-config-note');
-    if(note)note.textContent='Drives are physical endpoints exposed by the installed controller in each slot. Mount media from the Drives control panel.';
+    setText(storageSection.querySelector('h3'),'Storage controllers and drives');
+    setText(storageSection.querySelector('.iigs-config-note'),'Drives are physical endpoints exposed by the installed controller in each slot. Mount media from the Drives control panel.');
 
     const map=storageSection.querySelector('.iigs-storage-map');
     if(map){
-      map.innerHTML=svc.groups().map(g=>`<div><b>Slot ${g.slot} · ${g.label}</b><span>${g.devices.map(d=>`${d.label} — ${d.mediaLabel}`).join('<br>')}</span></div>`).join('');
+      const html=svc.groups().map(g=>`<div><b>Slot ${g.slot} · ${g.label}</b><span>${g.devices.map(d=>`${d.label} — ${d.mediaLabel}`).join('<br>')}</span></div>`).join('');
+      if(map.innerHTML!==html)map.innerHTML=html;
     }
     return true;
   }
@@ -38,5 +40,5 @@
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>{waitUI();waitBoard();},{once:true});
   else{waitUI();waitBoard();}
   window.addEventListener('iigs-storage-registry-ready',waitUI);
-  new MutationObserver(render).observe(document.documentElement,{childList:true,subtree:true});
+  window.addEventListener('iigs-storage-changed',render);
 })();
