@@ -22,13 +22,24 @@ export function appleKey(event) {
 }
 
 export function attachHostKeyboard(keyboard, adb, joystick, doc=document, host=window) {
-  const held=new Set();
+  // Keep each physical key separately so the emulated one-key data register can
+  // follow the newest still-held key. This gives the IIgs proper rollover for
+  // combinations such as held direction keys while modifiers remain independent.
+  const held=new Map();
+  let sequence=0;
+
   function modifiers(e) {
     joystick.keyboardCommand=!!e.metaKey;
     joystick.keyboardOption=!!e.altKey;
     adb?.setKeyModifiers((e.shiftKey?1:0)|(e.ctrlKey?2:0)|
       (e.getModifierState?.('CapsLock')?4:0)|(e.repeat?8:0)|
       (e.location===3?16:0)|(e.altKey?64:0)|(e.metaKey?128:0));
+  }
+  function activeHeld() {
+    let active=null;
+    for(const entry of held.values())
+      if(!active || entry.sequence>active.sequence) active=entry;
+    return active;
   }
   function release() {
     held.clear(); keyboard.key_up(); modifiers({});
@@ -43,16 +54,23 @@ export function attachHostKeyboard(keyboard, adb, joystick, doc=document, host=w
     const value=appleKey(e);
     if(value===null) return;
     e.preventDefault();
-    held.add(e.code || e.key);
+    const id=e.code || e.key;
+    const existing=held.get(id);
+    // Browser auto-repeat should retrigger the same key without changing the
+    // ordering of other held keys. A real fresh press becomes the newest key.
+    held.set(id,{value,sequence:existing?.sequence ?? ++sequence});
     keyboard.pressAscii(value);
   }
   function up(e) {
-    const wasHeld=held.delete(e.code || e.key);
+    const id=e.code || e.key;
+    const wasHeld=held.delete(id);
     if(excluded(e)) { release(); return; }
     modifiers(e);
     if(wasHeld) {
       e.preventDefault();
-      if(!held.size) keyboard.key_up();
+      const active=activeHeld();
+      if(active) keyboard.pressAscii(active.value);
+      else keyboard.key_up();
     }
   }
   const visibility=()=>{if(doc.hidden)release();};
