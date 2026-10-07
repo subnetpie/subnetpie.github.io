@@ -10,7 +10,8 @@ body.unified-ui #joyControls { display:none !important; }
 #unifiedLauncher {
   position:fixed;
   z-index:10020;
-  right:max(10px,env(safe-area-inset-right));
+  left:max(10px,env(safe-area-inset-left));
+  right:auto;
   top:max(10px,env(safe-area-inset-top));
   display:flex;
   align-items:center;
@@ -86,7 +87,6 @@ body.unified-ui #joyControls { display:none !important; }
 
 /* Phone portrait: sheet rises from bottom, leaving the IIgs screen above it. */
 @media (max-width:600px) and (orientation:portrait) {
-  #unifiedLauncher { top:auto;bottom:max(10px,env(safe-area-inset-bottom)); }
   #unifiedMachinePanel {
     left:0;right:0;bottom:0;
     width:100%;max-height:min(76dvh,720px);
