@@ -44,8 +44,14 @@ function state(id){
     const disk=b?.floppy525?._disks?.[ep.index];media=physicalMedia()[ep.id]||null;
     name=disk?.name||media?.name||'';writeProtected=true;writable=false;
   }else{
-    const disk=b?.prodosBlock?.drives?.[ep.index];media=physicalMedia()[ep.id]||null;
-    name=disk?.name||media?.name||'';writeProtected=!!disk?.writeProtected;writable=!!disk?.image;dirty=!!disk?.dirty;
+    const disk=b?.prodosBlock?.drives?.[ep.index];
+    // Older persistence code also mirrors 800K 3.5 media through the block
+    // device. That compatibility copy belongs to Slot 5 and must not make the
+    // same image appear as a mounted Slot-7 SmartPort disk in the registry.
+    if(disk?.image&&disk.physical!=='35'){
+      media=physicalMedia()[ep.id]||null;
+      name=disk.name||media?.name||'';writeProtected=!!disk.writeProtected;writable=true;dirty=!!disk.dirty;
+    }
   }
   return {...ep,mounted:!!name,name:name.split('/').pop(),media,writeProtected,writable,dirty};
 }
