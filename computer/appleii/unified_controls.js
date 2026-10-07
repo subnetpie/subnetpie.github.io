@@ -4,7 +4,7 @@
   if(new URLSearchParams(location.search).get('ui')==='legacy')return;
 
   const STORAGE={
-    island:'subnetpie.apple2.unifiedIsland.v1',
+    island:'subnetpie.apple2.unifiedIsland.v2',
     tab:'subnetpie.apple2.unifiedTab.v1',
     glide:'subnetpie.apple2.glidepadMode.v1'
   };
@@ -137,9 +137,6 @@
     panel.querySelector('#unifiedJoystick').addEventListener('click',()=>toggleInput('joystick'));
 
     panel.querySelectorAll('[data-joy-proxy]').forEach(b=>b.addEventListener('click',()=>{
-      // The legacy joystick settings intentionally use pointerdown so the
-      // same path works on iPhone/iPad. Re-dispatch that gesture instead of
-      // calling .click(), which otherwise bypasses the actual handler.
       pointerDown(b.dataset.joyProxy);
       requestAnimationFrame(syncJoystickSettings);
     }));
