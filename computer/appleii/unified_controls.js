@@ -85,6 +85,13 @@
           <button type="button" class="unified-choice" id="unifiedKeyboard">Keyboard</button>
           <button type="button" class="unified-choice" id="unifiedJoystick">Joystick</button>
         </div><p class="unified-note">On iPad and desktop both are off by default so the physical keyboard and pointing device can control the IIgs unobstructed.</p></div>
+        <div class="unified-section unified-joystick-settings" id="unifiedJoystickSettings" hidden>
+          <h3>Joystick</h3>
+          <div class="unified-setting-row"><span>Mode</span><button type="button" class="unified-choice" data-joy-proxy="buttonMode">Analog</button></div>
+          <div class="unified-setting-row"><span>Recenter</span><button type="button" class="unified-choice" data-joy-proxy="buttonCenter">On</button></div>
+          <div class="unified-setting-row"><span>Grid</span><button type="button" class="unified-choice" data-joy-proxy="buttonGrid">Off</button></div>
+          <p class="unified-note">These settings appear only while the on-screen joystick is enabled.</p>
+        </div>
         <div class="unified-section"><h3>Glide pad / pointer</h3><div class="unified-grid two">
           <button type="button" class="unified-choice" data-glide="mouse">Mouse</button>
           <button type="button" class="unified-choice" data-glide="joystick">Joystick</button>
@@ -138,12 +145,32 @@
     panel.querySelector('#unifiedKeyboard').addEventListener('click',()=>setInput(sourcePressed('buttonInput')?'none':'keyboard'));
     panel.querySelector('#unifiedJoystick').addEventListener('click',()=>setInput(sourcePressed('buttonJoystick')?'none':'joystick'));
 
+    panel.querySelectorAll('[data-joy-proxy]').forEach(b=>b.addEventListener('click',()=>{
+      click(b.dataset.joyProxy);
+      setTimeout(syncJoystickSettings,0);
+    }));
+
+    function syncJoystickSettings(){
+      const wrap=panel.querySelector('#unifiedJoystickSettings');
+      const enabled=sourcePressed('buttonJoystick');
+      wrap.hidden=!enabled;
+      wrap.querySelectorAll('[data-joy-proxy]').forEach(b=>{
+        const src=document.getElementById(b.dataset.joyProxy);
+        if(!src)return;
+        const text=(src.textContent||'').trim();
+        if(text)b.textContent=text.charAt(0).toUpperCase()+text.slice(1);
+        const value=text.toLowerCase();
+        b.classList.toggle('active',value==='on'||value==='analog');
+      });
+    }
+
     function syncInput(){
       const kp=sourcePressed('buttonInput'),jp=sourcePressed('buttonJoystick');
       key.setAttribute('aria-pressed',kp?'true':'false');
       joy.setAttribute('aria-pressed',jp?'true':'false');
       panel.querySelector('#unifiedKeyboard').classList.toggle('active',kp);
       panel.querySelector('#unifiedJoystick').classList.toggle('active',jp);
+      syncJoystickSettings();
       const glide=get(STORAGE.glide,'mouse');
       panel.querySelectorAll('[data-glide]').forEach(b=>b.classList.toggle('active',b.dataset.glide===glide));
       panel.querySelector('#unifiedGlideNote').textContent=glide==='mouse'
@@ -185,7 +212,7 @@
       syncDrives();syncInput();
       if(!panel.hidden && tabs.find(b=>b.classList.contains('active'))?.dataset.tab==='display')syncDisplay();
     });
-    ['controls','driveName0','driveName1'].forEach(id=>{const el=document.getElementById(id);if(el)observer.observe(el,{subtree:true,childList:true,attributes:true,characterData:true});});
+    ['controls','joyControls','driveName0','driveName1'].forEach(id=>{const el=document.getElementById(id);if(el)observer.observe(el,{subtree:true,childList:true,attributes:true,characterData:true});});
 
     // Workstation default: no virtual overlays. Wait until script.js has attached listeners.
     if(workstation)setTimeout(()=>setInput('none'),250);
