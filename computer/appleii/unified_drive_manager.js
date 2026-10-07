@@ -1,5 +1,7 @@
 (() => {
-  if(new URLSearchParams(location.search).get('ui')!=='unified')return;
+  // Unified controls are the production default. Only the explicit legacy
+  // override should suppress the unified drive manager.
+  if(new URLSearchParams(location.search).get('ui')==='legacy')return;
 
   const inputFor={0:'filedialogInsert',1:'filedialogInsert2',2:'filedialogInsert3',3:'filedialogInsert4'};
   const routeLabel={
