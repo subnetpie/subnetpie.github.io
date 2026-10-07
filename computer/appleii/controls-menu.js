@@ -15,9 +15,9 @@ const assets={
   color:'./display_color_panel.js?v=20261006-display-presets1',
   keyboard:'./iigs_keyboard_layout.js?v=20261005-iigs-kbd1',
   caps:'./caps_lock_indicator.js?v=20261007-caps-led1',
-  unifiedCss:'./unified_controls.css?v=20261007-unified4',
+  unifiedCss:'./unified_controls.css?v=20261007-unified5',
   driveCss:'./unified_drive_manager.css?v=20261007-drive-manager3',
-  unified:'./unified_controls.js?v=20261007-unified4',
+  unified:'./unified_controls.js?v=20261007-unified5',
   drive:'./unified_drive_manager.js?v=20261007-drive-manager3'
 };
 
