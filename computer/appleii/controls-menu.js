@@ -13,6 +13,7 @@ const assets={
   persistentUi:'./iigs_persistent_boot_ui.js?v=20261007-panel-audit1',
   storage:'./iigs_storage_registry.js?v=20261007-physical2',
   storageConfig:'./iigs_storage_config_ui.js?v=20261007-physical2',
+  unifiedBridge:'./unified_configuration_bridge.js?v=20261007-machine2',
   speed:'./display_speed_panel.js?v=20261006-speed-presets1',
   color:'./display_color_panel.js?v=20261006-display-presets1',
   keyboard:'./iigs_keyboard_layout.js?v=20261005-iigs-kbd1',
@@ -83,4 +84,5 @@ if(unifiedMode){
   addStyle(assets.driveCss);
   addScript(assets.unified,{defer:true});
   addScript(assets.drive,{defer:true});
+  addScript(assets.unifiedBridge,{defer:true});
 }
