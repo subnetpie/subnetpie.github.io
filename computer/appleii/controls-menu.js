@@ -2,7 +2,9 @@
 // The document-level touch guard explicitly exempts native controls and the
 // IIgs configuration dialog, so do not stop propagation here: a capture-phase
 // stop would prevent Safari from ever delivering taps to select/button targets.
-const iiGsMode = new URLSearchParams(location.search).get('machine') !== 'iie';
+const params = new URLSearchParams(location.search);
+const iiGsMode = params.get('machine') !== 'iie';
+const cloudMode = iiGsMode && params.get('cloud') === '1';
 if(document.readyState === 'loading') {
   document.write('<link rel="stylesheet" href="./iigs_configuration_mobile.css?v=20261004-touch3">');
   document.write('<script type="module" src="./iigs_configuration.js?v=20261004-slots-drives3"><\/script>');
@@ -10,6 +12,7 @@ if(document.readyState === 'loading') {
   if(iiGsMode) document.write('<script type="module" src="./iigs_extra_drives.js?v=20261006-smartport4"><\/script>');
   if(iiGsMode) document.write('<script type="module" src="./iigs_persistent_boot.js?v=20261006-persistent-boot1"><\/script>');
   if(iiGsMode) document.write('<script type="module" src="./iigs_persistent_boot_ui.js?v=20261006-persistent-ui1"><\/script>');
+  if(cloudMode) document.write('<script type="module" src="./cloud_profile_ui.js?v=20261006-cloud-ui1"><\/script>');
   document.write('<script type="module" src="./iigs_keyboard_layout.js?v=20261005-iigs-kbd1"><\/script>');
 } else {
   if(!document.querySelector('link[href*="iigs_configuration_mobile.css"]')) {
@@ -23,7 +26,8 @@ if(document.readyState === 'loading') {
   if(iiGsMode) hardware
     .then(() => import('./iigs_extra_drives.js?v=20261006-smartport4'))
     .then(() => import('./iigs_persistent_boot.js?v=20261006-persistent-boot1'))
-    .then(() => import('./iigs_persistent_boot_ui.js?v=20261006-persistent-ui1'));
+    .then(() => import('./iigs_persistent_boot_ui.js?v=20261006-persistent-ui1'))
+    .then(() => cloudMode ? import('./cloud_profile_ui.js?v=20261006-cloud-ui1') : null);
   import('./iigs_keyboard_layout.js?v=20261005-iigs-kbd1');
 }
 
