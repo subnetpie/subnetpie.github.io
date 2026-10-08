@@ -7,7 +7,15 @@ class AudioSink {
     this.ctx=AC?new AC({latencyHint:'interactive'}):null;
     this.rate=this.ctx?.sampleRate||48000;this.block=new Float32Array(1024);this.pos=0;this.nextTime=0;this.enabled=false;
   }
-  async unlock(){if(!this.ctx)return;try{await this.ctx.resume();this.enabled=this.ctx.state==='running';this.pos=0;this.nextTime=this.ctx.currentTime+.035;}catch{} }
+  async unlock(){
+    if(!this.ctx)return;
+    const wasRunning=this.enabled&&this.ctx.state==='running';
+    try{
+      if(this.ctx.state!=='running')await this.ctx.resume();
+      this.enabled=this.ctx.state==='running';
+      if(this.enabled&&!wasRunning){this.pos=0;this.nextTime=this.ctx.currentTime+.035;}
+    }catch{}
+  }
   push(v){if(!this.ctx||!this.enabled||this.ctx.state!=='running')return;this.block[this.pos++]=Math.max(-1,Math.min(1,v));if(this.pos<this.block.length)return;const b=this.ctx.createBuffer(1,this.block.length,this.rate);b.copyToChannel(this.block,0);const s=this.ctx.createBufferSource();s.buffer=b;s.connect(this.ctx.destination);const now=this.ctx.currentTime;if(this.nextTime<now+.015||this.nextTime>now+.25)this.nextTime=now+.035;s.start(this.nextTime);this.nextTime+=this.block.length/this.rate;this.pos=0;this.block=new Float32Array(1024);}
 }
 
