@@ -1,1 +1,33 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Star Trek CPU integration</title><link rel="stylesheet" href="./style.css"></head><body><main><h1>Star Trek — CPU bring-up</h1><p>MAME 0.289 · shared Z80 · security chip 64</p><p>This diagnostic build replaces the earlier asset-audit shell. It does not yet render or play the game.</p><button id="load">Load main ROMs</button><button id="step" disabled>Step one instruction</button><p id="status" role="status">Not running</p><pre id="log"></pre></main><script type="module">import { installResetProcessing } from './reset-processing.js'; window.starTrekModules = Object.assign(window.starTrekModules || {}, { installResetProcessing });</script><script type="module" src="./script.js"></script></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+  <title>Star Trek</title>
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <main>
+    <canvas id="screen" width="1024" height="800" aria-label="Star Trek vector display"></canvas>
+    <div id="controls">
+      <div class="turn">
+        <button data-key="left">◀</button>
+        <button data-key="right">▶</button>
+      </div>
+      <div class="actions">
+        <button data-key="fire">Fire</button>
+        <button data-key="photon">Photon</button>
+        <button data-key="shield">Shield</button>
+        <button data-key="warp">Warp</button>
+      </div>
+      <div class="system">
+        <button data-key="coin">Coin</button>
+        <button data-key="start">Start</button>
+        <button id="pause">Pause</button>
+      </div>
+    </div>
+    <p id="status" role="status">Loading…</p>
+  </main>
+  <script type="module" src="./script.js"></script>
+</body>
+</html>
