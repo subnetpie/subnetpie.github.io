@@ -1,8 +1,8 @@
 # Apple IIgs MCP companion — v0.1
 
-Eight tools connect an MCP client to one explicitly paired browser emulator:
+Fourteen tools connect an MCP client to one explicitly paired browser emulator:
 `get_status`, `get_devices`, `read_memory`, `capture_screen`, `pause`, `resume`,
-`step`, and `capture_trace`. The CPU, video and audio still run in the browser.
+`step`, and `capture_trace`, plus disk workspace inspection and editing tools. The CPU, video and audio still run in the browser.
 
 ## Start
 
@@ -60,7 +60,7 @@ Remote MCP hosting and OAuth are not included or deployed by this change.
   can occur after execution if its reply was lost; inspect status before retrying.
 - One browser session owns the bridge; idle sessions expire after 15 seconds.
   Backgrounded/suspended Safari tabs must reconnect after expiry.
-- This version cannot mount disks, reset, write RAM, or export audio remotely.
+- This version cannot mount disks, reset, write RAM, or export audio remotely. Disk patches affect snapshots only, never the running disk.
 
 ## Verify
 
@@ -72,3 +72,31 @@ execution gating, real CPU stepping and peripheral clock advancement.
 On an actual iPhone, verify native URL/token inputs, Connect/Disconnect, scrolling,
 and control opt-in using a reachable HTTPS bridge. Physical Safari validation is
 still required; automated tests exercise the API and transport.
+
+## Modify a mounted game disk
+
+1. Mount your disk normally using the emulator’s file picker.
+2. Connect MCP. Call `open_disk_workspace` with a physical device ID from
+   `get_devices`: for example `disk2:d1`, `iigs35:d1`, or `smartport:d1`.
+3. Use `read_disk` to inspect bytes. Offsets are relative to the decoded image:
+   DOS sector order for DSK, 512-byte block order for block media, with no 2MG header.
+4. In the browser, enable **Allow editing disk snapshots**. Execution permission
+   alone does not grant editing permission.
+5. Call `patch_disk` with the workspace ID, current revision, byte offset,
+   `expected` original bytes, and equally sized replacement `bytes`. A mismatch
+   rejects the entire patch. Each patch is at most 4096 bytes.
+6. `undo_disk_patch` reverses the latest patch; supply the current revision.
+7. In the MCP dialog select the workspace and tap **Download modified disk**.
+   Save the download to Files on iPhone/iPad, then reinsert it to test changes.
+
+The workspace includes guest writes present when opened, but does not follow later
+writes. Editing does not pause, alter or persist changes to the mounted disk.
+Downloading requires a local browser tap; the MCP client cannot force a download
+or browse the iOS Files app. A requested download is not confirmation it was saved.
+
+Two workspaces of up to 32 MB each and 16 undo records per workspace are supported.
+Close a workspace to free its memory; closing discards its modifications. Reloading
+or closing the emulator also discards snapshots. Disconnecting retains them for
+local download but revokes remote editing. WOZ/NIB sector patching is unsupported.
+DSK exports use normalized `.dsk` order. Block exports use `.po`, or a rebuilt
+`.2mg` wrapper if the source was 2MG; optional creator/comments are not preserved.

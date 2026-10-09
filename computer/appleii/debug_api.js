@@ -1,10 +1,15 @@
+import {createDiskWorkspaces} from "./debug_disks.js?v=20261009-edit1";
 // Debug operations run between animation callbacks, never on the audio thread.
-export function createDebugAPI({board,screen,pause,resume,isRunning,render,devices=()=>null,canControl=()=>false}) {
+export function createDebugAPI({board,screen,pause,resume,isRunning,render,devices=()=>null,canControl=()=>false,canEdit=()=>false}) {
+ const disks=createDiskWorkspaces(board);
  const integer=(v,min,max)=>{if(!Number.isInteger(v)||v<min||v>max)throw Error(`Expected integer ${min}–${max}`);return v;};
  const status=()=>({machine:board.iigsEnabled?'iigs':'iie',running:isRunning(),cycles:board.cycles,registers:JSON.parse(JSON.stringify(board.cpu.register)),video:{shr:!!board.video_iigs?.isSuperHires(),newVideo:board.video_iigs?.newVideo,width:screen.width,height:screen.height},controlEnabled:canControl()});
  return Object.freeze({
+  diskSnapshot:id=>disks.snapshot(id),
   async execute(method,args={}) {
    if(['pause','resume','step','capture_trace'].includes(method)&&!canControl())throw Error('Enable remote execution control in the emulator first.');
+   if(['patch_disk','undo_disk_patch'].includes(method)&&!canEdit())throw Error('Enable disk editing in the emulator first.');
+   if(['open_disk_workspace','list_disk_workspaces','close_disk_workspace','read_disk','patch_disk','undo_disk_patch'].includes(method))return disks.execute(method,args);
    switch(method) {
     case 'get_status':return status();
     case 'get_devices':return {slots:board.iigsConfiguration?.slots||{},devices:devices()||{smartport:board.prodosBlock.drives.map((d,i)=>({drive:i+1,name:d.name,blocks:d.blockCount,writeProtected:d.writeProtected,dirty:d.dirty})),floppy525:board.floppy525._disks.map(d=>({name:d.name})),floppy35:board.memory.floppy35Drives?.map(d=>({name:d.media?.name||''}))}};

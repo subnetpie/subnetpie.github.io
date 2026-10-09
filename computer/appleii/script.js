@@ -1,5 +1,5 @@
-import {createDebugAPI} from "./debug_api.js?v=20261008-mcp1";
-import {installDebugBridge} from "./debug_bridge.js?v=20261008-mcp1";
+import {createDebugAPI} from "./debug_api.js?v=20261009-edit1";
+import {installDebugBridge} from "./debug_bridge.js?v=20261009-edit1";
 import {exportHardDrive} from "./disk_export.js?v=20260930-disk-save";
 import {mediaPersistenceKey,restorePersistentBlocks,createBlockPersistenceWriter} from "./disk_persistence.js?v=20260930-persist1";
 const diskPersistenceWriter=createBlockPersistenceWriter();
@@ -352,10 +352,10 @@ function init() {
   emulatorSurface.width = 564;
   emulatorSurface.height = 390;
   motherboard = new Motherboard(khz, emulatorSurface, joyValues, (n, s) => {}, machineType);
-  let debugControl=false;
-  const debugAPI=createDebugAPI({board:motherboard,screen:emulatorSurface,pause:stop,resume:run,isRunning:()=>!!interval,canControl:()=>debugControl,devices:()=>window.__appleIIgsStorage?.endpoints().map(ep=>{const {media,...state}=window.__appleIIgsStorage.state(ep.id);return state;}),render:()=>{motherboard.video_iigs?.refresh();presentScreen();}});
+  let debugControl=false,debugEdit=false;
+  const debugAPI=createDebugAPI({board:motherboard,screen:emulatorSurface,pause:stop,resume:run,isRunning:()=>!!interval,canControl:()=>debugControl,canEdit:()=>debugEdit,devices:()=>window.__appleIIgsStorage?.endpoints().map(ep=>{const {media,...state}=window.__appleIIgsStorage.state(ep.id);return state;}),render:()=>{motherboard.video_iigs?.refresh();presentScreen();}});
   window.appleIIgsDebug=debugAPI;
-  installDebugBridge(debugAPI,value=>{debugControl=value;});
+  installDebugBridge(debugAPI,value=>{debugControl=value;},value=>{debugEdit=value;});
   motherboard.prodosBlock.setWriteListener((drive,disk,block)=>{
     diskPersistenceWriter.write(drive,disk,block);
     const status=document.getElementById('writeStatus'+drive);
