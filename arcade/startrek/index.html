@@ -9,38 +9,32 @@
 </head>
 <body>
   <main class="cockpit">
-    <aside class="rail rail-left" aria-label="Navigation and system controls">
-      <div class="course-panel">
-        <div class="panel-label">COURSE</div>
-        <div class="turn">
-          <button class="course-button" data-key="left" aria-label="Turn left">◀</button>
-          <button class="course-button" data-key="right" aria-label="Turn right">▶</button>
-        </div>
-      </div>
-      <div class="system">
-        <button data-key="coin">Coin</button>
-        <button data-key="start">Start</button>
-        <button id="pause">Pause</button>
-      </div>
-    </aside>
-
-    <section class="display-wrap">
+    <section class="display-wrap" aria-label="Star Trek playfield">
       <canvas id="screen" width="1024" height="832" aria-label="Star Trek vector display"></canvas>
+      <div class="gesture-hint" aria-hidden="true">DRAG LEFT / RIGHT TO TURN</div>
       <p id="status" role="status">Loading…</p>
     </section>
 
-    <aside class="rail rail-right" aria-label="Enterprise controls">
-      <div class="panel-label">ENTERPRISE</div>
-      <div class="actions primary-actions">
-        <button class="action impulse" data-key="shield">Impulse</button>
-        <button class="action fire" data-key="fire">Fire</button>
-      </div>
-      <div class="actions special-actions">
-        <button class="action photon" data-key="photon">Photon<br>Torpedo</button>
+    <div class="system-controls" data-no-swipe aria-label="System controls">
+      <button data-key="coin">Coin</button>
+      <button data-key="start">Start</button>
+      <button id="pause">Pause</button>
+    </div>
+
+    <div class="left-thumb" data-no-swipe aria-label="Left thumb control">
+      <button class="action impulse" data-key="shield">Impulse</button>
+    </div>
+
+    <div class="right-thumb" data-no-swipe aria-label="Right thumb controls">
+      <div class="special-actions">
+        <button class="action photon" data-key="photon">Photon</button>
         <button class="action warp" data-key="warp">Warp</button>
       </div>
-    </aside>
+      <button class="action fire" data-key="fire">Fire</button>
+    </div>
   </main>
+
   <script type="module" src="./script.js"></script>
+  <script type="module" src="./gesture.js"></script>
 </body>
 </html>
