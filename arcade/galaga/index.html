@@ -3,6 +3,7 @@
 
   <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
     <title>JSGalaga</title>
     <link rel="stylesheet" href="./style.css">
 
@@ -12,10 +13,7 @@
   <div id="gameContainer" aria-label="Galaga game">
   <canvas id="gameCanvas" width="288" height="224" aria-label="Galaga game display"></canvas>
 
-  <!--
-    Discrete controls are intentionally excluded from window-wide swipe
-    ownership. SwipeController checks data-no-swipe through composedPath().
-  -->
+  <!-- Discrete controls opt out of full-window swipe ownership. -->
   <div class="touch-controls" aria-label="Game controls">
     <div class="dpad-controls" data-no-swipe>
       <button id="btnLeft" class="touch-button dpad-button" type="button" data-no-swipe aria-label="Move Left">
@@ -52,8 +50,8 @@
   </div>
 </div>
     <script type="module" src="./script.js"></script>
+    <script type="module" src="./touch-tune.js"></script>
 
   </body>
   
 </html>
-
