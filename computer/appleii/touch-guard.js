@@ -8,7 +8,7 @@
     // activation. In particular, preventing pointerdown/touchend on <select>
     // suppresses the iOS picker and can also prevent form buttons from firing.
     if(event.target instanceof Element && event.target.closest(
-      'input, select, button, label, #buttonSettings, #controls, #buttonLoad, #archiveDialog, #mediaDialog, #iigsConfigurationDialog'
+      '#iigsMcpDialog, input, select, button, label, #buttonSettings, #controls, #buttonLoad, #archiveDialog, #mediaDialog, #iigsConfigurationDialog'
     )) return;
     if(event.cancelable) event.preventDefault();
   };
