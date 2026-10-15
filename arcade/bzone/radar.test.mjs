@@ -1,4 +1,3 @@
-import {Mathbox} from '../../cpu/bzone-mathbox.js';
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
@@ -29,9 +28,9 @@ test('radar uses ROM provenance, never short-vector length, for contacts',()=>{
 });
 
 test('ROM radar has four green compass ticks and separate red contacts without geometry changes',async()=>{
- const source=readFileSync(new URL('./runtime.js',import.meta.url),'utf8').replace(/^import .*;\r?\n/gm,'').replace('export class Battlezone','class Battlezone').replaceAll('import.meta.url', JSON.stringify(import.meta.url));
+ const source=readFileSync(new URL('./script.js',import.meta.url),'utf8').replace(/^import .*;\n/gm,'').split('const game=new Battlezone();')[0];
  const canvas={getContext:()=>({})};
- const context={Mathbox,M6502,BzoneAudio,PokeyRandom,AssetTrace,ASSETS,console,document:{querySelector:()=>canvas}};
+ const context={M6502,BzoneAudio,PokeyRandom,AssetTrace,ASSETS,console,document:{querySelector:()=>canvas}};
  vm.createContext(context);vm.runInContext(source+'\nBattlezone.prototype.bind=()=>{};Battlezone.prototype.draw=()=>{};globalThis.Battlezone=Battlezone;',context);
  context.Battlezone.prototype.rom=async n=>new Uint8Array(readFileSync(new URL('../bzone-old/roms/'+n,import.meta.url)));
  const game=new context.Battlezone();await game.init();
@@ -65,4 +64,3 @@ test('ROM radar has four green compass ticks and separate red contacts without g
  assert.ok(ticks>100);assert.ok(blips>0,'the run must actually encounter contacts');
  console.log({ticks,blips,positions:[...positions]});
 });
-
