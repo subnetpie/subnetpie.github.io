@@ -1,5 +1,5 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
@@ -8,8 +8,17 @@
 </head>
 <body>
   <main>
-    <canvas id="gameCanvas"></canvas>
-    <div id="top"><div id="leftTop"><button data-btn="coin1">COIN</button><button id="colorToggle" type="button">COLORIZED</button></div><div id="rightTop"><button data-btn="start1">START</button><button id="pauseToggle" type="button">PAUSE</button></div></div>
+    <canvas id="gameCanvas" aria-label="Battlezone game display"></canvas>
+    <div id="top">
+      <div id="leftTop">
+        <button data-btn="coin1">COIN</button>
+        <button id="colorToggle" type="button">COLORIZED</button>
+      </div>
+      <div id="rightTop">
+        <button data-btn="start1">START</button>
+        <button id="pauseToggle" type="button">PAUSE</button>
+      </div>
+    </div>
     <div id="leftControls" class="tank-controls">
       <div id="leftStick" class="stick"><span class="stick-knob"></span></div>
     </div>
