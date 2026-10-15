@@ -6,8 +6,8 @@ script.js is the complete game implementation, arranged as:
 
 1. Shared chip imports: M6502, PokeyAudio/POKEY_CLOCK and PokeyRandom.
 2. OBJECTS: source addresses and rendering attributes.
-3. Game constants and small presentation helpers.
-4. Unique classes: AssetTrace, Mathbox, NoiseEnvelope, BattlezoneDiscrete, BzoneAudio and RadarPersistence.
+3. Game constants and ObjectStyle class methods.
+4. Unique classes: AssetTrace, Mathbox, NoiseEnvelope, BattlezoneDiscrete, BzoneAudio, VectorRenderer and RadarPersistence.
 5. JSbzone: initialization, board memory map, AVG execution, rendering, timing and controls.
 6. Main: create the game, load ROMs, apply attributes and run.
 
@@ -29,3 +29,5 @@ obstacle: {
 Edit OBJECTS in CodePen and preview the result. The same complete script.js can be committed back to GitHub without changing its imports. For adjustments without restarting, use `bzone.setObjectStyle('obstacle', {color:'magenta', lineGlow:1})`; `bzone.exportObjectStyles()` returns the current table for pasting as OBJECTS. GitHub writes are explicit; no GitHub token belongs in a public Pen.
 
 The production source contains no test harness or debug logging. Existing repository development files are not imported by the page.
+
+The game script exports nothing. Shared chip imports are grouped at the top; presentation helpers belong to ObjectStyle and VectorRenderer, while circuit and math helpers stay inside their hardware classes.

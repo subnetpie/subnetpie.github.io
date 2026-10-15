@@ -4,7 +4,7 @@ import { PokeyAudio, POKEY_CLOCK } from "https://subnetpie.github.io/arcade/bzon
 import { PokeyRandom } from "https://subnetpie.github.io/arcade/bzone/pokey-random.js";
 
 // Game object attributes
-export const OBJECTS = {
+const OBJECTS = {
   unclassified: {
     source: {},
     color: "green",
@@ -239,77 +239,134 @@ const CPU_CLOCK = 12096000 / 8,
 // MAME 0.289 DIP banks: 3 tanks; 1 coin / 1 play, x1 coin multipliers, no bonus coins.
 const DSW0 = 0x15,
   DSW1 = 0x02;
-const s16 = (v) => ((v & 65535) ^ 32768) - 32768;
 
-// Presentation defaults derived from the object table
-const ASSETS = Object.freeze(
-  Object.fromEntries(
-    Object.entries(OBJECTS).map(([name, rule]) => [
-      name,
-      { ...rule, glow: rule.lineGlow },
-    ]),
-  ),
-);
+// Object appearance
+class ObjectStyle {
+  // Presentation defaults derived from the object table
+  static defaults = Object.freeze(
+    Object.fromEntries(Object.entries(OBJECTS).map(([name, rule]) => [name, { ...rule, glow: rule.lineGlow }])),
+  );
 
-// Battlezone rev 2 semantic provenance. See ASSETS.md for ROM/source evidence.
+  // Battlezone rev 2 semantic provenance. See ASSETS.md for ROM/source evidence.
 
-export function shapeAsset(type) {
-  if ([0, 1, 0x0c, 0x0f].includes(type)) return "obstacle";
-  if (
-    type === 2 ||
-    type === 0x21 ||
-    (type >= 4 && type <= 0x0b) ||
-    type === 0x0d
-  )
-    return "tank";
-  if (type === 3 || type === 0x0e) return "projectile";
-  if (type === 0x16) return "missile";
-  if ([0x17, 0x1e, 0x1f].includes(type)) return "logo";
-  if (type === 0x20) return "saucer";
-  if ((type >= 0x10 && type <= 0x1d) || (type >= 0x24 && type <= 0x2b))
-    return "debris";
-  return "unclassified";
+  static shape(type) {
+    if ([0, 1, 0x0c, 0x0f].includes(type)) return "obstacle";
+    if (type === 2 || type === 0x21 || (type >= 4 && type <= 0x0b) || type === 0x0d) return "tank";
+    if (type === 3 || type === 0x0e) return "projectile";
+    if (type === 0x16) return "missile";
+    if ([0x17, 0x1e, 0x1f].includes(type)) return "logo";
+    if (type === 0x20) return "saucer";
+    if ((type >= 0x10 && type <= 0x1d) || (type >= 0x24 && type <= 0x2b)) return "debris";
+    return "unclassified";
+  }
+
+  static palette = Object.freeze({
+    green: "rgb(80,255,80)",
+    purple: "rgb(190,70,255)",
+    darkPurple: "rgb(95,30,140)",
+    orange: "rgb(255,145,35)",
+    lightOrange: "rgb(255,190,105)",
+    red: "rgb(255,45,45)",
+    blue: "rgb(70,135,255)",
+  });
+  static bounded(value, fallback, max) { return Number.isFinite(value) ? Math.max(0, Math.min(max, value)) : fallback; }
+  static resolve(asset, sourceIntensity, overrides = {}, colorized = true) {
+    const name = Object.hasOwn(ObjectStyle.defaults, asset) ? asset : "unclassified";
+    const defaults = ObjectStyle.defaults[name];
+    const style = { ...defaults, ...overrides[name] };
+    const source = ObjectStyle.bounded(sourceIntensity, 0, 15);
+    return {
+      asset: name,
+      color: colorized ? (style.color ?? defaults.color) : (defaults.originalColor ?? "green"),
+      brightness: colorized ? ObjectStyle.bounded(style.brightness, defaults.brightness, 4) : 1,
+      glow: colorized ? ObjectStyle.bounded(style.glow, defaults.glow, 4) : 0.35,
+      coordinateSpace: defaults.coordinateSpace ?? "world",
+      displayIntensity: colorized ? ObjectStyle.bounded(style.displayIntensity, source, 15) : source,
+      fillOpacity: colorized ? ObjectStyle.bounded(style.fillOpacity, 0, 1) : 0,
+      ringRadius: colorized ? ObjectStyle.bounded(style.ringRadius, 0, 32) : 0,
+      primitive: defaults.primitive ?? null,
+    };
+  }
+
+  // Supported live presentation edits; provenance and original-mode behavior stay
+  // separate from appearance. Null displayIntensity restores the ROM intensity.
+
+  // Only known game identities can be styled. CPU/AVG hooks remain in AssetTrace.
+  static keys = new Set([
+    "source",
+    "color",
+    "brightness",
+    "lineGlow",
+    "fill",
+    "fillOpacity",
+    "displayIntensity",
+    "ringRadius",
+    "originalColor",
+    "coordinateSpace",
+    "primitive",
+  ]);
+  static own(o, k) { return Object.prototype.hasOwnProperty.call(o, k); }
+  static number(value, name, max) {
+    if (typeof value !== "number" || !Number.isFinite(value) || value < 0 || value > max)
+      throw new TypeError(`${name} must be a finite number from 0 to ${max}`);
+    return value;
+  }
+  static opacity(value) {
+    if (typeof value === "string" && /^\s*(?:\d+(?:\.\d+)?|\.\d+)\s*%\s*$/.test(value))
+      value = Number(value.replace("%", "")) / 100;
+    return ObjectStyle.number(value, "fillOpacity", 1);
+  }
+  static compile(objects) {
+    if (!objects || typeof objects !== "object" || Array.isArray(objects))
+      throw new TypeError("OBJECTS must be an object");
+    const result = {};
+    for (const [name, rule] of Object.entries(objects)) {
+      if (!ObjectStyle.own(ObjectStyle.defaults, name)) throw new TypeError(`Unknown game object: ${name}`);
+      if (!rule || typeof rule !== "object" || Array.isArray(rule)) throw new TypeError(`Invalid rule: ${name}`);
+      for (const key of Object.keys(rule))
+        if (!ObjectStyle.keys.has(key)) throw new TypeError(`Unknown setting ${name}.${key}`);
+      if (rule.source !== undefined && (!rule.source || typeof rule.source !== "object" || Array.isArray(rule.source)))
+        throw new TypeError("source must be provenance metadata");
+      const style = {};
+      if (rule.color !== undefined) {
+        if (typeof rule.color !== "string" || !rule.color.trim())
+          throw new TypeError("color must be a nonempty CSS color or palette name");
+        style.color = rule.color;
+      }
+      if (rule.brightness !== undefined) style.brightness = ObjectStyle.number(rule.brightness, "brightness", 4);
+      if (rule.lineGlow !== undefined) style.glow = ObjectStyle.number(rule.lineGlow, "lineGlow", 4);
+      if (rule.displayIntensity !== undefined)
+        style.displayIntensity =
+          rule.displayIntensity === null ? null : ObjectStyle.number(rule.displayIntensity, "displayIntensity", 15);
+      if (rule.ringRadius !== undefined) style.ringRadius = ObjectStyle.number(rule.ringRadius, "ringRadius", 32);
+      // Capability comes from existing geometry support, never from a caller's claim.
+      const capable = name === "obstacle";
+      if (rule.fill !== undefined && typeof rule.fill !== "boolean") throw new TypeError("fill must be boolean");
+      if ((ObjectStyle.own(rule, "fill") || ObjectStyle.own(rule, "fillOpacity")) && !capable)
+        throw new TypeError(`Fill geometry is not supported for ${name}`);
+      const fill =
+        rule.fillOpacity === undefined
+          ? (ObjectStyle.defaults[name].fillOpacity ?? 0)
+          : ObjectStyle.opacity(rule.fillOpacity);
+      if (fill > 0 && !capable) throw new TypeError(`Fill geometry is not supported for ${name}`);
+      style.fillOpacity = rule.fill === false ? 0 : fill;
+      result[name] = style;
+    }
+    return result;
+  }
+  static patch(objects, name, patch) {
+    if (!ObjectStyle.own(objects, name)) throw new TypeError(`Unknown game object: ${name}`);
+    if (!patch || typeof patch !== "object" || Array.isArray(patch))
+      throw new TypeError("Style patch must be an object");
+    if (ObjectStyle.own(patch, "source"))
+      throw new TypeError("source is provenance metadata; change verified hooks in AssetTrace");
+    const next = structuredClone(objects);
+    next[name] = { ...next[name], ...patch };
+    ObjectStyle.compile(next); // Validate the full result before replacing live settings.
+    return next;
+  }
 }
-
-export const PALETTE = Object.freeze({
-  green: "rgb(80,255,80)",
-  purple: "rgb(190,70,255)",
-  darkPurple: "rgb(95,30,140)",
-  orange: "rgb(255,145,35)",
-  lightOrange: "rgb(255,190,105)",
-  red: "rgb(255,45,45)",
-  blue: "rgb(70,135,255)",
-});
-const bounded = (value, fallback, max) =>
-  Number.isFinite(value) ? Math.max(0, Math.min(max, value)) : fallback;
-export function assetStyle(asset, sourceIntensity, overrides = {}, colorized = true) {
-  const name = Object.hasOwn(ASSETS, asset) ? asset : "unclassified";
-  const defaults = ASSETS[name];
-  const style = { ...defaults, ...overrides[name] };
-  const source = bounded(sourceIntensity, 0, 15);
-  return {
-    asset: name,
-    color: colorized
-      ? (style.color ?? defaults.color)
-      : (defaults.originalColor ?? "green"),
-    brightness: colorized
-      ? bounded(style.brightness, defaults.brightness, 4)
-      : 1,
-    glow: colorized ? bounded(style.glow, defaults.glow, 4) : 0.35,
-    coordinateSpace: defaults.coordinateSpace ?? "world",
-    displayIntensity: colorized
-      ? bounded(style.displayIntensity, source, 15)
-      : source,
-    fillOpacity: colorized ? bounded(style.fillOpacity, 0, 1) : 0,
-    ringRadius: colorized ? bounded(style.ringRadius, 0, 32) : 0,
-    primitive: defaults.primitive ?? null,
-  };
-}
-
-// Supported live presentation edits; provenance and original-mode behavior stay
-// separate from appearance. Null displayIntensity restores the ROM intensity.
-
-export class AssetTrace {
+class AssetTrace {
   constructor(mem) {
     this.mem = mem;
     this.bytes = new Array(0x1000).fill(null);
@@ -321,8 +378,7 @@ export class AssetTrace {
       [0x3000, 0x4000],
       [0x5000, 0x8000],
     ])
-      for (let a = start; a < end; a++)
-        hash = Math.imul(hash ^ mem[a], 16777619) >>> 0;
+      for (let a = start; a < end; a++) hash = Math.imul(hash ^ mem[a], 16777619) >>> 0;
     this.enabled = hash === 0x1056a217;
   }
 
@@ -348,7 +404,7 @@ export class AssetTrace {
     } else if (pc === 0x5c5c) {
       const slot = this.mem[0x10],
         type = cpu.a;
-      asset = shapeAsset(type);
+      asset = ObjectStyle.shape(type);
       fields = {
         slot: slot >>> 1,
         record: 0x270 + slot,
@@ -357,17 +413,11 @@ export class AssetTrace {
       };
     } else if (pc === 0x6ae9) {
       asset = "hudRadar";
-    } else if (
-      pc === 0x6b34 &&
-      this.scopes.at(-1)?.origin.asset === "hudRadar"
-    ) {
+    } else if (pc === 0x6b34 && this.scopes.at(-1)?.origin.asset === "hudRadar") {
       asset = "radarSweep";
       end = 0x6b37;
       sp = cpu.s;
-    } else if (
-      pc === 0x6c33 &&
-      this.scopes.at(-1)?.origin.asset === "hudRadar"
-    ) {
+    } else if (pc === 0x6c33 && this.scopes.at(-1)?.origin.asset === "hudRadar") {
       // Two VgDrawPoint calls emit the contact, then return to radar/text drawing.
       asset = "enemyBlip";
       end = 0x6c3b;
@@ -383,8 +433,7 @@ export class AssetTrace {
       end = pc === 0x6d59 ? 0x6d6c : 0x6d8e;
       sp = cpu.s;
     } else if (pc === 0x6c98) {
-      if (["score", "highScore"].includes(this.scopes.at(-1)?.origin.asset))
-        return;
+      if (["score", "highScore"].includes(this.scopes.at(-1)?.origin.asset)) return;
       // Direction strings comprise a shared prefix and a separate suffix.
       asset =
         cpu.x === 0x10
@@ -441,9 +490,7 @@ export class AssetTrace {
       return { ...inherited, asset: "moon", parentAsset: "mountains" };
     // AVG fetch tags the high byte; normalize to the instruction's word address.
     // The four short compass strokes are static ROM vectors, not enemy contacts.
-    const tick = { 0x1542: "3", 0x1548: "6", 0x154e: "9", 0x155c: "12" }[
-      pc & ~1
-    ];
+    const tick = { 0x1542: "3", 0x1548: "6", 0x154e: "9", 0x155c: "12" }[pc & ~1];
     if (inherited?.asset === "hudRadar" && tick)
       return {
         ...inherited,
@@ -457,12 +504,9 @@ export class AssetTrace {
     if (!this.enabled) return primitive;
     const dx = (primitive?.x2 ?? 0) - (primitive?.x1 ?? 0);
     const dy = (primitive?.y2 ?? 0) - (primitive?.y1 ?? 0);
-    const length =
-      Number.isFinite(dx) && Number.isFinite(dy)
-        ? Math.hypot(dx, dy)
-        : Infinity;
+    const length = Number.isFinite(dx) && Number.isFinite(dy) ? Math.hypot(dx, dy) : Infinity;
     const asset = origin?.asset ?? "unclassified";
-    const style = assetStyle(asset, primitive?.intensity);
+    const style = ObjectStyle.resolve(asset, primitive?.intensity);
     return {
       ...primitive,
       asset: style.asset,
@@ -477,116 +521,18 @@ export class AssetTrace {
   }
 }
 
-// Only known game identities can be styled. CPU/AVG hooks remain in AssetTrace.
-const STYLE_KEYS = new Set([
-  "source",
-  "color",
-  "brightness",
-  "lineGlow",
-  "fill",
-  "fillOpacity",
-  "displayIntensity",
-  "ringRadius",
-  "originalColor",
-  "coordinateSpace",
-  "primitive",
-]);
-const own = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
-function number(value, name, max) {
-  if (
-    typeof value !== "number" ||
-    !Number.isFinite(value) ||
-    value < 0 ||
-    value > max
-  )
-    throw new TypeError(`${name} must be a finite number from 0 to ${max}`);
-  return value;
-}
-function opacity(value) {
-  if (
-    typeof value === "string" &&
-    /^\s*(?:\d+(?:\.\d+)?|\.\d+)\s*%\s*$/.test(value)
-  )
-    value = Number(value.replace("%", "")) / 100;
-  return number(value, "fillOpacity", 1);
-}
-export function compileObjectStyles(objects) {
-  if (!objects || typeof objects !== "object" || Array.isArray(objects))
-    throw new TypeError("OBJECTS must be an object");
-  const result = {};
-  for (const [name, rule] of Object.entries(objects)) {
-    if (!own(ASSETS, name)) throw new TypeError(`Unknown game object: ${name}`);
-    if (!rule || typeof rule !== "object" || Array.isArray(rule))
-      throw new TypeError(`Invalid rule: ${name}`);
-    for (const key of Object.keys(rule))
-      if (!STYLE_KEYS.has(key))
-        throw new TypeError(`Unknown setting ${name}.${key}`);
-    if (
-      rule.source !== undefined &&
-      (!rule.source ||
-        typeof rule.source !== "object" ||
-        Array.isArray(rule.source))
-    )
-      throw new TypeError("source must be provenance metadata");
-    const style = {};
-    if (rule.color !== undefined) {
-      if (typeof rule.color !== "string" || !rule.color.trim())
-        throw new TypeError(
-          "color must be a nonempty CSS color or palette name",
-        );
-      style.color = rule.color;
-    }
-    if (rule.brightness !== undefined)
-      style.brightness = number(rule.brightness, "brightness", 4);
-    if (rule.lineGlow !== undefined)
-      style.glow = number(rule.lineGlow, "lineGlow", 4);
-    if (rule.displayIntensity !== undefined)
-      style.displayIntensity =
-        rule.displayIntensity === null
-          ? null
-          : number(rule.displayIntensity, "displayIntensity", 15);
-    if (rule.ringRadius !== undefined)
-      style.ringRadius = number(rule.ringRadius, "ringRadius", 32);
-    // Capability comes from existing geometry support, never from a caller's claim.
-    const capable = name === "obstacle";
-    if (rule.fill !== undefined && typeof rule.fill !== "boolean")
-      throw new TypeError("fill must be boolean");
-    if ((own(rule, "fill") || own(rule, "fillOpacity")) && !capable)
-      throw new TypeError(`Fill geometry is not supported for ${name}`);
-    const fill =
-      rule.fillOpacity === undefined
-        ? (ASSETS[name].fillOpacity ?? 0)
-        : opacity(rule.fillOpacity);
-    if (fill > 0 && !capable)
-      throw new TypeError(`Fill geometry is not supported for ${name}`);
-    style.fillOpacity = rule.fill === false ? 0 : fill;
-    result[name] = style;
-  }
-  return result;
-}
-export function patchObjectStyle(objects, name, patch) {
-  if (!own(objects, name)) throw new TypeError(`Unknown game object: ${name}`);
-  if (!patch || typeof patch !== "object" || Array.isArray(patch))
-    throw new TypeError("Style patch must be an object");
-  if (own(patch, "source"))
-    throw new TypeError(
-      "source is provenance metadata; change verified hooks in AssetTrace",
-    );
-  const next = structuredClone(objects);
-  next[name] = { ...next[name], ...patch };
-  compileObjectStyles(next); // Validate the full result before replacing live settings.
-  return next;
-}
-
 // Unique hardware and sound classes
 // Atari Battlezone mathbox. Extracted without arithmetic changes.
 class Mathbox {
+  static signed(v) {
+    return ((v & 65535) ^ 32768) - 32768;
+  }
   constructor() {
     this.r = new Int16Array(16);
     this.result = 0;
   }
   set(i, v) {
-    this.r[i] = s16(v);
+    this.r[i] = Mathbox.signed(v);
     return this.r[i];
   }
   go(o, d) {
@@ -675,7 +621,7 @@ class Mathbox {
         do {
           this.set(14, (r[4] + r[7]) >> 1);
           this.set(15, (r[5] + r[8]) >> 1);
-          if (r[11] < r[14] && r[15] < r[14] && s16(r[14] + r[15]) >= 0) {
+          if (r[11] < r[14] && r[15] < r[14] && Mathbox.signed(r[14] + r[15]) >= 0) {
             this.set(7, r[14]);
             this.set(8, r[15]);
           } else {
@@ -715,11 +661,11 @@ class Mathbox {
     this.set(14, t);
     t = (-r[1] * r[5]) | 0;
     this.set(7, t >> 16);
-    q = s16(t);
+    q = Mathbox.signed(t);
     this.set(7, r[7] + r[12]);
     this.set(14, (r[14] >> 1) & 32767);
     this.set(12, (q >> 1) & 32767);
-    q = s16(r[12] + r[14]);
+    q = Mathbox.signed(r[12] + r[14]);
     if (q < 0) this.set(7, r[7] + 1);
     this.result = r[7];
     if (r[15] < 0) return;
@@ -735,7 +681,7 @@ class Mathbox {
     this.set(9, t);
     t = (r[0] * r[5]) | 0;
     this.set(8, t >> 16);
-    q = s16(t);
+    q = Mathbox.signed(t);
     this.set(8, r[8] + r[12]);
     this.set(9, (r[9] >> 1) & 32767);
     this.set(12, (q >> 1) & 32767);
@@ -750,28 +696,28 @@ class Mathbox {
   }
   divide(c, q) {
     let r = this.r,
-      qq = s16(q);
+      qq = Mathbox.signed(q);
     this.set(14, r[7] ^ qq);
     this.set(13, qq);
-    if (qq >= 0) qq = s16(c);
+    if (qq >= 0) qq = Mathbox.signed(c);
     else {
       this.set(13, -qq - 1);
-      qq = s16(-c - 1);
-      if (qq < 0 && s16(qq + 1) < 0) this.set(13, r[13] + 1);
-      qq = s16(qq + 1);
+      qq = Mathbox.signed(-c - 1);
+      if (qq < 0 && Mathbox.signed(qq + 1) < 0) this.set(13, r[13] + 1);
+      qq = Mathbox.signed(qq + 1);
     }
     this.set(12, r[7] >= 0 ? r[7] : -r[7]);
     this.set(15, r[6]);
     do {
       this.set(13, r[13] - r[12]);
       let msb = qq & 32768;
-      qq = s16(qq << 1);
-      if (r[13] >= 0) qq = s16(qq + 1);
+      qq = Mathbox.signed(qq << 1);
+      if (r[13] >= 0) qq = Mathbox.signed(qq + 1);
       else this.set(13, r[13] + r[12]);
       this.set(13, r[13] << 1);
       this.set(13, r[13] + (msb ? 1 : 0));
     } while (this.set(15, r[15] - 1) >= 0);
-    this.result = s16(r[14] >= 0 ? qq : -qq);
+    this.result = Mathbox.signed(r[14] >= 0 ? qq : -qq);
   }
   lo() {
     return this.result & 255;
@@ -784,36 +730,32 @@ class Mathbox {
 // SPDX-License-Identifier: BSD-3-Clause
 // MAME 0.289 bzone_a.cpp circuit port, default R11 adjustment = 40% (49 kohm).
 // Original copyright: Couriersud; discrete primitives: K.Wilkins, Derrick Renaud.
-const parallel = (a, b) => 1 / (1 / a + 1 / b);
-const exp = (dt, rc) => 1 - Math.exp(-dt / rc);
 class NoiseEnvelope {
+  static parallel(a, b) {
+    return 1 / (1 / a + 1 / b);
+  }
+  static exponent(dt, rc) {
+    return 1 - Math.exp(-dt / rc);
+  }
   constructor(dt, c) {
     this.cap = 0;
     this.out = 0;
     this.drop = 23270 / 23540;
-    this.charge = exp(dt, 270 * c);
-    this.discharge = exp(dt, 23270 * c);
-    this.both = exp(dt, parallel(270, 23270) * c);
-    this.filter = exp(dt, 330000 * 4.7e-9);
-    this.gain = [
-      1 + 330000 / 43000,
-      1 + 330000 / (parallel(270, 33000) + 10000),
-    ];
+    this.charge = NoiseEnvelope.exponent(dt, 270 * c);
+    this.discharge = NoiseEnvelope.exponent(dt, 23270 * c);
+    this.both = NoiseEnvelope.exponent(dt, NoiseEnvelope.parallel(270, 23270) * c);
+    this.filter = NoiseEnvelope.exponent(dt, 330000 * 4.7e-9);
+    this.gain = [1 + 330000 / 43000, 1 + 330000 / (NoiseEnvelope.parallel(270, 33000) + 10000)];
   }
   step(gate, noise, loud) {
-    if (gate)
-      this.cap +=
-        ((noise ? 5 * this.drop : 5) - this.cap) *
-        (noise ? this.both : this.charge);
+    if (gate) this.cap += ((noise ? 5 * this.drop : 5) - this.cap) * (noise ? this.both : this.charge);
     else if (noise) this.cap -= this.cap * this.discharge;
-    const v = noise
-      ? Math.min(20.5, ((this.cap * this.drop) / 23) * this.gain[loud])
-      : 0;
+    const v = noise ? Math.min(20.5, ((this.cap * this.drop) / 23) * this.gain[loud]) : 0;
     this.out += (v - this.out) * this.filter;
     return this.out;
   }
 }
-export class BattlezoneDiscrete {
+class BattlezoneDiscrete {
   constructor(sampleRate) {
     this.dt = 1 / sampleRate;
     this.latch = 0;
@@ -833,16 +775,15 @@ export class BattlezoneDiscrete {
     this.counterClock = 0;
     this.engine = 0;
     this.coupling = 0;
-    this.cvSlow = exp(this.dt, 100000 * 10e-6);
-    this.cvFast = exp(this.dt, parallel(100000, 22000) * 10e-6);
-    this.engineAlpha = exp(this.dt, 8250 * 0.47e-6);
-    this.outputAlpha = exp(this.dt, 100000 * 0.1e-6);
+    this.cvSlow = NoiseEnvelope.exponent(this.dt, 100000 * 10e-6);
+    this.cvFast = NoiseEnvelope.exponent(this.dt, NoiseEnvelope.parallel(100000, 22000) * 10e-6);
+    this.engineAlpha = NoiseEnvelope.exponent(this.dt, 8250 * 0.47e-6);
+    this.outputAlpha = NoiseEnvelope.exponent(this.dt, 100000 * 0.1e-6);
     this.chargeRC = 149000 * 15e-9;
     this.dischargeRC = 49000 * 15e-9;
-    this.chargeAlpha = exp(this.dt, this.chargeRC);
-    this.dischargeAlpha = exp(this.dt, this.dischargeRC);
-    this.mixR =
-      1 / (1 / 100000 + 1 / 100000 + 1 / 41250 + 1 / 330000 + 1 / 22000);
+    this.chargeAlpha = NoiseEnvelope.exponent(this.dt, this.chargeRC);
+    this.dischargeAlpha = NoiseEnvelope.exponent(this.dt, this.dischargeRC);
+    this.mixR = 1 / (1 / 100000 + 1 / 100000 + 1 / 41250 + 1 / 330000 + 1 / 22000);
   }
   oscillator() {
     if (this.cv < 0.25) return this.vco;
@@ -863,8 +804,7 @@ export class BattlezoneDiscrete {
     do {
       let next;
       if (ff) {
-        next =
-          v + (5 - v) * (updated ? exp(dt, this.chargeRC) : this.chargeAlpha);
+        next = v + (5 - v) * (updated ? NoiseEnvelope.exponent(dt, this.chargeRC) : this.chargeAlpha);
         dt = 0;
         if (next >= threshold) {
           dt = this.chargeRC * Math.log(1 / (1 - (next - threshold) / (5 - v)));
@@ -874,12 +814,10 @@ export class BattlezoneDiscrete {
           updated = true;
         }
       } else {
-        next =
-          v - v * (updated ? exp(dt, this.dischargeRC) : this.dischargeAlpha);
+        next = v - v * (updated ? NoiseEnvelope.exponent(dt, this.dischargeRC) : this.dischargeAlpha);
         dt = 0;
         if (next <= trigger) {
-          if (next < trigger)
-            dt = this.dischargeRC * Math.log(1 / (1 - (trigger - next) / v));
+          if (next < trigger) dt = this.dischargeRC * Math.log(1 / (1 - (trigger - next) / v));
           next = trigger;
           ff = 1;
           changes++;
@@ -900,10 +838,7 @@ export class BattlezoneDiscrete {
       oldNand = this.nand;
     while (this.noisePhase >= 1) {
       this.noisePhase -= 1;
-      this.noiseReg =
-        ((this.noiseReg << 1) |
-          (1 ^ (((this.noiseReg >>> 3) ^ (this.noiseReg >>> 14)) & 1))) &
-        65535;
+      this.noiseReg = ((this.noiseReg << 1) | (1 ^ (((this.noiseReg >>> 3) ^ (this.noiseReg >>> 14)) & 1))) & 65535;
     }
     if (!oldBit && this.noiseReg & 32768) this.noise31 ^= 1;
     this.nand = (this.noiseReg & 0x7800) === 0x7800 ? 0 : 1;
@@ -911,7 +846,7 @@ export class BattlezoneDiscrete {
     // MAME 0.289 deliberately wires BOTH loud/soft filter inputs to D1, not D3.
     const shell = this.shell.step(d & 4, this.noise31, (d >>> 1) & 1);
     const explosion = this.explosion.step(d & 1, this.noise34, (d >>> 1) & 1);
-    const r = d & 16 ? parallel(1270, 4700) : 4700;
+    const r = d & 16 ? NoiseEnvelope.parallel(1270, 4700) : 4700;
     const diff = (5 * r) / (1000 + r) - this.cv;
     this.cv += diff * (diff > 0.5 ? this.cvFast : this.cvSlow);
     const clock = this.oscillator();
@@ -925,19 +860,10 @@ export class BattlezoneDiscrete {
       }
       this.counterClock = clock;
     }
-    const taps =
-      (this.count4 > 7) +
-      (this.count4 === 15) +
-      (this.count6 > 7) +
-      (this.count6 === 15);
+    const taps = (this.count4 > 7) + (this.count4 === 15) + (this.count6 > 7) + (this.count6 === 15);
     this.engine += (taps / 4 - this.engine) * this.engineAlpha;
     if (!(d & 32)) return 0; // mixer capacitor holds charge while disabled
-    const mix =
-      (shell / 100000 +
-        explosion / 100000 +
-        (this.engine * 3.4) / 41250 +
-        pokeyVoltage / 330000) *
-      this.mixR;
+    const mix = (shell / 100000 + explosion / 100000 + (this.engine * 3.4) / 41250 + pokeyVoltage / 330000) * this.mixR;
     this.coupling += (mix - this.coupling) * this.outputAlpha;
     return ((mix - this.coupling) * 48000) / 32768;
   }
@@ -945,7 +871,7 @@ export class BattlezoneDiscrete {
 
 // CPU-timestamped synthesis. Browser callbacks only drain the produced samples;
 // they never run an independent sound clock or discard register-write timing.
-export class BzoneAudio {
+class BzoneAudio {
   constructor(game) {
     this.game = game;
     this.ctx = null;
@@ -964,8 +890,7 @@ export class BzoneAudio {
       this.ctx = new AudioCtx();
       this.pokey = new PokeyAudio();
       this.discrete = new BattlezoneDiscrete(this.ctx.sampleRate);
-      for (let r = 0; r < 16; r++)
-        if (r !== 9) this.pokey.write(r, this.reg[r]);
+      for (let r = 0; r < 16; r++) if (r !== 9) this.pokey.write(r, this.reg[r]);
       this.pokey.write(9, 0);
       this.discrete.latch = this.latch;
       this.audioCycle = this.game.cpu?.cycles ?? 0;
@@ -973,12 +898,10 @@ export class BzoneAudio {
       this.sampleSum = 0;
       this.sampleClocks = 0;
       this.node = this.ctx.createScriptProcessor(1024, 0, 1);
-      this.node.onaudioprocess = (e) =>
-        this.render(e.outputBuffer.getChannelData(0));
+      this.node.onaudioprocess = (e) => this.render(e.outputBuffer.getChannelData(0));
       this.node.connect(this.ctx.destination);
     }
-    if (this.ctx.state === "suspended" || this.ctx.state === "interrupted")
-      this.ctx.resume().catch(() => {});
+    if (this.ctx.state === "suspended" || this.ctx.state === "interrupted") this.ctx.resume().catch(() => {});
   }
   read(r) {
     return (r & 15) === 8 ? this.game.in3() : this.reg[r & 15];
@@ -1042,190 +965,186 @@ export class BzoneAudio {
 }
 
 // Vector rendering
-const clamp = (v) => Math.max(0, Math.min(1, v));
-function colorValue(name) {
-  const value = PALETTE[name] ?? name;
-  if (typeof value !== "string") return PALETTE.green;
-  // CSS.supports accepts named/hex/rgb/hsl colors in browsers. Explicit fallback
-  // prevents invalid settings from accidentally reusing the previous asset's ink.
-  if (globalThis.CSS?.supports)
-    return CSS.supports("color", value) ? value : PALETTE.green;
-  return (
-    PALETTE[name] ??
-    (/^#[\da-f]{3}(?:[\da-f]{3})?$/i.test(value) ? value : PALETTE.green)
-  );
-}
-export function vectorStyle(vector, settings = {}, colorized = true) {
-  const style = assetStyle(vector[8]?.asset, vector[4], settings, colorized);
-  const signal = colorized
-    ? clamp(vector[8]?.radarStrength ?? 1) *
-      clamp(vector[8]?.trailStrength ?? 1)
-    : 1;
-  return {
-    ...style,
-    glow: style.glow * signal,
-    ink: colorValue(style.color),
-    alpha: (style.displayIntensity / 15) * style.brightness * signal,
-    width: 0.75 + style.displayIntensity / 20,
-  };
-}
-function hull(points) {
-  const unique = new Map();
-  for (const p of points) unique.set(p.join(","), p);
-  const p = [...unique.values()].sort((a, b) => a[0] - b[0] || a[1] - b[1]);
-  if (p.length < 3) return [];
-  const cross = (a, b, c) =>
-    (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]);
-  const lo = [],
-    hi = [];
-  for (const q of p) {
-    while (lo.length > 1 && cross(lo.at(-2), lo.at(-1), q) <= 0) lo.pop();
-    lo.push(q);
+class VectorRenderer {
+  // Vector rendering
+  static clamp(v) { return Math.max(0, Math.min(1, v)); }
+  static color(name) {
+    const value = ObjectStyle.palette[name] ?? name;
+    if (typeof value !== "string") return ObjectStyle.palette.green;
+    // CSS.supports accepts named/hex/rgb/hsl colors in browsers. Explicit fallback
+    // prevents invalid settings from accidentally reusing the previous asset's ink.
+    if (globalThis.CSS?.supports) return CSS.supports("color", value) ? value : ObjectStyle.palette.green;
+    return (
+      ObjectStyle.palette[name] ?? (/^#[\da-f]{3}(?:[\da-f]{3})?$/i.test(value) ? value : ObjectStyle.palette.green)
+    );
   }
-  for (let i = p.length - 1; i >= 0; i--) {
-    const q = p[i];
-    while (hi.length > 1 && cross(hi.at(-2), hi.at(-1), q) <= 0) hi.pop();
-    hi.push(q);
+  static style(vector, settings = {}, colorized = true) {
+    const style = ObjectStyle.resolve(vector[8]?.asset, vector[4], settings, colorized);
+    const signal = colorized
+      ? VectorRenderer.clamp(vector[8]?.radarStrength ?? 1) * VectorRenderer.clamp(vector[8]?.trailStrength ?? 1)
+      : 1;
+    return {
+      ...style,
+      glow: style.glow * signal,
+      ink: VectorRenderer.color(style.color),
+      alpha: (style.displayIntensity / 15) * style.brightness * signal,
+      width: 0.75 + style.displayIntensity / 20,
+    };
   }
-  return lo.slice(0, -1).concat(hi.slice(0, -1));
-}
-export function renderVectors(ctx, vectors, options = {}) {
-  const { width = 580, height = 400, colorized = true, settings = {} } = options;
-  // Resolve settings once per frame. Cached AVG tuple style fields are diagnostic
-  // snapshots only: edits take effect even while emulation is paused.
-  const prepared = [];
-  for (const v of vectors) {
-    if (v[4] <= 0 || !v.slice(0, 4).every(Number.isFinite)) continue;
-    const style = vectorStyle(v, settings, colorized);
-    if (style.alpha > 0) prepared.push({ v, style });
+  static hull(points) {
+    const unique = new Map();
+    for (const p of points) unique.set(p.join(","), p);
+    const p = [...unique.values()].sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+    if (p.length < 3) return [];
+    const cross = (a, b, c) => (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]);
+    const lo = [],
+      hi = [];
+    for (const q of p) {
+      while (lo.length > 1 && cross(lo.at(-2), lo.at(-1), q) <= 0) lo.pop();
+      lo.push(q);
+    }
+    for (let i = p.length - 1; i >= 0; i--) {
+      const q = p[i];
+      while (hi.length > 1 && cross(hi.at(-2), hi.at(-1), q) <= 0) hi.pop();
+      hi.push(q);
+    }
+    return lo.slice(0, -1).concat(hi.slice(0, -1));
   }
-  ctx.save();
-  ctx.globalAlpha = 1;
-  ctx.globalCompositeOperation = "source-over";
-  ctx.fillStyle = "#000";
-  ctx.fillRect(0, 0, width, height);
-  ctx.lineCap = "round";
-  const groups = new Map();
-  for (const { v, style } of prepared) {
-    if (style.fillOpacity <= 0 || v[8]?.id == null) continue;
-    const key = style.asset + ":" + v[8].id;
-    if (!groups.has(key)) groups.set(key, { points: [], style, alpha: 0 });
-    const group = groups.get(key);
-    group.points.push([v[0], v[1]], [v[2], v[3]]);
-    group.alpha = Math.max(group.alpha, style.alpha);
-  }
-  for (const { points, style, alpha } of groups.values()) {
-    const polygon = hull(points);
-    if (polygon.length < 3) continue;
-    ctx.fillStyle = style.ink;
-    ctx.globalAlpha = clamp(alpha * style.fillOpacity);
-    ctx.beginPath();
-    ctx.moveTo(...polygon[0]);
-    for (const p of polygon.slice(1)) ctx.lineTo(...p);
-    ctx.closePath();
-    ctx.fill();
-  }
-  ctx.globalCompositeOperation = "lighter";
-  // Fill narrow angular slices between observed sweep positions. The slices
-  // share edges, producing a continuous fan instead of disconnected spokes.
-  for (const { v, style: s } of prepared) {
-    const edge = v[8]?.trailEdge;
-    if (!edge || s.glow === 0) continue;
-    const strength = v[8].trailStrength,
-      next = v[8].trailNextStrength ?? strength;
-    const steps = 16;
-    ctx.fillStyle = s.ink;
-    for (let i = 0; i < steps; i++) {
-      const a = i / steps,
-        b = (i + 1) / steps;
-      const fade = strength + ((next - strength) * (a + b)) / 2;
-      ctx.globalAlpha = clamp(
-        (s.alpha / Math.max(strength, 1e-9)) *
-          fade *
-          0.38 *
-          (s.glow / Math.max(strength, 1e-9) / 0.9),
-      );
+  static draw(ctx, vectors, options = {}) {
+    const { width = 580, height = 400, colorized = true, settings = {} } = options;
+    // Resolve settings once per frame. Cached AVG tuple style fields are diagnostic
+    // snapshots only: edits take effect even while emulation is paused.
+    const prepared = [];
+    for (const v of vectors) {
+      if (v[4] <= 0 || !v.slice(0, 4).every(Number.isFinite)) continue;
+      const style = VectorRenderer.style(v, settings, colorized);
+      if (style.alpha > 0) prepared.push({ v, style });
+    }
+    ctx.save();
+    ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation = "source-over";
+    ctx.fillStyle = "#000";
+    ctx.fillRect(0, 0, width, height);
+    ctx.lineCap = "round";
+    const groups = new Map();
+    for (const { v, style } of prepared) {
+      if (style.fillOpacity <= 0 || v[8]?.id == null) continue;
+      const key = style.asset + ":" + v[8].id;
+      if (!groups.has(key)) groups.set(key, { points: [], style, alpha: 0 });
+      const group = groups.get(key);
+      group.points.push([v[0], v[1]], [v[2], v[3]]);
+      group.alpha = Math.max(group.alpha, style.alpha);
+    }
+    for (const { points, style, alpha } of groups.values()) {
+      const polygon = VectorRenderer.hull(points);
+      if (polygon.length < 3) continue;
+      ctx.fillStyle = style.ink;
+      ctx.globalAlpha = VectorRenderer.clamp(alpha * style.fillOpacity);
       ctx.beginPath();
-      ctx.moveTo(v[0], v[1]);
-      ctx.lineTo(v[2] + (edge[0] - v[2]) * a, v[3] + (edge[1] - v[3]) * a);
-      ctx.lineTo(v[2] + (edge[0] - v[2]) * b, v[3] + (edge[1] - v[3]) * b);
+      ctx.moveTo(...polygon[0]);
+      for (const p of polygon.slice(1)) ctx.lineTo(...p);
       ctx.closePath();
       ctx.fill();
     }
-  }
-  for (const [spread, gain] of [
-    [7, 0.035],
-    [4, 0.09],
-    [2, 0.24],
-    [1, 1],
-  ]) {
+    ctx.globalCompositeOperation = "lighter";
+    // Fill narrow angular slices between observed sweep positions. The slices
+    // share edges, producing a continuous fan instead of disconnected spokes.
+    for (const { v, style: s } of prepared) {
+      const edge = v[8]?.trailEdge;
+      if (!edge || s.glow === 0) continue;
+      const strength = v[8].trailStrength,
+        next = v[8].trailNextStrength ?? strength;
+      const steps = 16;
+      ctx.fillStyle = s.ink;
+      for (let i = 0; i < steps; i++) {
+        const a = i / steps,
+          b = (i + 1) / steps;
+        const fade = strength + ((next - strength) * (a + b)) / 2;
+        ctx.globalAlpha = VectorRenderer.clamp(
+          (s.alpha / Math.max(strength, 1e-9)) * fade * 0.38 * (s.glow / Math.max(strength, 1e-9) / 0.9),
+        );
+        ctx.beginPath();
+        ctx.moveTo(v[0], v[1]);
+        ctx.lineTo(v[2] + (edge[0] - v[2]) * a, v[3] + (edge[1] - v[3]) * a);
+        ctx.lineTo(v[2] + (edge[0] - v[2]) * b, v[3] + (edge[1] - v[3]) * b);
+        ctx.closePath();
+        ctx.fill();
+      }
+    }
+    for (const [spread, gain] of [
+      [7, 0.035],
+      [4, 0.09],
+      [2, 0.24],
+      [1, 1],
+    ]) {
+      for (const { v, style: s } of prepared) {
+        if (v[8]?.trailEdge) continue;
+        const halo = spread > 1;
+        if (halo && s.glow === 0) continue;
+        ctx.globalAlpha = VectorRenderer.clamp(s.alpha * gain * (halo ? s.glow / 0.35 : 1));
+        ctx.strokeStyle = ctx.fillStyle = s.ink;
+        ctx.lineWidth = s.width * spread * (halo ? 0.65 + s.glow : 1);
+        ctx.beginPath();
+        if (v[0] === v[2] && v[1] === v[3]) {
+          ctx.arc(v[0], v[1], ctx.lineWidth / 2, 0, Math.PI * 2);
+          ctx.fill();
+        } else {
+          ctx.moveTo(v[0], v[1]);
+          ctx.lineTo(v[2], v[3]);
+          ctx.stroke();
+        }
+      }
+    }
+    // The same resolved ink/alpha/glow controls endpoint dwell and point bloom.
     for (const { v, style: s } of prepared) {
       if (v[8]?.trailEdge) continue;
-      const halo = spread > 1;
-      if (halo && s.glow === 0) continue;
-      ctx.globalAlpha = clamp(s.alpha * gain * (halo ? s.glow / 0.35 : 1));
-      ctx.strokeStyle = ctx.fillStyle = s.ink;
-      ctx.lineWidth = s.width * spread * (halo ? 0.65 + s.glow : 1);
-      ctx.beginPath();
-      if (v[0] === v[2] && v[1] === v[3]) {
-        ctx.arc(v[0], v[1], ctx.lineWidth / 2, 0, Math.PI * 2);
-        ctx.fill();
-      } else {
-        ctx.moveTo(v[0], v[1]);
-        ctx.lineTo(v[2], v[3]);
-        ctx.stroke();
+      const points =
+        v[0] === v[2] && v[1] === v[3]
+          ? [[v[0], v[1]]]
+          : [
+              [v[0], v[1]],
+              [v[2], v[3]],
+            ];
+      for (const halo of [true, false]) {
+        if (halo && s.glow === 0) continue;
+        ctx.fillStyle = s.ink;
+        ctx.globalAlpha = VectorRenderer.clamp(s.alpha * (halo ? (0.12 * s.glow) / 0.35 : 0.65));
+        const radius = (s.width / 2) * (halo ? 1 + 2 * s.glow : 1.1);
+        for (const p of points) {
+          ctx.beginPath();
+          ctx.arc(...p, radius, 0, Math.PI * 2);
+          ctx.fill();
+        }
       }
     }
-  }
-  // The same resolved ink/alpha/glow controls endpoint dwell and point bloom.
-  for (const { v, style: s } of prepared) {
-    if (v[8]?.trailEdge) continue;
-    const points =
-      v[0] === v[2] && v[1] === v[3]
-        ? [[v[0], v[1]]]
-        : [
-            [v[0], v[1]],
-            [v[2], v[3]],
-          ];
-    for (const halo of [true, false]) {
-      if (halo && s.glow === 0) continue;
-      ctx.fillStyle = s.ink;
-      ctx.globalAlpha = clamp(s.alpha * (halo ? (0.12 * s.glow) / 0.35 : 0.65));
-      const radius = (s.width / 2) * (halo ? 1 + 2 * s.glow : 1.1);
-      for (const p of points) {
+    // One expanding contact ring per point, despite the ROM drawing it twice.
+    const rings = new Set();
+    if (colorized)
+      for (const { v, style: s } of prepared) {
+        if (!s.ringRadius || !s.glow || v[0] !== v[2] || v[1] !== v[3]) continue;
+        const key = s.asset + ":" + v[0] + ":" + v[1];
+        if (rings.has(key)) continue;
+        rings.add(key);
+        const signal = VectorRenderer.clamp(v[8]?.radarStrength ?? 1);
+        const radius = 2 + (1 - signal) * s.ringRadius;
+        ctx.save();
+        ctx.strokeStyle = s.ink;
+        ctx.shadowColor = s.ink;
+        ctx.shadowBlur = 4 * s.glow;
+        ctx.globalAlpha = VectorRenderer.clamp(s.alpha * 0.45);
+        ctx.lineWidth = 0.65 + s.glow * 0.5;
         ctx.beginPath();
-        ctx.arc(...p, radius, 0, Math.PI * 2);
-        ctx.fill();
+        ctx.arc(v[0], v[1], radius, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
       }
-    }
+    ctx.restore();
   }
-  // One expanding contact ring per point, despite the ROM drawing it twice.
-  const rings = new Set();
-  if (colorized)
-    for (const { v, style: s } of prepared) {
-      if (!s.ringRadius || !s.glow || v[0] !== v[2] || v[1] !== v[3]) continue;
-      const key = s.asset + ":" + v[0] + ":" + v[1];
-      if (rings.has(key)) continue;
-      rings.add(key);
-      const signal = clamp(v[8]?.radarStrength ?? 1);
-      const radius = 2 + (1 - signal) * s.ringRadius;
-      ctx.save();
-      ctx.strokeStyle = s.ink;
-      ctx.shadowColor = s.ink;
-      ctx.shadowBlur = 4 * s.glow;
-      ctx.globalAlpha = clamp(s.alpha * 0.45);
-      ctx.lineWidth = 0.65 + s.glow * 0.5;
-      ctx.beginPath();
-      ctx.arc(v[0], v[1], radius, 0, Math.PI * 2);
-      ctx.stroke();
-      ctx.restore();
-    }
-  ctx.restore();
-}
 
-// Only the sweep has persistence. No compass ticks, text or world geometry are
-// retained. Use emulated seconds so pause and repeated settings redraws freeze it.
-export class RadarPersistence {
+  // Only the sweep has persistence. No compass ticks, text or world geometry are
+  // retained. Use emulated seconds so pause and repeated settings redraws freeze it.
+}
+class RadarPersistence {
   constructor() {
     this.history = [];
     this.lastVectors = null;
@@ -1277,7 +1196,7 @@ export class RadarPersistence {
   }
 }
 
-export class JSbzone {
+class JSbzone {
   constructor() {
     this.cv = document.querySelector("#gameCanvas");
     this.cx = this.cv.getContext("2d");
@@ -1297,9 +1216,7 @@ export class JSbzone {
     this.bind();
   }
   async rom(n) {
-    const r = await fetch(
-      "https://subnetpie.github.io/arcade/bzone-old/roms/" + n,
-    );
+    const r = await fetch("https://subnetpie.github.io/arcade/bzone-old/roms/" + n);
     if (!r.ok) throw Error("ROM " + n);
     return new Uint8Array(await r.arrayBuffer());
   }
@@ -1315,9 +1232,7 @@ export class JSbzone {
         "036422-01.bc3",
         "036421-01.a3",
       ],
-      a = Object.fromEntries(
-        await Promise.all(files.map(async (n) => [n, await this.rom(n)])),
-      );
+      a = Object.fromEntries(await Promise.all(files.map(async (n) => [n, await this.rom(n)])));
     [
       ["036414-02.e1", 20480],
       ["036413-01.h1", 22528],
@@ -1456,9 +1371,7 @@ export class JSbzone {
           ? this.assetTrace.styleInstruction(origin, primitive)
           : primitive;
         const asset = styled.asset ?? origin?.asset ?? "unclassified";
-        const vectorOrigin = origin
-          ? { ...origin, asset }
-          : Object.freeze({ asset });
+        const vectorOrigin = origin ? { ...origin, asset } : Object.freeze({ asset });
         out.push([
           x1,
           y1,
@@ -1466,22 +1379,19 @@ export class JSbzone {
           y2,
           z,
           clip.slice(),
-          styled.color ?? ASSETS[asset]?.color ?? ASSETS.unclassified.color,
+          styled.color ?? ObjectStyle.defaults[asset]?.color ?? ObjectStyle.defaults.unclassified.color,
           instructionPC,
           vectorOrigin,
-          styled.brightness ?? ASSETS[asset]?.brightness ?? 1,
-          styled.glow ?? ASSETS[asset]?.glow ?? 0.35,
-          styled.displayIntensity ?? ASSETS[asset]?.displayIntensity ?? z,
+          styled.brightness ?? ObjectStyle.defaults[asset]?.brightness ?? 1,
+          styled.glow ?? ObjectStyle.defaults[asset]?.glow ?? 0.35,
+          styled.displayIntensity ?? ObjectStyle.defaults[asset]?.displayIntensity ?? z,
         ]);
       }
       x = nx;
       y = ny;
     };
     while (steps++ < 200000 && !halt) {
-      state =
-        (state & 0x10) |
-        (this.avgProm[(((state >> 4) ^ 1) << 7) | (op << 4) | (state & 15)] &
-          15);
+      state = (state & 0x10) | (this.avgProm[(((state >> 4) ^ 1) << 7) | (op << 4) | (state & 15)] & 15);
       if (state & 8) {
         data = rd();
         switch (state & 7) {
@@ -1523,11 +1433,7 @@ export class JSbzone {
               originStack[sp & 3] = callOrigin;
             } else {
               let i = 0;
-              while (
-                ((dvy ^ (dvy << 1)) & 0x1000) === 0 &&
-                ((dvx ^ (dvx << 1)) & 0x1000) === 0 &&
-                i++ < 16
-              ) {
+              while (((dvy ^ (dvy << 1)) & 0x1000) === 0 && ((dvx ^ (dvx << 1)) & 0x1000) === 0 && i++ < 16) {
                 dvy = (dvy & 0x1000) | ((dvy << 1) & 0x1fff);
                 dvx = (dvx & 0x1000) | ((dvx << 1) & 0x1fff);
                 timer = (timer >>> 1) | 0x4000 | (bit(1) << 7);
@@ -1537,8 +1443,7 @@ export class JSbzone {
             break;
           case 5:
             if (!bit(2)) {
-              for (let i = binScale; i > 0; i--)
-                timer = (timer >>> 1) | 0x4000 | (bit(1) << 7);
+              for (let i = binScale; i > 0; i--) timer = (timer >>> 1) | 0x4000 | (bit(1) << 7);
               if (bit(1)) timer &= 255;
             }
             if (bit(2)) sp = (sp + (bit(1) ? 15 : 1)) & 15;
@@ -1569,18 +1474,8 @@ export class JSbzone {
             if (!bit(0) && !bit(2)) {
               let cycles = bit(1) ? 0x100 - (timer & 255) : 0x8000 - timer;
               timer = 0;
-              let nx =
-                x +
-                Math.trunc(
-                  ((((dvx >> 3) ^ 0x200) - 0x200) * cycles * (scale ^ 255)) /
-                    16,
-                );
-              let ny =
-                y -
-                Math.trunc(
-                  ((((dvy >> 3) ^ 0x200) - 0x200) * cycles * (scale ^ 255)) /
-                    16,
-                );
+              let nx = x + Math.trunc(((((dvx >> 3) ^ 0x200) - 0x200) * cycles * (scale ^ 255)) / 16);
+              let ny = y - Math.trunc(((((dvy >> 3) ^ 0x200) - 0x200) * cycles * (scale ^ 255)) / 16);
               let z = intLatch >> 1 === 1 ? intensity : intLatch & 14;
               point(nx, ny, z);
               x = nx;
@@ -1601,14 +1496,14 @@ export class JSbzone {
     this.draw();
   }
   setObjectStyles(objects) {
-    const compiled = compileObjectStyles(objects);
+    const compiled = ObjectStyle.compile(objects);
     this.objectStyles = structuredClone(objects);
     this.assetSettings = structuredClone(compiled);
     this.draw();
     return this;
   }
   setObjectStyle(asset, patch) {
-    const next = patchObjectStyle(this.objectStyles, asset, patch);
+    const next = ObjectStyle.patch(this.objectStyles, asset, patch);
     return this.setObjectStyles(next);
   }
   exportObjectStyles() {
@@ -1616,12 +1511,8 @@ export class JSbzone {
   }
   draw() {
     this.radarPersistence ??= new RadarPersistence();
-    const vectors = this.radarPersistence.vectors(
-      this.vectors,
-      (this.cpu?.cycles ?? 0) / CPU_CLOCK,
-      this.colorized,
-    );
-    renderVectors(this.cx, vectors, {
+    const vectors = this.radarPersistence.vectors(this.vectors, (this.cpu?.cycles ?? 0) / CPU_CLOCK, this.colorized);
+    VectorRenderer.draw(this.cx, vectors, {
       width: W,
       height: H,
       colorized: this.colorized,
