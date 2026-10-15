@@ -57,7 +57,7 @@ test('CPU writes are clocked before applying registers and mute covers every sou
 });
 
 test('60/120 Hz browser frames keep 41 Hz game timing and feed audio without gaps',()=>{
- const source=readFileSync(new URL('./script.js',import.meta.url),'utf8');
+ const source=readFileSync(new URL('./runtime.js',import.meta.url),'utf8');
  const run=source.slice(source.indexOf(' run(){')+1,source.indexOf('\n bind(){'));
  for(const hz of [60,120])for(const sr of [44100,48000]) {
   const {audio,game}=audioFixture(sr);let scheduled;

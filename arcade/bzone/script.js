@@ -1,138 +1,132 @@
-import { BzoneAudio } from "./audio.js?v=20260930-mame289";
-import { M6502 } from "../../cpu/m6502.js";
-import { AssetTrace, ASSETS, updateAssetSettings } from "./assets.js?v=20261001-radar-fan";
-import { renderVectors, RadarPersistence } from "./vector-renderer.js?v=20261001-radar-fan";
-import { PokeyRandom } from "./pokey-random.js";
-const CPU_CLOCK=12096000/8,IRQ_HZ=(12096000/4096)/12,FPS=IRQ_HZ/6,W=580,H=400;
-// MAME 0.289 DIP banks: 3 tanks; 1 coin / 1 play, x1 coin multipliers, no bonus coins.
-const DSW0=0x15,DSW1=0x02;
-const s16=v=>((v&65535)^32768)-32768,sign13=v=>(v&4096)?v-8192:v;
-class Mathbox{
- constructor(){this.r=new Int16Array(16);this.result=0}
- set(i,v){this.r[i]=s16(v);return this.r[i]}
- go(o,d){let r=this.r;o&=31;d&=255;const lo=i=>this.set(i,(r[i]&0xff00)|d),hi=i=>this.set(i,(r[i]&255)|(d<<8));
-  switch(o){case 0:case 2:case 4:case 6:case 8:this.result=lo(o>>1);return;case 1:case 3:case 5:case 7:case 9:this.result=hi(o>>1);return;
-  case 10:this.result=lo(5);return;case 12:this.result=this.set(6,d);return;case 21:this.result=lo(7);return;case 22:this.result=hi(7);return;
-  case 26:this.result=lo(8);return;case 27:this.result=hi(8);return;case 13:this.result=lo(10);return;case 14:this.result=hi(10);return;
-  case 15:this.result=lo(11);return;case 16:this.result=hi(11);return;case 23:this.result=r[7];return;case 25:this.result=r[8];return;case 24:this.result=r[9];return;
-  case 11:hi(5);this.set(15,-1);this.set(4,r[4]-r[2]);this.set(5,r[5]-r[3]);this.mulA();return;
-  case 17:hi(5);this.set(15,0);this.mulA();return;case 18:this.mulB();return;case 19:this.divide(r[9],r[8]);return;case 20:this.divide(r[10],r[11]);return;
-  case 28:hi(5);do{this.set(14,(r[4]+r[7])>>1);this.set(15,(r[5]+r[8])>>1);if(r[11]<r[14]&&r[15]<r[14]&&s16(r[14]+r[15])>=0){this.set(7,r[14]);this.set(8,r[15])}else{this.set(4,r[14]);this.set(5,r[15])}}while(this.set(6,r[6]-1)>=0);this.result=r[8];return;
-  case 29:hi(3);this.set(2,r[2]-r[0]);if(r[2]<0)this.set(2,-r[2]);this.set(3,r[3]-r[1]);if(r[3]<0)this.set(3,-r[3]);
-  case 30:if(r[3]>=r[2]){this.set(12,r[2]);this.set(13,r[3])}else{this.set(13,r[2]);this.set(12,r[3])}this.set(12,r[12]>>2);this.set(13,r[13]+r[12]);this.set(12,r[12]>>1);this.result=this.set(13,r[12]+r[13]);return}}
- mulA(){let r=this.r,t,q;t=(r[0]*r[4])|0;this.set(12,t>>16);this.set(14,t);t=(-r[1]*r[5])|0;this.set(7,t>>16);q=s16(t);this.set(7,r[7]+r[12]);this.set(14,(r[14]>>1)&32767);this.set(12,(q>>1)&32767);q=s16(r[12]+r[14]);if(q<0)this.set(7,r[7]+1);this.result=r[7];if(r[15]<0)return;this.set(7,r[7]+r[2]);this.mulB()}
- mulB(){let r=this.r,t,q;t=(r[1]*r[4])|0;this.set(12,t>>16);this.set(9,t);t=(r[0]*r[5])|0;this.set(8,t>>16);q=s16(t);this.set(8,r[8]+r[12]);this.set(9,(r[9]>>1)&32767);this.set(12,(q>>1)&32767);this.set(9,r[9]+r[12]);if(r[9]<0)this.set(8,r[8]+1);this.set(9,r[9]<<1);this.result=r[8];if(r[15]<0)return;this.set(8,r[8]+r[3]);this.set(9,r[9]&0xff00);this.divide(r[9],r[8])}
- divide(c,q){let r=this.r,qq=s16(q);this.set(14,r[7]^qq);this.set(13,qq);if(qq>=0)qq=s16(c);else{this.set(13,-qq-1);qq=s16(-c-1);if(qq<0&&s16(qq+1)<0)this.set(13,r[13]+1);qq=s16(qq+1)}this.set(12,r[7]>=0?r[7]:-r[7]);this.set(15,r[6]);do{this.set(13,r[13]-r[12]);let msb=qq&32768;qq=s16(qq<<1);if(r[13]>=0)qq=s16(qq+1);else this.set(13,r[13]+r[12]);this.set(13,r[13]<<1);this.set(13,r[13]+(msb?1:0))}while(this.set(15,r[15]-1)>=0);this.result=s16(r[14]>=0?qq:-qq)}
- lo(){return this.result&255}hi(){return(this.result>>8)&255}}
+// Edit this table in CodePen; save the same script.js to GitHub when ready.
+// source = verified provenance notes, not editable CPU hooks.
+// Brightness/lineGlow: 0–4. fillOpacity: 0–1 or a percentage string.
+import { Battlezone } from "./runtime.js?v=20261015-object-styles";
 
-class Battlezone{
- constructor(){this.cv=document.querySelector("#gameCanvas");this.cx=this.cv.getContext("2d");this.cv.width=W;this.cv.height=H;this.mem=new Uint8Array(32768);this.math=new Mathbox();this.pokeyRandom=new PokeyRandom();this.i={coin1:0,start1:0,fire:0,lu:0,ld:0,ru:0,rd:0};this.sound=0;this.audio=new BzoneAudio(this);this.avgDone=1;this.vectors=[];this.colorized=true;this.assetSettings={};this.paused=false;this.bind()}
- async rom(n){const r=await fetch("../bzone-old/roms/"+n);if(!r.ok)throw Error("ROM "+n);return new Uint8Array(await r.arrayBuffer())}
- async init(){const files=["036408-01.k7","036414-02.e1","036413-01.h1","036412-01.j1","036411-01.k1","036410-01.lm1","036409-01.n1","036422-01.bc3","036421-01.a3"],a=Object.fromEntries(await Promise.all(files.map(async n=>[n,await this.rom(n)])));[["036414-02.e1",20480],["036413-01.h1",22528],["036412-01.j1",24576],["036411-01.k1",26624],["036410-01.lm1",28672],["036409-01.n1",30720],["036422-01.bc3",12288],["036421-01.a3",14336]].forEach(([n,o])=>this.mem.set(a[n],o));this.avgProm=a["036408-01.k7"];this.assetTrace=new AssetTrace(this.mem);this.cpu=new M6502(x=>this.read(x),(x,d)=>this.write(x,d));this.cpu.reset();console.log("[BZONE] reset PC",this.cpu.pc.toString(16),"vector",this.read(0x7ffc).toString(16),this.read(0x7ffd).toString(16))}
- in0(){let v=255;if(this.i.coin1)v&=254;if(this.avgDone)v|=64;else v&=191;if(this.cpu.cycles&256)v|=128;else v&=127;return v}
- in3(){let v=0;if(this.i.rd)v|=1;if(this.i.ru)v|=2;if(this.i.ld)v|=4;if(this.i.lu)v|=8;if(this.i.fire)v|=16;if(this.i.start1)v|=32;return v}
- read(a){a&=32767;if(a<1024)return this.mem[a];if(a===2048)return this.in0();if(a===2560)return DSW0;if(a===3072)return DSW1;if(a===6144)return 0;if(a===6160)return this.math.lo();if(a===6168)return this.math.hi();if(a===0x182a)return this.pokeyRandom.read(this.cpu?.cycles??0);if(a>=6176&&a<=6191)return this.audio.read(a&15);if(a>=8192)return this.mem[a];return 255}
- write(a,d){a&=32767;d&=255;if(a<1024){this.mem[a]=d;return}if(a===4608){this.runAVG();return}if(a===5632){this.avgDone=1;return}if(a>=6176&&a<=6191){this.pokeyRandom.write(a&15,d,this.cpu?.cycles??0);this.audio.write(a&15,d);return}if(a===6208){this.sound=d;this.audio.control(d);return}if(a>=6240&&a<=6271){this.math.go(a-6240,d);return}if(a>=8192&&a<12288){this.mem[a]=d;this.assetTrace?.write(a)}}
- word(pc){const a=8192+(pc&8191);return this.mem[a]|(this.mem[(a+1)&32767]<<8)}
- runAVG(){
-  this.avgDone=0;
-  let pc=0,sp=0,dvx=0,dvy=0,data=0,state=0,scale=0,intensity=0,op=0,dvy12=0,timer=0,intLatch=0,binScale=0,halt=0;
-  let x=290<<16,y=200<<16,hst=0,lst=0,clip=[0,0,W<<16,H<<16],steps=0,out=[],stack=new Uint16Array(4);
-  const bit=(n)=> (op>>n)&1;
-  const rd=()=>this.mem[0x2000+(pc^1)];
-  let origin=null,callOrigin=null,instructionPC=0;
-  const originStack=new Array(4).fill(null);
-  const point=(nx,ny,z)=>{let x1=x/65536,y1=y/65536,x2=nx/65536,y2=ny/65536;
-   if(z>0){
-    const primitive={x1,y1,x2,y2,intensity:z,visible:true,isMove:false};
-    const styled=this.assetTrace?.styleInstruction?this.assetTrace.styleInstruction(origin,primitive):primitive;
-    const asset=styled.asset??origin?.asset??"unclassified";
-    const vectorOrigin=origin?{...origin,asset}:Object.freeze({asset});
-    out.push([x1,y1,x2,y2,z,clip.slice(),styled.color??ASSETS[asset]?.color??ASSETS.unclassified.color,instructionPC,vectorOrigin,
-      styled.brightness??ASSETS[asset]?.brightness??1,styled.glow??ASSETS[asset]?.glow??0.35,styled.displayIntensity??ASSETS[asset]?.displayIntensity??z]);
-   }
-   x=nx;y=ny};
-  while(steps++<200000&&!halt){
-    state=(state&0x10)|(this.avgProm[(((state>>4)^1)<<7)|(op<<4)|(state&15)]&15);
-    if(state&8){
-      data=rd();
-      switch(state&7){
-        case 0:dvy=(dvy&0x1f00)|data;pc=(pc+1)&0x1fff;break;
-        case 1:
-          instructionPC=pc;origin=this.assetTrace.instruction(pc,callOrigin);
-          if(!hst){clip[2]=x;clip[1]=y} if(!lst){clip[0]=x;clip[3]=y} lst=hst=1;
-          dvy12=(data>>4)&1;op=data>>5;intLatch=0;dvy=(dvy12<<12)|((data&15)<<8);dvx=0;pc=(pc+1)&0x1fff;break;
-        case 2:dvx=(dvx&0x1f00)|data;pc=(pc+1)&0x1fff;break;
-        case 3:intLatch=data>>4;dvx=((intLatch&1)<<12)|((data&15)<<8)|(dvx&255);pc=(pc+1)&0x1fff;break;
-        case 4:
-          if(bit(0)){stack[sp&3]=pc;originStack[sp&3]=callOrigin;}
-          else{let i=0;while((((dvy^(dvy<<1))&0x1000)===0)&&(((dvx^(dvx<<1))&0x1000)===0)&&(i++<16)){dvy=(dvy&0x1000)|((dvy<<1)&0x1fff);dvx=(dvx&0x1000)|((dvx<<1)&0x1fff);timer=(timer>>>1)|0x4000|(bit(1)<<7)}if(bit(1))timer&=255}break;
-        case 5:
-          if(!bit(2)){for(let i=binScale;i>0;i--)timer=(timer>>>1)|0x4000|(bit(1)<<7);if(bit(1))timer&=255}
-          if(bit(2))sp=(sp+(bit(1)?15:1))&15;break;
-        case 6:
-          if(!bit(2)&&!dvy12){intensity=(dvy>>4)&15;if(!(dvy&0x400)){lst=dvy&0x200;hst=lst^0x200}}
-          if(bit(2)){if(bit(0)){pc=(dvy<<1)&0x1fff;callOrigin=origin}else{pc=stack[sp&3];callOrigin=originStack[sp&3]}}
-          else if(dvy12){scale=dvy&255;binScale=(dvy>>8)&7}break;
-        case 7:{
-          halt=bit(0);
-          if(!bit(0)&&!bit(2)){
-            let cycles=bit(1)?0x100-(timer&255):0x8000-timer;timer=0;
-            let nx=x+Math.trunc(((((dvx>>3)^0x200)-0x200)*cycles*(scale^255))/16);
-            let ny=y-Math.trunc(((((dvy>>3)^0x200)-0x200)*cycles*(scale^255))/16);
-            let z=(((intLatch>>1)===1)?intensity:(intLatch&14));
-            point(nx,ny,z);x=nx;y=ny;
-          }else if(bit(2)){timer=0;x=290<<16;y=200<<16}
-          break;}
-      }
-    }
-    state=(halt<<4)|(state&15);
-  }
-  this.vectors=out;
-  if(this.debugObjectColors){
-   const seen=new Map();for(const v of out){const k=v[8]?.asset??"unclassified";seen.set(k,(seen.get(k)||0)+1)}
-   console.table([...seen].sort((a,b)=>b[1]-a[1]).map(([asset,count])=>({asset,vectors:count})));
-  }
-  this.avgDone=1;this.draw();
- }
- setAssetStyle(asset,patch){
-  updateAssetSettings(this.assetSettings,asset,patch);
-  this.draw();
- }
- resetAssetStyles(){this.assetSettings={};this.draw();}
- draw(){
-  this.radarPersistence??=new RadarPersistence();
-  const vectors=this.radarPersistence.vectors(this.vectors,(this.cpu?.cycles??0)/CPU_CLOCK,this.colorized);
-  renderVectors(this.cx,vectors,{width:W,height:H,colorized:this.colorized,settings:this.assetSettings});
- }
-  frame(){
-   this.nextIRQ??=this.cpu.cycles;
-   for(let n=0;n<6;n++){
-    this.nextIRQ+=CPU_CLOCK/IRQ_HZ;
-    while(this.cpu.cycles<this.nextIRQ){
-     this.assetTrace.beforeStep(this.cpu);
-     const pc=this.cpu.pc;this.cpu.step();
-     if(this.cpu.pc===pc){console.error("[BZONE] CPU stalled",pc.toString(16));break;}
-    }
-    this.cpu.nmi();
-   }
-   this.audio.sync();
-   if(!this.vectors.length)this.draw();
-  }
- run(){
-  let last=null,accumulated=0;
-  const period=1000/FPS;
-  const loop=t=>{
-   if(last===null)last=t;
-   const elapsed=Math.max(0,Math.min(100,t-last));last=t;
-   if(this.paused)accumulated=0;
-   else {
-    accumulated+=elapsed;
-    while(accumulated>=period){this.frame();accumulated-=period;}
-   }
-   requestAnimationFrame(loop);
-  };
-  requestAnimationFrame(loop);
- }
- bind(){const colorToggle=document.querySelector("#colorToggle"),pauseToggle=document.querySelector("#pauseToggle");if(colorToggle){colorToggle.onclick=e=>{e.preventDefault();this.colorized=!this.colorized;colorToggle.textContent=this.colorized?"COLORIZED":"ORIGINAL";this.draw()}}if(pauseToggle){pauseToggle.onclick=e=>{e.preventDefault();this.paused=!this.paused;pauseToggle.textContent=this.paused?"RUN":"PAUSE";if(this.paused){this.i.fire=this.i.lu=this.i.ld=this.i.ru=this.i.rd=0}}}let lastTouch=0;document.addEventListener("touchend",e=>{if(!e.target.closest("#top,.tank-controls"))return;const now=Date.now();if(now-lastTouch<350)e.preventDefault();lastTouch=now},{passive:false});const unlock=()=>this.audio.start();addEventListener("pointerdown",unlock,{passive:true});addEventListener("touchstart",unlock,{passive:true});addEventListener("keydown",unlock);const set=(n,v)=>this.i[n]=v,pulse=n=>{set(n,1);setTimeout(()=>set(n,0),140)},km={KeyQ:"lu",KeyA:"ld",KeyE:"ru",KeyD:"rd",Space:"fire"};addEventListener("keydown",e=>{if(km[e.code])set(km[e.code],1);if(e.code==="Digit1")pulse("start1");if(e.code==="Digit5")pulse("coin1")});addEventListener("keyup",e=>km[e.code]&&set(km[e.code],0));document.querySelectorAll("[data-btn]").forEach(el=>{let n=el.dataset.btn;el.onpointerdown=e=>{e.preventDefault();this.audio.start();n==="coin1"||n==="start1"?pulse(n):set(n,1)};el.onpointerup=()=>set(n,0)});const controlPointers=new Set(),tapPointers=new Map(),TAP_MOVE=12,TAP_MS=350,fireDown=e=>{if(e.pointerType!=="touch")return;if(e.target.closest("#top,.tank-controls")){controlPointers.add(e.pointerId);tapPointers.delete(e.pointerId);return}if(controlPointers.has(e.pointerId))return;e.preventDefault();this.audio.start();tapPointers.set(e.pointerId,{x:e.clientX,y:e.clientY,t:performance.now(),moved:false})},fireMove=e=>{const tap=tapPointers.get(e.pointerId);if(!tap)return;if(Math.hypot(e.clientX-tap.x,e.clientY-tap.y)>TAP_MOVE){tap.moved=true}},fireUp=e=>{if(controlPointers.delete(e.pointerId)){tapPointers.delete(e.pointerId);return}const tap=tapPointers.get(e.pointerId);tapPointers.delete(e.pointerId);if(!tap||tap.moved||performance.now()-tap.t>TAP_MS)return;pulse("fire")},fireCancel=e=>{controlPointers.delete(e.pointerId);tapPointers.delete(e.pointerId)};document.addEventListener("pointerdown",fireDown,{passive:false});document.addEventListener("pointermove",fireMove,{passive:true});document.addEventListener("pointerup",fireUp);document.addEventListener("pointercancel",fireCancel);const stick=(id,up,down)=>{let el=document.querySelector(id),knob=el.querySelector(".stick-knob"),move=e=>{let r=el.getBoundingClientRect(),half=r.height/2,y=e.clientY-r.top-half,max=half-knob.offsetHeight/2-6,pos=Math.max(-max,Math.min(max,y));knob.style.transition="none";knob.style.transform="translateY(calc(-50% + "+pos+"px))";set(up,y<-12);set(down,y>12)},release=()=>{set(up,0);set(down,0);knob.style.transition="transform .12s ease-out";knob.style.transform="translateY(-50%)"};el.onpointerdown=e=>{e.preventDefault();this.audio.start();el.setPointerCapture(e.pointerId);move(e)};el.onpointermove=e=>el.hasPointerCapture(e.pointerId)&&move(e);el.onpointerup=release;el.onpointercancel=release};stick("#leftStick","lu","ld");stick("#rightStick","ru","rd")}}
-const game=new Battlezone();await game.init();game.run();window.battlezone=game;
+export const OBJECTS = {
+  unclassified: {
+    source: {},
+    color: "green", brightness: 1, lineGlow: 0.35,
+    fillSupported: false, fillOpacity: 0
+  },
+  mountains: {
+    source: {"cpu":["0x58a7"]},
+    color: "purple", brightness: 0.8, lineGlow: 0.25,
+    fillSupported: false, fillOpacity: 0
+  },
+  horizon: {
+    source: {"cpu":["0x5806"]},
+    color: "darkPurple", brightness: 0.8, lineGlow: 0.3,
+    fillSupported: false, fillOpacity: 0, displayIntensity: 15
+  },
+  moon: {
+    source: {"vectorROM":["0x3054–0x30c3"]},
+    color: "blue", brightness: 0.9, lineGlow: 0.4,
+    fillSupported: false, fillOpacity: 0
+  },
+  obstacle: {
+    source: {"cpu":["0x5c5c"],"types":["0x00","0x01","0x0c","0x0f"]},
+    color: "orange", brightness: 0.9, lineGlow: 0.3,
+    fillSupported: true, fillOpacity: 0.32
+  },
+  crosshair: {
+    source: {"cpu":["0x50ff"]},
+    color: "red", brightness: 1.15, lineGlow: 0.55,
+    fillSupported: false, fillOpacity: 0
+  },
+  volcanoSpark: {
+    source: {"cpu":["0x589e"]},
+    color: "red", brightness: 1.25, lineGlow: 0.7,
+    fillSupported: false, fillOpacity: 0, displayIntensity: 15
+  },
+  tank: {
+    source: {"cpu":["0x5c5c"],"types":["0x02","0x04–0x0b","0x0d","0x21"]},
+    color: "green", brightness: 1, lineGlow: 0.35,
+    fillSupported: false, fillOpacity: 0
+  },
+  playerLives: {
+    source: {"cpu":["0x6d3c"]},
+    color: "green", brightness: 1, lineGlow: 0.35,
+    fillSupported: false, fillOpacity: 0
+  },
+  projectile: {
+    source: {"types":["0x03","0x0e"]},
+    color: "green", brightness: 1, lineGlow: 0.35,
+    fillSupported: false, fillOpacity: 0
+  },
+  debris: {
+    source: {"types":["0x10–0x1d","0x24–0x2b"],"note":"Missile and logo types take precedence."},
+    color: "green", brightness: 0.95, lineGlow: 0.3,
+    fillSupported: false, fillOpacity: 0
+  },
+  missile: {
+    source: {"types":["0x16"]},
+    color: "green", brightness: 1.15, lineGlow: 0.55,
+    fillSupported: false, fillOpacity: 0
+  },
+  logo: {
+    source: {"types":["0x17","0x1e","0x1f"]},
+    color: "blue", brightness: 1, lineGlow: 0.4,
+    fillSupported: false, fillOpacity: 0
+  },
+  saucer: {
+    source: {"types":["0x20"]},
+    color: "green", brightness: 1.05, lineGlow: 0.5,
+    fillSupported: false, fillOpacity: 0
+  },
+  hudRadar: {
+    source: {"cpu":["0x6ae9"]},
+    color: "green", brightness: 0.9, lineGlow: 0.3,
+    fillSupported: false, fillOpacity: 0, displayIntensity: 15
+  },
+  radarSweep: {
+    source: {"cpu":["0x6b34"]},
+    color: "green", brightness: 1.2, lineGlow: 0.9,
+    fillSupported: false, fillOpacity: 0, displayIntensity: 15
+  },
+  radarTicks: {
+    source: {"vectorROM":["0x3542","0x3548","0x354e","0x355c"]},
+    color: "green", brightness: 0.9, lineGlow: 0.3,
+    fillSupported: false, fillOpacity: 0, displayIntensity: 15
+  },
+  enemyBlip: {
+    source: {"cpu":["0x6c33"]},
+    color: "red", brightness: 1.2, lineGlow: 1,
+    fillSupported: false, fillOpacity: 0, displayIntensity: 15, ringRadius: 8
+  },
+  score: {
+    source: {"cpu":["0x6d59"]},
+    color: "red", brightness: 0.8, lineGlow: 0.25,
+    fillSupported: false, fillOpacity: 0
+  },
+  highScore: {
+    source: {"cpu":["0x6d6c"]},
+    color: "orange", brightness: 1.05, lineGlow: 0.4,
+    fillSupported: false, fillOpacity: 0
+  },
+  enemyInRange: {
+    source: {"cpu":["0x6c98"],"text":["0x10"]},
+    color: "lightOrange", brightness: 1.05, lineGlow: 0.45,
+    fillSupported: false, fillOpacity: 0
+  },
+  enemyDirection: {
+    source: {"cpu":["0x6c98"],"text":["0x00","0x02","0x04","0x06"]},
+    color: "lightOrange", brightness: 1.05, lineGlow: 0.45,
+    fillSupported: false, fillOpacity: 0
+  },
+  motionBlocked: {
+    source: {"cpu":["0x6c98"],"text":["0x12"]},
+    color: "lightOrange", brightness: 1.05, lineGlow: 0.45,
+    fillSupported: false, fillOpacity: 0
+  },
+};
+
+const game = new Battlezone();
+await game.init();
+game.setObjectStyles(OBJECTS);
+window.battlezone = game;
+game.run();
+
+// Live console edits (also work while paused):
+// battlezone.setObjectStyle('obstacle', {color:'magenta', brightness:1.2, lineGlow:1, fillOpacity:'25%'});
+// battlezone.exportObjectStyles() returns the complete current table as JSON.
