@@ -1,17 +1,12 @@
 import assert from 'node:assert/strict';
-import {readFile} from 'node:fs/promises';
 import {test} from 'node:test';
+import {loadRom} from './rom_loader.js';
 
-// Resolve the browser's absolute module URL locally for the headless test.
-const source = await readFile(new URL('./FloppyWoz525.js', import.meta.url), 'utf8');
-const romURL = new URL('./rom/disk16-p5_341-0027.js', import.meta.url).href;
-const {Floppy525} = await import('data:text/javascript;base64,' + Buffer.from(
-  source.replace('https://subnetpie.github.io/computer/appleii/rom/disk16-p5_341-0027.js', romURL)
-).toString('base64'));
+const {Floppy525} = await import('./FloppyWoz525.js');
 const {W65C02S} = await import('./w65c02s.js');
 const {Memory} = await import('./memory.js');
-const {rom_342_0304_cd} = await import('./rom/342-0304-cd.js');
-const {rom_342_0303_ef} = await import('./rom/342-0303-ef.js');
+const rom_342_0304_cd = await loadRom(new URL('./roms/Apple_IIe/Apple IIe CD Enhanced - 342-0304-A - 2764.bin', import.meta.url), 0x2000);
+const rom_342_0303_ef = await loadRom(new URL('./roms/Apple_IIe/Apple IIe EF Enhanced - 342-0303-A - 2764.bin', import.meta.url), 0x2000);
 
 import {fixture} from './test-support/woz-fixture.mjs';
 

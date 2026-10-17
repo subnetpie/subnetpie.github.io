@@ -7,7 +7,8 @@
 //  https://www.gnu.org/licenses/gpl.html
 //
 
-import {rom_342_0265_a} from "https://subnetpie.github.io/computer/appleii/rom/342-0265-a.js";
+import {loadRom} from "./rom_loader.js?v=20261017-raw-rom2";
+const rom_342_0265_a = await loadRom(new URL("./roms/Apple2e_Enhanced_Video.rom", import.meta.url), 0x1000);
 
 export class TextDisplay
 {

@@ -28,8 +28,8 @@ export function createMachine(machine = 'iigs') {
   const joystick={axis0:127,axis1:127,axis2:127,axis3:127,button0:false,button1:false};
   const board=new Motherboard(machine==='iigs'?2800:1020.5,canvas,joystick,()=>{},machine);
   if(machine==='iigs') {
-    const lo=readFileSync(new URL('../rom/341-0728',import.meta.url));
-    const hi=readFileSync(new URL('../rom/341-0748',import.meta.url));
+    const lo=readFileSync(new URL('../roms/Apple_IIgs/Apple IIGS ROM 3 Banks FC-FD - 341-0728.bin',import.meta.url));
+    const hi=readFileSync(new URL('../roms/Apple_IIgs/Apple IIGS ROM 3 Banks FF-FE - 341-0748.bin',import.meta.url));
     const rom=new Uint8Array(0x40000);
     rom.set(lo);rom.set(hi.subarray(0x10000),0x20000);rom.set(hi.subarray(0,0x10000),0x30000);
     board.loadIIgsROM(rom);

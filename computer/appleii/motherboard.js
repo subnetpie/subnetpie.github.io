@@ -26,8 +26,9 @@ import {AppleAudio} from "https://subnetpie.github.io/computer/appleii/apple_aud
 import {ProDOSBlockDevice} from "https://subnetpie.github.io/computer/appleii/prodos_block.js?v=20260930-persist1";
 import {IIgsVideo} from "https://subnetpie.github.io/computer/appleii/video_iigs.js?v=20261002-dither-blend";
 import {MachineTrace} from "https://subnetpie.github.io/computer/appleii/machine_trace.js";
-import {rom_342_0304_cd} from "https://subnetpie.github.io/computer/appleii/rom/342-0304-cd.js";
-import {rom_342_0303_ef} from "https://subnetpie.github.io/computer/appleii/rom/342-0303-ef.js";
+import {loadRom} from "./rom_loader.js?v=20261017-raw-rom2";
+const rom_342_0304_cd = await loadRom(new URL("./roms/Apple_IIe/Apple IIe CD Enhanced - 342-0304-A - 2764.bin", import.meta.url), 0x2000);
+const rom_342_0303_ef = await loadRom(new URL("./roms/Apple_IIe/Apple IIe EF Enhanced - 342-0303-A - 2764.bin", import.meta.url), 0x2000);
 
 const IIGS_FAST_HZ = 2800000;
 const IIGS_SLOW_HZ = 1021800;

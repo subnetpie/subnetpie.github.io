@@ -30,8 +30,8 @@
 //
 
 
-import {disk16_p5_rom_341_0027} from "https://subnetpie.github.io/computer/appleii/rom/disk16-p5_341-0027.js";
-//import {disk16_p6_rom_341_0028} from "https://subnetpie.github.io/computer/appleii/rom/disk16-p6_341-0028.js";
+import {loadRom} from "./rom_loader.js?v=20261017-raw-rom2";
+const disk16_p5_rom_341_0027 = await loadRom(new URL("./roms/disk2_16sec.fw", import.meta.url), 0x100);
 
 // ProDOS_2_4_2.dsk 8596-85d6
 const write_62 = [

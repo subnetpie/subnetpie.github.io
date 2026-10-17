@@ -377,8 +377,8 @@ async function loadBuiltInIIgsROM() {
   // layout into the 256K linear ROM image expected by the IIgs bus:
   // 341-0728 + upper 64K of 341-0748 + lower 64K of 341-0748.
   const [loResponse, hiResponse] = await Promise.all([
-    fetch("rom/341-0728"),
-    fetch("rom/341-0748")
+    fetch("roms/Apple_IIgs/Apple%20IIGS%20ROM%203%20Banks%20FC-FD%20-%20341-0728.bin"),
+    fetch("roms/Apple_IIgs/Apple%20IIGS%20ROM%203%20Banks%20FF-FE%20-%20341-0748.bin")
   ]);
   if(!loResponse.ok || !hiResponse.ok)
     throw new Error("Unable to load built-in Apple IIgs ROM 03");
