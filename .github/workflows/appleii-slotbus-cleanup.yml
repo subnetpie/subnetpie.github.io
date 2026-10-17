@@ -22,22 +22,15 @@ jobs:
         run: |
           python3 - <<'PY'
           from pathlib import Path
+          import re
 
           prodos = Path('computer/appleii/prodos_block.js')
           text = prodos.read_text()
-          old = '''        // IIgsMemory.reset() restores the SLOTROM register to zero before card
-          // reset. Re-advertise this external slot only while block media is
-          // mounted, so ROM03 can discover the boot card through normal CnXX
-          // decode. The legacy IIe Memory class has no slotRom register.
-          if(typeof this.memory?.slotRom === 'number') {
-              const bit=1<<this.slot;
-              if(this.enabled)this.memory.slotRom|=bit;
-              else this.memory.slotRom&=~bit;
-          }
-          '''
-          if old not in text:
-              raise SystemExit('expected legacy SLOTROM reset block not found')
-          prodos.write_text(text.replace(old, ''))
+          pattern = r"\n\s*// IIgsMemory\.reset\(\) restores the SLOTROM register.*?\n\s*if\(typeof this\.memory\?\.slotRom === 'number'\) \{.*?\n\s*\}\n"
+          text, count = re.subn(pattern, '\n', text, count=1, flags=re.S)
+          if count != 1:
+              raise SystemExit(f'expected one legacy SLOTROM reset block, removed {count}')
+          prodos.write_text(text)
 
           index = Path('computer/appleii/index.html')
           html = index.read_text()
