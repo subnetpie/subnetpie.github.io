@@ -78,18 +78,39 @@ test('Memory Expansion only owns C800 after its CnXX ROM is selected',()=>{
   rom[0xfff]=0x77;
   const card=new AppleIIMemoryExpansion(memory,{slot:1,rom});
 
-  // Before a C1xx access the card must not globally steal C800-CFFF.
   assert.equal(memory.read(0xc800),0xff);
-  assert.equal(card.c800Active,false);
+  assert.equal(card.ownsC800(),false);
 
   assert.equal(memory.read(0xc100),0x42);
-  assert.equal(card.c800Active,true);
+  assert.equal(card.ownsC800(),true);
   assert.equal(memory.read(0xc800),0x99);
 
-  // CFFF returns the card byte and releases C800 ownership for the next read.
   assert.equal(memory.read(0xcfff),0x77);
-  assert.equal(card.c800Active,false);
+  assert.equal(card.ownsC800(),false);
   assert.equal(memory.read(0xc800),0xff);
+});
+
+test('C800 expansion ROM ownership is global and first card wins like MAME A2Bus',()=>{
+  const memory=new HookMemory();
+  const rom1=new Uint8Array(0x1000).fill(0x11);
+  const rom2=new Uint8Array(0x1000).fill(0x22);
+  rom1[0x100]=0xa1; rom1[0x800]=0xc1; rom1[0xfff]=0xf1;
+  rom2[0x200]=0xa2; rom2[0x800]=0xc2; rom2[0xfff]=0xf2;
+  const card1=new AppleIIMemoryExpansion(memory,{slot:1,rom:rom1});
+  const card2=new AppleIIMemoryExpansion(memory,{slot:2,rom:rom2});
+
+  assert.equal(memory.read(0xc100),0xa1);
+  assert.equal(memory._a2C800Owner,card1);
+  // Slot 2 CnXX still reads normally but cannot steal an already-owned C800.
+  assert.equal(memory.read(0xc200),0xa2);
+  assert.equal(memory._a2C800Owner,card1);
+  assert.equal(memory.read(0xc800),0xc1);
+  assert.equal(memory.read(0xcfff),0xf1);
+  assert.equal(memory._a2C800Owner,null);
+
+  assert.equal(memory.read(0xc200),0xa2);
+  assert.equal(memory._a2C800Owner,card2);
+  assert.equal(memory.read(0xc800),0xc2);
 });
 
 test('IIgs internal slot ROM selection prevents memory card CnXX interception',()=>{
@@ -100,9 +121,24 @@ test('IIgs internal slot ROM selection prevents memory card CnXX interception',(
   const card=new AppleIIMemoryExpansion(memory,{slot:1,rom});
 
   assert.equal(memory.read(0xc100),0xff);
-  assert.equal(card.c800Active,false);
+  assert.equal(card.ownsC800(),false);
 
   memory.intCxRom=false;
   assert.equal(memory.read(0xc100),0x5a);
-  assert.equal(card.c800Active,true);
+  assert.equal(card.ownsC800(),true);
+});
+
+test('IIgs slot 3 memory expansion follows SLOTC3ROM rather than SLOTROMSEL',()=>{
+  const memory=new HookMemory();
+  memory.intCxRom=false;
+  memory.slotRom=0x00;
+  memory.slotC3Rom=false;
+  const rom=new Uint8Array(0x1000).fill(0x33);
+  rom[0x300]=0x63;
+  const card=new AppleIIMemoryExpansion(memory,{slot:3,rom});
+
+  assert.equal(memory.read(0xc300),0xff);
+  memory.slotC3Rom=true;
+  assert.equal(memory.read(0xc300),0x63);
+  assert.equal(memory._a2C800Owner,card);
 });
