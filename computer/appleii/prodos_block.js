@@ -35,15 +35,18 @@ export class ProDOSBlockDevice {
         // when execution enters at Cn00, while matching the firmware scanner.
         this.rom.set([0x24,0x20,0x24,0x00,0x24,0x03,0x24,0x3c], 0x00);
 
-        // Boot: read ProDOS block 0 to $0800 through our driver, then enter $0801.
+        // Boot: read ProDOS block 0 to $0800 through the card hardware window,
+        // then enter the loaded boot sector at $0801.  Do this inline rather
+        // than calling the public Cn80 driver so boot does not depend on the
+        // caller's initial stack state.
         this.rom.set([
             0xa9,0x01,0x85,0x42,       // command = READ
             0xa9,this.slot<<4,0x85,0x43,// unit = slot, drive 1
             0xa9,0x00,0x85,0x44,       // buffer = $0800
             0xa9,0x08,0x85,0x45,
             0xa9,0x00,0x85,0x46,0x85,0x47, // block = 0
-            0x20,0x80,0xc0|this.slot,   // JSR Cn80
-            0xb0,0x07,                  // error -> RTS
+            0xad,0xf0,0xc0,             // LDA $C0F0 (perform request)
+            0xd0,0x07,                  // error -> RTS
             0xa2,this.slot<<4,          // boot convention: X = slot * 16
             0x86,0x43,                  // ProDOS boot sector expects unit/slot in $43
             0x4c,0x01,0x08,             // JMP $0801
