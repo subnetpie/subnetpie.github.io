@@ -6,10 +6,11 @@ const unifiedMode=params.get('ui')!=='legacy';
 
 const assets={
   configCss:'./iigs_configuration_mobile.css?v=20261007-panel-audit1',
-  config:'./iigs_configuration.js?v=20261017-memexp-config1',
+  config:'./iigs_configuration.js?v=20261017-slotbus1',
   configCompat:'./iigs_configuration_compat.js?v=20261007-config-compat1',
-  slot4:'./iigs_slot4_devices.js?v=20261017-memexp-config1',
-  memoryExpansion:'./iigs_memory_expansion.js?v=20261017-memexp-config1',
+  slot4:'./iigs_slot4_devices.js?v=20261017-slotbus1',
+  memoryExpansion:'./iigs_memory_expansion.js?v=20261017-slotbus1',
+  slotBus:'./iigs_slot_bus.js?v=20261017-slotbus1',
   extraDrives:'./iigs_extra_drives.js?v=20261006-smartport4',
   persistent:'./iigs_persistent_boot.js?v=20261007-unified-persist1',
   persistentUi:'./iigs_persistent_boot_ui.js?v=20261007-panel-audit1',
@@ -44,6 +45,7 @@ if(document.readyState==='loading'){
   document.write(`<script type="module" src="${assets.slot4}"><\/script>`);
   if(iiGsMode){
     document.write(`<script type="module" src="${assets.memoryExpansion}"><\/script>`);
+    document.write(`<script type="module" src="${assets.slotBus}"><\/script>`);
     document.write(`<script type="module" src="${assets.extraDrives}"><\/script>`);
     document.write(`<script type="module" src="${assets.persistent}"><\/script>`);
     document.write(`<script type="module" src="${assets.persistentUi}"><\/script>`);
@@ -58,7 +60,7 @@ if(document.readyState==='loading'){
 }else{
   addStyle(assets.configCss);
   const hardware=import(assets.config).then(()=>{addScript(assets.configCompat);return import(assets.slot4);});
-  if(iiGsMode)hardware.then(()=>import(assets.memoryExpansion)).then(()=>import(assets.extraDrives)).then(()=>import(assets.persistent)).then(()=>import(assets.persistentUi)).then(()=>import(assets.storage)).then(()=>addScript(assets.storageConfig));
+  if(iiGsMode)hardware.then(()=>import(assets.memoryExpansion)).then(()=>import(assets.slotBus)).then(()=>import(assets.extraDrives)).then(()=>import(assets.persistent)).then(()=>import(assets.persistentUi)).then(()=>import(assets.storage)).then(()=>addScript(assets.storageConfig));
   import(assets.speed);
   addScript(assets.color);
   import(assets.keyboard);
