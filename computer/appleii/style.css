@@ -1,1 +1,707 @@
-PLACEHOLDER
+:root {
+  --apple-beige: #c4c1a0;
+  --key-brown: #734d26;
+  --control-brown: #6d4f44;
+  --key-border: #66594e;
+  --screen-ratio: 0.75;
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: none;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  overscroll-behavior: none;
+  background: var(--apple-beige);
+  touch-action: none;
+  -webkit-touch-callout: none;
+  -webkit-text-size-adjust: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.screen {
+  position: absolute;
+  z-index: 1;
+  transform: translateX(-50%);
+  image-rendering: pixelated;
+  touch-action: none;
+}
+
+/* Emulator toolbar */
+#controls {
+  position: absolute;
+  z-index: 3;
+  top: max(30px, env(safe-area-inset-top));
+  left: max(3px, env(safe-area-inset-left));
+  right: max(3px, env(safe-area-inset-right));
+  display: flex;
+  justify-content: space-between;
+  gap: 3px;
+  font-family: "Rubik", sans-serif;
+}
+
+button,
+.button,
+.KBbutton,
+.SPbutton,
+.Dbutton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  height: 40px;
+  border: 3px outset var(--key-border);
+  border-radius: 5px;
+  background: var(--key-brown);
+  color: #fff;
+  opacity: 0.5;
+  font-family: "Rubik", sans-serif;
+  font-size: 15px;
+  line-height: 1;
+  text-align: center;
+  touch-action: none;
+}
+
+.button {
+  width: 64px;
+  height: 36px;
+  background: var(--control-brown);
+  font-size: 12px;
+}
+
+#buttonReset {
+  background: #800;
+  border-color: #600;
+}
+
+/* Apple II touch keyboard */
+#keyboard0,
+#keyboard1,
+#keyboard2 {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  margin: 0;
+  padding: 0 4px;
+  z-index: 3;
+}
+
+#row0,
+#row1,
+#row2,
+#row3,
+#row4,
+#row5 {
+  display: flex;
+  flex-flow: row nowrap;
+  justify-content: center;
+  gap: 2px;
+  margin-bottom: 2px;
+}
+
+#row0 {
+  justify-content: space-between;
+}
+
+.KBbutton {
+  flex: 0 1 40px;
+  width: 40px;
+}
+
+.SPbutton {
+  width: 66px;
+  height: 36px;
+  background: var(--control-brown);
+  font-size: 12px;
+}
+
+.Dbutton {
+  width: 36px;
+}
+
+#buttonSpace {
+  flex: 1 1 128px;
+  max-width: 150px;
+}
+
+#buttonCR,
+#buttonShift {
+  flex: 0 1 62px;
+  width: 62px;
+}
+
+#buttonCaps {
+  font-size: 9px;
+}
+
+#KPbuttonSpace {
+  width: 65px;
+}
+
+/* Compact landscape keypad */
+.keypad {
+  position: absolute;
+  top: 42px;
+  right: 3px;
+  width: 24%;
+}
+
+#keypad {
+  display: flex;
+  flex-flow: row wrap;
+  justify-content: space-between;
+}
+
+/* Thumb controls: stick left, settings center, fire right. */
+#joyStick {
+  position: absolute;
+  z-index: 3;
+  left: max(10px, env(safe-area-inset-left));
+  right: max(10px, env(safe-area-inset-right));
+  bottom: max(12px, env(safe-area-inset-bottom));
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 64px minmax(76px, .48fr);
+  align-items: center;
+  gap: 10px;
+  font-family: "Rubik", sans-serif;
+  touch-action: none;
+}
+#joyPadCanvas {
+  opacity: 0.5;
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1;
+  min-width: 0;
+  border-radius: 50%;
+  background: #29221f;
+  border: 2px solid #887467;
+  box-shadow: inset 0 0 20px #0008;
+}
+#joyControls {
+  display: grid;
+  gap: 10px;
+  align-content: center;
+}
+.joy-setting {
+  display: grid;
+  gap: 3px;
+  text-align: center;
+  color: #42362f;
+  font-size: 10px;
+  line-height: 1.2;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+#joyControls .button {
+  width: 100%;
+  height: 44px;
+  font-size: 12px;
+  background: #6d4f44;
+}
+#joyButtonsCanvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1 / 2;
+  min-width: 0;
+}
+@media (orientation: landscape) {
+  /* Landscape starts in joystick mode; the input toggle can still switch
+     explicitly to the compact keyboard/keypad composition. */
+  body.joystick-mode #keyboard0,
+  body.joystick-mode #keyboard1,
+  body.joystick-mode #keyboard2,
+  body.joystick-mode #keypad {
+    display: none !important;
+  }
+
+  body.joystick-mode #joyStick {
+    display: grid !important;
+  }
+
+  body.keyboard-mode #joyStick {
+    display: none !important;
+  }
+
+  body.keyboard-mode #keyboard0,
+  body.keyboard-mode #keypad {
+    display: block !important;
+  }
+
+  #joyStick {
+    grid-template-columns: min(56vh, 360px) 1fr min(32vh, 200px);
+    align-items: end;
+    pointer-events: none;
+  }
+  #joyStick canvas, #joyControls { pointer-events: auto; }
+  #joyControls {
+    grid-template-columns: repeat(4, 56px);
+    justify-content: center;
+    gap: 6px;
+  }
+  .joy-setting { color: #fff; text-shadow: 0 1px 2px #000; }
+}
+
+/* Portrait touch layout */
+@media (orientation: portrait) {
+  #controls { top: max(4px, env(safe-area-inset-top)); }
+  .button { flex: 1 1 0; width: auto; max-width: 68px; }
+
+  .screen {
+    /* JS chooses an integer SHR scale in physical pixels. Do not force the
+       canvas to 100vw: fractional Safari scaling creates GS/OS dither bands. */
+    left: 50%;
+  }
+
+  #keyboard0 {
+    top: calc(max(4px, env(safe-area-inset-top)) + 42px + (100vw * var(--screen-ratio)) + 8px);
+  }
+  #keyboard1,
+  #keyboard2 {
+    top: calc(max(4px, env(safe-area-inset-top)) + 42px + (100vw * var(--screen-ratio)) + 48px);
+  }
+
+  #joyStick {
+    top: calc(max(4px, env(safe-area-inset-top)) + 42px + (100vw * var(--screen-ratio)) + 12px);
+  }
+  #joyPadCanvas { max-width: 600px; justify-self: start; }
+  #joyButtonsCanvas { max-width: 290px; justify-self: end; }
+
+}
+
+@media (max-width: 390px) and (orientation: portrait) {
+  button, .KBbutton, .Dbutton { height: 38px; font-size: 13px; }
+  .KBbutton { flex-basis: 36px; }
+  .SPbutton { height: 34px; }
+}
+
+
+/* Touch controls are fail-safe visible: joystick is the default portrait mode. */
+@media (orientation: portrait) {
+  #joyStick {
+    display: grid !important;
+  }
+
+  #keyboard0,
+  #keyboard1,
+  #keyboard2,
+  #keypad {
+    display: none !important;
+  }
+
+  body.keyboard-mode #joyStick {
+    display: none !important;
+  }
+
+  body.keyboard-mode #keyboard0,
+  body.keyboard-mode #keyboard1 {
+    display: block !important;
+  }
+
+  body.keyboard-mode.symbols-mode #keyboard1 {
+    display: none !important;
+  }
+
+  body.keyboard-mode.symbols-mode #keyboard2 {
+    display: block !important;
+  }
+}
+
+@media (orientation: portrait) and (max-height: 660px) {
+  #joyControls { gap: 4px; }
+  #joyControls .button { height: 38px; }
+  #joyStick { align-items: center; gap: 8px; }
+}
+
+/* Native ZIP image selection, including iOS select and dialog buttons. */
+#archiveDialog {
+  width: min(92vw, 34rem);
+  max-height: 85dvh;
+  overflow: auto;
+  border: 2px solid var(--key-border);
+  border-radius: 12px;
+  background: var(--apple-beige);
+  color: #211b17;
+  padding: 1.25rem;
+  font: 1rem system-ui, sans-serif;
+}
+#archiveDialog::backdrop { background: #0009; }
+#archiveDialog, #archiveDialog * { touch-action: manipulation; }
+#archiveDialog h2 { margin: 0 0 .75rem; font-size: 1.25rem; }
+#archiveName { overflow-wrap: anywhere; }
+#archiveImages { display: block; width: 100%; min-height: 44px; margin-top: .5rem; font-size: 1rem; }
+.archiveActions { display: flex; justify-content: flex-end; gap: .75rem; margin-top: 1rem; }
+.archiveActions button { min-height: 44px; padding: .5rem 1rem; font-size: 1rem; }
+
+/* Keep every disk action reachable above the mobile browser chrome. */
+#mediaDialog {
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  width: min(92vw, 32rem);
+  max-height: calc(100vh - 32px);
+  max-height: calc(100dvh - 32px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 1rem;
+  border: 2px solid var(--key-border);
+  border-radius: 12px;
+  background: var(--apple-beige);
+  color: #211b17;
+  font: 1rem/1.4 system-ui, sans-serif;
+}
+#mediaDialog::backdrop { background: #000b; }
+#mediaDialog, #mediaDialog * { touch-action: pan-y; }
+#mediaDialog h2 { margin: 0 0 .75rem; font-size: 1.25rem; }
+#mediaDialog p { margin: .75rem 0; font-size: .875rem; }
+#mediaDialog .mediaChoice {
+  display: flex;
+  flex-direction: column;
+  gap: .3rem;
+  min-height: 64px;
+  padding: .8rem;
+  margin: .6rem 0;
+  border: 2px solid #695247;
+  border-radius: 8px;
+  background: var(--control-brown);
+  color: #fff;
+  cursor: pointer;
+}
+#mediaDialog .mediaChoice span { font-size: .875rem; }
+#mediaDialog button { width: 100%; min-height: 44px; padding: .5rem 1rem; font-size: 1rem; }
+
+
+/* Full Apple II keyboard, modeled after the physical IIgs/extended layout. */
+#keyboard0,
+#keyboard2 {
+  display: none !important;
+}
+
+#keyboard1.apple2-keyboard {
+  display: none !important;
+  box-sizing: border-box;
+  width: calc(100% - 20px);
+  left: 10px;
+  padding: clamp(7px, 1.1vw, 14px);
+  border: clamp(4px, .55vw, 7px) solid #aaa88c;
+  border-radius: 13px;
+  background: #c8c6aa;
+  box-shadow:
+    inset 0 2px 0 rgba(255,255,255,.32),
+    inset 0 -2px 0 rgba(0,0,0,.08);
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+#keyboard1 .kb-row {
+  display: flex;
+  width: 100%;
+  gap: clamp(3px, .42vw, 7px);
+  margin: 0 0 clamp(4px, .52vw, 8px);
+}
+
+#keyboard1 .kb-row:last-child {
+  margin-bottom: 0;
+}
+
+#keyboard1 .KBbutton {
+  box-sizing: border-box;
+  min-width: 0;
+  width: auto;
+  flex: 1 1 0;
+  height: clamp(48px, 6.15vw, 82px);
+  padding: 3px;
+  border: 0;
+  border-radius: clamp(6px, .7vw, 10px);
+  background: linear-gradient(135deg, #5b4a39 0%, #4c3e30 52%, #44372a 100%);
+  color: #f5f3ed;
+  font: 500 clamp(13px, 1.65vw, 25px)/1 "Helvetica Neue", Arial, sans-serif;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  box-shadow:
+    inset 3px 3px 0 rgba(255,255,255,.08),
+    inset -3px -3px 0 rgba(0,0,0,.35),
+    clamp(3px, .42vw, 6px) clamp(4px, .52vw, 7px) 0 #0d0c0a;
+  transform: translate(0,0);
+  touch-action: manipulation;
+}
+
+#keyboard1 .KBbutton:active,
+#keyboard1 .KBbutton.pressed,
+#keyboard1 .modifier-key.active {
+  transform: translate(2px, 3px);
+  box-shadow:
+    inset 2px 2px 0 rgba(255,255,255,.06),
+    inset -2px -2px 0 rgba(0,0,0,.3),
+    2px 2px 0 #0d0c0a;
+}
+
+#keyboard1 .dual {
+  flex-direction: column;
+  gap: clamp(2px, .28vw, 5px);
+}
+
+#keyboard1 .dual span {
+  display: block;
+  line-height: .95;
+}
+
+#keyboard1 .dual span:first-child {
+  font-size: .82em;
+}
+
+#keyboard1 .key-wide-esc      { flex: 1.08 1 0; font-size: .66em; }
+#keyboard1 .key-wide-delete   { flex: 1.45 1 0; font-size: .58em; }
+#keyboard1 .key-wide-tab      { flex: 1.45 1 0; font-size: .62em; }
+#keyboard1 .key-wide-ctrl     { flex: 1.72 1 0; font-size: .62em; }
+#keyboard1 .key-wide-return   { flex: 1.67 1 0; font-size: .60em; }
+#keyboard1 .key-wide-shift    { flex: 2.15 1 0; font-size: .60em; }
+#keyboard1 .key-space         { flex: 5.35 1 0; }
+
+#keyboard1 .caps-key {
+  flex: 1.08 1 0;
+  flex-direction: column;
+  gap: 5px;
+  color: #63ff50;
+  font-size: clamp(9px, 1.05vw, 15px);
+}
+
+#keyboard1 .indicator-key {
+  flex: 1.06 1 0;
+  background: #e4e1bd;
+  box-shadow:
+    inset 2px 2px 0 rgba(255,255,255,.65),
+    inset -2px -2px 0 rgba(0,0,0,.16),
+    clamp(3px, .42vw, 6px) clamp(4px, .52vw, 7px) 0 #88856e;
+}
+
+#keyboard1 .key-led {
+  width: 42%;
+  aspect-ratio: 1.45 / 1;
+  background: #43f33f;
+  box-shadow: 0 0 7px rgba(67,243,63,.38);
+}
+
+#keyboard1 .apple-key {
+  flex: 1.04 1 0;
+  font-size: clamp(25px, 3.4vw, 47px);
+}
+
+#keyboard1 .arrow-key {
+  flex: 1.03 1 0;
+  font-size: clamp(21px, 2.2vw, 31px);
+}
+
+@media (orientation: portrait) {
+  #keyboard1.apple2-keyboard {
+    top: calc(max(4px, env(safe-area-inset-top)) + 42px + (100vw * var(--screen-ratio)) + 8px);
+  }
+  body.keyboard-mode #keyboard1.apple2-keyboard {
+    display: block !important;
+  }
+  body.keyboard-mode #keyboard0,
+  body.keyboard-mode #keyboard2 {
+    display: none !important;
+  }
+}
+
+@media (orientation: landscape) {
+  body.keyboard-mode #keyboard1.apple2-keyboard {
+    display: block !important;
+    top: 8px;
+  }
+  body.keyboard-mode #keyboard0,
+  body.keyboard-mode #keyboard2 {
+    display: none !important;
+  }
+}
+
+@media (max-width: 430px) and (orientation: portrait) {
+  #keyboard1.apple2-keyboard {
+    width: calc(100% - 8px);
+    left: 4px;
+    padding: 5px;
+    border-width: 3px;
+  }
+  #keyboard1 .kb-row { gap: 2px; margin-bottom: 3px; }
+  #keyboard1 .KBbutton {
+    height: clamp(38px, 11vw, 48px);
+    border-radius: 5px;
+    font-size: clamp(10px, 3vw, 14px);
+    box-shadow:
+      inset 2px 2px 0 rgba(255,255,255,.07),
+      inset -2px -2px 0 rgba(0,0,0,.32),
+      2px 3px 0 #0d0c0a;
+  }
+}
+
+#mediaDialog .diskDrive { border-top: 1px solid #887467; padding: .6rem 0; }
+#mediaDialog h3 { font-size: 1rem; margin: .25rem 0; }
+#mediaDialog .diskName { overflow-wrap: anywhere; font-weight: 600; }
+#mediaDialog button:disabled { opacity: .45; }
+
+
+/* Portrait spacing and the floating controls retain a 30px top inset. */
+:root { --emulator-top: max(30px, env(safe-area-inset-top)); }
+
+#controls {
+  top: var(--emulator-top) !important;
+}
+
+@media (orientation: portrait) {
+  #controls {
+    top: var(--emulator-top) !important;
+  }
+  .screen {
+    top: calc(var(--emulator-top) + 42px) !important;
+  }
+  #keyboard0 {
+    top: calc(var(--emulator-top) + 42px + (100vw * var(--screen-ratio)) + 8px) !important;
+  }
+  #keyboard1,
+  #keyboard2 {
+    top: calc(var(--emulator-top) + 42px + (100vw * var(--screen-ratio)) + 48px) !important;
+  }
+  #joyStick {
+    top: calc(var(--emulator-top) + 42px + (100vw * var(--screen-ratio)) + 12px) !important;
+  }
+}
+
+@media (orientation: landscape) {
+  #controls {
+    top: var(--emulator-top) !important;
+  }
+  .screen {
+    top: 0 !important;
+  }
+}
+
+/* The gear stays available in both orientations; the panel overlays the screen. */
+#buttonSettings {
+  position: fixed;
+  z-index: 21;
+  top: var(--emulator-top);
+  right: max(8px, env(safe-area-inset-right));
+  width: 44px;
+  height: 40px;
+  opacity: 1;
+  background: var(--control-brown);
+  cursor: pointer;
+  touch-action: manipulation;
+}
+#buttonSettings[aria-expanded="true"] { background: #382920; }
+#controls {
+  position: fixed;
+  z-index: 20;
+  top: calc(var(--emulator-top) + 46px) !important;
+  left: auto;
+  right: max(8px, env(safe-area-inset-right));
+  width: min(320px, calc(100vw - 16px));
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--key-border);
+  border-radius: 10px;
+  background: var(--apple-beige);
+  box-shadow: 0 6px 24px #0008;
+}
+#controls[hidden] { display: none !important; }
+#controls .button { width: 100%; min-height: 44px; opacity: 1; cursor: pointer; touch-action: manipulation; }
+#controls {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-auto-rows: minmax(44px, auto);
+}
+#controls:not([hidden]) { display: grid; }
+#buttonColor { grid-column: 1; }
+#buttonScanlines { grid-column: 2 / 4; }
+#buttonSettings:focus-visible, #controls button:focus-visible { outline: 3px solid #ffdf80; outline-offset: 2px; }
+
+#screenResolution {
+  position: fixed;
+  z-index: 2;
+  right: 4px;
+  bottom: 4px;
+  padding: 5px 7px;
+  border-radius: 3px;
+  background: rgba(0, 0, 0, .72);
+  color: #fff;
+  font: 11px/1.3 monospace;
+  white-space: pre;
+  text-align: right;
+  pointer-events: none;
+}
+#screenResolution[hidden],
+#screenResolution:empty { display: none !important; }
+#buttonDiagnostics[aria-pressed="false"] { opacity: .32; }
+
+
+/* Main controls can disable the touch joystick independently of keyboard mode. */
+body.joystick-disabled #joyStick {
+  display: none !important;
+}
+#buttonJoystick[aria-pressed="false"] {
+  opacity: .32;
+}
+
+
+/* Keyboard toggle mirrors the joystick toggle in the emulator controls. */
+#buttonInput[aria-pressed="false"] {
+  opacity: .32;
+}
+
+/* Keep joystick options tucked behind their own gear. */
+#buttonJoySettings {
+  position: fixed;
+  z-index: 24;
+  left: max(8px, env(safe-area-inset-left));
+  right: auto;
+  top: var(--emulator-top);
+  bottom: auto;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  background: var(--control-brown);
+  color: #fff;
+  cursor: pointer;
+  pointer-events: auto;
+  touch-action: manipulation;
+}
+#buttonJoySettings[aria-expanded="true"] { background: #382920; }
+#buttonJoySettings:focus-visible { outline: 3px solid #ffdf80; outline-offset: 2px; }
+#joyPadCanvas { grid-column: 1; grid-row: 1; }
+#joyButtonsCanvas { grid-column: 3; grid-row: 1; }
+#joyControls {
+  position: absolute;
+  z-index: 25;
+  position: fixed;
+  top: calc(var(--emulator-top) + 52px);
+  bottom: auto;
+  left: max(8px, env(safe-area-inset-left));
+  right: auto;
+  transform: none;
+  width: min(300px, calc(100vw - 32px));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--key-border);
+  border-radius: 10px;
+  background: var(--apple-beige);
+  box-shadow: 0 6px 24px #0008;
+  pointer-events: auto;
+}
+#joyControls .joy-setting { color: #42362f; text-shadow: none; }
+#joyControls[hidden] { display: none !important; }
