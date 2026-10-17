@@ -134,13 +134,17 @@ async function mountFile(id,file){
   return true;
 }
 
-function eject(id){
+async function eject(id){
   const ep=endpoint(id),b=board();if(!ep||!b)return false;
   if(ep.controller==='iigs35')b.memory?.floppy35Drives?.[ep.index]?.eject();
   else if(ep.controller==='disk2'){
     const disk=b.floppy525?._disks?.[ep.index];if(disk){disk.medium=null;disk.name='';}
   }else b.prodosBlock?.eject(ep.index);
   delete physicalMedia()[ep.id];
+  candidates.delete(ep.persistenceId);
+  // Physical eject also clears the saved mount. Otherwise Keep mounted can
+  // silently restore an image the user explicitly ejected.
+  await setKeep(ep.persistenceId,false);
   window.dispatchEvent(new CustomEvent('iigs-storage-changed',{detail:{id:ep.id,action:'eject'}}));
   return true;
 }

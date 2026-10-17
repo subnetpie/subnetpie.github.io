@@ -59,12 +59,12 @@
     svc.endpoints().forEach(ep=>boot.add(new Option(bootLabel(ep),ep.persistenceId)));
     boot.addEventListener('change',()=>svc.setBoot(boot.value));
 
-    pane.addEventListener('click',event=>{
+    pane.addEventListener('click',async event=>{
       const button=event.target.closest('button'),r=event.target.closest('[data-storage-id]');
       if(!button||!r)return;
       const id=r.dataset.storageId;
       if(button.hasAttribute('data-storage-insert')){qs('[data-storage-input]',r)?.click();return;}
-      if(button.hasAttribute('data-storage-eject')){svc.eject(id);sync();return;}
+      if(button.hasAttribute('data-storage-eject')){await svc.eject(id);sync();return;}
       if(button.hasAttribute('data-storage-download')){try{svc.download(id);}catch(err){alert(err?.message||String(err));}return;}
       if(button.hasAttribute('data-storage-boot')){
         const ep=svc.endpoint(id),target=ep?.persistenceId||'auto';

@@ -14,7 +14,7 @@ const assets={
   extraDrives:'./iigs_extra_drives.js?v=20261017-nox128k1',
   persistent:'./iigs_persistent_boot.js?v=20261007-unified-persist1',
   persistentUi:'./iigs_persistent_boot_ui.js?v=20261007-panel-audit1',
-  storage:'./iigs_storage_registry.js?v=20261007-physical2',
+  storage:'./iigs_storage_registry.js?v=20261017-eject-clean1',
   storageConfig:'./iigs_storage_config_ui.js?v=20261007-slot-order1',
   unifiedBridge:'./unified_configuration_bridge.js?v=20261007-machine2',
   displayToolbar:'./unified_display_toolbar.js?v=20261007-display-toolbar1',
@@ -27,7 +27,7 @@ const assets={
   unifiedCss:'./unified_controls.css?v=20261007-unified11',
   driveCss:'./unified_drive_manager.css?v=20261007-drive-manager6',
   unified:'./unified_controls.js?v=20261017-gear-icon2',
-  drive:'./unified_drive_manager.js?v=20261007-drive-manager7'
+  drive:'./unified_drive_manager.js?v=20261017-eject-clean1'
 };
 
 function addStyle(href){
