@@ -35,11 +35,16 @@ export class ProDOSBlockDevice {
         // when execution enters at Cn00, while matching the firmware scanner.
         this.rom.set([0x24,0x20,0x24,0x00,0x24,0x03,0x24,0x3c], 0x00);
 
-        // Boot: read ProDOS block 0 to $0800 through the card hardware window,
-        // then enter the loaded boot sector at $0801.  Do this inline rather
-        // than calling the public Cn80 driver so boot does not depend on the
-        // caller's initial stack state.
+        // Boot: ROM03 can arrive with Apple II compatibility RAM selectors in
+        // a non-main state. A boot sector must be placed in bank-0 main memory
+        // because execution continues at $0801. Clear ALTZP/RAMRD/RAMWRT before
+        // building the request; normal Cn80 driver calls continue to honor the
+        // caller's selectors.
         this.rom.set([
+            0xa9,0x00,                  // selector write value is ignored
+            0x8d,0x08,0xc0,             // STA $C008: ALTZP off
+            0x8d,0x02,0xc0,             // STA $C002: RAMRD main
+            0x8d,0x04,0xc0,             // STA $C004: RAMWRT main
             0xa9,0x01,0x85,0x42,       // command = READ
             0xa9,this.slot<<4,0x85,0x43,// unit = slot, drive 1
             0xa9,0x00,0x85,0x44,       // buffer = $0800
