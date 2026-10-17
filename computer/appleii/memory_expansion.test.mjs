@@ -128,6 +128,34 @@ test('IIgs internal slot ROM selection prevents memory card CnXX interception',(
   assert.equal(card.ownsC800(),true);
 });
 
+test('IIgs internal C800 ROM overrides a previously selected memory-card C800 owner',()=>{
+  const memory=new HookMemory();
+  memory.intCxRom=false;
+  memory.intC8Rom=false;
+  memory.slotRom=0x02;
+  const rom=new Uint8Array(0x1000).fill(0x11);
+  rom[0x100]=0x42;
+  rom[0x800]=0x99;
+  rom[0xfff]=0x77;
+  const card=new AppleIIMemoryExpansion(memory,{slot:1,rom});
+  memory.add_read_hook(addr=>{
+    const low=addr&0xffff;
+    if((memory.intCxRom||memory.intC8Rom) && low>=0xc800 && low<=0xcfff)
+      return low===0xcfff?0x5f:0x55;
+    return undefined;
+  });
+
+  assert.equal(memory.read(0xc100),0x42);
+  assert.equal(card.ownsC800(),true);
+  assert.equal(memory.read(0xc800),0x99);
+
+  memory.intCxRom=true;
+  assert.equal(memory.read(0xc800),0x55);
+  assert.equal(card.ownsC800(),true);
+  assert.equal(memory.read(0xcfff),0x5f);
+  assert.equal(card.ownsC800(),false);
+});
+
 test('IIgs slot 3 memory expansion follows SLOTC3ROM rather than SLOTROMSEL',()=>{
   const memory=new HookMemory();
   memory.intCxRom=false;
