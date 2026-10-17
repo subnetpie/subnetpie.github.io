@@ -33,6 +33,13 @@ export class AppleIIMemoryExpansion {
     // selected external C800 owner whenever INTCXROM or INTC8ROM is active.
     return !!(this.memory?.intCxRom || this.memory?.intC8Rom);
   }
+  a2BusBank(addr){
+    // MAME 0.289 maps Apple II slot I/O only in banks $00, $01, $E0 and $E1.
+    // Do not alias $FC-$FF ROM (or arbitrary fast-RAM banks) through the
+    // card by masking a 24-bit address down to 16 bits.
+    const bank=(addr>>>16)&0xff;
+    return bank===0x00 || bank===0x01 || bank===0xe0 || bank===0xe1;
+  }
 
   setEnabled(enabled){
     this.enabled=!!enabled;
@@ -75,7 +82,7 @@ export class AppleIIMemoryExpansion {
   }
 
   read(addr){
-    if(!this.enabled)return undefined;
+    if(!this.enabled || !this.a2BusBank(addr))return undefined;
     const low=addr&0xffff;
     const base=this.c0Base();
     if(low>=base && low<=base+0x0f){
@@ -108,7 +115,7 @@ export class AppleIIMemoryExpansion {
   }
 
   write(addr,data){
-    if(!this.enabled)return undefined;
+    if(!this.enabled || !this.a2BusBank(addr))return undefined;
     const low=addr&0xffff, base=this.c0Base();
     // MAME releases the global expansion-ROM owner on every CFFF write,
     // regardless of whether internal C8 ROM currently has read priority.
