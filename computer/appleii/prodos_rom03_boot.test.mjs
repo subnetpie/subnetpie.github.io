@@ -42,7 +42,7 @@ test('IIgs ROM03 boots mounted ProDOS slot card into $0801',()=>{
     }));
 });
 
-test('ROM03 HDV boot survives slot 1 memory expansion and slot 4 Mockingboard',()=>{
+test('ROM03 HDV boot survives slots 1 memory expansion, 4 Mockingboard and 6 Disk II',()=>{
   const {board:m}=createMachine('iigs');
   const memexpRom=new Uint8Array(readFileSync(new URL('./roms/341-0344a.bin',import.meta.url)));
   const memexp=new AppleIIMemoryExpansion(m.memory,{slot:1,rom:memexpRom});
@@ -57,9 +57,9 @@ test('ROM03 HDV boot survives slot 1 memory expansion and slot 4 Mockingboard',(
   m.reset(true);
   memexp.reset();
 
-  // Mirror the configured machine-level slot policy: external firmware in
-  // slots 1, 4 and 7. C800 ownership itself starts unclaimed after reset.
-  m.memory.slotRom=(1<<1)|(1<<4)|(1<<7);
+  // Full intended slot layout: 1=memory expansion, 4=Mockingboard,
+  // 6=Disk II and 7=SmartPort/HDV. C800 starts globally unclaimed.
+  m.memory.slotRom=(1<<1)|(1<<4)|(1<<6)|(1<<7);
   m.memory.slotC3Rom=false;
   m.memory._a2C800Owner=null;
 
@@ -72,9 +72,9 @@ test('ROM03 HDV boot survives slot 1 memory expansion and slot 4 Mockingboard',(
 
   const booted=runUntilBlock0Loaded(m,{limit:30});
   assert.ok(booted,
-    'ROM03 HDV boot was corrupted by the memory expansion card: '+JSON.stringify({
+    'ROM03 HDV boot was corrupted by the populated slot layout: '+JSON.stringify({
       slotRom:m.memory.slotRom,
-      c800Owner:m.memory._a2C800Owner===memexp?'memexp':m.memory._a2C800Owner? 'other':'none',
+      c800Owner:m.memory._a2C800Owner===memexp?'memexp':m.memory._a2C800Owner?'other':'none',
       c800Owners,
       boot:Array.from({length:4},(_,i)=>m.memory.read(0x800+i))
     }));
