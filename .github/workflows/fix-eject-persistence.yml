@@ -1,0 +1,101 @@
+name: Fix disk eject persistence
+on:
+  push:
+    paths:
+      - .github/workflows/fix-eject-persistence.yml
+permissions:
+  contents: write
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Make eject clear persistent mount state
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          p=Path('computer/appleii/iigs_storage_registry.js')
+          s=p.read_text()
+          old="""function eject(id){
+            const ep=endpoint(id),b=board();if(!ep||!b)return false;
+            if(ep.controller==='iigs35')b.memory?.floppy35Drives?.[ep.index]?.eject();
+            else if(ep.controller==='disk2'){
+              const disk=b.floppy525?._disks?.[ep.index];if(disk){disk.medium=null;disk.name='';}
+            }else b.prodosBlock?.eject(ep.index);
+            delete physicalMedia()[ep.id];
+            window.dispatchEvent(new CustomEvent('iigs-storage-changed',{detail:{id:ep.id,action:'eject'}}));
+            return true;
+          }
+          """
+          new="""async function eject(id){
+            const ep=endpoint(id),b=board();if(!ep||!b)return false;
+            if(ep.controller==='iigs35')b.memory?.floppy35Drives?.[ep.index]?.eject();
+            else if(ep.controller==='disk2'){
+              const disk=b.floppy525?._disks?.[ep.index];if(disk){disk.medium=null;disk.name='';}
+            }else b.prodosBlock?.eject(ep.index);
+            delete physicalMedia()[ep.id];
+            candidates.delete(ep.persistenceId);
+            // A physical eject is authoritative: do not leave a saved image
+            // behind that can silently remount on the next page load.
+            await setKeep(ep.persistenceId,false);
+            window.dispatchEvent(new CustomEvent('iigs-storage-changed',{detail:{id:ep.id,action:'eject'}}));
+            return true;
+          }
+          """
+          if old not in s: raise SystemExit('registry eject block not found')
+          p.write_text(s.replace(old,new,1))
+
+          p=Path('computer/appleii/unified_drive_manager.js')
+          s=p.read_text()
+          old="""    pane.addEventListener('click',event=>{
+"""
+          new="""    pane.addEventListener('click',async event=>{
+"""
+          if old not in s: raise SystemExit('drive click handler not found')
+          s=s.replace(old,new,1)
+          old="""      if(button.hasAttribute('data-storage-eject')){svc.eject(id);sync();return;}
+"""
+          new="""      if(button.hasAttribute('data-storage-eject')){await svc.eject(id);sync();return;}
+"""
+          if old not in s: raise SystemExit('drive eject handler not found')
+          p.write_text(s.replace(old,new,1))
+
+          p=Path('computer/appleii/controls-menu.js')
+          s=p.read_text()
+          replacements={
+            "storage:'./iigs_storage_registry.js?v=20261007-physical2'":"storage:'./iigs_storage_registry.js?v=20261017-eject-clean1'",
+            "drive:'./unified_drive_manager.js?v=20261007-drive-manager7'":"drive:'./unified_drive_manager.js?v=20261017-eject-clean1'"
+          }
+          for old,new in replacements.items():
+            if old not in s: raise SystemExit('controls cache key not found: '+old)
+            s=s.replace(old,new,1)
+          p.write_text(s)
+
+          p=Path('computer/appleii/index.html')
+          s=p.read_text()
+          old='./controls-menu.js?v=20261017-slotbus3'
+          new='./controls-menu.js?v=20261017-eject-clean1'
+          if old not in s: raise SystemExit('index controls cache key not found')
+          p.write_text(s.replace(old,new,1))
+          PY
+      - name: Verify syntax and cleanup semantics
+        run: |
+          node --check computer/appleii/iigs_storage_registry.js
+          node --check computer/appleii/unified_drive_manager.js
+          grep -q "candidates.delete(ep.persistenceId)" computer/appleii/iigs_storage_registry.js
+          grep -q "await setKeep(ep.persistenceId,false)" computer/appleii/iigs_storage_registry.js
+          grep -q "await svc.eject(id)" computer/appleii/unified_drive_manager.js
+      - name: Commit fix
+        run: |
+          rm -f .github/workflows/fix-eject-persistence.yml
+          git config user.name subnetpie
+          git config user.email subnetpie@hotmail.com
+          git add -A
+          git commit -m "Make disk eject clear persistent mounts"
+          git push
