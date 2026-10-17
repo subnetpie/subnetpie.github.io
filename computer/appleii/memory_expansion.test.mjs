@@ -21,8 +21,6 @@ test('Apple II Memory Expansion matches MAME C0nX pointer semantics',()=>{
   const card=new AppleIIMemoryExpansion(memory,{slot:4});
   const base=0xc0c0;
 
-  // Select RAM address $012345. MAME reports the top address register with
-  // the Apple card's fixed high nibble set ($F0 | address bits 16-19).
   memory.write(base+0,0x45);
   memory.write(base+1,0x23);
   memory.write(base+2,0x01);
@@ -36,7 +34,6 @@ test('Apple II Memory Expansion matches MAME C0nX pointer semantics',()=>{
   assert.equal(memory.read(base+1),0x23);
   assert.equal(memory.read(base+2),0xf1);
 
-  // Rewind and verify RAM reads auto-increment the same live pointer.
   memory.write(base+0,0x45);
   memory.write(base+1,0x23);
   memory.write(base+2,0x01);
@@ -70,4 +67,42 @@ test('Memory Expansion follows its selected slot and can be disabled',()=>{
 
   card.setEnabled(false);
   assert.equal(memory.read(0xc0f0),0xff);
+});
+
+test('Memory Expansion only owns C800 after its CnXX ROM is selected',()=>{
+  const memory=new HookMemory();
+  const rom=new Uint8Array(0x1000);
+  rom.fill(0x11);
+  rom[0x100]=0x42;
+  rom[0x800]=0x99;
+  rom[0xfff]=0x77;
+  const card=new AppleIIMemoryExpansion(memory,{slot:1,rom});
+
+  // Before a C1xx access the card must not globally steal C800-CFFF.
+  assert.equal(memory.read(0xc800),0xff);
+  assert.equal(card.c800Active,false);
+
+  assert.equal(memory.read(0xc100),0x42);
+  assert.equal(card.c800Active,true);
+  assert.equal(memory.read(0xc800),0x99);
+
+  // CFFF returns the card byte and releases C800 ownership for the next read.
+  assert.equal(memory.read(0xcfff),0x77);
+  assert.equal(card.c800Active,false);
+  assert.equal(memory.read(0xc800),0xff);
+});
+
+test('IIgs internal slot ROM selection prevents memory card CnXX interception',()=>{
+  const memory=new HookMemory();
+  memory.intCxRom=true;
+  memory.slotRom=0x02;
+  const rom=new Uint8Array(0x1000).fill(0x5a);
+  const card=new AppleIIMemoryExpansion(memory,{slot:1,rom});
+
+  assert.equal(memory.read(0xc100),0xff);
+  assert.equal(card.c800Active,false);
+
+  memory.intCxRom=false;
+  assert.equal(memory.read(0xc100),0x5a);
+  assert.equal(card.c800Active,true);
 });
