@@ -23,6 +23,7 @@ const assets={
   color:'./display_color_panel.js?v=20261007-direct-monitor1',
   keyboard:'./iigs_keyboard_layout.js?v=20261005-iigs-kbd1',
   caps:'./caps_lock_indicator.js?v=20261007-caps-led1',
+  pause:'./pause_overlay.js?v=20261017-pause1',
   unifiedCss:'./unified_controls.css?v=20261007-unified11',
   driveCss:'./unified_drive_manager.css?v=20261007-drive-manager6',
   unified:'./unified_controls.js?v=20261017-gear-icon2',
@@ -57,6 +58,7 @@ if(document.readyState==='loading'){
   document.write(`<script type="module" src="${assets.keyboard}"><\/script>`);
   document.write(`<script src="${assets.caps}"><\/script>`);
   document.write(`<script src="${assets.scanlines}"><\/script>`);
+  document.write(`<script type="module" src="${assets.pause}"><\/script>`);
 }else{
   addStyle(assets.configCss);
   const hardware=import(assets.config).then(()=>{addScript(assets.configCompat);return import(assets.slot4);});
@@ -66,6 +68,7 @@ if(document.readyState==='loading'){
   import(assets.keyboard);
   addScript(assets.caps);
   addScript(assets.scanlines);
+  import(assets.pause);
 }
 
 // Independent legacy menus remain available underneath the unified UI.
