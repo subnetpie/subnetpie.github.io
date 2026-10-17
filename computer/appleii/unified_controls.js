@@ -45,8 +45,10 @@
     const key=make('button',{type:'button',class:'unified-island-action','aria-label':'Virtual keyboard','aria-pressed':'false'},'⌨');
     const joy=make('button',{type:'button',class:'unified-island-action','aria-label':'Virtual joystick','aria-pressed':'false'},'◉');
     const machine=make('button',{type:'button',class:'unified-island-action','aria-label':'Machine controls',title:'Machine controls','aria-expanded':'false'});
-    machine.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2"/><path d="M9 9h6v6H9zM9 2v4m6-4v4M9 18v4m6-4v4M2 9h4m-4 6h4m12-6h4m-4 6h4"/></svg>';
-    launcher.append(gear,drives,key,joy,machine);
+    machine.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3.5h10v17H7zM3 6.5h4m-4 3.5h4m-4 4h4m-4 3.5h4m10-11h4m-4 3.5h4m-4 4h4m-4 3.5h4"/><circle cx="14.5" cy="6.5" r="1.2"/></svg>';
+    const reset=make('button',{type:'button',class:'unified-island-action','aria-label':'Reset machine',title:'Reset machine'});
+    reset.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8V3m0 0h5M4.8 7.2A8 8 0 1 1 4.4 16"/></svg>';
+    launcher.append(gear,drives,key,joy,machine,reset);
     document.body.append(launcher);
 
     const panel=make('section',{id:'unifiedMachinePanel','aria-label':'Machine controls'});
@@ -123,6 +125,7 @@
 
     drives.addEventListener('click',()=>openPanel('drives'));
     machine.addEventListener('click',()=>openPanel('machine'));
+    reset.addEventListener('click',()=>click('buttonReset'));
     panel.querySelector('#unifiedPanelClose').addEventListener('click',closePanel);
 
     panel.querySelectorAll('[data-proxy]').forEach(b=>b.addEventListener('click',()=>click(b.dataset.proxy)));
