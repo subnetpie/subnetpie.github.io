@@ -265,8 +265,12 @@ const originalReset=Motherboard.prototype.reset;
 if(!Motherboard.prototype.__iigsConfigurationReset) {
   Motherboard.prototype.__iigsConfigurationReset=true;
   Motherboard.prototype.reset=function(...args) {
+    const result=originalReset.apply(this,args);
+    // MAME resets the machine-side SLOTROMSEL/C3ROM state first. Apply only
+    // physical controller placement here after reset; slot visibility is
+    // seeded by iigs_slot_bus.js in one machine-level policy step.
     applyConfiguration(this);
-    return originalReset.apply(this,args);
+    return result;
   };
 }
 
@@ -365,7 +369,7 @@ function buildConfigurationDialog() {
   dialog.addEventListener("change",event=>{
     const select=event.target.closest("select[data-slot]");
     if(select && (select.value==="smartport" || select.value==="disk2" || select.value==="memexp")) {
-      dialog.querySelectorAll("select[data-slot]").forEach(other=>{
+      dialog.querySelectorAll(`select[data-slot]`).forEach(other=>{
         if(other!==select && other.value===select.value)other.value="empty";
       });
     }
@@ -388,7 +392,7 @@ function buildConfigurationDialog() {
         previous.push([key,localStorage.getItem(key)]);
         localStorage.setItem(key,value);
       }
-      localStorage.removeItem(LEGACY_MEMEXP_KEY);
+      try{localStorage.removeItem(LEGACY_MEMEXP_KEY);}catch(_){}
     } catch(err) {
       for(const [key,value] of previous.reverse()) {
         try { if(value===null)localStorage.removeItem(key);else localStorage.setItem(key,value); } catch(_) {}
