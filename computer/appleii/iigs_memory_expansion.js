@@ -1,10 +1,25 @@
 import {Motherboard} from "https://subnetpie.github.io/computer/appleii/motherboard.js?v=20261004-mb-complete1";
-import {AppleIIMemoryExpansion} from "./memory_expansion.js?v=20261017-memexp1";
+import {AppleIIMemoryExpansion} from "./memory_expansion.js?v=20261017-memexp5";
 import {loadMachineProfile,saveMachineProfile} from "./machine_profile.js?v=20261017-memexp1";
 
 const KEY="subnetpie.apple2.memexp.slot.v1";
 const LABEL="Memory Expansion Card · 1 MB";
 const VALID_SLOTS=[1,2,3,4,6,7];
+const ROM_URL=new URL("./rom/341-0344a.bin",import.meta.url);
+let CARD_ROM=null;
+
+// The Apple memory expansion card is a ROM-bearing slot card.  Load the
+// 341-0344A firmware before this module finishes evaluating so ROM03 cannot
+// race ahead and scan an empty Cn00 window during startup.
+try{
+  const response=await fetch(ROM_URL,{cache:"no-store"});
+  if(!response.ok)throw new Error(`HTTP ${response.status}`);
+  const bytes=new Uint8Array(await response.arrayBuffer());
+  if(bytes.length!==0x1000)throw new Error(`expected 4096 bytes, got ${bytes.length}`);
+  CARD_ROM=bytes;
+}catch(error){
+  console.error("[Memory Expansion] Unable to load 341-0344A ROM",error);
+}
 
 function validSlot(slot){
   slot=Number(slot);
@@ -35,16 +50,18 @@ function applyCard(board){
   if(!board?.iigsEnabled || !board.memory)return;
   const slot=loadSlot();
   if(!board.memoryExpansionCard)
-    board.memoryExpansionCard=new AppleIIMemoryExpansion(board.memory,{slot:slot||1,enabled:!!slot});
+    board.memoryExpansionCard=new AppleIIMemoryExpansion(board.memory,{slot:slot||1,enabled:!!slot,rom:CARD_ROM});
   board.memoryExpansionCard.setSlot(slot||1);
   board.memoryExpansionCard.setEnabled(!!slot);
+  if(CARD_ROM && !board.memoryExpansionCard.rom)board.memoryExpansionCard.setRom(CARD_ROM);
 
-  // Do not advertise an external Cn00 slot ROM when no card firmware is
-  // installed. The register interface at C0n0-C0nF does not require SLOTROM,
-  // and forcing SLOTROM without 341-0344A makes ROM03 scan a card ROM that is
-  // not actually present, which can disturb SmartPort/HDV boot.
-  if(slot && board.memoryExpansionCard.rom)
-    board.memory.slotRom|=(1<<slot);
+  // SLOTROM must reflect the selected external card.  Clear our old bit when
+  // moving/disabling the card, then advertise the new slot only when firmware
+  // is actually present.
+  const previous=validSlot(board.memoryExpansionSlot||0);
+  if(previous)board.memory.slotRom&=~(1<<previous);
+  if(slot && board.memoryExpansionCard.rom)board.memory.slotRom|=(1<<slot);
+  board.memoryExpansionSlot=slot;
 }
 
 const originalReset=Motherboard.prototype.reset;
