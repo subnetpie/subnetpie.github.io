@@ -4,23 +4,27 @@ import {loadMachineProfile,saveMachineProfile} from "./machine_profile.js?v=2026
 
 const KEY="subnetpie.apple2.memexp.slot.v1";
 const LABEL="Memory Expansion Card · 1 MB";
+const VALID_SLOTS=[1,2,3,4,6,7];
+
+function validSlot(slot){
+  slot=Number(slot);
+  return VALID_SLOTS.includes(slot)?slot:0;
+}
 
 function loadSlot(){
-  try{
-    const n=Number(localStorage.getItem(KEY));
-    return [1,2,3,4,6,7].includes(n)?n:0;
-  }catch(_){return 0;}
+  try{return validSlot(localStorage.getItem(KEY));}
+  catch(_){return 0;}
 }
 
 function saveSlot(slot){
-  slot=[1,2,3,4,6,7].includes(slot)?slot:0;
+  slot=validSlot(slot);
   try{
     if(slot)localStorage.setItem(KEY,String(slot));
     else localStorage.removeItem(KEY);
   }catch(_){}
   try{
     const profile=loadMachineProfile();
-    for(const n of [1,2,3,4,6,7])if(profile.slots[n]==="memexp")profile.slots[n]="empty";
+    for(const n of VALID_SLOTS)if(profile.slots[n]==="memexp")profile.slots[n]="empty";
     if(slot)profile.slots[slot]="memexp";
     saveMachineProfile(profile);
   }catch(_){}
@@ -34,12 +38,13 @@ function applyCard(board){
     board.memoryExpansionCard=new AppleIIMemoryExpansion(board.memory,{slot:slot||1,enabled:!!slot});
   board.memoryExpansionCard.setSlot(slot||1);
   board.memoryExpansionCard.setEnabled(!!slot);
-  if(slot){
-    // Selecting a physical external card corresponds to "Your Card" for
-    // ROM03's slot-ROM selection latch. The C0nX register interface remains
-    // available regardless of whether the optional 341-0344A ROM is present.
+
+  // Do not advertise an external Cn00 slot ROM when no card firmware is
+  // installed. The register interface at C0n0-C0nF does not require SLOTROM,
+  // and forcing SLOTROM without 341-0344A makes ROM03 scan a card ROM that is
+  // not actually present, which can disturb SmartPort/HDV boot.
+  if(slot && board.memoryExpansionCard.rom)
     board.memory.slotRom|=(1<<slot);
-  }
 }
 
 const originalReset=Motherboard.prototype.reset;
@@ -68,60 +73,68 @@ function installUi(){
     select.append(option);
   }
 
+  let draftSlot=loadSlot();
+
   const overlay=()=>{
-    const slot=loadSlot();
-    if(!slot)return;
-    const select=dialog.querySelector(`select[data-slot="${slot}"]`);
+    dialog.querySelectorAll('select[data-slot]').forEach(select=>{
+      if(select.value==="memexp")select.value="empty";
+    });
+    if(!draftSlot)return;
+    const select=dialog.querySelector(`select[data-slot="${draftSlot}"]`);
     if(select)select.value="memexp";
   };
 
-  // The base IIgs configuration predates this card and normalizes unknown
-  // devices back to Empty in its change handler. Intercept only memexp changes
-  // before that handler so the user's selection survives until Save.
+  // The base configuration renderer does not know about memexp. Keep a draft
+  // slot locally so changing Mockingboard/SmartPort/Disk II cannot erase an
+  // unsaved memory-card choice when the base dialog re-renders all slots.
   if(!dialog.dataset.memexpChangeCapture){
     dialog.dataset.memexpChangeCapture="1";
     dialog.addEventListener("change",event=>{
       const select=event.target.closest?.("select[data-slot]");
-      if(!select || select.value!=="memexp")return;
-      dialog.querySelectorAll('select[data-slot]').forEach(other=>{
-        if(other!==select && other.value==="memexp")other.value="empty";
-      });
-      event.stopImmediatePropagation();
+      if(!select)return;
+      if(select.value==="memexp"){
+        draftSlot=validSlot(select.dataset.slot);
+        dialog.querySelectorAll('select[data-slot]').forEach(other=>{
+          if(other!==select && other.value==="memexp")other.value="empty";
+        });
+        // Prevent the legacy normalizer from immediately converting memexp to
+        // Empty. Other slot changes are allowed through, then we restore draft.
+        event.stopImmediatePropagation();
+        return;
+      }
+      if(Number(select.dataset.slot)===draftSlot && select.value!=="memexp")
+        draftSlot=0;
+      queueMicrotask(overlay);
     },true);
   }
 
-  // openWithConfiguration() re-renders from the legacy slot model. Restore the
-  // persisted memory-card choice after that render for both unified and legacy UI.
   if(!dialog.dataset.memexpOpenHook){
     dialog.dataset.memexpOpenHook="1";
-    dialog.addEventListener("iigs-config-open",overlay);
+    dialog.addEventListener("iigs-config-open",()=>{
+      draftSlot=loadSlot();
+      overlay();
+    });
   }
 
   const save=document.getElementById("iigsConfigSave");
   if(save&&!save.dataset.memexpHook){
     save.dataset.memexpHook="1";
     save.addEventListener("click",()=>{
-      const selected=[...dialog.querySelectorAll('select[data-slot]')]
-        .find(select=>select.value==="memexp");
-      const slot=saveSlot(selected?Number(selected.dataset.slot):0);
-      // Feed the older slot model Empty while persisting the real card choice
-      // separately. The memory-expansion reset hook restores the physical card.
+      saveSlot(draftSlot);
+      // Feed Empty to the older base slot serializer. The physical memory card
+      // is restored from KEY after reload, while SmartPort/Disk II/Mockingboard
+      // keep their normal configuration path.
+      const selected=dialog.querySelector('select[data-slot][value="memexp"]');
       if(selected)selected.value="empty";
-      if(slot)queueMicrotask(()=>saveSlot(slot));
     },true);
   }
 
   const defaults=document.getElementById("iigsConfigDefaults");
   if(defaults&&!defaults.dataset.memexpHook){
     defaults.dataset.memexpHook="1";
-    defaults.addEventListener("click",()=>saveSlot(0),true);
+    defaults.addEventListener("click",()=>{draftSlot=0;saveSlot(0);},true);
   }
 
-  const button=document.getElementById("buttonIIgsConfiguration");
-  if(button&&!button.dataset.memexpHook){
-    button.dataset.memexpHook="1";
-    button.addEventListener("click",()=>{queueMicrotask(overlay);setTimeout(overlay,0);},true);
-  }
   overlay();
   return true;
 }
