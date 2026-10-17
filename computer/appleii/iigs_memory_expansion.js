@@ -84,9 +84,6 @@ function installUi(){
     if(select)select.value="memexp";
   };
 
-  // The base configuration renderer does not know about memexp. Keep a draft
-  // slot locally so changing Mockingboard/SmartPort/Disk II cannot erase an
-  // unsaved memory-card choice when the base dialog re-renders all slots.
   if(!dialog.dataset.memexpChangeCapture){
     dialog.dataset.memexpChangeCapture="1";
     dialog.addEventListener("change",event=>{
@@ -97,13 +94,10 @@ function installUi(){
         dialog.querySelectorAll('select[data-slot]').forEach(other=>{
           if(other!==select && other.value==="memexp")other.value="empty";
         });
-        // Prevent the legacy normalizer from immediately converting memexp to
-        // Empty. Other slot changes are allowed through, then we restore draft.
         event.stopImmediatePropagation();
         return;
       }
-      if(Number(select.dataset.slot)===draftSlot && select.value!=="memexp")
-        draftSlot=0;
+      if(Number(select.dataset.slot)===draftSlot && select.value!=="memexp")draftSlot=0;
       queueMicrotask(overlay);
     },true);
   }
@@ -121,10 +115,8 @@ function installUi(){
     save.dataset.memexpHook="1";
     save.addEventListener("click",()=>{
       saveSlot(draftSlot);
-      // Feed Empty to the older base slot serializer. The physical memory card
-      // is restored from KEY after reload, while SmartPort/Disk II/Mockingboard
-      // keep their normal configuration path.
-      const selected=dialog.querySelector('select[data-slot][value="memexp"]');
+      const selected=[...dialog.querySelectorAll('select[data-slot]')]
+        .find(select=>select.value==="memexp");
       if(selected)selected.value="empty";
     },true);
   }
