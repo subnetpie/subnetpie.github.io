@@ -129,6 +129,16 @@ export class ProDOSBlockDevice {
         // Media remains mounted; a boot starts a fresh change-detection session.
         this.enabled=this.drives.some(d=>d.image);
         for(const disk of this.drives)disk.changed=false;
+
+        // IIgsMemory.reset() restores the SLOTROM register to zero before card
+        // reset. Re-advertise this external slot only while block media is
+        // mounted, so ROM03 can discover the boot card through normal CnXX
+        // decode. The legacy IIe Memory class has no slotRom register.
+        if(typeof this.memory?.slotRom === 'number') {
+            const bit=1<<this.slot;
+            if(this.enabled)this.memory.slotRom|=bit;
+            else this.memory.slotRom&=~bit;
+        }
     }
 
     setTrace(fn) { this.trace = fn; }
