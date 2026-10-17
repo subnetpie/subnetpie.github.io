@@ -25,6 +25,12 @@ export function createMachine(machine = 'iigs') {
   };
   const canvas={getContext:()=>context};
   globalThis.document={createElement:()=>canvas};
+  if(!globalThis.navigator) {
+    Object.defineProperty(globalThis,'navigator',{
+      value:{userAgent:'node',platform:'Node',maxTouchPoints:0},
+      configurable:true
+    });
+  }
   const joystick={axis0:127,axis1:127,axis2:127,axis3:127,button0:false,button1:false};
   const board=new Motherboard(machine==='iigs'?2800:1020.5,canvas,joystick,()=>{},machine);
   if(machine==='iigs') {
