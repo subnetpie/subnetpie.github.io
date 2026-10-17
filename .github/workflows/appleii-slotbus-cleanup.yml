@@ -1,0 +1,59 @@
+name: Apple II slot bus cleanup
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - '.github/workflows/appleii-slotbus-cleanup.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Remove legacy slot mutation and refresh browser cache key
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          prodos = Path('computer/appleii/prodos_block.js')
+          text = prodos.read_text()
+          old = '''        // IIgsMemory.reset() restores the SLOTROM register to zero before card
+          // reset. Re-advertise this external slot only while block media is
+          // mounted, so ROM03 can discover the boot card through normal CnXX
+          // decode. The legacy IIe Memory class has no slotRom register.
+          if(typeof this.memory?.slotRom === 'number') {
+              const bit=1<<this.slot;
+              if(this.enabled)this.memory.slotRom|=bit;
+              else this.memory.slotRom&=~bit;
+          }
+          '''
+          if old not in text:
+              raise SystemExit('expected legacy SLOTROM reset block not found')
+          prodos.write_text(text.replace(old, ''))
+
+          index = Path('computer/appleii/index.html')
+          html = index.read_text()
+          old_key = './controls-menu.js?v=20261017-speed-memexp1'
+          new_key = './controls-menu.js?v=20261017-slotbus2'
+          if old_key not in html:
+              raise SystemExit('expected controls-menu cache key not found')
+          index.write_text(html.replace(old_key, new_key))
+          PY
+      - name: Run slot and ROM03 boot regressions
+        run: node --test computer/appleii/memory_expansion.test.mjs computer/appleii/prodos_rom03_boot.test.mjs computer/appleii/rom_resources.test.mjs
+      - name: Commit cleanup
+        run: |
+          git config user.name 'subnetpie'
+          git config user.email 'subnetpie@hotmail.com'
+          git add computer/appleii/prodos_block.js computer/appleii/index.html
+          git diff --cached --check
+          git commit -m 'Centralize IIgs slot ROM ownership'
+          git push
