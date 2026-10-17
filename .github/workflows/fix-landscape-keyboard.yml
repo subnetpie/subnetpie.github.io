@@ -17,21 +17,26 @@ jobs:
           git show 8f752e56ab579690a017a3ad26f8c7529265881d:computer/appleii/style.css > computer/appleii/style.css
           python - <<'PY'
           from pathlib import Path
+
           p=Path('computer/appleii/style.css')
           s=p.read_text()
-          old='''#keyboard1.apple2-keyboard {\n  box-sizing: border-box;'''
-          new='''#keyboard1.apple2-keyboard {\n  display: none !important;\n  box-sizing: border-box;'''
+          old="#keyboard1.apple2-keyboard {\n  box-sizing: border-box;"
+          new="#keyboard1.apple2-keyboard {\n  display: none !important;\n  box-sizing: border-box;"
           if old not in s:
               raise SystemExit('keyboard base rule not found')
-          s=s.replace(old,new,1)
-          p.write_text(s)
+          p.write_text(s.replace(old,new,1))
 
           p=Path('computer/appleii/index.html')
           s=p.read_text()
-          import re
-          s,n=re.subn(r'./style\\.css\\?v=[^"\\']+', './style.css?v=20261017-landscape-keyboard1', s, count=1)
-          if n != 1:
+          marker='./style.css?v='
+          i=s.find(marker)
+          if i < 0:
               raise SystemExit('style cache key not found')
+          quote_positions=[x for x in (s.find('"',i),s.find("'",i)) if x >= 0]
+          if not quote_positions:
+              raise SystemExit('style cache key terminator not found')
+          j=min(quote_positions)
+          s=s[:i]+'./style.css?v=20261017-landscape-keyboard1'+s[j:]
           p.write_text(s)
           PY
       - name: Verify keyboard rule
