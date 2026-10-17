@@ -1,0 +1,32 @@
+name: Fix Nox 128K compatibility
+on:
+  push:
+    paths:
+      - tools/fix-nox-128k.py
+      - .github/workflows/fix-nox-128k.yml
+permissions:
+  contents: write
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Apply MAME-aligned IIgs compatibility fix
+        run: python tools/fix-nox-128k.py
+      - name: Run targeted Nox and memory tests
+        run: |
+          node --test computer/appleii/nox_128k.test.mjs
+          node --test computer/appleii/memory_expansion.test.mjs
+      - name: Commit migration
+        run: |
+          rm -f tools/fix-nox-128k.py .github/workflows/fix-nox-128k.yml
+          git config user.name subnetpie
+          git config user.email subnetpie@hotmail.com
+          git add -A
+          git commit -m "Fix IIgs Nox 128K auxiliary-memory detection"
+          git push
