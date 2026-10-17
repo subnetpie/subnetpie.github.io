@@ -1,8 +1,8 @@
-// Apple II Memory Expansion Card (MAME 0.289 a2memexp.cpp behavior).
+// Apple II Memory Expansion Card, matching MAME 0.289 a2memexp.cpp.
 //
-// This models the card's C0n0-C0nF register/RAM interface and 1 MB RAM.
-// The original Apple 341-0344A slot ROM is not bundled here; callers may
-// optionally provide a 4K ROM image via setRom().
+// The card exposes C0n0-C0nF registers, a slot-specific CnXX firmware page,
+// and a C800-CFFF expansion ROM that is claimed only after this card's CnXX
+// page is selected. The Apple card provides 1 MB of RAM.
 export class AppleIIMemoryExpansion {
   constructor(memory,{slot=1,enabled=true,rom=null}={}) {
     this.memory=memory;
@@ -14,6 +14,7 @@ export class AppleIIMemoryExpansion {
     this.bankHiOr=0xf0;
     this.wptr=0;
     this.liveptr=0;
+    this.c800Active=false;
     this.rom=null;
     if(rom)this.setRom(rom);
     this.readHook=this.read.bind(this);
@@ -22,8 +23,14 @@ export class AppleIIMemoryExpansion {
     memory.add_write_hook(this.writeHook);
   }
 
-  setEnabled(enabled){this.enabled=!!enabled;}
-  setSlot(slot){this.slot=Math.max(1,Math.min(7,slot|0));}
+  setEnabled(enabled){
+    this.enabled=!!enabled;
+    if(!this.enabled)this.c800Active=false;
+  }
+  setSlot(slot){
+    this.slot=Math.max(1,Math.min(7,slot|0));
+    this.c800Active=false;
+  }
   setRom(data){
     const src=data instanceof Uint8Array?data:new Uint8Array(data);
     if(src.length!==0x1000)throw new Error('Apple II Memory Expansion ROM must be 4096 bytes');
@@ -34,6 +41,7 @@ export class AppleIIMemoryExpansion {
     this.regs.fill(0);
     this.wptr=0;
     this.liveptr=0;
+    this.c800Active=false;
   }
 
   updatePointerRegisters(){
@@ -44,6 +52,16 @@ export class AppleIIMemoryExpansion {
 
   c0Base(){return 0xc080|(this.slot<<4);}
   cnBase(){return 0xc000|(this.slot<<8);}
+
+  // IIgs compatibility: installed hooks run before the normal CnXX decoder,
+  // so honor the IIgs internal/external slot-ROM selectors here rather than
+  // allowing the card to override internal ROM unconditionally.
+  slotRomVisible(){
+    if(typeof this.memory?.intCxRom!=='boolean')return true;
+    if(this.memory.intCxRom)return false;
+    if(typeof this.memory.slotRom!=='number')return true;
+    return !!(this.memory.slotRom&(1<<this.slot));
+  }
 
   read(addr){
     if(!this.enabled)return undefined;
@@ -61,12 +79,17 @@ export class AppleIIMemoryExpansion {
     }
     if(this.rom){
       const cn=this.cnBase();
-      if(low>=cn && low<=cn+0xff){
+      if(low>=cn && low<=cn+0xff && this.slotRomVisible()){
+        this.c800Active=true;
         const slotImage=(this.slot&7)*0x100;
         return this.rom[slotImage+(low&0xff)];
       }
-      if(low>=0xc800 && low<=0xcfff)
-        return this.rom[0x800+(low-0xc800)];
+      if(low>=0xc800 && low<=0xcfff && this.c800Active){
+        const value=this.rom[0x800+(low-0xc800)];
+        // Apple II bus C800 ownership is released by an access to CFFF.
+        if(low===0xcfff)this.c800Active=false;
+        return value;
+      }
     }
     return undefined;
   }
