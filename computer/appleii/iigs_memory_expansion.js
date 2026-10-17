@@ -1,5 +1,5 @@
 import {Motherboard} from "https://subnetpie.github.io/computer/appleii/motherboard.js?v=20261004-mb-complete1";
-import {AppleIIMemoryExpansion} from "./memory_expansion.js?v=20261017-memexp5";
+import {AppleIIMemoryExpansion} from "./memory_expansion.js?v=20261017-c800-latch1";
 import {loadMachineProfile,saveMachineProfile} from "./machine_profile.js?v=20261017-memexp1";
 
 const KEY="subnetpie.apple2.memexp.slot.v1";
@@ -55,11 +55,10 @@ function applyCard(board){
   board.memoryExpansionCard.setEnabled(!!slot);
   if(CARD_ROM && !board.memoryExpansionCard.rom)board.memoryExpansionCard.setRom(CARD_ROM);
 
-  // SLOTROM must reflect the selected external card. Clear our old bit when
-  // moving/disabling the card, then advertise the new slot only when firmware
-  // is actually present.
-  const previous=validSlot(board.memoryExpansionSlot||0);
-  if(previous)board.memory.slotRom&=~(1<<previous);
+  // Motherboard reset clears SLOTROM before installed devices rebuild their
+  // state. Only assert our currently selected slot; do not clear an old slot
+  // bit here because another card may own that bit after a configuration
+  // change (for example a Mockingboard replacing the memory card in slot 4).
   if(slot && board.memoryExpansionCard.rom)board.memory.slotRom|=(1<<slot);
   board.memoryExpansionSlot=slot;
 }
