@@ -6,6 +6,8 @@ for(const type of ['iie','iigs'])test(`${type} SmartPort firmware discovers empt
  const {board:m}=createMachine(type);
  mountMedia(m,decodeMedia('system.hdv',new Uint8Array(1024).fill(0x11)));m.reset(true);
  const wr=(a,v)=>m.memory.write(a,v),rd=a=>m.memory.read(a);
+ const subtypeWrites=[];
+ m.memory.add_write_hook((addr,value)=>{if((addr&0xffffff)===0x816)subtypeWrites.push(value&255);});
  function call(command,unit,code=0) {
   // Exercise real JSR/inline parameters/firmware/RTS, including return flags.
   [0x20,0x83,0xc7,command,0,4,0xea].forEach((v,i)=>wr(0x300+i,v));
@@ -20,7 +22,9 @@ for(const type of ['iie','iigs'])test(`${type} SmartPort firmware discovers empt
  assert.equal(m.cpu.register.x,8);
  assert.equal(call(0,2,3),0);assert.equal(rd(0x800)&0x10,0);
  const dib=Array.from({length:25},(_,i)=>rd(0x800+i));
- assert.equal(rd(0x816),0xc0,'removable, extended calls and disk-switched errors; DIB='+dib.map(v=>v.toString(16).padStart(2,'0')).join(' '));
+ const legacy=m.legacyMemory;
+ const backing=legacy?{main:legacy._main?.[0x816],aux:legacy._aux?.[0x816],auxRead:legacy.aux_read,auxWrite:legacy.aux_write}:{};
+ assert.equal(rd(0x816),0xc0,'removable, extended calls and disk-switched errors; '+JSON.stringify({dib:dib.map(v=>v.toString(16).padStart(2,'0')),subtypeWrites,backing}));
  assert.equal(m.cpu.register.x,25,'DIB length');
  mountMedia(m,decodeMedia('app.hdv',new Uint8Array(1536).fill(0x22)),1,{preserveSession:true});
  assert.equal(call(0,2),0x2e,'insertion notification');
