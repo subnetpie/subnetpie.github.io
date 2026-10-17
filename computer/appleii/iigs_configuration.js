@@ -4,10 +4,12 @@ import {Floppy525} from "https://subnetpie.github.io/computer/appleii/FloppyWoz5
 import {Floppy35} from "https://subnetpie.github.io/computer/appleii/floppy35.js?v=20260928-trackcache1";
 
 const STORAGE_KEY = "subnetpie.apple2.iigs.configuration.v1";
+const LEGACY_MEMEXP_KEY = "subnetpie.apple2.memexp.slot.v1";
 const DEVICE_LABELS = Object.freeze({
   empty: "Empty",
   smartport: "SmartPort / hard disk",
   disk2: "Disk II · 5.25-inch",
+  memexp: "Memory Expansion Card · 1 MB",
   iigs35: "IIgs built-in · 3.5-inch"
 });
 const TARGET_LABELS = Object.freeze({
@@ -16,10 +18,11 @@ const TARGET_LABELS = Object.freeze({
   "35": "3.5-inch IWM",
   "525": "5.25-inch Disk II"
 });
+const CONFIGURABLE_SLOTS=[1,2,3,4,6,7];
 
 function defaultConfiguration() {
   return {
-    version: 2,
+    version: 3,
     slots: {1:"empty",2:"empty",3:"empty",4:"mouse",5:"iigs35",6:"disk2",7:"smartport"},
     driveTargets: ["auto","auto"]
   };
@@ -28,7 +31,7 @@ function defaultConfiguration() {
 function normalizeConfiguration(value) {
   const out=defaultConfiguration();
   const input=value && typeof value === "object" ? value : {};
-  const validSlotDevice=new Set(["empty","smartport","disk2"]);
+  const validSlotDevice=new Set(["empty","smartport","disk2","memexp"]);
   const claimed=new Set();
   for(const slot of [7,6,4,3,2,1]) {
     const requested=input.slots?.[slot];
@@ -60,19 +63,38 @@ function normalizeConfiguration(value) {
     const target=input.driveTargets?.[drive];
     out.driveTargets[drive]=validTarget.has(target)?target:"auto";
   }
+  out.version=3;
   return out;
+}
+
+function migrateLegacyConfiguration(value) {
+  const migrated=value && typeof value==="object" ? structuredClone(value) : defaultConfiguration();
+  migrated.slots=migrated.slots && typeof migrated.slots==="object" ? migrated.slots : {};
+
+  if(Number(migrated.version)<2 && migrated.slots[4]==="empty") {
+    const legacy=localStorage.getItem("subnetpie.apple2.iigs.slot4.v1")||"mouse";
+    if(legacy==="mouse" || legacy==="mockingboard")migrated.slots[4]=legacy;
+  }
+
+  if(Number(migrated.version)<3 && !Object.values(migrated.slots).includes("memexp")) {
+    const slot=Number(localStorage.getItem(LEGACY_MEMEXP_KEY));
+    if(CONFIGURABLE_SLOTS.includes(slot) && (!migrated.slots[slot] || migrated.slots[slot]==="empty"))
+      migrated.slots[slot]="memexp";
+  }
+  migrated.version=3;
+  return migrated;
 }
 
 export function loadIIgsConfiguration() {
   try {
     const value=JSON.parse(localStorage.getItem(STORAGE_KEY)||"null");
-    if(!value)return defaultConfiguration();
-    // Migrate the old separate slot-4 preference without overriding a controller.
-    if(value.version!==2 && value.slots?.[4]==="empty") {
-      const legacy=localStorage.getItem("subnetpie.apple2.iigs.slot4.v1")||"mouse";
-      if(legacy==="mouse" || legacy==="mockingboard")value.slots[4]=legacy;
+    if(!value) {
+      const config=defaultConfiguration();
+      const slot=Number(localStorage.getItem(LEGACY_MEMEXP_KEY));
+      if(CONFIGURABLE_SLOTS.includes(slot) && config.slots[slot]==="empty")config.slots[slot]="memexp";
+      return normalizeConfiguration(config);
     }
-    return normalizeConfiguration(value);
+    return normalizeConfiguration(migrateLegacyConfiguration(value));
   }
   catch(_) { return defaultConfiguration(); }
 }
@@ -80,6 +102,7 @@ export function loadIIgsConfiguration() {
 export function saveIIgsConfiguration(config) {
   const normalized=normalizeConfiguration(config);
   localStorage.setItem(STORAGE_KEY,JSON.stringify(normalized));
+  try{localStorage.removeItem(LEGACY_MEMEXP_KEY);}catch(_){}
   return normalized;
 }
 
@@ -310,7 +333,7 @@ function buildConfigurationDialog() {
     row.className="iigs-slot-row"+(slot===5?" fixed":"");
     const options=slot===5
       ? `<option value="iigs35">${DEVICE_LABELS.iigs35}</option>`
-      : `<option value="empty">${DEVICE_LABELS.empty}</option><option value="smartport">${DEVICE_LABELS.smartport}</option><option value="disk2">${DEVICE_LABELS.disk2}</option>`;
+      : `<option value="empty">${DEVICE_LABELS.empty}</option><option value="smartport">${DEVICE_LABELS.smartport}</option><option value="disk2">${DEVICE_LABELS.disk2}</option><option value="memexp">${DEVICE_LABELS.memexp}</option>`;
     row.innerHTML=`<span>${slot}</span><select data-slot="${slot}" ${slot===5?"disabled":""}>${options}</select>`;
     if(slot===4) {
       const select=row.querySelector("select");
@@ -341,8 +364,8 @@ function buildConfigurationDialog() {
   };
   dialog.addEventListener("change",event=>{
     const select=event.target.closest("select[data-slot]");
-    if(select && (select.value==="smartport" || select.value==="disk2")) {
-      dialog.querySelectorAll(`select[data-slot]`).forEach(other=>{
+    if(select && (select.value==="smartport" || select.value==="disk2" || select.value==="memexp")) {
+      dialog.querySelectorAll("select[data-slot]").forEach(other=>{
         if(other!==select && other.value===select.value)other.value="empty";
       });
     }
@@ -354,8 +377,6 @@ function buildConfigurationDialog() {
   document.getElementById("iigsConfigClose").addEventListener("click",()=>dialog.close("cancel"));
   document.getElementById("iigsConfigurationForm").addEventListener("submit",event=>event.preventDefault());
   document.getElementById("iigsConfigSave").addEventListener("click",()=>{
-    // Keep all panel changes as a draft until Save. Roll back prior writes if
-    // Safari denies storage or a quota error occurs; leave the dialog usable.
     const writes=[[STORAGE_KEY,JSON.stringify(readForm())]];
     if(dialog.readPersistentConfiguration)writes.push([
       "subnetpie.apple2.iigs.persistentBoot.v1",
@@ -367,6 +388,7 @@ function buildConfigurationDialog() {
         previous.push([key,localStorage.getItem(key)]);
         localStorage.setItem(key,value);
       }
+      localStorage.removeItem(LEGACY_MEMEXP_KEY);
     } catch(err) {
       for(const [key,value] of previous.reverse()) {
         try { if(value===null)localStorage.removeItem(key);else localStorage.setItem(key,value); } catch(_) {}
