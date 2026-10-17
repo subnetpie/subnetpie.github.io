@@ -5,10 +5,10 @@ import {loadMachineProfile,saveMachineProfile} from "./machine_profile.js?v=2026
 const KEY="subnetpie.apple2.memexp.slot.v1";
 const LABEL="Memory Expansion Card · 1 MB";
 const VALID_SLOTS=[1,2,3,4,6,7];
-const ROM_URL=new URL("./rom/341-0344a.bin",import.meta.url);
+const ROM_URL=new URL("./roms/341-0344a.bin",import.meta.url);
 let CARD_ROM=null;
 
-// The Apple memory expansion card is a ROM-bearing slot card.  Load the
+// The Apple memory expansion card is a ROM-bearing slot card. Load the
 // 341-0344A firmware before this module finishes evaluating so ROM03 cannot
 // race ahead and scan an empty Cn00 window during startup.
 try{
@@ -55,7 +55,7 @@ function applyCard(board){
   board.memoryExpansionCard.setEnabled(!!slot);
   if(CARD_ROM && !board.memoryExpansionCard.rom)board.memoryExpansionCard.setRom(CARD_ROM);
 
-  // SLOTROM must reflect the selected external card.  Clear our old bit when
+  // SLOTROM must reflect the selected external card. Clear our old bit when
   // moving/disabling the card, then advertise the new slot only when firmware
   // is actually present.
   const previous=validSlot(board.memoryExpansionSlot||0);
