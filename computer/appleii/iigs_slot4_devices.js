@@ -9,10 +9,10 @@ function loadMode(){
   return value==="mouse" || value==="mockingboard" ? value : "none";
 }
 
-// Make the physical card decode authoritative when Slot 4 is explicitly set to
-// Mockingboard. This is intentionally below the motherboard reset/firmware
-// latches: ROM03 and compatibility software are free to change SLOTROM/INTCXROM
-// without making a physically configured card disappear from $C400-$C4FF.
+// Physical card presence is independent from the IIgs SLOTROMSEL register.
+// MAME keeps SLOTROMSEL as machine/firmware state; a card never rewrites it
+// during reset. The configured Mockingboard therefore controls only physical
+// decode/selection here.
 const originalHandles=Mockingboard.prototype.handles;
 if(!Mockingboard.prototype.__iigsConfiguredSlot4Decode){
   Mockingboard.prototype.__iigsConfiguredSlot4Decode=true;
@@ -45,10 +45,6 @@ function applySlot4(board){
   if(!board?.iigsEnabled || !board.memory)return;
   const mode=loadMode();
   board.iigsSlot4Device=mode;
-
-  if(mode==="mockingboard") board.memory.slotRom|=0x10;
-  else board.memory.slotRom&=~0x10;
-
   if(board.mockingboard)board.mockingboard.selected=()=>board.iigsSlot4Device==="mockingboard";
   installLegacyMockingboardIrqVector(board);
 }
