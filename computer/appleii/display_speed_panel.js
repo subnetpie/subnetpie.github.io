@@ -24,6 +24,22 @@ function writeMode(id){
 }
 
 let activeMode=readMode();
+const legacyButtons=new Map();
+const unifiedButtons=new Map();
+
+function sync(){
+  for(const [id,button] of legacyButtons){
+    const selected=id===activeMode;
+    button.classList.toggle('selected',selected);
+    button.setAttribute('aria-checked',selected?'true':'false');
+  }
+  for(const [id,button] of unifiedButtons){
+    const selected=id===activeMode;
+    button.classList.toggle('active',selected);
+    button.setAttribute('aria-pressed',selected?'true':'false');
+  }
+}
+function setMode(id){activeMode=writeMode(id);sync();}
 
 // Host-side scheduler scaling only. The IIgs still performs its normal
 // $C036 fast/slow switching internally; this changes how much emulated master
@@ -36,8 +52,6 @@ if(!Motherboard.prototype.__displaySpeedPresets){
     if(mode.id==='infinity'){
       const start=performance.now();
       let result;
-      // Browser-limited turbo: keep running normal-size slices until most of
-      // the current frame budget is consumed, then yield back to Safari.
       do{result=originalClock.call(this,cycles,...args);}while(performance.now()-start<11);
       return result;
     }
@@ -47,7 +61,7 @@ if(!Motherboard.prototype.__displaySpeedPresets){
   };
 }
 
-function install(){
+function installLegacy(){
   const controls=document.getElementById('controls');
   if(!controls||document.getElementById('displaySpeedPresets'))return;
 
@@ -57,7 +71,6 @@ function install(){
   panel.setAttribute('role','radiogroup');
   panel.setAttribute('aria-label','Emulation speed');
 
-  const buttons=new Map();
   for(const mode of MODES){
     const button=document.createElement('button');
     button.type='button';
@@ -67,20 +80,9 @@ function install(){
     button.setAttribute('role','radio');
     button.setAttribute('aria-label',mode.id==='infinity'?'Unlimited speed':`${mode.label} MHz`);
     button.title=mode.id==='infinity'?'Browser-limited turbo':`${mode.label} MHz host speed`;
-    button.addEventListener('click',()=>{
-      activeMode=writeMode(mode.id);
-      sync();
-    });
+    button.addEventListener('click',()=>setMode(mode.id));
     panel.append(button);
-    buttons.set(mode.id,button);
-  }
-
-  function sync(){
-    for(const [id,button] of buttons){
-      const selected=id===activeMode;
-      button.classList.toggle('selected',selected);
-      button.setAttribute('aria-checked',selected?'true':'false');
-    }
+    legacyButtons.set(mode.id,button);
   }
 
   const colorPanel=document.getElementById('displayColorPresets');
@@ -127,5 +129,34 @@ function install(){
   sync();
 }
 
+function installUnified(){
+  const target=document.getElementById('unifiedSpeed');
+  if(!target||target.dataset.speedInstalled)return false;
+  target.dataset.speedInstalled='1';
+  target.replaceChildren();
+  unifiedButtons.clear();
+  for(const mode of MODES){
+    const button=document.createElement('button');
+    button.type='button';
+    button.className='unified-choice';
+    button.textContent=mode.label;
+    button.setAttribute('aria-label',mode.id==='infinity'?'Unlimited speed':`${mode.label} MHz`);
+    button.addEventListener('click',()=>setMode(mode.id));
+    target.append(button);
+    unifiedButtons.set(mode.id,button);
+  }
+  sync();
+  return true;
+}
+
+function install(){
+  installLegacy();
+  if(!installUnified()){
+    const observer=new MutationObserver(()=>{if(installUnified())observer.disconnect();});
+    observer.observe(document.documentElement,{childList:true,subtree:true});
+  }
+}
+
+window.apple2DisplaySpeed={modes:MODES.map(m=>({...m})),getMode:()=>activeMode,setMode};
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});
 else install();
