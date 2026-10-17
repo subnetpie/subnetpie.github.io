@@ -19,7 +19,8 @@ for(const type of ['iie','iigs'])test(`${type} SmartPort firmware discovers empt
  assert.equal(call(0,0),0);assert.equal(rd(0x800),2,'two devices, even with an empty second drive');
  assert.equal(m.cpu.register.x,8);
  assert.equal(call(0,2,3),0);assert.equal(rd(0x800)&0x10,0);
- assert.equal(rd(0x816),0xc0,'removable, extended calls and disk-switched errors');
+ const dib=Array.from({length:25},(_,i)=>rd(0x800+i));
+ assert.equal(rd(0x816),0xc0,'removable, extended calls and disk-switched errors; DIB='+dib.map(v=>v.toString(16).padStart(2,'0')).join(' '));
  assert.equal(m.cpu.register.x,25,'DIB length');
  mountMedia(m,decodeMedia('app.hdv',new Uint8Array(1536).fill(0x22)),1,{preserveSession:true});
  assert.equal(call(0,2),0x2e,'insertion notification');
