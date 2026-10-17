@@ -28,6 +28,11 @@ export class AppleIIMemoryExpansion {
     // MAME apple2gs_state::read_slot_rom uses first-one-wins semantics.
     if(this.memory && this.memory._a2C800Owner==null)this.memory._a2C800Owner=this;
   }
+  internalC800Visible(){
+    // MAME apple2gs_state::c800_r gives internal ROM priority over an already
+    // selected external C800 owner whenever INTCXROM or INTC8ROM is active.
+    return !!(this.memory?.intCxRom || this.memory?.intC8Rom);
+  }
 
   setEnabled(enabled){
     this.enabled=!!enabled;
@@ -91,10 +96,12 @@ export class AppleIIMemoryExpansion {
         return this.rom[slotImage+(low&0xff)];
       }
       if(low>=0xc800 && low<=0xcfff && this.ownsC800()){
-        const value=this.rom[0x800+(low-0xc800)];
-        // MAME returns the current owner's CFFF byte, then releases the latch.
+        // MAME samples the external owner first, releases it on CFFF, then
+        // chooses internal-vs-external data. Therefore CFFF still releases a
+        // stale external owner even while internal C8 ROM is being returned.
         if(low===0xcfff)this.releaseC800();
-        return value;
+        if(this.internalC800Visible())return undefined;
+        return this.rom[0x800+(low-0xc800)];
       }
     }
     return undefined;
@@ -103,8 +110,8 @@ export class AppleIIMemoryExpansion {
   write(addr,data){
     if(!this.enabled)return undefined;
     const low=addr&0xffff, base=this.c0Base();
-    // The Apple card has no C800 write handler, but the bus still releases the
-    // global expansion-ROM owner on a write to CFFF.
+    // MAME releases the global expansion-ROM owner on every CFFF write,
+    // regardless of whether internal C8 ROM currently has read priority.
     if(low===0xcfff && this.ownsC800()){
       this.releaseC800();
       return 0;
