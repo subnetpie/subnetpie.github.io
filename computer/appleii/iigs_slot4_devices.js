@@ -1,6 +1,6 @@
-import {Motherboard} from "https://subnetpie.github.io/computer/appleii/motherboard.js?v=20261004-mb-complete1";
+import {Motherboard} from "https://subnetpie.github.io/computer/appleii/motherboard.js?v=20261017-nox128k1";
 import {Mockingboard} from "https://subnetpie.github.io/computer/appleii/mockingboard.js?v=20261005-mame0289-sc01a1";
-import "./iigs_memory_expansion.js?v=20261017-slotbus2";
+import "./iigs_memory_expansion.js?v=20261017-nox128k1";
 
 import {loadIIgsConfiguration} from "./iigs_configuration.js?v=20261017-slotbus1";
 

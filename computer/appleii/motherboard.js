@@ -12,7 +12,7 @@ import {Mockingboard} from "./mockingboard.js?v=20261005-mame0289-sc01a1";
 
 import {W65C02S} from "https://subnetpie.github.io/computer/appleii/w65c02s.js?v=20261004-mb-complete1";
 import {Memory} from "https://subnetpie.github.io/computer/appleii/memory.js";
-import {IIgsMemory} from "https://subnetpie.github.io/computer/appleii/iigs_memory.js?v=20260930-audio-hw1";
+import {IIgsMemory} from "https://subnetpie.github.io/computer/appleii/iigs_memory.js?v=20261017-nox128k1";
 import {W65C816} from "https://subnetpie.github.io/computer/appleii/w65c816.js?v=20260928-blend";
 import {IOManager} from "https://subnetpie.github.io/computer/appleii/io_manager.js?v=20260930-keyboard";
 import {TextDisplay} from "https://subnetpie.github.io/computer/appleii/display_text.js";

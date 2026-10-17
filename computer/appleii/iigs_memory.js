@@ -619,6 +619,12 @@ export class IIgsMemory {
       if(this.trace) this.trace("R",io,undefined);
       if(io>=0xc000 && io<=0xc00f) return this.adb.readKeyData();
       if(io===0xc010) return this.adb.readAnyKeyAndClearStrobe();
+      // MAME apple2gs_state::c000_r owns these latches in IIgs machine state.
+      // Do not fall through to IOManager's independent IIe Cx/C3 latches: Nox
+      // Archaist explicitly SETINTC3ROMs at C00A then verifies C017 is clear
+      // before entering its 128K auxiliary-memory test.
+      if(io===0xc015) return this.intCxRom ? 0x80 : 0x00;
+      if(io===0xc017) return this.slotC3Rom ? 0x80 : 0x00;
       if(io===0xc068) return this.readState();
       if(io===0xc026) return this.adb.readData();
       if(io===0xc027) return this.adb.readStatus();

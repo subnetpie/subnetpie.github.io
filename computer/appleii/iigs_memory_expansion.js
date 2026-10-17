@@ -1,4 +1,4 @@
-import {Motherboard} from "https://subnetpie.github.io/computer/appleii/motherboard.js?v=20261004-mb-complete1";
+import {Motherboard} from "https://subnetpie.github.io/computer/appleii/motherboard.js?v=20261017-nox128k1";
 import {AppleIIMemoryExpansion} from "./memory_expansion.js?v=20261017-slotbus4";
 import {loadIIgsConfiguration} from "./iigs_configuration.js?v=20261017-slotbus1";
 
