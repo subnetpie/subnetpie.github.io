@@ -33,7 +33,7 @@ export class ProDOSBlockDevice {
     buildRom() {
         // Apple storage-card signature.  These are harmless BIT zp instructions
         // when execution enters at Cn00, while matching the firmware scanner.
-        this.rom.set([0x24,0x20,0x24,0x00,0x24,0x03,0x24,0x00], 0x00);
+        this.rom.set([0x24,0x20,0x24,0x00,0x24,0x03,0x24,0x3c], 0x00);
 
         // Boot: read ProDOS block 0 to $0800 through our driver, then enter $0801.
         this.rom.set([
