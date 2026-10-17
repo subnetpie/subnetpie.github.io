@@ -1,8 +1,8 @@
 // Apple II Memory Expansion Card, matching MAME 0.289 a2memexp.cpp.
 //
 // The card exposes C0n0-C0nF registers, a slot-specific CnXX firmware page,
-// and a C800-CFFF expansion ROM that is claimed only after this card's CnXX
-// page is selected. The Apple card provides 1 MB of RAM.
+// and a C800-CFFF expansion ROM. C800 ownership is a single bus-wide latch:
+// the first CnXX card requesting it wins until an access to CFFF releases it.
 export class AppleIIMemoryExpansion {
   constructor(memory,{slot=1,enabled=true,rom=null}={}) {
     this.memory=memory;
@@ -14,7 +14,6 @@ export class AppleIIMemoryExpansion {
     this.bankHiOr=0xf0;
     this.wptr=0;
     this.liveptr=0;
-    this.c800Active=false;
     this.rom=null;
     if(rom)this.setRom(rom);
     this.readHook=this.read.bind(this);
@@ -23,13 +22,20 @@ export class AppleIIMemoryExpansion {
     memory.add_write_hook(this.writeHook);
   }
 
+  ownsC800(){return this.memory?._a2C800Owner===this;}
+  releaseC800(){if(this.ownsC800())this.memory._a2C800Owner=null;}
+  claimC800(){
+    // MAME apple2gs_state::read_slot_rom uses first-one-wins semantics.
+    if(this.memory && this.memory._a2C800Owner==null)this.memory._a2C800Owner=this;
+  }
+
   setEnabled(enabled){
     this.enabled=!!enabled;
-    if(!this.enabled)this.c800Active=false;
+    if(!this.enabled)this.releaseC800();
   }
   setSlot(slot){
+    this.releaseC800();
     this.slot=Math.max(1,Math.min(7,slot|0));
-    this.c800Active=false;
   }
   setRom(data){
     const src=data instanceof Uint8Array?data:new Uint8Array(data);
@@ -41,7 +47,7 @@ export class AppleIIMemoryExpansion {
     this.regs.fill(0);
     this.wptr=0;
     this.liveptr=0;
-    this.c800Active=false;
+    this.releaseC800();
   }
 
   updatePointerRegisters(){
@@ -53,12 +59,12 @@ export class AppleIIMemoryExpansion {
   c0Base(){return 0xc080|(this.slot<<4);}
   cnBase(){return 0xc000|(this.slot<<8);}
 
-  // IIgs compatibility: installed hooks run before the normal CnXX decoder,
-  // so honor the IIgs internal/external slot-ROM selectors here rather than
-  // allowing the card to override internal ROM unconditionally.
+  // MAME IIgs CnXX decode: slots 1/2/4/5/6/7 use SLOTROMSEL, while slot 3
+  // uses the independent SLOTC3ROM soft switch. INTCXROM overrides both.
   slotRomVisible(){
     if(typeof this.memory?.intCxRom!=='boolean')return true;
     if(this.memory.intCxRom)return false;
+    if(this.slot===3 && typeof this.memory.slotC3Rom==='boolean')return this.memory.slotC3Rom;
     if(typeof this.memory.slotRom!=='number')return true;
     return !!(this.memory.slotRom&(1<<this.slot));
   }
@@ -80,14 +86,14 @@ export class AppleIIMemoryExpansion {
     if(this.rom){
       const cn=this.cnBase();
       if(low>=cn && low<=cn+0xff && this.slotRomVisible()){
-        this.c800Active=true;
+        this.claimC800();
         const slotImage=(this.slot&7)*0x100;
         return this.rom[slotImage+(low&0xff)];
       }
-      if(low>=0xc800 && low<=0xcfff && this.c800Active){
+      if(low>=0xc800 && low<=0xcfff && this.ownsC800()){
         const value=this.rom[0x800+(low-0xc800)];
-        // Apple II bus C800 ownership is released by an access to CFFF.
-        if(low===0xcfff)this.c800Active=false;
+        // MAME returns the current owner's CFFF byte, then releases the latch.
+        if(low===0xcfff)this.releaseC800();
         return value;
       }
     }
@@ -97,6 +103,12 @@ export class AppleIIMemoryExpansion {
   write(addr,data){
     if(!this.enabled)return undefined;
     const low=addr&0xffff, base=this.c0Base();
+    // The Apple card has no C800 write handler, but the bus still releases the
+    // global expansion-ROM owner on a write to CFFF.
+    if(low===0xcfff && this.ownsC800()){
+      this.releaseC800();
+      return 0;
+    }
     if(low<base || low>base+0x0f)return undefined;
     const off=low&0x0f, value=data&0xff;
     switch(off){
