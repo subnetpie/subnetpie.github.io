@@ -75,13 +75,27 @@ function installUi(){
     if(select)select.value="memexp";
   };
 
-  dialog.addEventListener("change",event=>{
-    const select=event.target.closest?.("select[data-slot]");
-    if(!select || select.value!=="memexp")return;
-    dialog.querySelectorAll('select[data-slot]').forEach(other=>{
-      if(other!==select && other.value==="memexp")other.value="empty";
-    });
-  });
+  // The base IIgs configuration predates this card and normalizes unknown
+  // devices back to Empty in its change handler. Intercept only memexp changes
+  // before that handler so the user's selection survives until Save.
+  if(!dialog.dataset.memexpChangeCapture){
+    dialog.dataset.memexpChangeCapture="1";
+    dialog.addEventListener("change",event=>{
+      const select=event.target.closest?.("select[data-slot]");
+      if(!select || select.value!=="memexp")return;
+      dialog.querySelectorAll('select[data-slot]').forEach(other=>{
+        if(other!==select && other.value==="memexp")other.value="empty";
+      });
+      event.stopImmediatePropagation();
+    },true);
+  }
+
+  // openWithConfiguration() re-renders from the legacy slot model. Restore the
+  // persisted memory-card choice after that render for both unified and legacy UI.
+  if(!dialog.dataset.memexpOpenHook){
+    dialog.dataset.memexpOpenHook="1";
+    dialog.addEventListener("iigs-config-open",overlay);
+  }
 
   const save=document.getElementById("iigsConfigSave");
   if(save&&!save.dataset.memexpHook){
@@ -90,9 +104,8 @@ function installUi(){
       const selected=[...dialog.querySelectorAll('select[data-slot]')]
         .find(select=>select.value==="memexp");
       const slot=saveSlot(selected?Number(selected.dataset.slot):0);
-      // The legacy configuration module predates memexp and normalizes unknown
-      // values to Empty. Feed it Empty while persisting the real card choice
-      // separately; this keeps its SmartPort/Disk II uniqueness rules intact.
+      // Feed the older slot model Empty while persisting the real card choice
+      // separately. The memory-expansion reset hook restores the physical card.
       if(selected)selected.value="empty";
       if(slot)queueMicrotask(()=>saveSlot(slot));
     },true);
