@@ -40,7 +40,7 @@
 
     const launcher=make('div',{id:'unifiedLauncher','aria-label':'Apple II controls',class:'collapsed'});
     const gear=make('button',{type:'button',class:'unified-grip','aria-label':'Open or close controls',title:'Open or close controls','aria-expanded':'false'});
-    gear.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.8 2.6h4.4l.6 2.4c.7.2 1.4.5 2 .8l2.1-1.3 3.1 3.1-1.3 2.1c.4.6.6 1.3.8 2l2.4.6v4.4l-2.4.6c-.2.7-.5 1.4-.8 2l1.3 2.1-3.1 3.1-2.1-1.3c-.6.4-1.3.6-2 .8l-.6 2.4H9.8L9.2 22c-.7-.2-1.4-.5-2-.8l-2.1 1.3L2 19.4l1.3-2.1c-.4-.6-.6-1.3-.8-2L.1 14.7v-4.4l2.4-.6c.2-.7.5-1.4.8-2L2 5.6l3.1-3.1 2.1 1.3c.6-.4 1.3-.6 2-.8z"/><circle cx="12" cy="12.5" r="4.4"/></svg>';
+    gear.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10.01 5.08 10.48 3.13h3.04l.47 1.95 1.5.62 1.71-1.05 2.15 2.15-1.05 1.71.62 1.5 1.95.47v3.04l-1.95.47-.62 1.5 1.05 1.71-2.15 2.15-1.71-1.05-1.5.62-.47 1.95h-3.04l-.47-1.95-1.5-.62-1.71 1.05-2.15-2.15 1.05-1.71-.62-1.5-1.95-.47v-3.04l1.95-.47.62-1.5-1.05-1.71 2.15-2.15 1.71 1.05z"/><circle cx="12" cy="12" r="3.35"/></svg>';
     const drives=make('button',{type:'button',class:'unified-island-action','aria-label':'Drives',title:'Drives','aria-expanded':'false'});
     drives.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h12l2 2v16H5z"/><path d="M8 3v6h8V3M8 15h8v6H8z"/></svg>';
     const key=make('button',{type:'button',class:'unified-island-action','aria-label':'Virtual keyboard','aria-pressed':'false'},'⌨');
