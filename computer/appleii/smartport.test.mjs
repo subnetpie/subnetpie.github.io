@@ -15,7 +15,7 @@ for(const type of ['iie','iigs'])test(`${type} SmartPort firmware discovers empt
   assert.equal(m.cpu.register.pc,0x306,'RTS skips the three inline bytes');
   return m.cpu.register.a&255;
  }
- assert.equal(rd(0xc707),0,'SmartPort signature');
+ assert.equal(rd(0xc707),0x3c,'storage-card signature type byte');
  assert.equal(call(0,0),0);assert.equal(rd(0x800),2,'two devices, even with an empty second drive');
  assert.equal(m.cpu.register.x,8);
  assert.equal(call(0,2,3),0);assert.equal(rd(0x800)&0x10,0);
