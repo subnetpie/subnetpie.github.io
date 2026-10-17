@@ -1,0 +1,48 @@
+name: Fix landscape keyboard toggle
+on:
+  push:
+    paths:
+      - .github/workflows/fix-landscape-keyboard.yml
+permissions:
+  contents: write
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Restore and patch keyboard CSS
+        run: |
+          git show 8f752e56ab579690a017a3ad26f8c7529265881d:computer/appleii/style.css > computer/appleii/style.css
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('computer/appleii/style.css')
+          s=p.read_text()
+          old='''#keyboard1.apple2-keyboard {\n  box-sizing: border-box;'''
+          new='''#keyboard1.apple2-keyboard {\n  display: none !important;\n  box-sizing: border-box;'''
+          if old not in s:
+              raise SystemExit('keyboard base rule not found')
+          s=s.replace(old,new,1)
+          p.write_text(s)
+
+          p=Path('computer/appleii/index.html')
+          s=p.read_text()
+          import re
+          s,n=re.subn(r'./style\\.css\\?v=[^"\\']+', './style.css?v=20261017-landscape-keyboard1', s, count=1)
+          if n != 1:
+              raise SystemExit('style cache key not found')
+          p.write_text(s)
+          PY
+      - name: Verify keyboard rule
+        run: |
+          grep -A3 '#keyboard1.apple2-keyboard {' computer/appleii/style.css | head -4
+          grep 'style.css?v=20261017-landscape-keyboard1' computer/appleii/index.html
+      - name: Commit fix
+        run: |
+          rm -f .github/workflows/fix-landscape-keyboard.yml
+          git config user.name subnetpie
+          git config user.email subnetpie@hotmail.com
+          git add -A
+          git commit -m "Fix landscape keyboard hide toggle"
+          git push
