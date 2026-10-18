@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import {createMachine} from './test-support/headless.mjs';
-import {mountMedia,decodeMedia,readZipEntries} from './media.js';
+import {mountMedia,ejectMedia,decodeMedia,readZipEntries} from './media.js';
 import {zipSync} from './vendor/fflate.js';
 for(const machine of ['iie','iigs'])test(`${machine} disk swap preserves execution state and reads replacement blocks`,()=>{
  const {board:m}=createMachine(machine);
@@ -72,7 +72,6 @@ test('IWM selects independent 3.5-inch media and reset preserves both',()=>{
 });
 
 test('two 5.25-inch drives select distinct disks and eject preserves CPU state',async()=>{
- const {ejectMedia}=await import('./media.js');
  const {board:m}=createMachine('iie');
  mountMedia(m,decodeMedia('first.dsk',new Uint8Array(143360)));
  mountMedia(m,decodeMedia('second.dsk',new Uint8Array(143360).fill(0x22)),1,{preserveSession:true});
@@ -83,4 +82,20 @@ test('two 5.25-inch drives select distinct disks and eject preserves CPU state',
  assert.equal(m.floppy525._disks[1].medium,null);
  assert.ok(m.floppy525._disks[0].medium);
  assert.equal(m.mountedMedia[1],null);
+});
+
+
+test('IIgs sees live 5.25 insertion and eject without reset',()=>{
+ const {board:m}=createMachine('iigs');
+ m.memory.read(0xc0e9); // motor on
+ assert.equal(m.floppy525._active_disk.medium,null);
+ const regs={...m.cpu.register};
+ mountMedia(m,decodeMedia('geos-data.dsk',new Uint8Array(143360)),0,{preserveSession:true});
+ assert.deepEqual({...m.cpu.register},regs);
+ assert.ok(m.floppy525._active_disk.medium);
+ // Q6L data is immediately visible to software polling the already-running drive.
+ assert.notEqual(m.memory.read(0xc0ec),0);
+ ejectMedia(m,0);
+ assert.equal(m.floppy525._active_disk.medium,null);
+ assert.equal(m.memory.read(0xc0ec),0);
 });

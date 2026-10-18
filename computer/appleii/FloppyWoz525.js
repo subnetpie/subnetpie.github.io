@@ -60,7 +60,7 @@ class BaseMedium
     }
 
     set_head_pos(pos) { this.head_pos = pos; }
-    reset_rotation()  { this.byte_pos = 0; }
+    reset_rotation(cycles = 0)  { this.byte_pos = 0; }
     read_byte()       { return 0; }
 }
 
@@ -178,12 +178,15 @@ class WozMedium extends BaseMedium
     }
 
     // Override reset_rotation to clear all latch state.
-    reset_rotation() {
+    reset_rotation(cycles = 0) {
         this._bit_pos    = 0;
         this._latch      = 0;
         this._latch_delay = 0;
         this._shift      = 0;
-        this._last_cycle = 0;
+        // A disk inserted while the machine is running begins rotating now.
+        // Starting at cycle zero makes the first WOZ read consume the entire
+        // elapsed emulation time and can stall live disk insertion.
+        this._last_cycle = cycles >>> 0;
     }
 
     // Cycle-accurate latch read.  Called on every Q6L soft-switch access.
@@ -367,14 +370,23 @@ class Disk
         this.led_cb(this.num, this.motor_on);
     }
 
-    mount_medium(name, medium) {
+    mount_medium(name, medium, cycles = 0) {
         this.name          = name;
         this.medium        = medium;
         this.write_protect = true; // write sequencing is not implemented for either format
         if(this.medium) {
             this.medium.set_head_pos(this.head_pos);
-            this.medium.reset_rotation();
+            this.medium.reset_rotation(cycles);
         }
+    }
+
+    eject() {
+        // Physical eject changes the medium, not the controller motor/select
+        // latches. Clearing the medium atomically prevents stale disk data from
+        // surviving a desktop swap while preserving the guest's drive state.
+        this.name = "";
+        this.medium = null;
+        this.write_protect = true;
     }
 
     reset() {
@@ -508,7 +520,7 @@ export class Floppy525
         }
         const src    = new Uint8Array(bin);
         const medium = new DskMedium(name, src, (data,t,s) => this.sector_62encode(data,t,s,options.volume ?? 254));
-        this._disks[num].mount_medium(name, medium);
+        this._disks[num].mount_medium(name, medium, this._get_cycles());
         return true;
     }
 
@@ -516,7 +528,7 @@ export class Floppy525
         console.log(`loading woz disk ${num + 1}: ${name}`);
         try {
             const medium = WozMedium.fromWoz(name, bin);
-            this._disks[num].mount_medium(name, medium);
+            this._disks[num].mount_medium(name, medium, this._get_cycles());
             return true;
         } catch(err) {
             console.log("error loading WOZ:", err.message);
@@ -533,7 +545,7 @@ export class Floppy525
             return this.load_woz(num, name, bin);
         if(options.format === 'nib' || /\.nib$/i.test(name)) {
             if(sigBytes.length !== 35*6656) return false;
-            this._disks[num].mount_medium(name, new NibMedium(name, sigBytes));
+            this._disks[num].mount_medium(name, new NibMedium(name, sigBytes), this._get_cycles());
             return true;
         }
         return this.load_disk(num, name, bin, options);
@@ -579,6 +591,11 @@ export class Floppy525
         res = res.concat([0xde, 0xaa, 0xeb]);
 
         return res;
+    }
+
+    eject(num) {
+        if(num !== 0 && num !== 1) throw new Error("Invalid drive");
+        this._disks[num].eject();
     }
 
     reset() {

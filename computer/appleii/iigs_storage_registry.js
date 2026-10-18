@@ -1,4 +1,4 @@
-import {decodeMedia,isZip,readZipEntries} from './media.js?v=20260930-gsos-drives';
+import {decodeMedia,isZip,readZipEntries} from './media.js?v=20261018-live525-1';
 import {mediaPersistenceKey,restorePersistentBlocks} from './disk_persistence.js?v=20260930-persist1';
 import {exportHardDrive} from './disk_export.js?v=20260930-disk-save';
 
@@ -137,9 +137,8 @@ async function mountFile(id,file){
 async function eject(id){
   const ep=endpoint(id),b=board();if(!ep||!b)return false;
   if(ep.controller==='iigs35')b.memory?.floppy35Drives?.[ep.index]?.eject();
-  else if(ep.controller==='disk2'){
-    const disk=b.floppy525?._disks?.[ep.index];if(disk){disk.medium=null;disk.name='';}
-  }else b.prodosBlock?.eject(ep.index);
+  else if(ep.controller==='disk2')b.floppy525?.eject(ep.index);
+  else b.prodosBlock?.eject(ep.index);
   delete physicalMedia()[ep.id];
   candidates.delete(ep.persistenceId);
   // Physical eject also clears the saved mount. Otherwise Keep mounted can

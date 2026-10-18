@@ -125,8 +125,7 @@ export function mountMedia(board, media, drive=0, {preserveSession=false}={}) {
   // Otherwise slot 7 keeps booting the previously selected hard disk.
   if(media.kind==='floppy')board.prodosBlock.eject(drive);
   else {
-    board.floppy525._disks[drive].medium=null;
-    board.floppy525._disks[drive].name='';
+    board.floppy525.eject(drive);
   }
   board.mountedMedia ??= [null,null];
   board.mountedMedia[drive]=media;
@@ -137,7 +136,6 @@ export function ejectMedia(board,drive) {
   if(drive!==0 && drive!==1)throw new Error('Invalid drive');
   board.prodosBlock.eject(drive);
   if(board.iigsEnabled)board.memory.floppy35Drives[drive].eject();
-  board.floppy525._disks[drive].medium=null;
-  board.floppy525._disks[drive].name='';
+  board.floppy525.eject(drive);
   if(board.mountedMedia)board.mountedMedia[drive]=null;
 }
