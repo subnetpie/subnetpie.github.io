@@ -1,6 +1,6 @@
-import {Motherboard} from "https://subnetpie.github.io/computer/appleii/motherboard.js?v=20261017-nox128k1";
-import {ProDOSBlockDevice} from "./prodos_block.js?v=20260930-persist1";
-import {loadIIgsConfiguration} from "./iigs_configuration.js?v=20261017-slotbus1";
+import {Motherboard} from "https://subnetpie.github.io/computer/appleii/motherboard.js?v=20261019-storage2";
+import {ProDOSBlockDevice} from "./prodos_block.js?v=20261019-storage2";
+import {loadIIgsConfiguration} from "./iigs_configuration.js?v=20261019-storage2";
 
 // MAME 0.289 keeps SLOTROMSEL/SLOTC3ROM and the C800 owner in machine state,
 // not in the individual cards. This module is the single IIgs policy point

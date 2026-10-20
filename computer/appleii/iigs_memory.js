@@ -335,9 +335,8 @@ export class IIgsMemory {
         return 0;
       }
       const data = this.legacy.read(addr);
-      if(addr & 1) return 0;
       if(this.iwmQ6 && !this.iwmQ7) return this.iwmMode | (this.iwmMotor ? 32 : 0) |
-        ((!this.floppy?._active_disk.medium || this.floppy._active_disk.write_protect) ? 128 : 0);
+        ((!this.floppy?._active_disk || this.floppy._active_disk.write_protect) ? 128 : 0);
       if(!this.iwmQ6 && this.iwmQ7) return 0x80;
       return data;
     }

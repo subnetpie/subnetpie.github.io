@@ -120,22 +120,47 @@ export function mountMedia(board, media, drive=0, {preserveSession=false}={}) {
   // Each menu drive owns one image. Clear stale media of a different type
   // in this drive only; the other drive stays mounted.
   if(board.iigsEnabled && media.physical!=='35') {
-    board.memory.floppy35Drives[drive].eject();
+    ejectPhysicalMedia(board,'iigs35',drive);
   }
   // Otherwise slot 7 keeps booting the previously selected hard disk.
-  if(media.kind==='floppy')board.prodosBlock.eject(drive);
+  if(media.kind==='floppy')ejectPhysicalMedia(board,'smartport',drive);
   else {
-    board.floppy525.eject(drive);
+    ejectPhysicalMedia(board,'disk2',drive);
   }
   board.mountedMedia ??= [null,null];
   board.mountedMedia[drive]=media;
+  if(board.iigsEnabled) {
+    board.iigsPhysicalMedia ??= Object.create(null);
+    const controller=media.kind==='floppy'?'disk2':media.physical==='35'?'iigs35':'smartport';
+    for(const type of ['iigs35','disk2','smartport'])delete board.iigsPhysicalMedia[type+':d'+(drive+1)];
+    board.iigsPhysicalMedia[controller+':d'+(drive+1)]=media;
+  }
   return true;
+}
+
+export function mediaController(media) {
+  return !media?null:media.kind==='floppy'?'disk2':media.physical==='35'?'iigs35':'smartport';
+}
+
+// The registry owns independent physical devices; mountedMedia is the older
+// logical-drive view. Only clear aliases belonging to the ejected controller.
+export function ejectPhysicalMedia(board,controller,drive) {
+  const alias=board.mountedMedia?.[drive];
+  const aliasController=mediaController(alias);
+  if(controller==='iigs35') {
+    board.memory?.floppy35Drives?.[drive]?.eject();
+    // Legacy mounts mirrored 800K media into the block card for booting.
+    if(board.prodosBlock?.drives?.[drive]?.physical==='35')board.prodosBlock.eject(drive);
+  } else if(controller==='disk2')board.floppy525.eject(drive);
+  else if(controller==='smartport') {
+    if(board.prodosBlock.drives[drive]?.physical!=='35')board.prodosBlock.eject(drive);
+  }
+  else throw new Error('Invalid storage controller');
+  if(alias && aliasController===controller)board.mountedMedia[drive]=null;
+  if(board.iigsPhysicalMedia)delete board.iigsPhysicalMedia[controller+':d'+(drive+1)];
 }
 
 export function ejectMedia(board,drive) {
   if(drive!==0 && drive!==1)throw new Error('Invalid drive');
-  board.prodosBlock.eject(drive);
-  if(board.iigsEnabled)board.memory.floppy35Drives[drive].eject();
-  board.floppy525.eject(drive);
-  if(board.mountedMedia)board.mountedMedia[drive]=null;
+  for(const controller of ['iigs35','smartport','disk2'])ejectPhysicalMedia(board,controller,drive);
 }

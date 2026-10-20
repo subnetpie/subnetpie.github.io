@@ -1,6 +1,6 @@
-import {Motherboard} from "https://subnetpie.github.io/computer/appleii/motherboard.js?v=20261017-nox128k1";
+import {Motherboard} from "https://subnetpie.github.io/computer/appleii/motherboard.js?v=20261019-storage2";
 import {AppleIIMemoryExpansion} from "./memory_expansion.js?v=20261017-slotbus4";
-import {loadIIgsConfiguration} from "./iigs_configuration.js?v=20261017-slotbus1";
+import {loadIIgsConfiguration} from "./iigs_configuration.js?v=20261019-storage2";
 
 const ROM_URL=new URL("./roms/341-0344a.bin",import.meta.url);
 let CARD_ROM=null;

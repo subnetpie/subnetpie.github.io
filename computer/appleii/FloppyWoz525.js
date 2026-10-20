@@ -336,7 +336,7 @@ class Disk
         this.name          = "";
         // The current nibble/WOZ engine has no write sequencer. Advertise
         // read-only media instead of allowing firmware to attempt writes.
-        this.write_protect = true;
+        this.write_protect = false; // empty drive sensor is uncovered
         this.motor_on      = false;
         this.medium        = null;
 
@@ -386,7 +386,7 @@ class Disk
         // surviving a desktop swap while preserving the guest's drive state.
         this.name = "";
         this.medium = null;
-        this.write_protect = true;
+        this.write_protect = false; // MAME floppy_image_device::call_unload: uncovered sensor
     }
 
     reset() {

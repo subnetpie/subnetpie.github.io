@@ -1,4 +1,4 @@
-import {decodeMedia,isZip,readZipEntries} from './media.js?v=20261018-live525-1';
+import {decodeMedia,isZip,readZipEntries,ejectPhysicalMedia,mediaController} from './media.js?v=20261019-storage2';
 import {mediaPersistenceKey,restorePersistentBlocks} from './disk_persistence.js?v=20260930-persist1';
 import {exportHardDrive} from './disk_export.js?v=20260930-disk-save';
 
@@ -38,11 +38,11 @@ function state(id){
   if(!ep)return null;
   let media=null,name='',writeProtected=true,writable=false,dirty=false;
   if(ep.controller==='iigs35'){
-    media=b?.memory?.floppy35Drives?.[ep.index]?.media||physicalMedia()[ep.id]||null;
+    media=b?.memory?.floppy35Drives?.[ep.index]?.media||null;
     name=media?.name||'';writeProtected=media?!media.data||!!media.writeProtected:true;writable=!!media?.data;dirty=!!media?.dirty;
   }else if(ep.controller==='disk2'){
-    const disk=b?.floppy525?._disks?.[ep.index];media=physicalMedia()[ep.id]||null;
-    name=disk?.name||media?.name||'';writeProtected=true;writable=false;
+    const disk=b?.floppy525?._disks?.[ep.index];media=disk?.medium?physicalMedia()[ep.id]||null:null;
+    name=disk?.medium?disk.name||media?.name||'':'';writeProtected=true;writable=false;
   }else{
     const disk=b?.prodosBlock?.drives?.[ep.index];
     // Older persistence code also mirrors 800K 3.5 media through the block
@@ -127,6 +127,11 @@ async function mountFile(id,file){
     ensureSmartPort(b);
     if(!b.prodosBlock.load_image(media.name,media.data,media,ep.index))throw new Error('Unable to mount '+name);
   }
+  // Replace only this controller's legacy alias. Other physical devices at
+  // the same unit index are independently mounted.
+  if(ep.controller==='iigs35' && b.prodosBlock?.drives?.[ep.index]?.physical==='35')b.prodosBlock.eject(ep.index);
+  if(b.mountedMedia?.[ep.index] && mediaController(b.mountedMedia[ep.index])===ep.controller)
+    b.mountedMedia[ep.index]=media;
   physicalMedia()[ep.id]=media;
   candidates.set(ep.persistenceId,{id:ep.persistenceId,name:file.name,entryName:entryName||undefined,data:original.buffer,updatedAt:Date.now()});
   if(keepEnabled(ep.persistenceId))await putRecord(candidates.get(ep.persistenceId));
@@ -136,10 +141,7 @@ async function mountFile(id,file){
 
 async function eject(id){
   const ep=endpoint(id),b=board();if(!ep||!b)return false;
-  if(ep.controller==='iigs35')b.memory?.floppy35Drives?.[ep.index]?.eject();
-  else if(ep.controller==='disk2')b.floppy525?.eject(ep.index);
-  else b.prodosBlock?.eject(ep.index);
-  delete physicalMedia()[ep.id];
+  ejectPhysicalMedia(b,ep.controller,ep.index);
   candidates.delete(ep.persistenceId);
   // Physical eject also clears the saved mount. Otherwise Keep mounted can
   // silently restore an image the user explicitly ejected.

@@ -1,5 +1,5 @@
-import {Motherboard} from "https://subnetpie.github.io/computer/appleii/motherboard.js?v=20261017-nox128k1";
-import {ProDOSBlockDevice} from "https://subnetpie.github.io/computer/appleii/prodos_block.js?v=20260930-persist1";
+import {Motherboard} from "https://subnetpie.github.io/computer/appleii/motherboard.js?v=20261019-storage2";
+import {ProDOSBlockDevice} from "https://subnetpie.github.io/computer/appleii/prodos_block.js?v=20261019-storage2";
 import {decodeMedia,isZip,readZipEntries} from "./media.js?v=20260930-gsos-drives";
 import {mediaPersistenceKey,restorePersistentBlocks} from "./disk_persistence.js?v=20260930-persist1";
 import {exportHardDrive} from "./disk_export.js?v=20260930-disk-save";
@@ -211,10 +211,11 @@ function installUI(){
       const disk=window.__appleIIgsBoard?.prodosBlock?.drives?.[drive];
       if(disk)disk.writeProtected=event.target.checked;
     });
-    document.getElementById('ejectDrive'+drive).addEventListener('click',()=>{
+    document.getElementById('ejectDrive'+drive).addEventListener('click',async()=>{
       const board=window.__appleIIgsBoard;
       if(!board)return;
-      board.prodosBlock.eject(drive);
+      if(window.__appleIIgsStorage)await window.__appleIIgsStorage.eject('smartport:d'+(drive+1));
+      else board.prodosBlock.eject(drive);
       if(board.mountedMedia)board.mountedMedia[drive]=null;
       refreshExtraDrives();
     });

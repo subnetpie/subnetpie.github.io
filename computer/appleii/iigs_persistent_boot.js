@@ -1,6 +1,6 @@
 import {decodeMedia,isZip,readZipEntries} from './media.js?v=20260930-gsos-drives';
 import {mediaPersistenceKey,restorePersistentBlocks} from './disk_persistence.js?v=20260930-persist1';
-import {ProDOSBlockDevice} from 'https://subnetpie.github.io/computer/appleii/prodos_block.js?v=20260930-persist1';
+import {ProDOSBlockDevice} from 'https://subnetpie.github.io/computer/appleii/prodos_block.js?v=20261019-storage2';
 
 const DB='appleii-iigs-mounted-media';
 const STORE='mounts';

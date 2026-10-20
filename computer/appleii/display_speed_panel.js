@@ -1,4 +1,4 @@
-import {Motherboard} from "https://subnetpie.github.io/computer/appleii/motherboard.js?v=20261017-nox128k1";
+import {Motherboard} from "https://subnetpie.github.io/computer/appleii/motherboard.js?v=20261019-storage2";
 
 const STORAGE_KEY='subnetpie.apple2.displaySpeed.v1';
 const MODES=[

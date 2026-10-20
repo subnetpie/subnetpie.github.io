@@ -12,7 +12,7 @@ import {Mockingboard} from "./mockingboard.js?v=20261005-mame0289-sc01a1";
 
 import {W65C02S} from "https://subnetpie.github.io/computer/appleii/w65c02s.js?v=20261004-mb-complete1";
 import {Memory} from "https://subnetpie.github.io/computer/appleii/memory.js";
-import {IIgsMemory} from "https://subnetpie.github.io/computer/appleii/iigs_memory.js?v=20261017-nox128k1";
+import {IIgsMemory} from "https://subnetpie.github.io/computer/appleii/iigs_memory.js?v=20261019-storage2";
 import {W65C816} from "https://subnetpie.github.io/computer/appleii/w65c816.js?v=20260928-blend";
 import {IOManager} from "https://subnetpie.github.io/computer/appleii/io_manager.js?v=20260930-keyboard";
 import {TextDisplay} from "https://subnetpie.github.io/computer/appleii/display_text.js";
@@ -21,9 +21,9 @@ import {HiresDisplay} from "https://subnetpie.github.io/computer/appleii/display
 import {LoresDisplay} from "https://subnetpie.github.io/computer/appleii/display_lores.js";
 import {DoubleHiresDisplay} from "https://subnetpie.github.io/computer/appleii/display_double_hires.js?v=20260928-pageflipram1";
 import {Keyboard} from "https://subnetpie.github.io/computer/appleii/keyboard.js?v=20260930-keyboard";
-import {Floppy525} from "https://subnetpie.github.io/computer/appleii/FloppyWoz525.js";
+import {Floppy525} from "https://subnetpie.github.io/computer/appleii/FloppyWoz525.js?v=20261019-storage2";
 import {AppleAudio} from "https://subnetpie.github.io/computer/appleii/apple_audio.js?v=20261004-mb1";
-import {ProDOSBlockDevice} from "https://subnetpie.github.io/computer/appleii/prodos_block.js?v=20260930-persist1";
+import {ProDOSBlockDevice} from "https://subnetpie.github.io/computer/appleii/prodos_block.js?v=20261019-storage2";
 import {IIgsVideo} from "https://subnetpie.github.io/computer/appleii/video_iigs.js?v=20261002-dither-blend";
 import {MachineTrace} from "https://subnetpie.github.io/computer/appleii/machine_trace.js";
 import {loadRom} from "./rom_loader.js?v=20261017-raw-rom2";
