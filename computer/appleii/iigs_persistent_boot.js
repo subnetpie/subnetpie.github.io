@@ -117,28 +117,20 @@ function applyBoot(board,boot){
 
 async function restore(board){
   const s=settings(),items=await all();let mounted=0;
-  for(const r of items){if(!s.keep[r.id])continue;try{await mountRecord(board,r);mounted++;}catch(err){console.warn('[persistent mount]',r.id,err);}}
+  const errors=[];
+  for(const r of items){
+    if(!s.keep[r.id])continue;
+    try{await mountRecord(board,r);mounted++;}
+    catch(err){errors.push({id:r.id,error:String(err)});console.warn('[persistent mount]',r.id,err);}
+  }
   applyBoot(board,s.boot);
-  if(mounted){
-    // Use the same full cold-boot path as the working manual media loader.
-    // A bare board.reset() does not restart the browser's emulation loop.
-    const resetButton=document.getElementById('buttonReset');
-    if(resetButton){
-      resetButton.dispatchEvent(new MouseEvent('click',{bubbles:true,cancelable:true,shiftKey:true,view:window}));
-    }else{
-      board.reset(true);
-    }
-    applyBoot(board,s.boot);
-  }
-  window.dispatchEvent(new CustomEvent('iigs-persistent-drives-restored',{detail:{mounted,boot:s.boot}}));
+  const detail={mounted,boot:s.boot,errors};
+  window.dispatchEvent(new CustomEvent('iigs-persistent-drives-restored',{detail}));
+  return detail;
 }
-async function waitForBoard(){
-  for(let i=0;i<100;i++){
-    const b=window.__appleIIgsBoard;
-    if(b?.iigsEnabled){await new Promise(r=>setTimeout(r,350));await restore(b);return;}
-    await new Promise(r=>setTimeout(r,50));
-  }
-}
+// The ROM loader owns the first reset and CPU start. No independent polling,
+// delayed resets or synthetic button clicks are allowed during startup.
+window.__appleIIgsRestorePersistent=restore;
 
 function label(id){return ({s5d1:'Slot 5 · 3.5-inch Drive 1',s5d2:'Slot 5 · 3.5-inch Drive 2',s6d1:'Slot 6 · 5.25-inch Drive 1',s6d2:'Slot 6 · 5.25-inch Drive 2',s7d1:'Slot 7 · SmartPort Drive 1',s7d2:'Slot 7 · SmartPort Drive 2',s7d3:'Slot 7 · SmartPort Drive 3',s7d4:'Slot 7 · SmartPort Drive 4'})[id]||id;}
 function installConfigBoot(){
@@ -197,5 +189,5 @@ window.__appleIIgsPersistence={
 };
 
 function install(){installConfigBoot();installKeepUI();installCapture();}
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>{install();waitForBoard();},{once:true});else{install();waitForBoard();}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});else install();
 new MutationObserver(install).observe(document.documentElement,{childList:true,subtree:true});
