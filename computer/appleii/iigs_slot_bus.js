@@ -26,14 +26,6 @@ function externalVisible(board,device){
   return false;
 }
 
-function bootAllowsDevice(device,boot){
-  if(!boot || boot==='auto')return true;
-  if(/^s7d[1-4]$/.test(boot))return device==='smartport' || (device!=='disk2' && device!=='smartport');
-  if(/^s6d[12]$/.test(boot))return device!=='smartport';
-  if(/^s5d[12]$/.test(boot))return device!=='smartport' && device!=='disk2';
-  return true;
-}
-
 export function applyIIgsSlotBusPolicy(board){
   if(!board?.iigsEnabled || !board.memory)return;
   const config=loadIIgsConfiguration();
@@ -44,11 +36,6 @@ export function applyIIgsSlotBusPolicy(board){
   for(const slot of [1,2,3,4,6,7]){
     const device=config.slots?.[slot]||"empty";
     if(!externalVisible(board,device))continue;
-    // An explicit physical boot target must win over ROM 03's normal highest-
-    // slot-first scan. Hide only higher-priority storage controllers for the
-    // reset seed; non-storage cards remain visible and firmware/GS/OS may
-    // rewrite SLOTROMSEL normally after startup.
-    if(!bootAllowsDevice(device,boot))continue;
     if(slot===3)slot3=true;
     else mask|=1<<slot;
   }
