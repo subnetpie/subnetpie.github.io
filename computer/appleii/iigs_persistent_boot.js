@@ -119,7 +119,17 @@ async function restore(board){
   const s=settings(),items=await all();let mounted=0;
   for(const r of items){if(!s.keep[r.id])continue;try{await mountRecord(board,r);mounted++;}catch(err){console.warn('[persistent mount]',r.id,err);}}
   applyBoot(board,s.boot);
-  if(mounted){board.reset(true);applyBoot(board,s.boot);}
+  if(mounted){
+    // Use the same full cold-boot path as the working manual media loader.
+    // A bare board.reset() does not restart the browser's emulation loop.
+    const resetButton=document.getElementById('buttonReset');
+    if(resetButton){
+      resetButton.dispatchEvent(new MouseEvent('click',{bubbles:true,cancelable:true,shiftKey:true,view:window}));
+    }else{
+      board.reset(true);
+    }
+    applyBoot(board,s.boot);
+  }
   window.dispatchEvent(new CustomEvent('iigs-persistent-drives-restored',{detail:{mounted,boot:s.boot}}));
 }
 async function waitForBoard(){
