@@ -419,12 +419,40 @@ async function loadBuiltInIIgsROM() {
       };
       const restored=await waitForRestore();
       if(restored.errors?.length)console.warn("[IIgs restore failures]",restored.errors);
+      // Diagnostic snapshot before the ROM 03 reset: actual mounted block media,
+      // slot policy and first boot-sector bytes. Never alter disk contents.
+      const bootSnapshot=(phase)=>{
+        const block=motherboard.prodosBlock;
+        const disks=block.drives.map((d,i)=>({
+          unit:i+1,name:d.name||"",mounted:!!d.image,
+          bytes:d.image?.length||0,blocks:d.blockCount||0,
+          block0:d.image?Array.from(d.image.subarray(0,16)).map(x=>x.toString(16).padStart(2,"0")).join(" "):null
+        }));
+        const snapshot={phase,boot:restored.boot,mounted:restored.mounted,errors:restored.errors,
+          enabled:block.enabled,slotRom:motherboard.memory.slotRom,
+          slotC3Rom:motherboard.memory.slotC3Rom,disks};
+        window.__appleIIgsBootSnapshot=snapshot;
+        console.info("[IIgs boot snapshot]",snapshot);
+        return snapshot;
+      };
+      if(new URLSearchParams(location.search).get("bootTrace")==="1")bootSnapshot("after restore");
       motherboard.reset(true);
       // Reset may clear the selected SmartPort unit; restore it before running.
       const boot=restored.boot;
       motherboard.prodosBlock._bootSmartPortDrive=/^s7d[1-4]$/.test(boot)?Number(boot.at(-1))-1:null;
+      if(new URLSearchParams(location.search).get("bootTrace")==="1"){
+        const snapshot=bootSnapshot("after reset");
+        const d=snapshot.disks[0];
+        showBootStatus("IIgs BOOT STORAGE TRACE\\n"+
+          "Boot="+snapshot.boot+" restored="+snapshot.mounted+
+          " errors="+snapshot.errors.length+
+          "\\nS7 enabled="+snapshot.enabled+" SLOTROM=$"+
+          (snapshot.slotRom??0).toString(16).toUpperCase()+
+          " S7D1="+(d?.mounted?"mounted":"empty")+
+          " bytes="+(d?.bytes||0)+"\\nBlock 0: "+(d?.block0||"none"));
+      }
       if(!restored.mounted)motherboard.message("No disk - press load");
-      showBootStatus("");
+      if(new URLSearchParams(location.search).get("bootTrace")!=="1")showBootStatus("");
       run();
       clearTimeout(bootWatchdog);
       // An empty slot-6 drive normally polls forever at $C65E. A timed
