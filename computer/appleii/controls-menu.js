@@ -10,13 +10,14 @@ const assets={
   configCompat:'./iigs_configuration_compat.js?v=20261007-config-compat1',
   slot4:'./iigs_slot4_devices.js?v=20261019-storage2',
   memoryExpansion:'./iigs_memory_expansion.js?v=20261019-storage2',
-  slotBus:'./iigs_slot_bus.js?v=20261019-storage2',
+  slotBus:'./iigs_slot_bus.js?v=20261029-boot1',
   extraDrives:'./iigs_extra_drives.js?v=20261019-storage2',
   persistent:'./iigs_persistent_boot.js?v=20261019-storage2',
   persistentUi:'./iigs_persistent_boot_ui.js?v=20261007-panel-audit1',
   storage:'./iigs_storage_registry.js?v=20261019-storage2',
   storageConfig:'./iigs_storage_config_ui.js?v=20261007-slot-order1',
   unifiedBridge:'./unified_configuration_bridge.js?v=20261007-machine2',
+  bootBridge:'./iigs_boot_bridge.js?v=20261029-boot1',
   displayToolbar:'./unified_display_toolbar.js?v=20261007-display-toolbar1',
   scanlines:'./display_scanline_overlay.js?v=20261007-shr-scanlines1',
   speed:'./display_speed_panel.js?v=20261019-storage2',
@@ -98,5 +99,6 @@ if(unifiedMode){
   addScript(assets.unified,{defer:true});
   addScript(assets.drive,{defer:true});
   addScript(assets.unifiedBridge,{defer:true});
+  addScript(assets.bootBridge,{defer:true});
   addScript(assets.displayToolbar,{defer:true});
 }
