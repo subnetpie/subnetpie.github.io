@@ -405,8 +405,25 @@ async function loadBuiltInIIgsROM() {
   setColor();
   if(machineType === "iigs") {
     motherboard.message("loading IIgs ROM 03...");
-    loadBuiltInIIgsROM().then(() => {
-      motherboard.message("No disk - press load");
+    loadBuiltInIIgsROM().then(async () => {
+      // Restore physical disks before the CPU executes ROM 03's first boot scan.
+      // The persistent module no longer performs a separate startup reset.
+      showBootStatus("IIgs startup: restoring persistent drives...");
+      const waitForRestore=async()=>{
+        for(let i=0;i<200;i++){
+          if(typeof window.__appleIIgsRestorePersistent==='function')
+            return window.__appleIIgsRestorePersistent(motherboard);
+          await new Promise(resolve=>setTimeout(resolve,25));
+        }
+        throw new Error("Persistent drive module unavailable");
+      };
+      const restored=await waitForRestore();
+      if(restored.errors?.length)console.warn("[IIgs restore failures]",restored.errors);
+      motherboard.reset(true);
+      // Reset may clear the selected SmartPort unit; restore it before running.
+      const boot=restored.boot;
+      motherboard.prodosBlock._bootSmartPortDrive=/^s7d[1-4]$/.test(boot)?Number(boot.at(-1))-1:null;
+      if(!restored.mounted)motherboard.message("No disk - press load");
       showBootStatus("");
       run();
       clearTimeout(bootWatchdog);
