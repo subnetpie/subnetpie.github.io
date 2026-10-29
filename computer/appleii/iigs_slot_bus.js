@@ -2,6 +2,15 @@ import {Motherboard} from "https://subnetpie.github.io/computer/appleii/motherbo
 import {ProDOSBlockDevice} from "./prodos_block.js?v=20261019-storage2";
 import {loadIIgsConfiguration} from "./iigs_configuration.js?v=20261019-storage2";
 
+const BOOT_SETTINGS='subnetpie.apple2.iigs.persistentBoot.v1';
+
+function selectedBootTarget(){
+  try {
+    const value=JSON.parse(localStorage.getItem(BOOT_SETTINGS)||'{}');
+    return typeof value.boot==='string'?value.boot:'auto';
+  } catch(_) { return 'auto'; }
+}
+
 // MAME 0.289 keeps SLOTROMSEL/SLOTC3ROM and the C800 owner in machine state,
 // not in the individual cards. This module is the single IIgs policy point
 // that seeds configured external slots after a machine reset.
@@ -17,15 +26,29 @@ function externalVisible(board,device){
   return false;
 }
 
+function bootAllowsDevice(device,boot){
+  if(!boot || boot==='auto')return true;
+  if(/^s7d[1-4]$/.test(boot))return device==='smartport' || (device!=='disk2' && device!=='smartport');
+  if(/^s6d[12]$/.test(boot))return device!=='smartport';
+  if(/^s5d[12]$/.test(boot))return device!=='smartport' && device!=='disk2';
+  return true;
+}
+
 export function applyIIgsSlotBusPolicy(board){
   if(!board?.iigsEnabled || !board.memory)return;
   const config=loadIIgsConfiguration();
+  const boot=selectedBootTarget();
   let mask=0;
   let slot3=false;
 
   for(const slot of [1,2,3,4,6,7]){
     const device=config.slots?.[slot]||"empty";
     if(!externalVisible(board,device))continue;
+    // An explicit physical boot target must win over ROM 03's normal highest-
+    // slot-first scan. Hide only higher-priority storage controllers for the
+    // reset seed; non-storage cards remain visible and firmware/GS/OS may
+    // rewrite SLOTROMSEL normally after startup.
+    if(!bootAllowsDevice(device,boot))continue;
     if(slot===3)slot3=true;
     else mask|=1<<slot;
   }
@@ -35,6 +58,7 @@ export function applyIIgsSlotBusPolicy(board){
   board.memory.slotC3Rom=slot3;
   board.memory._a2C800Owner=null;
   board.iigsConfiguredSlotRomMask=board.memory.slotRom;
+  board.iigsBootTarget=boot;
 }
 
 // ProDOSBlockDevice historically reasserted SLOTROMSEL from inside reset.
