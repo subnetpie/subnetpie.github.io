@@ -17,7 +17,7 @@ const assets={
   storage:'./iigs_storage_registry.js?v=20261019-storage2',
   storageConfig:'./iigs_storage_config_ui.js?v=20261007-slot-order1',
   unifiedBridge:'./unified_configuration_bridge.js?v=20261007-machine2',
-  bootBridge:'./iigs_boot_bridge.js?v=20261029-boot1',
+  bootBridge:'./iigs_boot_bridge.js?v=20261029-boot2',
   displayToolbar:'./unified_display_toolbar.js?v=20261007-display-toolbar1',
   scanlines:'./display_scanline_overlay.js?v=20261007-shr-scanlines1',
   speed:'./display_speed_panel.js?v=20261019-storage2',
@@ -28,7 +28,7 @@ const assets={
   unifiedCss:'./unified_controls.css?v=20261019-reset2',
   driveCss:'./unified_drive_manager.css?v=20261007-drive-manager6',
   unified:'./unified_controls.js?v=20261019-reset2',
-  drive:'./unified_drive_manager.js?v=20261019-storage2'
+  drive:'./unified_drive_manager.js?v=20261029-boot2'
 };
 
 function addStyle(href){
