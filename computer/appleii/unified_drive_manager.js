@@ -68,15 +68,12 @@
       if(button.hasAttribute('data-storage-download')){try{svc.download(id);}catch(err){alert(err?.message||String(err));}return;}
       if(button.hasAttribute('data-storage-boot')){
         const ep=svc.endpoint(id),target=ep?.persistenceId||'auto';
-        // Persist/select the physical boot unit first, then use the emulator's
-        // real cold-reset path. A normal .click() creates a warm reset; the
-        // legacy media boot path succeeds because it performs reset(true).
-        // Dispatching Shift+click reuses buttonReset() and gives this physical
-        // Boot button exactly the same cold IIgs startup behavior.
+        // Apply once before reset so the selected device is stored, then again
+        // in a microtask after the synchronous reset and before the first RAF.
+        // This preserves S5D2/S6D2 selections even when reset restores the
+        // controller's default drive register.
         svc.setBoot(target);
-        const reset=document.getElementById('buttonReset');
-        if(reset)reset.dispatchEvent(new MouseEvent('click',{bubbles:true,cancelable:true,shiftKey:true}));
-        else window.__appleIIgsBoard?.reset?.(true);
+        document.getElementById('buttonReset')?.click();
         queueMicrotask(()=>svc.setBoot(target));
         return;
       }

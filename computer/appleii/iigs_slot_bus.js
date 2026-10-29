@@ -2,15 +2,6 @@ import {Motherboard} from "https://subnetpie.github.io/computer/appleii/motherbo
 import {ProDOSBlockDevice} from "./prodos_block.js?v=20261019-storage2";
 import {loadIIgsConfiguration} from "./iigs_configuration.js?v=20261019-storage2";
 
-const BOOT_SETTINGS='subnetpie.apple2.iigs.persistentBoot.v1';
-
-function selectedBootTarget(){
-  try {
-    const value=JSON.parse(localStorage.getItem(BOOT_SETTINGS)||'{}');
-    return typeof value.boot==='string'?value.boot:'auto';
-  } catch(_) { return 'auto'; }
-}
-
 // MAME 0.289 keeps SLOTROMSEL/SLOTC3ROM and the C800 owner in machine state,
 // not in the individual cards. This module is the single IIgs policy point
 // that seeds configured external slots after a machine reset.
@@ -29,7 +20,6 @@ function externalVisible(board,device){
 export function applyIIgsSlotBusPolicy(board){
   if(!board?.iigsEnabled || !board.memory)return;
   const config=loadIIgsConfiguration();
-  const boot=selectedBootTarget();
   let mask=0;
   let slot3=false;
 
@@ -45,7 +35,6 @@ export function applyIIgsSlotBusPolicy(board){
   board.memory.slotC3Rom=slot3;
   board.memory._a2C800Owner=null;
   board.iigsConfiguredSlotRomMask=board.memory.slotRom;
-  board.iigsBootTarget=boot;
 }
 
 // ProDOSBlockDevice historically reasserted SLOTROMSEL from inside reset.
