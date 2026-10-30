@@ -27,7 +27,7 @@ const assets={
   unifiedCss:'./unified_controls.css?v=20261019-reset2',
   driveCss:'./unified_drive_manager.css?v=20261007-drive-manager6',
   unified:'./unified_controls.js?v=20261019-reset2',
-  drive:'./unified_drive_manager.js?v=20261019-storage2'
+  drive:'./unified_drive_manager.js?v=20261030-coldboot1'
 };
 
 function addStyle(href){
