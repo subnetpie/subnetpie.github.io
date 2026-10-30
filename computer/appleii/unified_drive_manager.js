@@ -68,12 +68,23 @@
       if(button.hasAttribute('data-storage-download')){try{svc.download(id);}catch(err){alert(err?.message||String(err));}return;}
       if(button.hasAttribute('data-storage-boot')){
         const ep=svc.endpoint(id),target=ep?.persistenceId||'auto';
-        // Apply once before reset so the selected device is stored, then again
-        // in a microtask after the synchronous reset and before the first RAF.
-        // This preserves S5D2/S6D2 selections even when reset restores the
-        // controller's default drive register.
+        // Store/apply the physical target before reset. ROM 03 only restarts
+        // its boot scan on a cold reset, so synthesize the same Shift-reset
+        // gesture used by the legacy reset control instead of a warm .click().
         svc.setBoot(target);
-        document.getElementById('buttonReset')?.click();
+        const reset=document.getElementById('buttonReset');
+        if(reset){
+          reset.dispatchEvent(new MouseEvent('click',{
+            bubbles:true,
+            cancelable:true,
+            shiftKey:true,
+            view:window
+          }));
+        }else{
+          window.__appleIIgsBoard?.reset?.(true);
+        }
+        // Controller reset can restore a default unit; reapply the selected
+        // drive before the next animation frame begins executing ROM code.
         queueMicrotask(()=>svc.setBoot(target));
         return;
       }
