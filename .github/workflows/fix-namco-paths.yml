@@ -23,6 +23,7 @@ jobs:
 
           games = ['bosco','digdug','galaga','mspacman','pacman','polepos']
           exts = {'.js','.mjs','.html','.css','.md','.json','.yml','.yaml','.txt'}
+          helper = Path('.github/workflows/fix-namco-paths.yml')
 
           for game in games:
               root = Path('arcade/namco') / game
@@ -51,7 +52,7 @@ jobs:
               '/arcade/polepos/': '/arcade/namco/polepos/',
           }
           for p in Path('.').rglob('*'):
-              if not p.is_file() or '.git' in p.parts or p.suffix.lower() not in exts:
+              if p == helper or not p.is_file() or '.git' in p.parts or p.suffix.lower() not in exts:
                   continue
               try:
                   s = p.read_text()
@@ -63,7 +64,7 @@ jobs:
               if ns != s:
                   p.write_text(ns)
           PY
-          git rm .github/workflows/fix-namco-paths.yml
+          git rm -f .github/workflows/fix-namco-paths.yml
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
           git add -A
