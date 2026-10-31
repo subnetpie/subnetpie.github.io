@@ -1,5 +1,5 @@
 import { Z80 } from "../../cpu/z80.js";
-import { AY8910 } from "../../chips/AY8910.js";
+import { AY8910 } from "../../audio/AY8910.js";
 
 const MC=3072000,SC=14318000/8,FPS=16000/132/2,W=256,H=256;
 
