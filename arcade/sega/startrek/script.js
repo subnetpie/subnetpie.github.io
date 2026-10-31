@@ -1,6 +1,6 @@
 // Sega/Gremlin Star Trek (1982) — Sega G80 vector hardware.
 // Behavioral reference: MAME 0.289 segag80v.cpp / segag80v_v.cpp.
-import { Z80 } from '../../cpu/z80.js';
+import { Z80 } from '../../../cpu/z80.js';
 import { StarTrekAudio } from './audio.js';
 
 const VIDEO_CLOCK = 15468480;

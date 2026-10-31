@@ -1,4 +1,4 @@
-import { M6502 } from "../../cpu/m6502.js";
+import { M6502 } from "../../../cpu/m6502.js";
 const CPU_CLOCK=12096000/8,IRQ_HZ=(12096000/4096)/12,FPS=IRQ_HZ/6,W=580,H=400;
 const s16=v=>((v&65535)^32768)-32768,sign13=v=>(v&4096)?v-8192:v;
 class Mathbox{

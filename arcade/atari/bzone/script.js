@@ -1,5 +1,5 @@
 import { BzoneAudio } from "./audio.js?v=20260930-mame289";
-import { M6502 } from "../../cpu/m6502.js";
+import { M6502 } from "../../../cpu/m6502.js";
 import { AssetTrace, ASSETS, updateAssetSettings } from "./assets.js?v=20261001-radar-fan";
 import { renderVectors, RadarPersistence } from "./vector-renderer.js?v=20261001-radar-fan";
 import { PokeyRandom } from "./pokey-random.js";

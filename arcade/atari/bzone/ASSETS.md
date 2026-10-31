@@ -95,14 +95,14 @@ vectors receive one spot rather than two coincident endpoint spots.
 
 ## Validation
 
-Run `node arcade/bzoneii/assets.test.mjs` from the repository root.
+Run `node arcade/atari/bzoneii/assets.test.mjs` from the repository root.
 The 2,400-frame headless run covers attract mode, coin/start input, rotation,
 and firing. It observes every requested asset and compares CPU PC/cycles,
 all RAM, and every vector's geometry/intensity/clipping with tracing disabled.
 It also checks recycled RAM tags, unsupported ROMs, stack-gated scope returns,
 and differently colored callers sharing the same nested ROM primitive.
-Syntax checks: `node --check arcade/bzoneii/script.js` and
-`node --check arcade/bzoneii/assets.js`. This is not a full browser/audio or
+Syntax checks: `node --check arcade/atari/bzoneii/script.js` and
+`node --check arcade/atari/bzoneii/assets.js`. This is not a full browser/audio or
 cycle-by-cycle MAME conformance test.
 
 ## POKEY random register
@@ -120,7 +120,7 @@ Previously RANDOM incorrectly read the audio register array's zero byte. This
 made five volcano slots spawn together with only two distinct trajectories.
 The runtime regression now requires at least four distinct simultaneous spark
 positions (five observed), with the camera directed at the volcano in the last
-400 frames. `node arcade/bzoneii/pokey-random.test.mjs` compares both complete
+400 frames. `node arcade/atari/bzoneii/pokey-random.test.mjs` compares both complete
 polynomial periods against independent bit-array wiring and checks reset,
 resume, wraparound, and repeated reads at the same emulated time.
 
@@ -134,7 +134,7 @@ The AVG high-byte fetch address is normalized to its word address. No vector
 length or screen position is used to classify a contact. This keeps small
 sweep/cone segments and compass ticks green, with only actual contacts red.
 
-Run `node --test arcade/bzone/radar.test.mjs` to verify all four tick identities,
+Run `node --test arcade/atari/bzone/radar.test.mjs` to verify all four tick identities,
 contact scope lifetime, and unchanged raw vectors in a 600-frame ROM run.
 
 ## Shared appearance settings
@@ -170,7 +170,7 @@ colorized settings resume when color mode is restored. Invalid numeric live
 patches are rejected, finite values are bounded, and unsupported CSS colors
 fall back to green rather than borrowing the previous asset’s paint.
 
-Validation: `node --test arcade/bzone/asset-style.test.mjs arcade/bzone/radar.test.mjs`.
+Validation: `node --test arcade/atari/bzone/asset-style.test.mjs arcade/atari/bzone/radar.test.mjs`.
 Tests cover every asset, lines and points, zero brightness/glow, fill color,
 high-score color changes, live updates, original mode, and the radar ROM run.
 

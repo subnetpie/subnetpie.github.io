@@ -2,7 +2,7 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import {readFileSync} from 'node:fs';
-import {M6502} from '../../cpu/m6502.js';
+import {M6502} from '../../../cpu/m6502.js';
 import {BzoneAudio} from './audio.js';
 import {PokeyRandom} from './pokey-random.js';
 import {AssetTrace,ASSETS} from './assets.js';

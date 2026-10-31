@@ -35,7 +35,7 @@ extra CPU time every interrupt.
 Run from the repository root:
 
 ```
-node --test arcade/bzone/audio.test.mjs arcade/bzone/audio-rom.test.mjs
+node --test arcade/atari/bzone/audio.test.mjs arcade/atari/bzone/audio-rom.test.mjs
 ```
 
 - 2,097,152 raw POKEY output states match the original MAME clock and polynomial
