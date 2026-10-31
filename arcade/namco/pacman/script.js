@@ -1,5 +1,5 @@
 import { Z80 } from "../../../cpu/z80.js";
-import { NamcoWSG } from "../../../chips/NamcoWSG.js";
+import { NamcoWSG } from "../chips/NamcoWSG.js";
 import { EmulatorAudioWorklet } from "../../../audio/EmulatorAudioWorklet.js";
 
 // ===========================================================

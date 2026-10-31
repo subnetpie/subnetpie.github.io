@@ -1,10 +1,10 @@
-import { Namco06XX } from "../../../chips/Namco06XX.js";
-import { Namco50XX } from "../../../chips/Namco50XX.js";
-import { MB88xx, MB8841, MB8842, MB8843, MB8844 } from "../../../chips/MB88xx.js";
-import { Namco51XX } from "../../../chips/Namco51XX.js";
-import { Namco52XX } from "../../../chips/Namco52XX.js";
-import { Namco54XX } from "../../../chips/Namco54XX.js";
-import { NamcoWSG } from "../../../chips/NamcoWSG.js";
+import { Namco06XX } from "../chips/Namco06XX.js";
+import { Namco50XX } from "../chips/Namco50XX.js";
+import { MB88xx, MB8841, MB8842, MB8843, MB8844 } from "../chips/MB88xx.js";
+import { Namco51XX } from "../chips/Namco51XX.js";
+import { Namco52XX } from "../chips/Namco52XX.js";
+import { Namco54XX } from "../chips/Namco54XX.js";
+import { NamcoWSG } from "../chips/NamcoWSG.js";
 import { Namco52xxDac } from "../../../audio/Namco52xxDac.js";
 import { Namco54xxDac } from "../../../audio/Namco54xxDac.js";
 import { EmulatorAudioWorklet } from "../../../audio/EmulatorAudioWorklet.js";
