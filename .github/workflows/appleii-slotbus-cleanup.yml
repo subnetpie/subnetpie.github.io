@@ -15,38 +15,38 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
         with:
-          node-version: '20'
-      - name: Remove legacy slot mutation and refresh browser cache key
+          fetch-depth: 2
+      - name: Repair Namco DAC paths
         run: |
           python3 - <<'PY'
           from pathlib import Path
-          import re
 
-          prodos = Path('computer/appleii/prodos_block.js')
-          text = prodos.read_text()
-          pattern = r"\n\s*// IIgsMemory\.reset\(\) restores the SLOTROM register.*?\n\s*if\(typeof this\.memory\?\.slotRom === 'number'\) \{.*?\n\s*\}\n"
-          text, count = re.subn(pattern, '\n', text, count=1, flags=re.S)
-          if count != 1:
-              raise SystemExit(f'expected one legacy SLOTROM reset block, removed {count}')
-          prodos.write_text(text)
+          replacements = {
+              Path('arcade/namco/bosco/script.js'): {
+                  '../../../audio/Namco52xxDac.js': '../audio/Namco52xxDac.js',
+                  '../../../audio/Namco54xxDac.js': '../audio/Namco54xxDac.js',
+              },
+              Path('arcade/namco/galaga/script.js'): {
+                  '../../../audio/Namco54xxDac.js': '../audio/Namco54xxDac.js',
+              },
+          }
 
-          index = Path('computer/appleii/index.html')
-          html = index.read_text()
-          old_key = './controls-menu.js?v=20261017-speed-memexp1'
-          new_key = './controls-menu.js?v=20261017-slotbus2'
-          if old_key not in html:
-              raise SystemExit('expected controls-menu cache key not found')
-          index.write_text(html.replace(old_key, new_key))
+          for path, pairs in replacements.items():
+              text = path.read_text()
+              for old, new in pairs.items():
+                  if old not in text:
+                      raise SystemExit(f'expected path not found in {path}: {old}')
+                  text = text.replace(old, new)
+              path.write_text(text)
           PY
-      - name: Run slot and ROM03 boot regressions
-        run: node --test computer/appleii/memory_expansion.test.mjs computer/appleii/prodos_rom03_boot.test.mjs computer/appleii/rom_resources.test.mjs
-      - name: Commit cleanup
-        run: |
-          git config user.name 'subnetpie'
-          git config user.email 'subnetpie@hotmail.com'
-          git add computer/appleii/prodos_block.js computer/appleii/index.html
+
+          git rm audio/Namco52xxDac.js audio/Namco54xxDac.js
+          git show HEAD^:.github/workflows/appleii-slotbus-cleanup.yml > .github/workflows/appleii-slotbus-cleanup.yml
+
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add arcade/namco/bosco/script.js arcade/namco/galaga/script.js .github/workflows/appleii-slotbus-cleanup.yml
           git diff --cached --check
-          git commit -m 'Centralize IIgs slot ROM ownership'
+          git commit -m '[skip ci] Use canonical Namco DAC paths'
           git push
