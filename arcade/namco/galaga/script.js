@@ -1,8 +1,8 @@
 import { Z80 } from "../../../cpu/z80.js";
 import { Namco06XX } from "../chips/Namco06XX.js";
 import { Namco51XX } from "../chips/Namco51XX.js";
-import { Namco54XX } from "../chips/Namco54XX.js";
-import { NamcoWSG } from "../chips/NamcoWSG.js";
+import { Namco54XX } from "../audio/Namco54XX.js";
+import { NamcoWSG } from "../audio/NamcoWSG.js";
 import { Namco54xxDac } from "../../../audio/Namco54xxDac.js";
 import { EmulatorAudioWorklet } from "../../../audio/EmulatorAudioWorklet.js";
 import { MB88xx, MB8843, MB8844 } from "../chips/MB88xx.js";

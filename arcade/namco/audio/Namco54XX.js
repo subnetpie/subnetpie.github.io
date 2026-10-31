@@ -1,4 +1,4 @@
-import { MB8844 } from "./MB88xx.js";
+import { MB8844 } from "../chips/MB88xx.js";
 function _defineProperty(obj, key, value) { Object.defineProperty(obj, key, {value, enumerable:true, configurable:true, writable:true}); return obj; }
 class Namco54XX {
 
