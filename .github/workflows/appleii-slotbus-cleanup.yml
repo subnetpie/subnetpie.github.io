@@ -15,8 +15,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 2
       - name: Repair Namco DAC paths
         run: |
           python3 - <<'PY'
@@ -42,11 +40,9 @@ jobs:
           PY
 
           git rm audio/Namco52xxDac.js audio/Namco54xxDac.js
-          git show HEAD^:.github/workflows/appleii-slotbus-cleanup.yml > .github/workflows/appleii-slotbus-cleanup.yml
-
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add arcade/namco/bosco/script.js arcade/namco/galaga/script.js .github/workflows/appleii-slotbus-cleanup.yml
+          git add arcade/namco/bosco/script.js arcade/namco/galaga/script.js
           git diff --cached --check
           git commit -m '[skip ci] Use canonical Namco DAC paths'
           git push
