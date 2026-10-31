@@ -1,0 +1,29 @@
+name: Update AY8910 import paths
+
+on:
+  push:
+    paths:
+      - '.github/workflows/update-ay8910-imports.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  update-imports:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: master
+      - name: Update AY8910 references
+        run: |
+          sed -i 's#../../chips/AY8910.js#../../audio/AY8910.js#g' arcade/timeplt/script.js arcade/scramble/script.js
+          git rm -f chips/AY8910.js
+          git rm -f .github/workflows/update-ay8910-imports.yml
+      - name: Commit changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add arcade/timeplt/script.js arcade/scramble/script.js
+          git commit -m "Update AY8910 imports to audio directory"
+          git push origin HEAD:master
