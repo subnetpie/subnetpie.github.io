@@ -1,0 +1,48 @@
+name: Fix Konami paths
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - '.github/workflows/fix-konami-paths.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Repair Konami paths
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          for game in ('scramble', 'timeplt'):
+              root = Path('arcade/konami') / game
+              script = root / 'script.js'
+              s = script.read_text()
+              s = s.replace('../../cpu/', '../../../cpu/')
+              s = s.replace('../../audio/AY8910.js', '../audio/AY8910.js')
+              script.write_text(s)
+
+              index = root / 'index.html'
+              if index.exists():
+                  s = index.read_text()
+                  s = s.replace('href="../../"', 'href="../../../"')
+                  s = s.replace("href='../../'", "href='../../../'")
+                  index.write_text(s)
+
+          root_index = Path('index.html')
+          s = root_index.read_text()
+          s = s.replace('./arcade/scramble/', './arcade/konami/scramble/')
+          s = s.replace('./arcade/timeplt/', './arcade/konami/timeplt/')
+          root_index.write_text(s)
+          PY
+          git rm -f .github/workflows/fix-konami-paths.yml
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -A
+          git commit -m "Repair paths after Konami arcade reorganization"
+          git push
