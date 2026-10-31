@@ -1,6 +1,6 @@
-import { Z80 } from "../../cpu/z80.js";
-import { NamcoWSG } from "../../chips/NamcoWSG.js";
-import { EmulatorAudioWorklet } from "../../audio/EmulatorAudioWorklet.js";
+import { Z80 } from "../../../cpu/z80.js";
+import { NamcoWSG } from "../../../chips/NamcoWSG.js";
+import { EmulatorAudioWorklet } from "../../../audio/EmulatorAudioWorklet.js";
 
 // ===========================================================
 // jspacman — Pac-Man Emulator
@@ -72,7 +72,7 @@ class jspacman {
     return new Uint8Array(await res.arrayBuffer());
   }
   async loadROMS(useDiag = false) {
-    const base = "https://subnetpie.github.io/arcade/pacman/roms/";
+    const base = "https://subnetpie.github.io/arcade/namco/pacman/roms/";
 
     if (!useDiag) {
       const [r6e, r6f, r6h, r6j] = await Promise.all([

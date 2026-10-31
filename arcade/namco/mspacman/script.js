@@ -1,6 +1,6 @@
-import { Z80 } from "../../cpu/z80.js";
-import { NamcoWSG } from "../../chips/NamcoWSG.js";
-import { EmulatorAudioWorklet } from "../../audio/EmulatorAudioWorklet.js";
+import { Z80 } from "../../../cpu/z80.js";
+import { NamcoWSG } from "../../../chips/NamcoWSG.js";
+import { EmulatorAudioWorklet } from "../../../audio/EmulatorAudioWorklet.js";
 
 //=====================================================================
 // - MS. PAC-MAN EMULATOR -
@@ -365,7 +365,7 @@ class jsMsPacMan {
 
  // ── ROM Loading ──────────────────────────────────────────────
  async loadROMS() {
-  const base = "https://subnetpie.github.io/arcade/mspacman/roms/";
+  const base = "https://subnetpie.github.io/arcade/namco/mspacman/roms/";
   const files = {
    "pacman.6e": { target: "rom", offset: 0x0000 },
    "pacman.6f": { target: "rom", offset: 0x1000 },

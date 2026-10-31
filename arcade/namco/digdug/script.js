@@ -1,7 +1,7 @@
-import { Z80 } from "../../cpu/z80.js";
-import { Namco51XX } from "../../chips/Namco51XX.js";
-import { Namco53XX } from "../../chips/Namco53XX.js";
-import { NamcoWSG } from "../../chips/NamcoWSG.js";
+import { Z80 } from "../../../cpu/z80.js";
+import { Namco51XX } from "../../../chips/Namco51XX.js";
+import { Namco53XX } from "../../../chips/Namco53XX.js";
+import { NamcoWSG } from "../../../chips/NamcoWSG.js";
 
 const MASTER_CLOCK = 18_432_000;
 const CPU_CLOCK = MASTER_CLOCK / 6;

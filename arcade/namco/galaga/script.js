@@ -1,11 +1,11 @@
-import { Z80 } from "../../cpu/z80.js";
-import { Namco06XX } from "../../chips/Namco06XX.js";
-import { Namco51XX } from "../../chips/Namco51XX.js";
-import { Namco54XX } from "../../chips/Namco54XX.js";
-import { NamcoWSG } from "../../chips/NamcoWSG.js";
-import { Namco54xxDac } from "../../audio/Namco54xxDac.js";
-import { EmulatorAudioWorklet } from "../../audio/EmulatorAudioWorklet.js";
-import { MB88xx, MB8843, MB8844 } from "../../chips/MB88xx.js";
+import { Z80 } from "../../../cpu/z80.js";
+import { Namco06XX } from "../../../chips/Namco06XX.js";
+import { Namco51XX } from "../../../chips/Namco51XX.js";
+import { Namco54XX } from "../../../chips/Namco54XX.js";
+import { NamcoWSG } from "../../../chips/NamcoWSG.js";
+import { Namco54xxDac } from "../../../audio/Namco54xxDac.js";
+import { EmulatorAudioWorklet } from "../../../audio/EmulatorAudioWorklet.js";
+import { MB88xx, MB8843, MB8844 } from "../../../chips/MB88xx.js";
 
 class EmulatorConfig {
   static MASTER_CLOCK = 18_432_000;
@@ -40,7 +40,7 @@ class EmulatorConfig {
       touchPulseDurationMs: 250
     };
     this.roms = {
-      baseUrl: "https://subnetpie.github.io/arcade/galaga/roms/",
+      baseUrl: "https://subnetpie.github.io/arcade/namco/galaga/roms/",
       files: [
         {
           name: "gg1_1b.3p",
