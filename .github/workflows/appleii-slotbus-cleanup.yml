@@ -15,50 +15,38 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Make Namco typed-array checks realm-safe
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Remove legacy slot mutation and refresh browser cache key
         run: |
           python3 - <<'PY'
           from pathlib import Path
+          import re
 
-          replacements = {
-              Path('arcade/namco/audio/NamcoWSG.js'): [
-                  ('if (!(waveformProm instanceof Uint8Array) || waveformProm.length < 0x100)',
-                   'if (!ArrayBuffer.isView(waveformProm) || waveformProm.BYTES_PER_ELEMENT !== 1 || waveformProm.length < 0x100)')
-              ],
-              Path('arcade/namco/audio/Namco52XX.js'): [
-                  ('voiceRom instanceof Uint8Array ? voiceRom : new Uint8Array(0)',
-                   'ArrayBuffer.isView(voiceRom) && voiceRom.BYTES_PER_ELEMENT === 1 ? voiceRom : new Uint8Array(0)')
-              ],
-              Path('arcade/namco/audio/Namco54XX.js'): [
-                  ('if (!(romData instanceof Uint8Array)) {',
-                   'if (!ArrayBuffer.isView(romData) || romData.BYTES_PER_ELEMENT !== 1) {')
-              ],
-              Path('arcade/namco/chips/Namco51XX.js'): [
-                  ('if (!(romData instanceof Uint8Array)) {',
-                   'if (!ArrayBuffer.isView(romData) || romData.BYTES_PER_ELEMENT !== 1) {')
-              ],
-              Path('arcade/namco/chips/MB88xx.js'): [
-                  ('romData instanceof Uint8Array ? romData : new Uint8Array(romData)',
-                   'ArrayBuffer.isView(romData) && romData.BYTES_PER_ELEMENT === 1 ? romData : new Uint8Array(romData)')
-              ],
-          }
+          prodos = Path('computer/appleii/prodos_block.js')
+          text = prodos.read_text()
+          pattern = r"\n\s*// IIgsMemory\.reset\(\) restores the SLOTROM register.*?\n\s*if\(typeof this\.memory\?\.slotRom === 'number'\) \{.*?\n\s*\}\n"
+          text, count = re.subn(pattern, '\n', text, count=1, flags=re.S)
+          if count != 1:
+              raise SystemExit(f'expected one legacy SLOTROM reset block, removed {count}')
+          prodos.write_text(text)
 
-          for path, pairs in replacements.items():
-              text = path.read_text()
-              for old, new in pairs:
-                  if old not in text:
-                      raise SystemExit(f'expected pattern not found in {path}: {old}')
-                  text = text.replace(old, new)
-              path.write_text(text)
+          index = Path('computer/appleii/index.html')
+          html = index.read_text()
+          old_key = './controls-menu.js?v=20261017-speed-memexp1'
+          new_key = './controls-menu.js?v=20261017-slotbus2'
+          if old_key not in html:
+              raise SystemExit('expected controls-menu cache key not found')
+          index.write_text(html.replace(old_key, new_key))
           PY
-          node --check arcade/namco/audio/NamcoWSG.js
-          node --check arcade/namco/audio/Namco52XX.js
-          node --check arcade/namco/audio/Namco54XX.js
-          node --check arcade/namco/chips/Namco51XX.js
-          node --check arcade/namco/chips/MB88xx.js
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add arcade/namco/audio/NamcoWSG.js arcade/namco/audio/Namco52XX.js arcade/namco/audio/Namco54XX.js arcade/namco/chips/Namco51XX.js arcade/namco/chips/MB88xx.js
+      - name: Run slot and ROM03 boot regressions
+        run: node --test computer/appleii/memory_expansion.test.mjs computer/appleii/prodos_rom03_boot.test.mjs computer/appleii/rom_resources.test.mjs
+      - name: Commit cleanup
+        run: |
+          git config user.name 'subnetpie'
+          git config user.email 'subnetpie@hotmail.com'
+          git add computer/appleii/prodos_block.js computer/appleii/index.html
           git diff --cached --check
-          git commit -m '[skip ci] Make Namco typed-array guards realm-safe'
+          git commit -m 'Centralize IIgs slot ROM ownership'
           git push
