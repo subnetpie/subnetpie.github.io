@@ -26,7 +26,7 @@ export class NamcoWSG {
   static INTERNAL_RATE = 192000;
 
   constructor({ variant = NamcoWSG.VARIANT_3_VOICE, clock, waveformProm } = {}) {
-    if (!(waveformProm instanceof Uint8Array) || waveformProm.length < 0x100)
+    if (!ArrayBuffer.isView(waveformProm) || waveformProm.BYTES_PER_ELEMENT !== 1 || waveformProm.length < 0x100)
       throw new TypeError("NamcoWSG requires a 0x100-byte waveform PROM");
 
     this.variant = variant;

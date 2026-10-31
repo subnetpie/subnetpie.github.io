@@ -19,7 +19,7 @@ class Namco52XX {
      * MAME obtains its sample bytes through m_romread(m_address).
      */
     this.voiceRom =
-    voiceRom instanceof Uint8Array ? voiceRom : new Uint8Array(0);
+    ArrayBuffer.isView(voiceRom) && voiceRom.BYTES_PER_ELEMENT === 1 ? voiceRom : new Uint8Array(0);
 
     /*
      * MAME persistent device wrapper state:

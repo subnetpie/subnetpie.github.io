@@ -44,7 +44,7 @@ class MB88xx {
   loadROM(romData) {
     this.rom.fill(0);
     const src =
-    romData instanceof Uint8Array ? romData : new Uint8Array(romData);
+    ArrayBuffer.isView(romData) && romData.BYTES_PER_ELEMENT === 1 ? romData : new Uint8Array(romData);
     this.rom.set(src.subarray(0, Math.min(src.length, this.rom.length)));
     this.romLoaded = true;
   }

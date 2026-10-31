@@ -218,7 +218,7 @@ class Namco51XX {
    * ===================================================================== */
 
   loadROM(romData) {
-    if (!(romData instanceof Uint8Array)) {
+    if (!ArrayBuffer.isView(romData) || romData.BYTES_PER_ELEMENT !== 1) {
       throw new TypeError("Namco51XX.loadROM() requires a Uint8Array");
     }
 
