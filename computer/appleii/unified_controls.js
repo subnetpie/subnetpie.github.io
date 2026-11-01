@@ -11,6 +11,22 @@
   const get=(k,fallback)=>{try{const v=localStorage.getItem(k);return v==null?fallback:v;}catch(_){return fallback;}};
   const set=(k,v)=>{try{localStorage.setItem(k,v);}catch(_){}};
   const click=id=>{const el=document.getElementById(id);if(el){el.click();return true;}return false;};
+  const resetMachine=()=>{
+    const el=document.getElementById('buttonReset');
+    if(!el)return false;
+    // The unified circular-arrow is a reboot control. On IIgs that must be a
+    // cold reset so ROM 03 restarts its slot scan and sees newly mounted Slot 7
+    // SmartPort media. Preserve the legacy warm-reset behavior on IIe.
+    if(window.__appleIIgsBoard?.iigsEnabled){
+      el.dispatchEvent(new MouseEvent('click',{
+        bubbles:true,
+        cancelable:true,
+        shiftKey:true,
+        view:window
+      }));
+    }else el.click();
+    return true;
+  };
   const pointerDown=id=>{
     const el=document.getElementById(id);
     if(!el)return false;
@@ -126,10 +142,13 @@
 
     drives.addEventListener('click',()=>openPanel('drives'));
     machine.addEventListener('click',()=>openPanel('machine'));
-    reset.addEventListener('click',()=>click('buttonReset'));
+    reset.addEventListener('click',resetMachine);
     panel.querySelector('#unifiedPanelClose').addEventListener('click',closePanel);
 
-    panel.querySelectorAll('[data-proxy]').forEach(b=>b.addEventListener('click',()=>click(b.dataset.proxy)));
+    panel.querySelectorAll('[data-proxy]').forEach(b=>b.addEventListener('click',()=>{
+      if(b.dataset.proxy==='buttonReset')resetMachine();
+      else click(b.dataset.proxy);
+    }));
     panel.querySelector('#unifiedConfiguration').addEventListener('click',()=>{
       const candidate=document.querySelector('#buttonIIgsConfiguration,#iigsConfigButton,[data-iigs-config],button[aria-label*="configuration" i],button[title*="configuration" i]');
       if(candidate)candidate.click();
@@ -235,24 +254,13 @@
     const end=e=>{
       if(!drag||e.pointerId!==drag.id)return;
       launcher.classList.remove('dragging');
-      if(!moved){
-        launcher.classList.toggle('collapsed');
-        const expanded=!launcher.classList.contains('collapsed');
-        gear.setAttribute('aria-expanded',expanded?'true':'false');
-        if(!expanded)closePanel();
-      }else set(STORAGE.island,JSON.stringify({x:launcher.offsetLeft,y:launcher.offsetTop}));
+      if(!moved){launcher.classList.toggle('collapsed');gear.setAttribute('aria-expanded',launcher.classList.contains('collapsed')?'false':'true');}
+      else set(STORAGE.island,JSON.stringify({x:launcher.offsetLeft,y:launcher.offsetTop}));
       drag=null;
     };
-    gear.addEventListener('pointerup',end);gear.addEventListener('pointercancel',end);
-
-    addEventListener('resize',()=>{
-      if(!launcher.style.left)return;
-      const r=launcher.getBoundingClientRect();
-      launcher.style.left=Math.max(4,Math.min(innerWidth-r.width-4,r.left))+'px';
-      launcher.style.top=Math.max(4,Math.min(innerHeight-r.height-4,r.top))+'px';
-    });
+    gear.addEventListener('pointerup',end);
+    gear.addEventListener('pointercancel',end);
   }
 
-  if(document.readyState==='complete')install();
-  else addEventListener('load',install,{once:true});
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});else install();
 })();
