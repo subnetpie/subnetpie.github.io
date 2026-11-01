@@ -99,7 +99,19 @@
       const id=r.dataset.storageId;
       if(event.target.hasAttribute('data-storage-input')){
         const file=event.target.files?.[0];if(!file)return;
-        try{await svc.mountFile(id,file);}catch(err){alert(err?.message||String(err));}
+        const ep=svc.endpoint(id),persistenceId=ep?.persistenceId;
+        const wasKeep=!!persistence()?.settings?.().keep?.[persistenceId];
+        try{
+          // A mounted IIgs disk is part of the machine configuration. Persist
+          // it by default so reloading the emulator restores the same media;
+          // iigs_persistent_boot then performs a cold reset and ROM 03 boots
+          // the restored device. Explicit Eject still clears the saved mount.
+          if(persistenceId&&!wasKeep)await svc.setKeep(id,true);
+          await svc.mountFile(id,file);
+        }catch(err){
+          if(persistenceId&&!wasKeep)await svc.setKeep(id,false);
+          alert(err?.message||String(err));
+        }
         event.target.value='';sync();return;
       }
       if(event.target.hasAttribute('data-storage-protect')){svc.setWriteProtected(id,event.target.checked);sync();return;}
