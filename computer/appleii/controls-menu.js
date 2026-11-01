@@ -24,9 +24,9 @@ const assets={
   keyboard:'./iigs_keyboard_layout.js?v=20261005-iigs-kbd1',
   caps:'./caps_lock_indicator.js?v=20261007-caps-led1',
   pause:'./pause_overlay.js?v=20261017-pause1',
-  unifiedCss:'./unified_controls.css?v=20261031-prereset1',
+  unifiedCss:'./unified_controls.css?v=20261019-reset2',
   driveCss:'./unified_drive_manager.css?v=20261007-drive-manager6',
-  unified:'./unified_controls.js?v=20261031-prereset1',
+  unified:'./unified_controls.js?v=20261031-coldreboot1',
   drive:'./unified_drive_manager.js?v=20261031-persistboot1'
 };
 

@@ -11,6 +11,22 @@
   const get=(k,fallback)=>{try{const v=localStorage.getItem(k);return v==null?fallback:v;}catch(_){return fallback;}};
   const set=(k,v)=>{try{localStorage.setItem(k,v);}catch(_){}};
   const click=id=>{const el=document.getElementById(id);if(el){el.click();return true;}return false;};
+  const resetMachine=()=>{
+    const el=document.getElementById('buttonReset');
+    if(!el)return false;
+    // The unified circular-arrow is a reboot control. On IIgs that must be a
+    // cold reset so ROM 03 restarts its slot scan and sees newly mounted Slot 7
+    // SmartPort media. Preserve the legacy warm-reset behavior on IIe.
+    if(window.__appleIIgsBoard?.iigsEnabled){
+      el.dispatchEvent(new MouseEvent('click',{
+        bubbles:true,
+        cancelable:true,
+        shiftKey:true,
+        view:window
+      }));
+    }else el.click();
+    return true;
+  };
   const pointerDown=id=>{
     const el=document.getElementById(id);
     if(!el)return false;
@@ -39,14 +55,17 @@
     if(workstation)document.body.classList.add('unified-workstation');
 
     const launcher=make('div',{id:'unifiedLauncher','aria-label':'Apple II controls',class:'collapsed'});
-    const gear=make('button',{type:'button',class:'unified-grip','aria-label':'Open or close controls',title:'Open or close controls','aria-expanded':'false'},'⚙');
+    const gear=make('button',{type:'button',class:'unified-grip','aria-label':'Open or close controls',title:'Open or close controls','aria-expanded':'false'});
+    gear.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10.01 5.08 10.48 3.13h3.04l.47 1.95 1.5.62 1.71-1.05 2.15 2.15-1.05 1.71.62 1.5 1.95.47v3.04l-1.95.47-.62 1.5 1.05 1.71-2.15 2.15-1.71-1.05-1.5.62-.47 1.95h-3.04l-.47-1.95-1.5-.62-1.71 1.05-2.15-2.15 1.05-1.71-.62-1.5-1.95-.47v-3.04l1.95-.47.62-1.5-1.05-1.71 2.15-2.15 1.71 1.05z"/><circle cx="12" cy="12" r="3.35"/></svg>';
     const drives=make('button',{type:'button',class:'unified-island-action','aria-label':'Drives',title:'Drives','aria-expanded':'false'});
     drives.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h12l2 2v16H5z"/><path d="M8 3v6h8V3M8 15h8v6H8z"/></svg>';
     const key=make('button',{type:'button',class:'unified-island-action','aria-label':'Virtual keyboard','aria-pressed':'false'},'⌨');
     const joy=make('button',{type:'button',class:'unified-island-action','aria-label':'Virtual joystick','aria-pressed':'false'},'◉');
     const machine=make('button',{type:'button',class:'unified-island-action','aria-label':'Machine controls',title:'Machine controls','aria-expanded':'false'});
-    machine.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2"/><path d="M9 9h6v6H9zM9 2v4m6-4v4M9 18v4m6-4v4M2 9h4m-4 6h4m12-6h4m-4 6h4"/></svg>';
-    launcher.append(gear,drives,key,joy,machine);
+    machine.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3.5h10v17H7zM3 6.5h4m-4 3.5h4m-4 4h4m-4 3.5h4m10-11h4m-4 3.5h4m-4 4h4m-4 3.5h4"/><circle cx="14.5" cy="6.5" r="1.2"/></svg>';
+    const reset=make('button',{type:'button',class:'unified-island-action','aria-label':'Reset machine',title:'Reset machine'});
+    reset.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8V3m0 0h5M4.8 7.2A8 8 0 1 1 4.4 16"/></svg>';
+    launcher.append(gear,drives,key,joy,machine,reset);
     document.body.append(launcher);
 
     const panel=make('section',{id:'unifiedMachinePanel','aria-label':'Machine controls'});
@@ -123,9 +142,13 @@
 
     drives.addEventListener('click',()=>openPanel('drives'));
     machine.addEventListener('click',()=>openPanel('machine'));
+    reset.addEventListener('click',resetMachine);
     panel.querySelector('#unifiedPanelClose').addEventListener('click',closePanel);
 
-    panel.querySelectorAll('[data-proxy]').forEach(b=>b.addEventListener('click',()=>click(b.dataset.proxy)));
+    panel.querySelectorAll('[data-proxy]').forEach(b=>b.addEventListener('click',()=>{
+      if(b.dataset.proxy==='buttonReset')resetMachine();
+      else click(b.dataset.proxy);
+    }));
     panel.querySelector('#unifiedConfiguration').addEventListener('click',()=>{
       const candidate=document.querySelector('#buttonIIgsConfiguration,#iigsConfigButton,[data-iigs-config],button[aria-label*="configuration" i],button[title*="configuration" i]');
       if(candidate)candidate.click();
@@ -231,24 +254,13 @@
     const end=e=>{
       if(!drag||e.pointerId!==drag.id)return;
       launcher.classList.remove('dragging');
-      if(!moved){
-        launcher.classList.toggle('collapsed');
-        const expanded=!launcher.classList.contains('collapsed');
-        gear.setAttribute('aria-expanded',expanded?'true':'false');
-        if(!expanded)closePanel();
-      }else set(STORAGE.island,JSON.stringify({x:launcher.offsetLeft,y:launcher.offsetTop}));
+      if(!moved){launcher.classList.toggle('collapsed');gear.setAttribute('aria-expanded',launcher.classList.contains('collapsed')?'false':'true');}
+      else set(STORAGE.island,JSON.stringify({x:launcher.offsetLeft,y:launcher.offsetTop}));
       drag=null;
     };
-    gear.addEventListener('pointerup',end);gear.addEventListener('pointercancel',end);
-
-    addEventListener('resize',()=>{
-      if(!launcher.style.left)return;
-      const r=launcher.getBoundingClientRect();
-      launcher.style.left=Math.max(4,Math.min(innerWidth-r.width-4,r.left))+'px';
-      launcher.style.top=Math.max(4,Math.min(innerHeight-r.height-4,r.top))+'px';
-    });
+    gear.addEventListener('pointerup',end);
+    gear.addEventListener('pointercancel',end);
   }
 
-  if(document.readyState==='complete')install();
-  else addEventListener('load',install,{once:true});
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});else install();
 })();
