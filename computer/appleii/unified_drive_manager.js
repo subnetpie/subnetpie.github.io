@@ -4,6 +4,7 @@
   const qs=(s,r=document)=>r.querySelector(s);
   const storage=()=>window.__appleIIgsStorage;
   const persistence=()=>window.__appleIIgsPersistence;
+  const insertBoot=import('./iigs_insert_boot.js?v=20261101-insertboot1');
 
   function row(ep){
     return `<article class="unified-drive-row" data-storage-id="${ep.id}">
@@ -102,12 +103,20 @@
         const ep=svc.endpoint(id),persistenceId=ep?.persistenceId;
         const wasKeep=!!persistence()?.settings?.().keep?.[persistenceId];
         try{
+          const policy=await insertBoot;
+          const machine=window.__appleIIgsBoard;
+          const machineWasEmpty=!policy.hasMountedMedia(machine);
           // A mounted IIgs disk is part of the machine configuration. Persist
           // it by default so reloading the emulator restores the same media;
           // iigs_persistent_boot then performs a cold reset and ROM 03 boots
           // the restored device. Explicit Eject still clears the saved mount.
           if(persistenceId&&!wasKeep)await svc.setKeep(id,true);
           await svc.mountFile(id,file);
+          // A hard disk inserted into Slot 7 Drive 1 on a completely empty
+          // IIgs is a startup disk, not a hot-swap. Cold-start immediately so
+          // ROM 03 sees the newly present SmartPort card and boots block 0.
+          if(ep?.controller==='smartport')
+            policy.autoBootFirstSmartPortInsert(machine,ep.index,machineWasEmpty,target=>svc.setBoot(target));
         }catch(err){
           if(persistenceId&&!wasKeep)await svc.setKeep(id,false);
           alert(err?.message||String(err));
