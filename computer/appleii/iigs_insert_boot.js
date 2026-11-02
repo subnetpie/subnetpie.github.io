@@ -1,8 +1,9 @@
-// IIgs SmartPort insertion boot policy.
-// A first bootable hard disk inserted into an otherwise empty machine should
-// behave like powering on with that disk attached: select it and cold-reset so
-// ROM 03 performs a fresh slot scan. Hot insertion into a machine that already
-// has media mounted must not unexpectedly reboot it.
+// IIgs physical-storage boot policy.
+//
+// Media insertion/ejection is a hot-swap operation and must not reset the
+// machine. Booting is explicit: select the requested physical device, perform
+// a cold reset so ROM 03 repeats its startup scan, then reapply the selected
+// drive because controller reset can restore its default unit.
 
 export function hasMountedMedia(board) {
   if (!board) return false;
@@ -12,24 +13,37 @@ export function hasMountedMedia(board) {
   return false;
 }
 
-export function coldBootSmartPort(board, drive = 0, selectBoot = null) {
-  const disk = board?.prodosBlock?.drives?.[drive];
-  if (!board?.iigsEnabled || !disk?.image) return false;
+export function bootTargetMounted(board, target) {
+  if (!board?.iigsEnabled || typeof target !== 'string') return false;
+  const match = /^s([567])d([1-4])$/.exec(target);
+  if (!match) return false;
 
-  const target = `s7d${drive + 1}`;
+  const slot = Number(match[1]);
+  const drive = Number(match[2]) - 1;
+  if (slot === 5)
+    return drive < 2 && !!board.memory?.floppy35Drives?.[drive]?.media;
+  if (slot === 6)
+    return drive < 2 && !!board.floppy525?._disks?.[drive]?.medium;
+  return !!board.prodosBlock?.drives?.[drive]?.image;
+}
+
+export function coldBootStorage(board, target, selectBoot = null) {
+  if (!bootTargetMounted(board, target)) return false;
+
   if (typeof selectBoot === 'function') selectBoot(target);
 
-  // A cold reset is required: ROM 03 only repeats its slot scan on a cold
-  // start. Media survives Motherboard.reset(true).
+  // ROM 03 only performs a fresh startup-device scan on a cold start. Mounted
+  // media survives Motherboard.reset(true), exactly like disks left in drives.
   board.reset(true);
 
-  // Some reset wrappers restore configuration defaults after the device reset;
-  // reassert the selected physical boot unit before execution resumes.
+  // Drive-select state is controller state and can be reset to drive 1. Apply
+  // the requested physical target again before the next emulation slice.
   if (typeof selectBoot === 'function') selectBoot(target);
   return true;
 }
 
-export function autoBootFirstSmartPortInsert(board, drive, machineWasEmpty, selectBoot = null) {
-  if (!machineWasEmpty || drive !== 0) return false;
-  return coldBootSmartPort(board, drive, selectBoot);
+// Compatibility helper for callers that still describe a Slot-7 boot by drive.
+export function coldBootSmartPort(board, drive = 0, selectBoot = null) {
+  if (!Number.isInteger(drive) || drive < 0 || drive > 3) return false;
+  return coldBootStorage(board, `s7d${drive + 1}`, selectBoot);
 }
