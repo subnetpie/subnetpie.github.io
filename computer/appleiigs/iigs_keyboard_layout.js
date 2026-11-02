@@ -38,7 +38,7 @@
   if(apple) {
     apple.innerHTML='<span class="iigs-apple"></span><span class="iigs-command">⌘</span>';
     apple.className='KBbutton iigs-command-key modifier-key';
-    apple.setAttribute('aria-label','Apple Command');
+    apple.setAttribute('aria-label','Open Apple / Command');
   }
   if(grave) grave.innerHTML='<span>~</span><span>`</span>';
   if(backslash) backslash.innerHTML='<span>|</span><span>\\</span>';
@@ -50,7 +50,7 @@
   // Lower-case legends and tall/wide modifier labels follow the actual IIgs cap style.
   const labels={
     buttonEsc:'esc',buttonTab:'tab',buttonCtrl:'control',buttonCR:'return',
-    buttonShift:'shift',buttonShiftRight:'shift',buttonDel:'delete'
+    buttonShift:'shift',buttonShiftRight:'shift',buttonDel:'delete',buttonKeyboardReset:'reset'
   };
   for(const [id,label] of Object.entries(labels)) {
     const key=get(id); if(key) key.textContent=label;

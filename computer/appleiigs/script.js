@@ -10,7 +10,10 @@ const machineType = machineParam === "iie" ? "iie" : "iigs";
 const khz = machineType === "iigs" ? 2800 : 1020.5;
 let motherboard;
 let screenMouse;
-import {attachHostKeyboard} from "./host_keyboard.js?v=20260930-gear";
+let keyboardInput;
+import {createKeyboardInput,resetWithKeyboard} from "./keyboard_input.js?v=20261102-keyboard-reset1";
+import {attachTouchKeyboard} from "./touch_keyboard.js?v=20261102-keyboard-reset1";
+import {attachHostKeyboard} from "./host_keyboard.js?v=20261102-keyboard-reset1";
 let emulatorSurface = null;
 let screenCanvas = null;
 
@@ -366,7 +369,9 @@ function init() {
     const status=document.getElementById('writeStatus'+drive);
     if(status&&disk.persistenceKey)status.textContent='Changes are being saved automatically in this browser.';
   });
-  attachHostKeyboard(motherboard.keyboard, motherboard.iigsEnabled ? motherboard.memory.adb : null, joyValues);
+  keyboardInput=createKeyboardInput(motherboard.keyboard,motherboard.iigsEnabled?motherboard.memory.adb:null,joyValues);
+  attachHostKeyboard(motherboard.keyboard,motherboard.iigsEnabled?motherboard.memory.adb:null,joyValues,document,window,keyboardInput);
+  attachTouchKeyboard(keyboardInput,buttonReset);
   if(motherboard.iigsEnabled) {
     screenMouse=attachTouchMouse(screenCanvas,motherboard.memory.adb);
     const mouseHint = document.getElementById('mouseHint');
@@ -497,136 +502,7 @@ document.addEventListener("visibilitychange",()=>{
 });
 window.addEventListener("pagehide",()=>diskPersistenceWriter.flush());
 
-// Keyboard
-//
-// The full on-screen keyboard uses one-shot SHIFT/CTRL latches. This works
-// better on phones than requiring two fingers to remain down simultaneously:
-// tap SHIFT or CTRL, then tap the target key. The modifier clears after use.
-(function() {
-  var shiftActive = false;
-  var ctrlActive = false;
 
-  function setModifierVisual() {
-    document.querySelectorAll("#buttonShift,#buttonShiftRight")
-      .forEach(el => el.classList.toggle("active", shiftActive));
-    const ctrl = document.getElementById("buttonCtrl");
-    if(ctrl) ctrl.classList.toggle("active", ctrlActive);
-  }
-
-  function toggleShift(e) {
-    e.preventDefault();
-    shiftActive = !shiftActive;
-    if(shiftActive) ctrlActive = false;
-    setModifierVisual();
-  }
-
-  function toggleCtrl(e) {
-    e.preventDefault();
-    ctrlActive = !ctrlActive;
-    if(ctrlActive) shiftActive = false;
-    setModifierVisual();
-  }
-
-  document.querySelectorAll("#buttonShift,#buttonShiftRight")
-    .forEach(el => el.addEventListener("pointerdown", toggleShift));
-  const ctrl = document.getElementById("buttonCtrl");
-  if(ctrl) ctrl.addEventListener("pointerdown", toggleCtrl);
-
-  // CAPS LOCK on an Apple II does not need a software case conversion here:
-  // alphabet keys already generate the machine's uppercase ASCII. Keep the
-  // physical-style key and lamp state for touch feedback.
-  const caps = document.getElementById("buttonCaps");
-  const indicator = document.getElementById("buttonIndicator");
-  if(caps) caps.addEventListener("pointerdown", e => {
-    e.preventDefault();
-    caps.classList.toggle("active");
-    if(indicator) indicator.classList.toggle("caps-on", caps.classList.contains("active"));
-  });
-
-  var keys = new Map();
-  keys.set('#button0', 0x30);
-  keys.set('#button1', 0x31);
-  keys.set('#button2', 0x32);
-  keys.set('#button3', 0x33);
-  keys.set('#button4', 0x34);
-  keys.set('#button5', 0x35);
-  keys.set('#button6', 0x36);
-  keys.set('#button7', 0x37);
-  keys.set('#button8', 0x38);
-  keys.set('#button9', 0x39);
-  keys.set('#buttonA', 0x41);
-  keys.set('#buttonB', 0x42);
-  keys.set('#buttonC', 0x43);
-  keys.set('#buttonD', 0x44);
-  keys.set('#buttonE', 0x45);
-  keys.set('#buttonF', 0x46);
-  keys.set('#buttonG', 0x47);
-  keys.set('#buttonH', 0x48);
-  keys.set('#buttonI', 0x49);
-  keys.set('#buttonJ', 0x4a);
-  keys.set('#buttonK', 0x4b);
-  keys.set('#buttonL', 0x4c);
-  keys.set('#buttonM', 0x4d);
-  keys.set('#buttonN', 0x4e);
-  keys.set('#buttonO', 0x4f);
-  keys.set('#buttonP', 0x50);
-  keys.set('#buttonQ', 0x51);
-  keys.set('#buttonR', 0x52);
-  keys.set('#buttonS', 0x53);
-  keys.set('#buttonT', 0x54);
-  keys.set('#buttonU', 0x55);
-  keys.set('#buttonV', 0x56);
-  keys.set('#buttonW', 0x57);
-  keys.set('#buttonX', 0x58);
-  keys.set('#buttonY', 0x59);
-  keys.set('#buttonZ', 0x5a);
-
-  keys.set('#buttonLarr', 0x08);
-  keys.set('#buttonTab', 0x09);
-  keys.set('#buttonUarr', 0x0b);
-  keys.set('#buttonDarr', 0x0a);
-  keys.set('#buttonCR', 0x0d);
-  keys.set('#buttonRarr', 0x15);
-  keys.set('#buttonEsc', 0x1b);
-  keys.set('#buttonSpace', 0xa0);
-  keys.set('#buttonDel', 0x7f);
-
-  // Browser-style key codes are used for keys whose shifted glyph differs.
-  keys.set('#buttonMinus', 0xad);
-  keys.set('#buttonEquals', 0x3d);
-  keys.set('#buttonSemi', 0x3b);
-  keys.set('#buttonApos', 0xde);
-  keys.set('#buttonComma', 0xbc);
-  keys.set('#buttonPeriod', 0xbe);
-  keys.set('#buttonSlash', 0xbf);
-  keys.set('#buttonGrave', 0xc0);
-  keys.set('#buttonLbrack', 0xdb);
-  keys.set('#buttonBackslash', 0xdc);
-  keys.set('#buttonRbrack', 0xdd);
-
-  for (const [selector, val] of keys.entries()) {
-    document.querySelectorAll(selector).forEach((key) => {
-      key.addEventListener("pointerdown", (e) => {
-        e.preventDefault();
-        key.setPointerCapture?.(e.pointerId);
-        key.classList.add("pressed");
-        motherboard.keyboard.key_down(val, shiftActive, ctrlActive, false);
-      });
-      const release = (e) => {
-        e.preventDefault();
-        key.classList.remove("pressed");
-        motherboard.keyboard.key_up();
-        if(shiftActive || ctrlActive) {
-          shiftActive = false;
-          ctrlActive = false;
-          setModifierVisual();
-        }
-      };
-      key.addEventListener("pointerup", release);
-      key.addEventListener("pointercancel", release);
-    });
-  }
-})();
 
 function setJoystickEnabled(enabled) {
   joystickEnabled = !!enabled;
@@ -772,10 +648,8 @@ document.getElementById("buttonGrid").addEventListener("pointerdown", ()=>{setGr
 init();
 
 function buttonReset(event) {
-  const was_stopped = !interval;
   stop();
-  const cold = event && (event.shiftKey || event.altKey || event.metaKey);
-  motherboard.reset(cold);
+  resetWithKeyboard(motherboard,keyboardInput,event);
   run();
 }
 

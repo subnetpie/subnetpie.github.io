@@ -1,3 +1,5 @@
+import {createKeyboardInput,shiftedKey} from "./keyboard_input.js?v=20261102-keyboard-reset1";
+
 // Browser KeyboardEvent.key is already translated by the iPad keyboard layout.
 // Keep ASCII separate from the touch keyboard's legacy numeric keycodes.
 const special = {Enter:13, Escape:27, Tab:9, Backspace:127, Delete:127,
@@ -21,29 +23,14 @@ export function appleKey(event) {
   return code>=32 && code<=126 ? code : null;
 }
 
-export function attachHostKeyboard(keyboard, adb, joystick, doc=document, host=window) {
-  // Keep each physical key separately so the emulated one-key data register can
-  // follow the newest still-held key. This gives the IIgs proper rollover for
-  // combinations such as held direction keys while modifiers remain independent.
-  const held=new Map();
-  let sequence=0;
-
+export function attachHostKeyboard(keyboard, adb, joystick, doc=document, host=window, input=null) {
+  input??=createKeyboardInput(keyboard,adb,joystick);
   function modifiers(e) {
-    joystick.keyboardCommand=!!e.metaKey;
-    joystick.keyboardOption=!!e.altKey;
-    adb?.setKeyModifiers((e.shiftKey?1:0)|(e.ctrlKey?2:0)|
-      (e.getModifierState?.('CapsLock')?4:0)|(e.repeat?8:0)|
-      (e.location===3?16:0)|(e.altKey?64:0)|(e.metaKey?128:0));
+    input.setHostModifiers({shift:!!e.shiftKey,control:!!e.ctrlKey,
+      option:!!e.altKey,command:!!e.metaKey,capsLock:!!e.getModifierState?.('CapsLock'),
+      repeat:!!e.repeat,keypad:e.location===3});
   }
-  function activeHeld() {
-    let active=null;
-    for(const entry of held.values())
-      if(!active || entry.sequence>active.sequence) active=entry;
-    return active;
-  }
-  function release() {
-    held.clear(); keyboard.key_up(); modifiers({});
-  }
+  const release=()=>input.releaseHost();
   function excluded(e) {
     return e.target?.isContentEditable ||
       e.target?.closest?.('input,textarea,select,dialog,#controls,#buttonSettings,[contenteditable="true"]');
@@ -51,27 +38,18 @@ export function attachHostKeyboard(keyboard, adb, joystick, doc=document, host=w
   function down(e) {
     if(excluded(e)) { release(); return; }
     modifiers(e);
-    const value=appleKey(e);
+    const m=input.modifiers();
+    const key=m.shift&&!e.shiftKey?shiftedKey(e.key):e.key;
+    const value=appleKey({key,code:e.code,isComposing:e.isComposing,
+      shiftKey:m.shift,ctrlKey:m.control,altKey:m.option});
     if(value===null) return;
     e.preventDefault();
-    const id=e.code || e.key;
-    const existing=held.get(id);
-    // Browser auto-repeat should retrigger the same key without changing the
-    // ordering of other held keys. A real fresh press becomes the newest key.
-    held.set(id,{value,sequence:existing?.sequence ?? ++sequence});
-    keyboard.pressAscii(value);
+    input.press('host:'+(e.code||e.key),value);
   }
   function up(e) {
-    const id=e.code || e.key;
-    const wasHeld=held.delete(id);
     if(excluded(e)) { release(); return; }
     modifiers(e);
-    if(wasHeld) {
-      e.preventDefault();
-      const active=activeHeld();
-      if(active) keyboard.pressAscii(active.value);
-      else keyboard.key_up();
-    }
+    input.release('host:'+(e.code||e.key));
   }
   const visibility=()=>{if(doc.hidden)release();};
   doc.addEventListener('keydown',down);
@@ -80,7 +58,7 @@ export function attachHostKeyboard(keyboard, adb, joystick, doc=document, host=w
   doc.addEventListener('visibilitychange',visibility);
   return ()=>{
     release();
-    doc.removeEventListener('keydown',down); doc.removeEventListener('keyup',up);
+    doc.removeEventListener('keydown',down);doc.removeEventListener('keyup',up);
     host.removeEventListener('blur',release);
     doc.removeEventListener('visibilitychange',visibility);
   };
