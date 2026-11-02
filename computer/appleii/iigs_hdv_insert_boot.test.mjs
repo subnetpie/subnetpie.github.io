@@ -34,13 +34,10 @@ test('clean IIgs boots an HDV from insertion alone with every other drive empty'
   const wasEmpty=!hasMountedMedia(m);
   assert.equal(m.prodosBlock.load_image('inserted.hdv',image,{},0),true);
 
-  let selected='';
-  const bootedByInsert=autoBootFirstSmartPortInsert(m,0,wasEmpty,target=>{
-    selected=target;
-    m.prodosBlock._bootSmartPortDrive=Number(target.at(-1))-1;
-  });
+  // Do not preselect a boot unit in the harness. Slot 7 Drive 1 is the default
+  // ROM03 target, so this must work from the insertion and cold reset alone.
+  const bootedByInsert=autoBootFirstSmartPortInsert(m,0,wasEmpty);
   assert.equal(bootedByInsert,true,'first Slot 7 Drive 1 insert must cold-boot automatically');
-  assert.equal(selected,'s7d1');
 
   let executed=false;
   for(let i=0;i<30&&!executed;i++){
