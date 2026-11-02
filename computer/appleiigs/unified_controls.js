@@ -47,7 +47,7 @@
     const joy=make('button',{type:'button',class:'unified-island-action','aria-label':'Virtual joystick','aria-pressed':'false'},'◉');
     const machine=make('button',{type:'button',class:'unified-island-action','aria-label':'Machine controls',title:'Machine controls','aria-expanded':'false'});
     machine.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3.5h10v17H7zM3 6.5h4m-4 3.5h4m-4 4h4m-4 3.5h4m10-11h4m-4 3.5h4m-4 4h4m-4 3.5h4"/><circle cx="14.5" cy="6.5" r="1.2"/></svg>';
-    const reset=make('button',{type:'button',class:'unified-island-action','aria-label':'Reset machine',title:'Reset machine'});
+    const reset=make('button',{type:'button',class:'unified-island-action','aria-label':'Reset machine',title:'Hard reboot (Ctrl + Open Apple + Reset)'});
     reset.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8V3m0 0h5M4.8 7.2A8 8 0 1 1 4.4 16"/></svg>';
     launcher.append(gear,drives,key,joy,machine,reset);
     document.body.append(launcher);
@@ -126,7 +126,11 @@
 
     drives.addEventListener('click',()=>openPanel('drives'));
     machine.addEventListener('click',()=>openPanel('machine'));
-    reset.addEventListener('click',()=>click('buttonReset'));
+    reset.addEventListener('click',()=>{
+      document.getElementById('buttonReset')?.dispatchEvent(new MouseEvent('click',{
+        bubbles:true,cancelable:true,ctrlKey:true,metaKey:true
+      }));
+    });
     panel.querySelector('#unifiedPanelClose').addEventListener('click',closePanel);
 
     panel.querySelectorAll('[data-proxy]').forEach(b=>b.addEventListener('click',()=>click(b.dataset.proxy)));
