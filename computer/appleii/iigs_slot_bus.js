@@ -18,7 +18,9 @@ function installRom03SafeSmartPortBoot(){
     this.ioBase=0xc080|(slot<<4);
     const io=this.ioBase&0xffff,lo=io&255,hi=io>>>8;
     this.rom.fill(0xea);
-    this.rom.set([0x24,0x20,0x24,0x00,0x24,0x03,0x24,0x00],0x00);
+    // Match the corrected ProDOS card signature used by the base device.
+    // ROM03's slot scan expects the final identification byte at Cn07 to be $3C.
+    this.rom.set([0x24,0x20,0x24,0x00,0x24,0x03,0x24,0x3c],0x00);
 
     // Boot block 0 directly through the card hardware window. Clear the Apple
     // II compatibility RAM selectors first so $0800 is bank-0 main memory,
