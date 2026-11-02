@@ -1,8 +1,8 @@
-import {Motherboard} from "./motherboard.js?v=20261102-disk-lifecycle1";
+import {Motherboard} from "./motherboard.js?v=20261102-35boot1";
 import {Mockingboard} from "./mockingboard.js?v=20261005-mame0289-sc01a1";
-import "./iigs_memory_expansion.js?v=20261102-disk-lifecycle1";
+import "./iigs_memory_expansion.js?v=20261102-35boot1";
 
-import {loadIIgsConfiguration} from "./iigs_configuration.js?v=20261102-disk-lifecycle1";
+import {loadIIgsConfiguration} from "./iigs_configuration.js?v=20261102-35boot1";
 
 function loadMode(){
   const value=loadIIgsConfiguration().slots[4];

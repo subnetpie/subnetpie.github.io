@@ -6,20 +6,20 @@ const unifiedMode=params.get('ui')!=='legacy';
 
 const assets={
   configCss:'./iigs_configuration_mobile.css?v=20261007-panel-audit1',
-  config:'./iigs_configuration.js?v=20261102-disk-lifecycle1',
+  config:'./iigs_configuration.js?v=20261102-35boot1',
   configCompat:'./iigs_configuration_compat.js?v=20261007-config-compat1',
-  slot4:'./iigs_slot4_devices.js?v=20261102-disk-lifecycle1',
-  memoryExpansion:'./iigs_memory_expansion.js?v=20261102-disk-lifecycle1',
-  slotBus:'./iigs_slot_bus.js?v=20261102-disk-lifecycle1',
-  extraDrives:'./iigs_extra_drives.js?v=20261102-disk-lifecycle1',
-  persistent:'./iigs_persistent_boot.js?v=20261102-disk-lifecycle1',
+  slot4:'./iigs_slot4_devices.js?v=20261102-35boot1',
+  memoryExpansion:'./iigs_memory_expansion.js?v=20261102-35boot1',
+  slotBus:'./iigs_slot_bus.js?v=20261102-35boot1',
+  extraDrives:'./iigs_extra_drives.js?v=20261102-35boot1',
+  persistent:'./iigs_persistent_boot.js?v=20261102-35boot1',
   persistentUi:'./iigs_persistent_boot_ui.js?v=20261007-panel-audit1',
-  storage:'./iigs_storage_registry.js?v=20261102-disk-lifecycle1',
+  storage:'./iigs_storage_registry.js?v=20261102-35boot1',
   storageConfig:'./iigs_storage_config_ui.js?v=20261007-slot-order1',
   unifiedBridge:'./unified_configuration_bridge.js?v=20261007-machine2',
   displayToolbar:'./unified_display_toolbar.js?v=20261007-display-toolbar1',
   scanlines:'./display_scanline_overlay.js?v=20261007-shr-scanlines1',
-  speed:'./display_speed_panel.js?v=20261102-disk-lifecycle1',
+  speed:'./display_speed_panel.js?v=20261102-35boot1',
   color:'./display_color_panel.js?v=20261007-direct-monitor1',
   keyboard:'./iigs_keyboard_layout.js?v=20261102-keyboard-reset1',
   caps:'./caps_lock_indicator.js?v=20261007-caps-led1',
@@ -27,7 +27,7 @@ const assets={
   unifiedCss:'./unified_controls.css?v=20261007-unified11',
   driveCss:'./unified_drive_manager.css?v=20261007-drive-manager6',
   unified:'./unified_controls.js?v=20261017-gear-icon2',
-  drive:'./unified_drive_manager.js?v=20261017-eject-clean1'
+  drive:'./unified_drive_manager.js?v=20261102-35boot1'
 };
 
 function addStyle(href){

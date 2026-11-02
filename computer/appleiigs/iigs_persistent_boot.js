@@ -1,6 +1,6 @@
-import {decodeMedia,isZip,readZipEntries} from './media.js?v=20261102-disk-lifecycle1';
+import {decodeMedia,isZip,readZipEntries} from './media.js?v=20261102-35boot1';
 import {mediaPersistenceKey,restorePersistentBlocks} from './disk_persistence.js?v=20260930-persist1';
-import {ProDOSBlockDevice} from './prodos_block.js?v=20261102-disk-lifecycle1';
+import {ProDOSBlockDevice} from './prodos_block.js?v=20261102-35boot1';
 
 const DB='appleii-iigs-mounted-media';
 const STORE='mounts';
@@ -65,14 +65,14 @@ async function decodeStored(record){
   return media;
 }
 function ensureSP(board){while(board.prodosBlock.drives.length<4)board.prodosBlock.drives.push({image:null,name:'',dirty:false,writeProtected:false,blockCount:0,changed:false,physical:null,persistenceKey:null});}
-async function mountRecord(board,record){
+export async function mountRecord(board,record){
   const media=await decodeStored(record);const d=Number(record.id.slice(3))-1;
   if(record.id.startsWith('s7')){
     if(media.kind!=='block'||media.physical==='35')throw new Error(record.id+' is not SmartPort media');
     ensureSP(board);board.prodosBlock.load_image(media.name,media.data,media,d);
   } else if(record.id.startsWith('s5')){
     if(media.kind!=='block'||media.physical!=='35')throw new Error(record.id+' is not 3.5-inch media');
-    board.prodosBlock.load_image(media.name,media.data,media,d);board.memory.floppy35Drives[d].mount(media);
+    board.memory.floppy35Drives[d].mount(media);
   } else if(record.id.startsWith('s6')){
     if(media.kind!=='floppy')throw new Error(record.id+' is not 5.25-inch media');
     board.floppy525.load_image(d,media.name,media.data,media);
@@ -112,7 +112,10 @@ function applyBoot(board,boot){
   board.prodosBlock._bootSmartPortDrive=null;
   if(/^s7d[1-4]$/.test(boot))board.prodosBlock._bootSmartPortDrive=Number(boot.at(-1))-1;
   if(/^s6d[12]$/.test(boot)&&board.floppy525)board.floppy525._drive=Number(boot.at(-1))-1;
-  if(/^s5d[12]$/.test(boot)&&board.memory)board.memory.iwmControlDrive2=boot.endsWith('2');
+  if(/^s5d[12]$/.test(boot)&&board.memory) {
+    board.memory.iwmControlDrive2=boot.endsWith('2');
+    board.floppy35Block?.selectBoot(boot.endsWith('2')?1:0);
+  }
 }
 
 async function restore(board){

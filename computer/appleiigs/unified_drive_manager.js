@@ -68,12 +68,15 @@
       if(button.hasAttribute('data-storage-download')){try{svc.download(id);}catch(err){alert(err?.message||String(err));}return;}
       if(button.hasAttribute('data-storage-boot')){
         const ep=svc.endpoint(id),target=ep?.persistenceId||'auto';
-        // Apply once before reset so the selected device is stored, then again
+        // Cold-reset through the shared keyboard/reset path. Apply the target
+        // before reset so the selected device is stored, then again
         // in a microtask after the synchronous reset and before the first RAF.
         // This preserves S5D2/S6D2 selections even when reset restores the
         // controller's default drive register.
         svc.setBoot(target);
-        document.getElementById('buttonReset')?.click();
+        document.getElementById('buttonReset')?.dispatchEvent(new MouseEvent('click',{
+          bubbles:true,ctrlKey:true,metaKey:true
+        }));
         queueMicrotask(()=>svc.setBoot(target));
         return;
       }

@@ -1,6 +1,6 @@
-import {Motherboard} from "./motherboard.js?v=20261102-disk-lifecycle1";
-import {ProDOSBlockDevice} from "./prodos_block.js?v=20261102-disk-lifecycle1";
-import {loadIIgsConfiguration} from "./iigs_configuration.js?v=20261102-disk-lifecycle1";
+import {Motherboard} from "./motherboard.js?v=20261102-35boot1";
+import {ProDOSBlockDevice} from "./prodos_block.js?v=20261102-35boot1";
+import {loadIIgsConfiguration} from "./iigs_configuration.js?v=20261102-35boot1";
 
 // MAME 0.289 keeps SLOTROMSEL/SLOTC3ROM and the C800 owner in machine state,
 // not in the individual cards. This module is the single IIgs policy point
@@ -20,7 +20,7 @@ function externalVisible(board,device){
 export function applyIIgsSlotBusPolicy(board){
   if(!board?.iigsEnabled || !board.memory)return;
   const config=loadIIgsConfiguration();
-  let mask=0;
+  let mask=board.floppy35Block?.enabled ? 1<<5 : 0;
   let slot3=false;
 
   for(const slot of [1,2,3,4,6,7]){

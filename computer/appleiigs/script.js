@@ -133,7 +133,7 @@ var joyButtons = document.getElementById("joyButtonsCanvas");
 var joyButtonsCtx = joyButtons.getContext("2d");
 document.oncontextmenu = new Function("return false;");
 
-import {decodeMedia, isZip, readZipEntries, mountMedia, ejectMedia} from './media.js?v=20261102-disk-lifecycle1';
+import {decodeMedia, isZip, readZipEntries, mountMedia, ejectMedia} from './media.js?v=20261102-35boot1';
 
 function chooseArchiveImage(name, entries) {
   const dialog = document.getElementById('archiveDialog');
@@ -151,7 +151,7 @@ function chooseArchiveImage(name, entries) {
   });
 }
 
-import { Motherboard } from "./motherboard.js?v=20261102-disk-lifecycle1";
+import { Motherboard } from "./motherboard.js?v=20261102-35boot1";
 
 class Drive {
   constructor(num, display, led, dialog, restart=true) {
@@ -370,6 +370,7 @@ function init() {
     if(status&&disk.persistenceKey)status.textContent='Changes are being saved automatically in this browser.';
   });
   keyboardInput=createKeyboardInput(motherboard.keyboard,motherboard.iigsEnabled?motherboard.memory.adb:null,joyValues);
+  motherboard.floppy35Block?.setWriteListener((drive,disk,block)=>diskPersistenceWriter.write(drive,disk,block));
   attachHostKeyboard(motherboard.keyboard,motherboard.iigsEnabled?motherboard.memory.adb:null,joyValues,document,window,keyboardInput);
   attachTouchKeyboard(keyboardInput,buttonReset);
   if(motherboard.iigsEnabled) {

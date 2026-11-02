@@ -1,5 +1,5 @@
-import {Motherboard} from "./motherboard.js?v=20261102-disk-lifecycle1";
-import {ProDOSBlockDevice} from "./prodos_block.js?v=20261102-disk-lifecycle1";
+import {Motherboard} from "./motherboard.js?v=20261102-35boot1";
+import {ProDOSBlockDevice} from "./prodos_block.js?v=20261102-35boot1";
 import {Floppy525} from "./FloppyWoz525.js?v=20261102-disk-lifecycle1";
 import {Floppy35} from "./floppy35.js?v=20260928-trackcache1";
 
@@ -172,7 +172,7 @@ function installBlockSlotSupport() {
 
   p.read=function(addr) {
     if(addr>=this.romBase && addr<=this.romBase+0xff) {
-      if(!this.enabled)return 0;
+      if(!this.enabled)return this.bootFallback?.(addr)??0;
       const off=addr&0xff;
       if(off===0xfc)return this.blockCount&0xff;
       if(off===0xfd)return (this.blockCount>>>8)&0xff;

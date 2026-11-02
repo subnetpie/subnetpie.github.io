@@ -1,4 +1,4 @@
-import {Motherboard} from "./motherboard.js?v=20261102-disk-lifecycle1";
+import {Motherboard} from "./motherboard.js?v=20261102-35boot1";
 
 const STORAGE_KEY='subnetpie.apple2.displaySpeed.v1';
 const MODES=[

@@ -1,3 +1,4 @@
+import {Floppy35BlockDevice} from "./floppy35_block.js?v=20261102-35boot1";
 import {Mockingboard} from "./mockingboard.js?v=20261005-mame0289-sc01a1";
 //
 //  main class to tie components together
@@ -23,7 +24,7 @@ import {DoubleHiresDisplay} from "./display_double_hires.js?v=20260928-pageflipr
 import {Keyboard} from "./keyboard.js?v=20260930-keyboard";
 import {Floppy525} from "./FloppyWoz525.js?v=20261102-disk-lifecycle1";
 import {AppleAudio} from "./apple_audio.js?v=20261004-mb1";
-import {ProDOSBlockDevice} from "./prodos_block.js?v=20261102-disk-lifecycle1";
+import {ProDOSBlockDevice} from "./prodos_block.js?v=20261102-35boot1";
 import {IIgsVideo} from "./video_iigs.js?v=20261002-dither-blend";
 import {MachineTrace} from "./machine_trace.js";
 import {loadRom} from "./rom_loader.js?v=20261017-raw-rom2";
@@ -87,6 +88,8 @@ export class Motherboard
         this.floppy525 = new Floppy525(6, this.legacyMemory, floppy_led_cb, () => this.iigsEnabled ? this.cycles * (IIGS_SLOW_HZ / IIGS_FAST_HZ) : this.cycles);
         if(this.iigsEnabled) this.memory.floppy = this.floppy525;
         this.prodosBlock = new ProDOSBlockDevice(7, this.iigsEnabled ? this.memory : this.legacyMemory);
+        this.floppy35Block = this.iigsEnabled ? new Floppy35BlockDevice(this.memory,this.memory.floppy35Drives) : null;
+        if(this.floppy35Block)this.prodosBlock.bootFallback=addr=>this.floppy35Block.bootFallback(addr);
 
         this.audio = new AppleAudio(khz);
         this.mockingboard = new Mockingboard(this.memory, {
@@ -277,6 +280,7 @@ export class Motherboard
         if(this.video_iigs) this.video_iigs.reset();
         this.floppy525.reset();
         this.prodosBlock.reset();
+        this.floppy35Block?.reset();
         this.audio.reset();
         this.mockingboard.reset();
         this.io_manager.reset();

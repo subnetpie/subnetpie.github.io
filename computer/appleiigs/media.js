@@ -84,6 +84,8 @@ export function decodeMedia(name,value) {
   else if(/\.(po|hdv)$/.test(lower) || data.length!==143360)format=1;
   else format=0;
 
+  if(format===1 && data.length===819200 && /\.po$/.test(lower))physical='35';
+
   if(format===2) {
     if(data.length!==35*6656)throw new Error('NIB image must contain 35 tracks of 6656 bytes');
     return {kind:'floppy',format:'nib',name,data,writeProtected:true};

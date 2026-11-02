@@ -1,4 +1,4 @@
-import {decodeMedia,isZip,readZipEntries,ejectPhysicalMedia,mediaController} from './media.js?v=20261102-disk-lifecycle1';
+import {decodeMedia,isZip,readZipEntries,ejectPhysicalMedia,mediaController} from './media.js?v=20261102-35boot1';
 import {mediaPersistenceKey,restorePersistentBlocks} from './disk_persistence.js?v=20260930-persist1';
 import {exportHardDrive} from './disk_export.js?v=20260930-disk-save';
 

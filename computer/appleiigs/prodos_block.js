@@ -31,6 +31,8 @@ export class ProDOSBlockDevice {
     }
 
     buildRom() {
+        const lo=this.ioBase&255,hi=this.ioBase>>>8;
+        const bootUnit=(this.slot<<4)|((this.bootDrive||0)<<7);
         // Apple storage-card signature.  These are harmless BIT zp instructions
         // when execution enters at Cn00, while matching the firmware scanner.
         this.rom.set([0x24,0x20,0x24,0x00,0x24,0x03,0x24,0x3c], 0x00);
@@ -46,13 +48,13 @@ export class ProDOSBlockDevice {
             0x8d,0x02,0xc0,             // STA $C002: RAMRD main
             0x8d,0x04,0xc0,             // STA $C004: RAMWRT main
             0xa9,0x01,0x85,0x42,       // command = READ
-            0xa9,this.slot<<4,0x85,0x43,// unit = slot, drive 1
+            0xa9,bootUnit,0x85,0x43,    // unit = slot and selected boot drive
             0xa9,0x00,0x85,0x44,       // buffer = $0800
             0xa9,0x08,0x85,0x45,
             0xa9,0x00,0x85,0x46,0x85,0x47, // block = 0
-            0xad,0xf0,0xc0,             // LDA $C0F0 (perform request)
+            0xad,lo,hi,                  // perform request through this slot
             0xd0,0x07,                  // error -> RTS
-            0xa2,this.slot<<4,          // boot convention: X = slot * 16
+            0xa2,bootUnit,              // boot convention: X = ProDOS unit
             0x86,0x43,                  // ProDOS boot sector expects unit/slot in $43
             0x4c,0x01,0x08,             // JMP $0801
             0x60
@@ -62,12 +64,12 @@ export class ProDOSBlockDevice {
         // $C0F0 performs command in $42-$47 and returns error code in A.
         // On success STATUS returns block count through $C0F1/$C0F2 -> X/Y.
         this.rom.set([
-            0xad,0xf0,0xc0,             // LDA $C0F0
+            0xad,lo,hi,             // LDA $C0F0
             0xd0,0x0e,                  // BNE error
             0xa5,0x42,                  // STATUS alone returns block count
             0xd0,0x06,                  // read/write preserve X and Y
-            0xae,0xf1,0xc0,             // LDX $C0F1
-            0xac,0xf2,0xc0,             // LDY $C0F2
+            0xae,lo+1,hi,             // LDX $C0F1
+            0xac,lo+2,hi,             // LDY $C0F2
             0xa9,0x00,                  // successful command returns A = 0
             0x18,                        // CLC
             0x60,                        // RTS
@@ -78,9 +80,9 @@ export class ProDOSBlockDevice {
         this.rom.set([0x4c,0xa0,0xc0|this.slot],0x80);
         this.rom.set([
             0xba,                       // TSX: emulation-mode caller stack
-            0x8e,0xf3,0xc0,            // STX $C0F3
-            0xad,0xf4,0xc0,            // execute inline SmartPort request
-            0xae,0xf5,0xc0,0xac,0xf6,0xc0, // transfer count X/Y
+            0x8e,lo+3,hi,            // STX $C0F3
+            0xad,lo+4,hi,            // execute inline SmartPort request
+            0xae,lo+5,hi,0xac,lo+6,hi, // transfer count X/Y
             0xc9,0x01,0x60             // CMP #1: carry iff error; RTS
         ],0x83);
 
@@ -160,26 +162,26 @@ export class ProDOSBlockDevice {
             // hard drive must not advertise a boot signature: its failed boot
             // cannot RTS because the firmware enters slot ROMs with JMP.
             // Once started, keep firmware present through hot ejection.
-            if (!this.enabled) return 0;
+            if (!this.enabled) return this.bootFallback?.(addr)??0;
             const off = addr & 0xff;
             if (off === 0xfc) return this.blockCount & 0xff;
             if (off === 0xfd) return (this.blockCount >>> 8) & 0xff;
             return this.rom[off];
         }
 
-        if (addr === 0xc0f4) return this.executeSmartPort();
-        if (addr === 0xc0f5) return this.smartCount & 255;
-        if (addr === 0xc0f6) return this.smartCount >>> 8;
-        if (addr === 0xc0f0) return this.execute();
-        if (addr === 0xc0f1) return this.drives[this.statusDrive].blockCount & 0xff;
-        if (addr === 0xc0f2) return (this.drives[this.statusDrive].blockCount >>> 8) & 0xff;
+        if (addr === this.ioBase+4) return this.executeSmartPort();
+        if (addr === this.ioBase+5) return this.smartCount & 255;
+        if (addr === this.ioBase+6) return this.smartCount >>> 8;
+        if (addr === this.ioBase) return this.execute();
+        if (addr === this.ioBase+1) return this.drives[this.statusDrive].blockCount & 0xff;
+        if (addr === this.ioBase+2) return (this.drives[this.statusDrive].blockCount >>> 8) & 0xff;
         return undefined;
     }
 
     write(addr, val) {
         // Reserve the tiny hardware window used by the ROM driver.
-        if(addr===0xc0f3)this.smartStack=val;
-        if (addr >= 0xc0f0 && addr <= 0xc0f6) return 0;
+        if(addr===this.ioBase+3)this.smartStack=val;
+        if (addr >= this.ioBase && addr <= this.ioBase+6) return 0;
         return undefined;
     }
 
@@ -281,3 +283,9 @@ export class ProDOSBlockDevice {
         return 0;
     }
 }
+
+// Stable controller operations for the independent Slot-5 floppy adapter.
+// Browser configuration extends only the separate SmartPort hard-disk card.
+export const blockDeviceCore=Object.freeze(Object.fromEntries(
+  ["buildRom","read","write","execute","executeSmartPort"].map(name=>[name,ProDOSBlockDevice.prototype[name]])
+));
