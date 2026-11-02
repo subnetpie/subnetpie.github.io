@@ -4,7 +4,7 @@
   const qs=(s,r=document)=>r.querySelector(s);
   const storage=()=>window.__appleIIgsStorage;
   const persistence=()=>window.__appleIIgsPersistence;
-  const insertBoot=import('./iigs_insert_boot.js?v=20261101-insertboot1');
+  const bootPolicy=import('./iigs_insert_boot.js?v=20261101-bootlogic1');
 
   function row(ep){
     return `<article class="unified-drive-row" data-storage-id="${ep.id}">
@@ -68,25 +68,14 @@
       if(button.hasAttribute('data-storage-eject')){await svc.eject(id);sync();return;}
       if(button.hasAttribute('data-storage-download')){try{svc.download(id);}catch(err){alert(err?.message||String(err));}return;}
       if(button.hasAttribute('data-storage-boot')){
-        const ep=svc.endpoint(id),target=ep?.persistenceId||'auto';
-        // Store/apply the physical target before reset. ROM 03 only restarts
-        // its boot scan on a cold reset, so synthesize the same Shift-reset
-        // gesture used by the legacy reset control instead of a warm .click().
-        svc.setBoot(target);
-        const reset=document.getElementById('buttonReset');
-        if(reset){
-          reset.dispatchEvent(new MouseEvent('click',{
-            bubbles:true,
-            cancelable:true,
-            shiftKey:true,
-            view:window
-          }));
-        }else{
-          window.__appleIIgsBoard?.reset?.(true);
-        }
-        // Controller reset can restore a default unit; reapply the selected
-        // drive before the next animation frame begins executing ROM code.
-        queueMicrotask(()=>svc.setBoot(target));
+        const ep=svc.endpoint(id),target=ep?.persistenceId;
+        const policy=await bootPolicy;
+        const machine=window.__appleIIgsBoard;
+        // Boot is the only storage action that resets the machine. Select the
+        // physical drive before and after a cold reset so ROM 03 starts from a
+        // deterministic controller/unit while mounted media remains intact.
+        if(!target || !policy.coldBootStorage(machine,target,t=>svc.setBoot(t)))
+          alert('Unable to boot: the selected device is no longer mounted.');
         return;
       }
       if(button.hasAttribute('data-storage-more')){
@@ -103,20 +92,11 @@
         const ep=svc.endpoint(id),persistenceId=ep?.persistenceId;
         const wasKeep=!!persistence()?.settings?.().keep?.[persistenceId];
         try{
-          const policy=await insertBoot;
-          const machine=window.__appleIIgsBoard;
-          const machineWasEmpty=!policy.hasMountedMedia(machine);
-          // A mounted IIgs disk is part of the machine configuration. Persist
-          // it by default so reloading the emulator restores the same media;
-          // iigs_persistent_boot then performs a cold reset and ROM 03 boots
-          // the restored device. Explicit Eject still clears the saved mount.
+          // Insertion is a hardware hot-swap, not a boot command. This keeps
+          // GEOS/GSOS running so the guest can observe a newly inserted disk.
+          // Persistence controls only whether the mount survives page reload.
           if(persistenceId&&!wasKeep)await svc.setKeep(id,true);
           await svc.mountFile(id,file);
-          // A hard disk inserted into Slot 7 Drive 1 on a completely empty
-          // IIgs is a startup disk, not a hot-swap. Cold-start immediately so
-          // ROM 03 sees the newly present SmartPort card and boots block 0.
-          if(ep?.controller==='smartport')
-            policy.autoBootFirstSmartPortInsert(machine,ep.index,machineWasEmpty,target=>svc.setBoot(target));
         }catch(err){
           if(persistenceId&&!wasKeep)await svc.setKeep(id,false);
           alert(err?.message||String(err));
