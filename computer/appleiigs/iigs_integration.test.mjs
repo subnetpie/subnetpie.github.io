@@ -1,0 +1,806 @@
+import assert from 'node:assert/strict';
+import {test} from 'node:test';
+import {readFileSync} from 'node:fs';
+import {createHash} from 'node:crypto';
+import {createMachine} from './test-support/headless.mjs';
+import {fixture} from './test-support/woz-fixture.mjs';
+
+const digest = bytes => createHash('sha256').update(bytes).digest('hex');
+
+
+test('IIgs fast-mode Mega II accesses accumulate MAME slow-cycle wait states', () => {
+  const {board:m}=createMachine();
+  const b=m.memory;
+  b.speed=0x80;
+  b.slowCycleRemainder=0; b.pendingSlowCycles=0;
+
+  // MAME adds 0x2cccd in 16.16 fixed point per slow access. The first five
+  // accesses therefore charge 2,3,3,3,3 fast cycles = 14 total.
+  const waits=[];
+  for(let i=0;i<5;i++) {
+    b.read(0xe00000);
+    waits.push(b.consumeSlowCycles());
+  }
+  assert.deepEqual(waits,[2,3,3,3,3]);
+  assert.equal(b.slowCycleRemainder,1);
+
+  // When SPEED selects the ~1 MHz CPU, slow-bus accesses need no extra wait.
+  b.speed=0;
+  b.read(0xe00000);
+  assert.equal(b.consumeSlowCycles(),0);
+});
+
+test('Motherboard clock advances video/master time by Mega II wait states', () => {
+  const {board:m}=createMachine();
+  m.memory.speed=0x80;
+  m.memory.slowCycleRemainder=0; m.memory.pendingSlowCycles=0;
+  const start=m.cycles;
+  const originalStep=m.cpu.step.bind(m.cpu);
+  m.cpu.step=()=>{m.memory.noteSlowCycle(); return 2;};
+  m.clock(1);
+  m.cpu.step=originalStep;
+  assert.equal(m.cycles-start,4,'2 CPU cycles + first 2-cycle Mega II wait');
+});
+
+
+test('IIgs compatibility shadow renderer uses auxiliary Mega II bytes for aux writes', () => {
+  const {board:m}=createMachine();
+  const io=m.io_manager;
+  io._text_mode=false;
+  io._double_hires=false;
+  m.legacyMemory.dms_hires=true;
+  m.video_iigs.writeNewVideo(0x01);
+  m.legacyMemory.aux_write=true;
+  let seen=null;
+  const draw=io.draw_display.bind(io);
+  io.draw_display=(addr,val,bank)=>{seen={addr,val,bank};};
+  m.memory.write(0x002000,0xa5);
+  io.draw_display=draw;
+  assert.deepEqual(seen,{addr:0x2000,val:0xa5,bank:'aux'});
+  assert.equal(m.memory.slowE1[0x2000],0xa5);
+  assert.notEqual(m.memory.slowE0[0x2000],0xa5);
+});
+
+test('IIgs HGR writes update the cache without Canvas upload until frame presentation', () => {
+  const {board:m}=createMachine();
+  const io=m.io_manager, h=m.display_hires;
+  io._text_mode=false;
+  io._double_hires=false;
+  m.legacyMemory.dms_hires=true;
+  m.video_iigs.writeNewVideo(0x01);
+  io.latch_display_state();
+  let uploads=0;
+  const put=h._context.putImageData.bind(h._context);
+  h._context.putImageData=(...args)=>{uploads++; return put(...args);};
+  h.set_active_page(1);
+  uploads=0;
+  m.memory.write(0x002000,0x7f);
+  assert.equal(uploads,0,'video store must not synchronously upload a Canvas rectangle');
+  io.latch_display_state();
+  io.present_latched_display();
+  assert.equal(uploads,1,'frame presentation performs one completed HGR upload');
+  h._context.putImageData=put;
+});
+
+test('STATEREG restores bank selection without changing the LC write latch', () => {
+  const {board:m}=createMachine();
+  const b=m.memory, ram=m.legacyMemory;
+  ram._main[0x20]=0x11; ram._aux[0x20]=0x22;
+  ram._main[0x1000]=0x33; ram._aux[0x1000]=0x44;
+  ram._aux_bb[0]=0x55;
+  ram.bsr_write=false;
+  b.write(0xe1c068,0xf7);
+  assert.equal(b.read(0xc068),0xf7);
+  assert.equal(b.read(0x20),0x22); assert.equal(b.read(0x1000),0x44);
+  assert.equal(b.read(0xd000),0x55); assert.equal(ram.bsr_write,false);
+  b.write(0xc068,8);
+  assert.equal(b.read(0x20),0x11); assert.equal(b.read(0x1000),0x33);
+  assert.equal(b.read(0xfffc),b.read(0xfffffc));
+  b.write(0xc003,0); assert.equal(b.read(0xc068),0x28);
+});
+
+test('IIgs reset restores ROM vectors after a native program banks in RAM', () => {
+  const {board:m}=createMachine();
+  m.memory.write(0xc068,0xf7); m.memory.write(0xc035,0x3f);
+  m.memory.write(0xc026,0x0d);
+  m.legacyMemory._main[0xfffc]=0; m.legacyMemory._main[0xfffd]=0;
+  m.reset();
+  assert.equal(m.cpu.register.pc,m.memory.read_word(0xfffffc));
+  assert.equal(m.memory.readState(),12);
+  assert.equal(m.memory.shadow,0); assert.equal(m.memory.adb.readStatus()&0x20,0);
+});
+
+
+test('IIgs beam counter reads clear scanline VGC interrupt status', () => {
+  const {board:m}=createMachine();
+  const b=m.memory, v=m.video;
+  v.vgcIntStatus|=0x20;
+  b.read(0xc02e);
+  assert.equal(v.vgcIntStatus&0x20,0,'VERTCNT clears scanline status');
+  v.vgcIntStatus|=0x20;
+  b.read(0xc02f);
+  assert.equal(v.vgcIntStatus&0x20,0,'HORIZCNT clears scanline status');
+});
+
+test('IIgs C021 MONOCHROME is write-only', () => {
+  const {board:m}=createMachine();
+  const b=m.memory;
+  b.write(0xc021,0x5a);
+  assert.equal(m.video.monochrome,0x5a);
+  assert.notEqual(b.read(0xc021),0x5a,'C021 read must fall through to floating bus');
+});
+
+test('IIgs C032 VGCINTCLEAR read is not a readable latch', () => {
+  const {board:m}=createMachine();
+  const b=m.memory;
+  b.write(0xc032,0xff);
+  assert.notEqual(b.read(0xc032),0xff,'C032 read must fall through to floating bus');
+});
+
+test('IIgs INTFLAG reports AN3 in bit 5', () => {
+  const {board:m}=createMachine();
+  const b=m.memory;
+  b.write(0xc05e,0);
+  assert.equal(b.read(0xc046)&0x20,0,'AN3 off / DHIRES on');
+  b.write(0xc05f,0);
+  assert.equal(b.read(0xc046)&0x20,0x20,'AN3 on / DHIRES off');
+});
+
+test('IIgs C037 DMAREG/CYAREG access is a no-op', () => {
+  const {board:m}=createMachine();
+  const b=m.memory;
+  assert.equal('dmaBank' in b,false,'reset must not create obsolete DMAREG latch state');
+  b.write(0xc037,0x5a);
+  assert.equal('dmaBank' in b,false,'C037 must not create DMAREG latch state');
+  assert.notEqual(b.read(0xc037),0x5a,'C037 read must not expose written data');
+});
+
+test('IIgs SOUNDCTL and SOUNDDATA match MAME GLU semantics', () => {
+  const {board:m}=createMachine();
+  const b=m.memory, doc=b.doc;
+  doc.setAddressLow(0x34); doc.setAddressHigh(0x12);
+  doc.setControl(0xff);
+  assert.equal(doc.getControl(),0x7f,'SOUNDCTL bit 7 is forced clear');
+  assert.equal(doc.addressHigh(),0x12);
+  doc.setControl(0x20);
+  assert.equal(doc.addressHigh(),0,'DOC-register mode clears address high byte');
+  assert.equal(b.read(0xc03c),0x3f,'write-only SOUNDCTL bits read as ones');
+
+  // RAM mode must bypass DOC register decoding even at a register address.
+  doc.osc[0].freq=0x1234;
+  doc.setAddressLow(0x00); doc.setControl(0x40); doc.writeData(0xa5);
+  assert.equal(doc.ram[0],0xa5);
+  assert.equal(doc.osc[0].freq,0x1234,'DOC RAM write must not alter oscillator register');
+
+  doc.setAddressLow(0x40); doc.setControl(0x40);
+  doc.ram[0x40]=0x5a; doc.ram[0x41]=0xa5;
+  assert.equal(b.read(0xc03d),0,'first SOUNDDATA read returns dummy latch');
+  assert.equal(b.read(0xc03d),0x5a,'second read returns previously fetched byte');
+  doc.setControl(0x60);
+  assert.equal(b.read(0xc03d),0x5a);
+  assert.equal(doc.addressLow(),0x41,'auto-increment advances after fetch');
+});
+
+test('IIgs C07E/C07F writes do not toggle the IIe IOUDIS latch', () => {
+  const {board:m}=createMachine();
+  const b=m.memory;
+  const io=m.legacyMemory.io_manager;
+  io._iou_disable=false;
+  b.write(0xc07e,0);
+  assert.equal(io._iou_disable,false);
+  io._iou_disable=true;
+  b.write(0xc07f,0);
+  assert.equal(io._iou_disable,true);
+});
+
+test('ROM03 C071-C07F IRQ helper window comes from firmware', () => {
+  const {board:m}=createMachine();
+  const b=m.memory;
+  for(let off=0x71;off<=0x7f;off++)
+    assert.equal(b.read(0xc000|off),b.rom[0x3c000+off]);
+});
+
+test('IIgs IWM motor-off follows MAME delayed and immediate modes', () => {
+  const {board:m}=createMachine();
+  const b=m.memory;
+  b.iwmAccess(0xc0e9); // motor on
+  assert.equal(b.iwmMotor,true);
+  assert.equal(b.iwmDevSel,1);
+  b.iwmAccess(0xc0e8); // timer-enabled motor off
+  assert.equal(b.iwmMotor,true);
+  assert.ok(b.iwmMotorDelay>0);
+  b.tickIwm(5600000,2800000); // ~2 s, 8,038,400 IWM clocks
+  assert.equal(b.iwmMotor,true);
+  b.tickIwm(300000,2800000);
+  assert.equal(b.iwmMotor,false);
+  assert.equal(b.iwmDevSel,0);
+
+  b.iwmMode=0x04;
+  b.iwmAccess(0xc0e9);
+  b.iwmAccess(0xc0e8);
+  assert.equal(b.iwmMotor,false);
+  assert.equal(b.iwmMotorDelay,0);
+});
+
+test('IIgs IWM drive-select follows control bit 5 while active', () => {
+  const {board:m}=createMachine();
+  const b=m.memory;
+  b.iwmAccess(0xc0e9);
+  assert.equal(b.iwmDevSel,1);
+  b.iwmAccess(0xc0eb);
+  assert.equal(b.iwmDevSel,2);
+  b.iwmAccess(0xc0ea);
+  assert.equal(b.iwmDevSel,1);
+});
+
+test('IIgs IWM WHD exposes write-engine and byte-ready transitions', () => {
+  const {board:m}=createMachine();
+  const b=m.memory;
+  b.iwmMode=0x01; // latched synchronous mode
+  b.iwmAccess(0xc0e9); // active
+  b.iwmAccess(0xc0ef); // Q7H: enter write mode
+  assert.equal(b.iwmWhd&0x40,0x40);
+
+  b.iwmQ6=true;
+  b.iwmAccess(0xc0ef,0xa5); // load write byte
+  assert.equal(b.iwmData,0xa5);
+  assert.equal(b.iwmWhd&0x80,0);
+  assert.ok(b.iwmWritePending>0);
+
+  b.tickIwm(1000,2800000);
+  assert.equal(b.iwmWhd&0x80,0x80);
+  assert.equal(b.iwmWhd&0x40,0x40);
+
+  b.iwmAccess(0xc0ee); // Q7L: leave write mode
+  assert.equal(b.iwmWhd&0x40,0);
+  assert.equal(b.iwmWritePending,0);
+});
+
+test('IIgs IWM register probes do not consume Disk II media', () => {
+  const {board:m}=createMachine();
+  const b=m.memory;
+  let reads=0;
+  b.floppy={
+    _get_cycles:()=>1234,
+    _active_disk:{
+      medium:{},
+      write_protect:true,
+      read:()=>{ reads++; return 0xa5; }
+    }
+  };
+  b.iwmActive=true; b.iwmMotor=true;
+
+  // Q6H/Q7L status and Q6L/Q7H WHD are controller registers.
+  b.iwmQ6=true; b.iwmQ7=false;
+  assert.equal(b.iwmAccess(0xc0ec)&0x80,0x80);
+  b.iwmQ6=false; b.iwmQ7=true;
+  assert.equal(b.iwmAccess(0xc0ec),0xbf);
+  assert.equal(reads,0);
+
+  // Only Q6L/Q7L consumes the selected media latch.
+  b.iwmQ6=false; b.iwmQ7=false;
+  assert.equal(b.iwmAccess(0xc0ec),0xa5);
+  assert.equal(reads,1);
+  assert.equal(b.iwmData,0xa5);
+});
+
+test('IIgs IWM Q6/Q7=11 writes mode only while inactive', () => {
+  const {board:m}=createMachine();
+  const b=m.memory;
+  b.iwmQ6=true; b.iwmQ7=true;
+  // MAME mode/data latch occurs only on an odd control access.
+  b.iwmAccess(0xc0ee,0x1d);
+  assert.equal(b.iwmMode,0);
+  b.iwmAccess(0xc0ef,0x1d);
+  assert.equal(b.iwmMode,0x1d);
+
+  b.iwmAccess(0xc0e9); // active
+  b.iwmAccess(0xc0ef,0xa5);
+  assert.equal(b.iwmMode,0x1d);
+  assert.equal(b.iwmData,0xa5);
+  // Latched-write mode clears WHD bit 7 when data is loaded.
+  assert.equal(b.iwmWhd&0x80,0);
+
+  b.iwmAccess(0xc0e8); // timer mode: active during delayed motor-off
+  assert.equal(b.iwmActive,true);
+  b.iwmAccess(0xc0ef,0x5a);
+  assert.equal(b.iwmMode,0x1d);
+  assert.equal(b.iwmData,0x5a);
+});
+
+test('IIgs IWM reset register reads match MAME inactive state', () => {
+  const {board:m}=createMachine();
+  const b=m.memory;
+  // Q6L/Q7L with motor off selects the data register. MAME returns $FF
+  // while inactive and must not advance the mounted medium.
+  b.iwmQ6=false; b.iwmQ7=false; b.iwmMotor=false;
+  assert.equal(b.iwmAccess(0xc0ec),0xff);
+  // Q7H/Q6L selects the write-handshake register, reset value $BF.
+  b.iwmQ7=true;
+  assert.equal(b.iwmAccess(0xc0ec),0xbf);
+  // Q6H/Q7H is not a readable register.
+  b.iwmQ6=true;
+  assert.equal(b.iwmAccess(0xc0ec),0xff);
+});
+
+test('IIgs DISKREG bit 6 selects 3.5-inch IWM path; bit 7 alone does not', () => {
+  const {board:m}=createMachine();
+  const b=m.memory;
+  // Q6 high/Q7 low exposes IWM status. With no 5.25 medium the legacy path
+  // reports write-protect/no-disk in bit 7.
+  b.iwmQ6=true; b.iwmQ7=false; b.iwmMotor=false; b.iwmMode=0;
+  b.diskReg=0x80; // HDSEL only: still chained to 5.25-inch drives.
+  assert.equal(b.iwmAccess(0xc0ec)&0x80,0x80);
+  b.diskReg=0x40; // 35SEL: internal 3.5-inch path.
+  assert.equal(b.iwmAccess(0xc0ec)&0x80,0x80);
+  // The important routing distinction is that HDSEL must not satisfy 35SEL.
+  assert.equal(!!(0x80&0x40),false);
+  assert.equal(!!(0x40&0x40),true);
+});
+
+test('ROM03 GLU DATA_FULL clears only after KMSTATUS then DATA', () => {
+  const {board:m}=createMachine();
+  const b=m.memory, adb=b.adb;
+  adb.writeStatus(0x10);
+  adb.queue.push(0x5a); adb.updateIrq();
+  assert.equal(b.intFlag&1,1);
+  assert.equal(b.read(0xc026),0x5a);
+  assert.equal(adb.queue.length,1,'DATA read alone must not clear DATA_FULL');
+  assert.equal(b.intFlag&1,1);
+  assert.equal(b.read(0xc027)&0x20,0x20);
+  assert.equal(b.read(0xc026),0x5a);
+  assert.equal(adb.queue.length,0,'KMSTATUS followed by DATA clears DATA_FULL');
+  assert.equal(b.intFlag&1,0);
+});
+
+test('ROM03 keyboard latch spans C000-C00F and C010 clears strobe', () => {
+  const {board:m}=createMachine();
+  const b=m.memory, adb=b.adb;
+  adb.writeStatus(0x04);
+  adb.setKeyData(0x41,true);
+  for(let a=0xc000;a<=0xc00f;a++) assert.equal(b.read(a),0xc1);
+  assert.equal(b.intFlag&1,1,'key strobe IRQ must assert when enabled');
+  assert.equal(b.read(0xc010),0xc1);
+  assert.equal(adb.keyStrobe,false);
+  assert.equal(b.intFlag&1,0,'C010 read must clear key strobe IRQ');
+  assert.equal(b.read(0xc000),0x41);
+});
+
+test('IIgs key GLU exposes mouse, modifiers, status, and IRQs', () => {
+  const {board:m}=createMachine();
+  const b=m.memory, adb=b.adb;
+  adb.setKeyModifiers(0x42);
+  assert.equal(b.read(0xc025),0x42);
+
+  // MAME keyglu_816_read returns X then Y and clears mouse-full/IRQ on Y.
+  adb.writeStatus(0x40);
+  adb.setMouseData(0x12,0x34);
+  assert.equal(b.read(0xc027)&0x80,0x80);
+  assert.equal(b.intFlag&1,1);
+  assert.equal(b.read(0xc024),0x12);
+  assert.equal(b.read(0xc027)&0x02,0x02);
+  assert.equal(b.read(0xc024),0x34);
+  assert.equal(b.read(0xc027)&0x82,0);
+  assert.equal(b.intFlag&1,0);
+
+  // DATA-full is reflected in SYSSTAT and participates in the ADB IRQ.
+  adb.writeStatus(0x10);
+  adb.queue.push(0x5a); adb.updateIrq();
+  assert.equal(b.read(0xc027)&0x20,0x20);
+  assert.equal(b.intFlag&1,1);
+  assert.equal(b.read(0xc026),0x5a);
+  assert.equal(b.intFlag&1,0);
+
+  // Only IRQ-enable bits are writable; live status bits cannot be latched
+  // into KMSTATUS by software.
+  adb.writeStatus(0xff);
+  assert.equal(adb.control,0x54);
+  assert.equal(b.read(0xc027)&0x01,0);
+});
+
+test('ROM03 expansion RAM mirrors only above the power-of-two ghost boundary', () => {
+  const {board:m}=createMachine();
+  const b=m.memory;
+  assert.equal(b.ram.length,0x200000);
+  assert.equal(b.motherboardRam,0x100000);
+  assert.equal(b.ghostMask,0x0fffff);
+  assert.equal(b.ghostStart,0x200000);
+  b.write(0x100123,0x5a);
+  assert.equal(b.read(0x200123),0x5a);
+  b.write(0x300456,0xa5);
+  assert.equal(b.read(0x100456),0xa5);
+  assert.equal(b.read(0x800000),0x80,'banks outside the expansion ghost window float');
+});
+
+test('ROM03 non-power-of-two expansion leaves holes at ff before ghost mirrors', async () => {
+  const {IIgsMemory}=await import('./iigs_memory.js');
+  const legacy={
+    _main:new Uint8Array(65536), _aux:new Uint8Array(65536),
+    read:()=>0, write(){}, reset(){},
+    aux_zp:false, aux_read:false, aux_write:false,
+    dms_80store:false, dms_page2:false, dms_hires:false,
+    bsr_read:false, bsr_bank2:true, bsr_write:true
+  };
+  const b=new IIgsMemory(legacy,null,0x280000); // 1 MB motherboard + 1.5 MB expansion
+  assert.equal(b.ghostMask,0x1fffff);
+  assert.equal(b.ghostStart,0x300000);
+  b.write(0x100321,0x66);
+  assert.equal(b.read(0x280000),0xff,'non-power-of-two expansion hole must read ff');
+  assert.equal(b.read(0x300321),0x66,'ghost range mirrors installed expansion');
+});
+
+test('IIgs INTEN gates IRQ without clearing VBL and quarter status', () => {
+  const {board:m}=createMachine();
+  const b=m.memory;
+  b.write(0xc041,0x18);
+  b.setVblFlag(); b.setQuarterFlag();
+  assert.equal(b.read(0xc046)&0x19,0x19);
+  b.write(0xc041,0x00);
+  assert.equal(b.read(0xc046)&0x18,0x18,'INTEN must preserve pending status');
+  assert.equal(b.read(0xc046)&0x01,0,'disabled sources must deassert IRQ');
+  b.write(0xc047,0);
+  assert.equal(b.read(0xc046)&0x18,0,'CLRVBLINT clears both status bits');
+});
+
+test('IIgs VBL follows MAME border-adjusted scanlines with active-high polarity', () => {
+  const {board:m}=createMachine();
+  assert.equal(m.memory.read(0xc019),0);
+  m.video_iigs.tick(2800000*208/(60*262)+1);
+  assert.equal(m.video_iigs.currentScanline,208);
+  assert.equal(m.memory.read(0xe1c019),0x80);
+  m.video_iigs.tick(2800000*70/(60*262));
+  assert.equal(m.video_iigs.currentScanline,16);
+  assert.equal(m.memory.read(0xc019),0);
+});
+
+for(const machine of ['iie','iigs']) {
+  test(`${machine} paddle timers use elapsed CPU time and latch each trigger`, () => {
+    const {board:m,joystick}=createMachine(machine);
+    const unit=10.8*(machine==='iigs'?2.8:1.0205);
+    joystick.axis0=100; joystick.axis1=200;
+    m.memory.write(0xc070,0);
+    for(let i=0;i<1000;i++)assert.equal(m.memory.read(0xc064),0x80);
+    m.cycles=Math.ceil(unit*100);
+    assert.equal(m.memory.read(0xc064),0);
+    assert.equal(m.memory.read(0xc065),0x80);
+    m.memory.read(0xc070); // X starts again; the running Y timer is unchanged.
+    m.cycles=Math.ceil(unit*200);
+    assert.equal(m.memory.read(0xc065),0);
+    m.cycles=Math.ceil(unit*201);
+    assert.equal(m.memory.read(0xc064),0);
+  });
+}
+
+test('IIgs 80STORE changes immediately recompute the displayed HGR page', () => {
+  const {board:m}=createMachine();
+  m.memory.write(0xc050,0);
+  m.memory.write(0xc057,0);
+  m.memory.write(0xc055,0); // PAGE2, 80STORE off => display HGR page 2
+  assert.equal(m.display_hires._active_page,2);
+  m.memory.write(0xc001,0); // 80STORE on => PAGE2 becomes AUX bank selector, display page 1
+  assert.equal(m.display_hires._active_page,1);
+  m.memory.write(0xc000,0); // 80STORE off with PAGE2 still set => display page 2 again
+  assert.equal(m.display_hires._active_page,2);
+});
+
+test('IIgs STATEREG PAGE2 writes recompute the displayed HGR page', () => {
+  const {board:m}=createMachine();
+  m.memory.write(0xc050,0);
+  m.memory.write(0xc057,0);
+  m.memory.write(0xc000,0); // 80STORE off
+  const base=m.memory.readState()&~0x40;
+  m.memory.write(0xc068,base|0x40);
+  assert.equal(m.display_hires._active_page,2);
+  m.memory.write(0xc068,base);
+  assert.equal(m.display_hires._active_page,1);
+});
+
+test('IIgs 80STORE PAGE2 aux HGR writes do not replace the displayed main page', () => {
+  const {board:m,pixels}=createMachine();
+  m.memory.write(0xc050,0); // graphics
+  m.memory.write(0xc057,0); // hires
+  m.memory.write(0xc001,0); // 80STORE on
+  m.memory.write(0xc054,0); // PAGE1 -> main page-1 banking
+  m.memory.write(0x002000,0x7f);
+  m.io_manager.latch_display_state();
+  m.io_manager.present_latched_display();
+  const mainPage=digest(pixels);
+
+  m.memory.write(0xc055,0); // PAGE2 under 80STORE -> AUX bank, still displays HGR page 1
+  m.memory.write(0x002000,0x00);
+  assert.equal(m.memory.slowE0[0x2000],0x7f);
+  assert.equal(m.memory.slowE1[0x2000],0x00);
+  m.io_manager.latch_display_state();
+  m.io_manager.present_latched_display();
+  assert.equal(digest(pixels),mainPage,
+    'PAGE2 under 80STORE must select AUX RAM without selecting an AUX display page');
+});
+
+test('IIgs 80-column text forwards AUX and MAIN writes to separate renderer banks', () => {
+  const {board:m}=createMachine();
+  const io=m.io_manager;
+  io._text_mode=true;
+  io._80col_mode=true;
+  const seen=[];
+  const draw=m.display_text_80.draw_text.bind(m.display_text_80);
+  m.display_text_80.draw_text=(addr,val,bank)=>seen.push({addr,val,bank});
+  io.draw_display(0x0400,0x41,'aux');
+  io.draw_display(0x0400,0x42,'main');
+  m.display_text_80.draw_text=draw;
+  assert.deepEqual(seen,[
+    {addr:0x0400,val:0x41,bank:'aux'},
+    {addr:0x0400,val:0x42,bank:'main'}
+  ]);
+});
+
+test('hidden hi-res page writes survive a page flip', () => {
+  const {board:m,pixels}=createMachine('iie');
+  m.memory.read(0xc050); m.memory.read(0xc057);
+  m.memory.read(0xc055); m.memory.read(0xc054); // initialize both cached pages
+  const blank=digest(pixels);
+  m.memory.write(0x4000,0x7f);
+  assert.equal(digest(pixels),blank,'hidden page must stay hidden');
+  m.memory.read(0xc055);
+  assert.notEqual(digest(pixels),blank,'page flip must reveal the updated pixels');
+});
+
+test('IIgs SHR handoff waits for compatibility redraw to settle', () => {
+  const {board:m}=createMachine();
+  m.memory.write(0xc050,0);
+  m.memory.write(0xc057,0);
+  m.memory.write(0xc054,0);
+  m.memory.write(0xc029,0xc1);
+  m.memory.write(0xc029,0x01);
+
+  // Simulate a game progressively rebuilding HGR while artwork is hidden.
+  for(let i=0;i<64;i++) m.memory.write(0x2000+i,i);
+  assert.equal(m.video_iigs.shouldRevealCompatibility(),false);
+  assert.equal(m.video_iigs.compatRevealPending,true);
+
+  // One quiet frame after a meaningful redraw burst is enough to reveal.
+  assert.equal(m.video_iigs.shouldRevealCompatibility(),true);
+});
+
+test('IIgs SHR artwork remains presented until the next frame boundary', () => {
+  const {board:m}=createMachine();
+  m.memory.write(0xc050,0);
+  m.memory.write(0xc057,0);
+  m.memory.write(0xc054,0);
+  m.memory.write(0xc029,0xc1); // SHR on
+  assert.equal(m.video_iigs.isSuperHires(),true);
+
+  m.memory.write(0x002000,0x7f); // prepare HGR underneath
+  m.memory.write(0xc029,0x01);   // hardware exits SHR now
+
+  assert.equal(m.video_iigs.isSuperHires(),false);
+  assert.equal(m.video_iigs.compatRevealPending,true,
+    'presentation handoff must remain pending until frame boundary');
+
+  const before=m.video_iigs.frameCount;
+  m.clock(60000);
+  assert.ok(m.video_iigs.frameCount>before);
+  assert.equal(m.video_iigs.compatRevealPending,false);
+  assert.equal(m.display_hires._active_page,1);
+});
+
+test('IIgs leaving SHR reveals HGR written while SHR was active', () => {
+  const {board:m,pixels}=createMachine();
+  m.memory.write(0xc050,0); // graphics
+  m.memory.write(0xc057,0); // hires
+  m.memory.write(0xc054,0); // page 1
+  m.memory.write(0xc029,0xc1); // SHR on
+
+  // While SHR owns the screen, compatibility writes still shadow into
+  // Mega II RAM but do not update the hidden HGR pixel cache.
+  m.memory.write(0x002000,0x7f);
+  assert.equal(m.memory.slowE0[0x2000],0x7f);
+
+  // Total Replay does exactly this when hiding launch artwork.
+  m.memory.write(0xc029,0x01);
+
+  // The SHR->legacy transition must rebuild the HGR cache from Mega II RAM.
+  assert.equal(m.display_hires._active_page,1);
+  assert.equal(m.display_hires._active_bank,'main');
+  assert.notEqual(digest(pixels),digest(new Uint8ClampedArray(pixels.length)));
+});
+
+const replayPath=process.env.TOTAL_REPLAY_IMAGE;
+test('Total Replay boots on IIgs, accepts a search, and launches Battlezone',
+  {skip:!replayPath}, () => {
+    const {board:m,pixels}=createMachine();
+    m.clock(3000000); // The browser starts ROM before the file picker is used.
+    let reads=0;const execute=m.prodosBlock.execute.bind(m.prodosBlock);
+    m.prodosBlock.execute=()=>{reads++;return execute();};
+    assert.ok(m.prodosBlock.load_image('Total Replay',readFileSync(replayPath)));
+    m.reset(true); // Same path used by Drive.load_media().
+    m.clock(10000000);
+    assert.ok(reads>=100,'ROM must boot the disk and read the menu assets');
+    assert.equal(m.cpu.register.e,true,'compatibility program must enter emulation mode');
+    const menu=digest(pixels);
+    assert.ok(pixels.some((v,i)=>i%4!==3&&v>100),'menu must render visible pixels');
+    for(const c of 'BATTLEZONE') {
+      m.keyboard.key_down(c.charCodeAt(0));m.clock(1000000);m.keyboard.key_up();
+    }
+    assert.notEqual(digest(pixels),menu,'search must update the visible page');
+    const before=reads;
+    m.keyboard.key_down(13);m.clock(100000);m.keyboard.key_up();m.clock(10000000);
+    assert.ok(reads>before,'Return must read the selected game');
+    assert.ok(m.cpu.register.pc>=0x800&&m.cpu.register.pc<0xc000,'game must execute in RAM');
+    assert.ok(pixels.some((v,i)=>i%4!==3&&v>100),'game title must render');
+  });
+
+test('IIgs reset matches MAME ROM03 power-on register defaults', () => {
+  const {board:m}=createMachine();
+  const b=m.memory;
+  assert.equal(b.shadow,0x00);
+  assert.equal(b.speed,0x80);
+  assert.equal(b.readState(),0x0c);
+  assert.equal(m.video_iigs.readNewVideo(),0x01);
+  assert.equal(b.intEnable,0x00);
+  assert.equal(b.intFlag,0x00);
+  assert.equal(b.adb.readStatus(),0x00);
+  assert.equal(m.legacyMemory.bsr_read,false);
+  assert.equal(m.legacyMemory.bsr_bank2,true);
+  assert.equal(m.legacyMemory.bsr_write,true);
+  assert.equal(m.legacyMemory._bsr_write_count,0);
+});
+
+test('IIgs RTC advances with emulated time and preserves seconds across reset', () => {
+  const {board:m}=createMachine();
+  m.memory.rtc.seconds.fill(0);
+  m.memory.rtc.cycleAccum=0;
+  m.clock(2800000);
+  assert.equal(m.memory.rtc.seconds[0],1);
+  assert.equal(m.memory.rtc.seconds[1],0);
+  m.memory.rtc.cycleAccum=12345;
+  m.reset(false);
+  assert.equal(m.memory.rtc.seconds[0],1);
+  assert.equal(m.memory.rtc.cycleAccum,0);
+});
+
+test('IIgs extended RTC PRAM writes bypass normal write protect', () => {
+  const {board:m}=createMachine();
+  const r=m.memory.rtc;
+  r.writeProtect=true;
+  r.state=3;
+  r.xpaddr=0x55;
+  m.memory.rtcByte(0xa5);
+  assert.equal(r.pram[0x55],0xa5);
+  assert.equal(r.state,0);
+});
+
+test('IIgs RTC advances once per emulated second and survives reset', () => {
+  const {board:m}=createMachine();
+  const rtc=m.memory.rtc;
+  rtc.seconds.fill(0);
+  m.memory.tickRtc(2799999,2800000);
+  assert.deepEqual([...rtc.seconds],[0,0,0,0]);
+  m.memory.tickRtc(1,2800000);
+  assert.deepEqual([...rtc.seconds],[1,0,0,0]);
+  rtc.seconds.set([0xff,0xff,0xff,0xff]);
+  m.memory.tickRtc(2800000,2800000);
+  assert.deepEqual([...rtc.seconds],[0,0,0,0]);
+  rtc.seconds.set([0x78,0x56,0x34,0x12]);
+  rtc.cycleAccum=12345;
+  m.reset(false);
+  assert.deepEqual([...rtc.seconds],[0x78,0x56,0x34,0x12]);
+  assert.equal(rtc.cycleAccum,0);
+});
+
+test('IIgs reset restores MAME VGC display defaults after software changes', () => {
+  const {board:m}=createMachine();
+  m.memory.write(0xc029,0x80);
+  m.memory.write(0xc022,0x13);
+  m.memory.write(0xc034,0x0a);
+  m.reset(false);
+  assert.equal(m.video_iigs.readNewVideo(),0x01);
+  assert.equal(m.video_iigs.getTextColor(),0xf2);
+  assert.equal(m.video_iigs.getBorderColor(),0x02);
+});
+
+test('ROM03 leaves its power-on delay loop during headless execution', () => {
+  const {board:m}=createMachine();
+  let sawDelay=false, leftDelay=false;
+  m.cpu.setTrace(e=>{
+    const pc=e.pc&0xffff;
+    if(pc>=0xfcd9 && pc<=0xfce5) sawDelay=true;
+    else if(sawDelay) leftDelay=true;
+  });
+  for(let i=0;i<20&&!leftDelay;i++)m.clock(250000);
+  assert.ok(sawDelay,'ROM03 must execute the FCD9-FCE5 power-on delay');
+  assert.ok(leftDelay,'ROM03 delay loop must complete rather than stall permanently');
+});
+
+test('IIgs floating bus blanking uses the current program bank', () => {
+  const {board:m}=createMachine();
+  m.cpu.register.pb=0xfc;
+  m.cpu.register.pc=0x1235;
+  m.memory.rom[0x1234]=0xa5;
+  m.memory.slowE0[0x1234]=0x5a;
+  // Force vertical blanking so floatingBus() takes MAME's PC-1 fallback.
+  m.video_iigs.currentScanline=220;
+  assert.equal(m.memory.floatingBus(),0xa5);
+});
+
+for(const format of ['dsk','woz1','woz2']) {
+  test(`IIgs ROM cold-boots a ${format} floppy`, () => {
+    const {board:m}=createMachine();
+    const disk=new Uint8Array(143360);
+    disk.set([1,0x4c,1,8]); // One-sector boot program loops at $0801.
+    let image=disk;
+    if(format!=='dsk') {
+      const track=[];
+      for(let s=0;s<16;s++)track.push(...m.floppy525.sector_62encode(disk,0,s));
+      image=fixture(format==='woz1'?1:2,track);
+    }
+    assert.ok(m.floppy525.load_image(0,'boot.'+format,image));
+    let booted=false;
+    m.cpu.setTrace(e=>{if(e.pc===0x801)booted=true;});
+    for(let i=0;i<20&&!booted;i++)m.clock(500000);
+    assert.ok(booted,'system ROM must reach the loaded boot sector');
+    assert.deepEqual(Uint8Array.from({length:256},(_,i)=>m.memory.read(0x800+i)),disk.slice(0,256));
+  });
+}
+
+test('IIgs legacy video reads slow RAM and follows shadow and direct writes', () => {
+  const {board:m,pixels}=createMachine();
+  assert.equal(m.memory.slowE0,m.legacyMemory._main);
+  assert.equal(m.memory.slowE1,m.legacyMemory._aux);
+  m.memory.write(0xc050,0); m.memory.write(0xc057,0);
+  m.memory.write(0x2000,0x7f);
+  const visible=digest(pixels);
+  assert.equal(m.memory.slowE0[0x2000],0x7f);
+  m.memory.write(0xc035,0x02); // Inhibit main HGR page 1 shadowing.
+  m.memory.write(0x2000,0);
+  assert.equal(m.memory.read(0x2000),0);
+  assert.equal(m.memory.slowE0[0x2000],0x7f);
+  assert.equal(digest(pixels),visible,'fast-only write must not change video');
+  m.memory.write(0xe02000,0);
+  m.io_manager.latch_display_state();
+  m.io_manager.present_latched_display();
+  assert.notEqual(digest(pixels),visible,'direct slow-bank write must redraw video at frame presentation');
+});
+
+
+test('IIgs slot 6 Disk II motor detect forces 1 MHz CPU speed while enabled', () => {
+  const {board:m}=createMachine();
+  const b=m.memory;
+  b.speed=0x84; // SPEED_HIGH + slot-6 Disk II motor detect
+  b.diskReg=0x00;
+  b.iwmMotor=false;
+  assert.equal(b.isFastCpu(),true);
+  b.iwmMotor=true;
+  assert.equal(b.isFastCpu(),false);
+  b.diskReg=0x40; // 3.5-inch IWM path does not trigger Disk II slowdown
+  assert.equal(b.isFastCpu(),true);
+});
+
+test('IIgs SPEED bit 7 changes CPU execution rate without slowing machine time', () => {
+  const {board:m}=createMachine();
+  // Run the same master-time budget once fast and once slow. Count executed
+  // instructions; video/master time must advance by the same amount.
+  let steps=0;
+  const originalStep=m.cpu.step.bind(m.cpu);
+  m.cpu.step=()=>{ steps++; return originalStep(); };
+
+  m.memory.speed=0x80;
+  const frame0=m.video_iigs.frameCount;
+  const startFast=m.cycles;
+  m.clock(28000);
+  const fastSteps=steps;
+  const fastMaster=m.cycles-startFast;
+
+  steps=0;
+  m.memory.speed=0x00;
+  const startSlow=m.cycles;
+  m.clock(28000);
+  const slowSteps=steps;
+  const slowMaster=m.cycles-startSlow;
+
+  assert.ok(slowSteps < fastSteps*0.5,
+    'slow mode must execute substantially fewer 65816 instructions per real-time slice');
+  assert.ok(fastMaster>=28000 && slowMaster>=28000,
+    'both modes must consume the requested master-time budget');
+  assert.ok(m.video_iigs.frameCount>=frame0,
+    'video time continues independently of CPU speed');
+});

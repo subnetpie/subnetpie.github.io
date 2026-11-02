@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+    <title>Apple 2ios</title>
+    <script src="./touch-guard.js?v=20261009-edit1"></script>
+    <link rel='stylesheet' href='https://fonts.googleapis.com/css2?family=Rubik'>
+<link rel='stylesheet' href='https://fonts.googleapis.com/css2?family=Russo+One&amp;display=swap'><link rel="stylesheet" href="./style.css?v=20261017-landscape-keyboard1">
+
+  </head>
+    
+  <body>
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-touch-fullscreen" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<canvas class="screen" id="screen" height="390" width="564"></canvas>
+<output id="screenResolution" aria-label="Canvas and viewport diagnostics" hidden></output>
+<div id="bootStatus" style="display:none;position:fixed;z-index:9999;left:8px;right:8px;top:290px;padding:8px;background:#200;color:#fff;font:12px monospace;white-space:pre-wrap;word-break:break-word;border:1px solid #f66"></div>
+<div class="keypad" id="keypad">
+  <button id="-button1">1</button>
+  <button id="-button2">2</button>
+  <button id="-button3">3</button>
+  <button id="-button4">4</button>
+  <button id="-button5">5</button>
+  <button id="-button6">6</button>
+  <button id="-button7">7</button>
+  <button id="-button8">8</button>
+  <button id="-button9">9</button>
+  <button id="-button0">0</button>
+  <button id="KPbuttonSpace">space</button>
+  <button id="-buttonA">A</button>
+  <button id="-buttonB">B</button>
+  <button id="-buttonC">C</button>
+  <button id="-buttonD">D</button>
+  <button id="-buttonE">E</button>
+  <button id="-buttonF">F</button>
+  <button id="-buttonJ">J</button>
+  <button id="-buttonK">K</button>
+  <button id="-buttonL">L</button>
+  <button id="-buttonEsc">esc</button>
+  <button id="-buttonUarr">&uarr;</button>
+  <button id="-buttonCR">&crarr;</button>
+  <button id="-buttonLarr">&larr;</button>
+  <button id="-buttonDarr">&darr;</button>
+  <button id="-buttonRarr">&rarr;</button>
+</div>
+<div id="keyboard0" aria-hidden="true">
+  <div id="buttonKeyboard">123</div>
+</div>
+
+<div id="keyboard1" class="apple2-keyboard" aria-label="Apple II keyboard">
+  <div class="kb-row">
+    <div class="KBbutton key-wide-esc" id="buttonEsc">ESC</div>
+    <div class="KBbutton dual" id="button1"><span>!</span><span>1</span></div>
+    <div class="KBbutton dual" id="button2"><span>@</span><span>2</span></div>
+    <div class="KBbutton dual" id="button3"><span>#</span><span>3</span></div>
+    <div class="KBbutton dual" id="button4"><span>$</span><span>4</span></div>
+    <div class="KBbutton dual" id="button5"><span>%</span><span>5</span></div>
+    <div class="KBbutton dual" id="button6"><span>^</span><span>6</span></div>
+    <div class="KBbutton dual" id="button7"><span>&amp;</span><span>7</span></div>
+    <div class="KBbutton dual" id="button8"><span>*</span><span>8</span></div>
+    <div class="KBbutton dual" id="button9"><span>(</span><span>9</span></div>
+    <div class="KBbutton dual" id="button0"><span>)</span><span>0</span></div>
+    <div class="KBbutton dual" id="buttonMinus"><span>_</span><span>-</span></div>
+    <div class="KBbutton dual" id="buttonEquals"><span>+</span><span>=</span></div>
+    <div class="KBbutton key-wide-delete" id="buttonDel">DELETE</div>
+  </div>
+
+  <div class="kb-row">
+    <div class="KBbutton key-wide-tab" id="buttonTab">TAB</div>
+    <div class="KBbutton" id="buttonQ">Q</div>
+    <div class="KBbutton" id="buttonW">W</div>
+    <div class="KBbutton" id="buttonE">E</div>
+    <div class="KBbutton" id="buttonR">R</div>
+    <div class="KBbutton" id="buttonT">T</div>
+    <div class="KBbutton" id="buttonY">Y</div>
+    <div class="KBbutton" id="buttonU">U</div>
+    <div class="KBbutton" id="buttonI">I</div>
+    <div class="KBbutton" id="buttonO">O</div>
+    <div class="KBbutton" id="buttonP">P</div>
+    <div class="KBbutton dual" id="buttonLbrack"><span>{</span><span>[</span></div>
+    <div class="KBbutton dual" id="buttonRbrack"><span>}</span><span>]</span></div>
+    <div class="KBbutton dual" id="buttonBackslash"><span>|</span><span>\\</span></div>
+  </div>
+
+  <div class="kb-row">
+    <div class="KBbutton key-wide-ctrl modifier-key" id="buttonCtrl">CTRL</div>
+    <div class="KBbutton" id="buttonA">A</div>
+    <div class="KBbutton" id="buttonS">S</div>
+    <div class="KBbutton" id="buttonD">D</div>
+    <div class="KBbutton" id="buttonF">F</div>
+    <div class="KBbutton" id="buttonG">G</div>
+    <div class="KBbutton" id="buttonH">H</div>
+    <div class="KBbutton" id="buttonJ">J</div>
+    <div class="KBbutton" id="buttonK">K</div>
+    <div class="KBbutton" id="buttonL">L</div>
+    <div class="KBbutton dual" id="buttonSemi"><span>:</span><span>;</span></div>
+    <div class="KBbutton dual" id="buttonApos"><span>&quot;</span><span>'</span></div>
+    <div class="KBbutton key-wide-return" id="buttonCR">RETURN</div>
+  </div>
+
+  <div class="kb-row">
+    <div class="KBbutton key-wide-shift modifier-key" id="buttonShift">SHIFT</div>
+    <div class="KBbutton" id="buttonZ">Z</div>
+    <div class="KBbutton" id="buttonX">X</div>
+    <div class="KBbutton" id="buttonC">C</div>
+    <div class="KBbutton" id="buttonV">V</div>
+    <div class="KBbutton" id="buttonB">B</div>
+    <div class="KBbutton" id="buttonN">N</div>
+    <div class="KBbutton" id="buttonM">M</div>
+    <div class="KBbutton dual" id="buttonComma"><span>&lt;</span><span>,</span></div>
+    <div class="KBbutton dual" id="buttonPeriod"><span>&gt;</span><span>.</span></div>
+    <div class="KBbutton dual" id="buttonSlash"><span>?</span><span>/</span></div>
+    <div class="KBbutton key-wide-shift modifier-key" id="buttonShiftRight">SHIFT</div>
+  </div>
+
+  <div class="kb-row">
+    <div class="KBbutton caps-key" id="buttonCaps"><span>CAPS</span><span>LOCK</span></div>
+    <div class="KBbutton dual" id="buttonGrave"><span>~</span><span>`</span></div>
+    <div class="KBbutton indicator-key" id="buttonIndicator"><span class="key-led"></span></div>
+    <div class="KBbutton apple-key" id="buttonOpenApple"></div>
+    <div class="KBbutton key-space" id="buttonSpace"></div>
+    <div class="KBbutton apple-key" id="buttonSolidApple"></div>
+    <div class="KBbutton arrow-key" id="buttonLarr">←</div>
+    <div class="KBbutton arrow-key" id="buttonRarr">→</div>
+    <div class="KBbutton arrow-key" id="buttonDarr">↓</div>
+    <div class="KBbutton arrow-key" id="buttonUarr">↑</div>
+  </div>
+</div>
+
+<div id="keyboard2" aria-hidden="true"></div>
+<!-- Leave accept unset: iOS can disable unknown disk-image extensions.
+     The media loader validates the selected file after reading it. -->
+<dialog id="mediaDialog" aria-labelledby="mediaTitle">
+  <input type="file" id="filedialog1" hidden/>
+  <input type="file" id="filedialogInsert" hidden/>
+  <input type="file" id="filedialogInsert2" hidden/>
+  <h2 id="mediaTitle">Disk controls</h2>
+  <p>Boot your system in Drive 1, then insert an application in Drive 2.</p>
+  <section class="diskDrive" aria-labelledby="driveTitle0">
+    <h3 id="driveTitle0">Drive 1 · System / boot</h3>
+    <p id="driveName0" class="diskName">Empty</p>
+    <label class="mediaChoice" for="filedialog1"><strong>Load and restart</strong><span>Boot a system disk or start a new game.</span></label>
+    <label class="mediaChoice" for="filedialogInsert">Insert into Drive 1 — keep running</label>
+    <div id="hardDriveOptions0" hidden>
+      <label><input type="checkbox" id="protectDrive0"> Write protect</label>
+      <p id="writeStatus0" role="status"></p>
+      <button id="saveDrive0" type="button">Download image</button>
+    </div>
+    <button id="ejectDrive0" type="button">Eject Drive 1</button>
+  </section>
+  <section class="diskDrive" aria-labelledby="driveTitle1">
+    <h3 id="driveTitle1">Drive 2 · Application / data</h3>
+    <p id="driveName1" class="diskName">Empty</p>
+    <label class="mediaChoice" for="filedialogInsert2">Insert into Drive 2 — keep running</label>
+    <div id="hardDriveOptions1" hidden>
+      <label><input type="checkbox" id="protectDrive1"> Write protect</label>
+      <p id="writeStatus1" role="status"></p>
+      <button id="saveDrive1" type="button">Download image</button>
+    </div>
+    <button id="ejectDrive1" type="button">Eject Drive 2</button>
+  </section>
+  <p>DSK, WOZ, 2MG, HDV and ZIP supported. Eject the disk in the guest desktop before replacing it. Hard-drive writes remain in memory until you download the image. Save in the guest application, then download before ejecting, replacing, or reloading. Downloads create a new file; the original file is unchanged.</p>
+  <form method="dialog"><button>Cancel</button></form>
+</dialog>
+<dialog id="archiveDialog" aria-labelledby="archiveTitle">
+  <form method="dialog">
+    <h2 id="archiveTitle">Choose a disk image</h2>
+    <p id="archiveName"></p>
+    <label for="archiveImages">Disk image</label>
+    <select id="archiveImages" autofocus></select>
+    <div class="archiveActions">
+      <button value="cancel">Cancel</button>
+      <button value="load">Load</button>
+    </div>
+  </form>
+</dialog>
+
+<button id="buttonSettings" type="button" aria-label="Emulator controls" aria-expanded="false" aria-controls="controls" title="Emulator controls">
+  <svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="m9 3 1-2h4l1 2 2 1 2 0 2 3-1 2v3l1 2-2 3h-2l-2 1-1 3h-4l-1-3-2-1H5l-2-3 1-2V9L3 7l2-3h2Z"/><circle cx="12" cy="11" r="3"/></svg>
+</button>
+<div id="controls" role="group" aria-label="Emulator controls" hidden>
+  <button class="button" id="buttonLoad" type="button">load</button>
+  <button type="button" class="button" id="buttonRunStop">run</button>
+  <button type="button" class="button" id="buttonReset">reset</button>
+
+  <button type="button" class="button" id="buttonInput" aria-pressed="false" title="Show or hide on-screen keyboard">key</button>
+  <button type="button" class="button" id="buttonJoystick" aria-pressed="false" title="Show or hide joystick controls">joy</button>
+  <button type="button" class="button" id="buttonDiagnostics" aria-pressed="false" title="Show or hide display diagnostics">diag</button>
+
+  <button type="button" class="button" id="buttonColor">color</button>
+  <button type="button" class="button" id="buttonScanlines">scanlines</button>
+</div>
+
+
+
+<div id="joyStick">
+  <canvas id="joyPadCanvas" aria-label="Analog joystick" width="256" height="256"></canvas>
+  <button id="buttonJoySettings" type="button" aria-label="Joystick settings" title="Joystick settings" aria-expanded="false" aria-controls="joyControls">
+  <svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="m9 3 1-2h4l1 2 2 1 2 0 2 3-1 2v3l1 2-2 3h-2l-2 1-1 3h-4l-1-3-2-1H5l-2-3 1-2V9L3 7l2-3h2Z"/><circle cx="12" cy="11" r="3"/></svg>
+  </button>
+  <div id="joyControls" role="group" aria-label="Joystick settings" hidden>
+    <label class="joy-setting"><span>mode</span><button type="button" class="button" id="buttonMode">analog</button></label>
+    <label class="joy-setting"><span>recenter</span><button type="button" class="button" id="buttonCenter">on</button></label>
+    <label class="joy-setting"><span>grid</span><button type="button" class="button" id="buttonGrid">off</button></label>
+  </div>
+  <canvas id="joyButtonsCanvas" aria-label="Fire 1 above, Fire 2 below" width="256" height="256"></canvas>
+</div>
+<script src="./controls-menu.js?v=20261017-eject-clean1"></script>
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js'></script>
+
+<script>
+(function () {
+  var status = document.getElementById("bootStatus");
+  if (status) {
+    status.textContent = "IIgs startup: HTML loaded, waiting for module...";
+    status.style.display = "block";
+  }
+  window.addEventListener("error", function (e) {
+    if (!status) return;
+    status.textContent = "PAGE ERROR\n" + (e.message || "module/resource failed") +
+      (e.filename ? "\n" + e.filename.split("/").pop() + ":" + e.lineno + ":" + e.colno : "");
+    status.style.display = "block";
+  }, true);
+  setTimeout(function () {
+    if (status && status.textContent.indexOf("HTML loaded") >= 0)
+      status.textContent = "MODULE DID NOT START\nscript.js was not evaluated";
+  }, 1500);
+})();
+</script>
+<script src="./joystick.js?v=20261001-no-debug"></script><script type="module" src="./script.js?v=20261017-nox128k1"></script>
+
+  </body>
+  
+</html>

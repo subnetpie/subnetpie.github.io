@@ -1,0 +1,143 @@
+// 2IMG format: https://ciderpress2.com/formatdoc/TwoIMG-notes.html
+import {unzipSync} from './vendor/fflate.js';
+import {parse2MG} from './disk_2mg.js?v=20260927-v0';
+export {parse2MG as parse2IMG} from './disk_2mg.js?v=20260927-v0';
+
+const supported = /\.(2mg|2img|po|hdv|dsk|do|woz|nib|rom|bin)$/i;
+const bytesOf = value => value instanceof Uint8Array ? value : new Uint8Array(value);
+const hasMagic = (data, text) => [...text].every((c,i)=>data[i]===c.charCodeAt(0));
+export const isZip = (name, data) => /\.zip$/i.test(name) || hasMagic(bytesOf(data),'PK\x03\x04');
+
+export function readZipEntries(value) {
+  let total=0;
+  const files=unzipSync(bytesOf(value), {filter(entry) {
+    const name=entry.name;
+    if(!supported.test(name) || /(^|\/)(__MACOSX|\._[^/]*)(\/|$)/.test(name))return false;
+    total+=entry.originalSize;
+    if(entry.originalSize>64*1024*1024 || total>128*1024*1024)
+      throw new Error('ZIP disk images exceed the 128 MB extraction limit');
+    return true;
+  }});
+  const entries=Object.entries(files).map(([name,data])=>({name,data}));
+  entries.sort((a,b)=>a.name.localeCompare(b.name,undefined,{numeric:true}));
+  if(!entries.length)throw new Error('ZIP contains no supported Apple II image');
+  return entries;
+}
+
+// The same physical sectors appear in reverse logical order (1..14) in
+// 16-sector DOS and ProDOS images; sectors 0 and 15 remain in place.
+export function prodosToDOS(data) {
+  if(data.length!==143360)throw new Error('ProDOS floppy must contain 35 tracks');
+  const out=new Uint8Array(data.length);
+  for(let track=0;track<35;track++)for(let sector=0;sector<16;sector++) {
+    const source=sector===0||sector===15?sector:15-sector;
+    const at=track*4096;
+    out.set(data.subarray(at+source*256,at+(source+1)*256),at+sector*256);
+  }
+  return out;
+}
+
+// Some distributions label a raw ProDOS volume .2mg. Require a valid root
+// volume header before accepting that mismatch; never reinterpret broken 2IMG.
+function rawProDOSBlocks(data) {
+  if(data.length<1536 || data.length%512)return 0;
+  const h=1024, n=data[h+4]&15;
+  const blocks=data[h+41]|(data[h+42]<<8);
+  const bitmap=data[h+39]|(data[h+40]<<8);
+  if(data[h] || data[h+1] || (data[h+4]>>4)!==15 || !n ||
+     data[h+35]!==39 || data[h+36]!==13 || bitmap<3 || bitmap>=blocks ||
+     blocks<3 || blocks*512>data.length)return 0;
+  for(let i=0;i<n;i++)if(data[h+5+i]<0x20 || data[h+5+i]>0x7e)return 0;
+  return blocks;
+}
+
+export function decodeMedia(name,value) {
+  let data=bytesOf(value),format,writeProtected=false,volume=254,physical=null;
+  const lower=name.toLowerCase();
+  const rawBlocks=rawProDOSBlocks(data);
+  if(!hasMagic(data,'2IMG') && rawBlocks && /\.(2mg|2img)$/.test(lower)) {
+    if(data.length===65536*512 && rawBlocks===65535)data=data.subarray(0,65535*512);
+    format=1;
+    if(data.length===819200)physical='35';
+  } else if(hasMagic(data,'2IMG') || /\.(2mg|2img)$/.test(lower)) {
+    const parsed=parse2MG(data);
+    ({data,format,writeProtected,volume}=parsed);
+    // 800K IIgs 3.5 images are logical 512-byte block media. Most writers
+    // mark these as ProDOS-order (format 1), but several legacy publishers
+    // (including the Sierra Thexder 2MG) incorrectly use format 0 while still
+    // storing a straight 1600-block image. 143K format-0 images remain DOS
+    // sector-order floppies; only the unambiguous 800K size gets this repair.
+    if(data.length===1600*512) {
+      format=1;
+      physical='35';
+    } else if(format===1 && parsed.blocks===1600) {
+      physical='35';
+    }
+  } else if(/\.(rom|bin)$/.test(lower) && [0x20000,0x40000].includes(data.length)) {
+    return {kind:'rom',name,data};
+  } else if(hasMagic(data,'WOZ1') || hasMagic(data,'WOZ2')) {
+    return {kind:'floppy',format:'woz',name,data,writeProtected:true};
+  } else if(/\.woz$/.test(lower))throw new Error('Invalid WOZ signature');
+  else if(/\.(rom|bin)$/.test(lower))throw new Error('IIgs ROM must contain 128K or 256K');
+  else if(/\.nib$/.test(lower))format=2;
+  else if(/\.(dsk|do)$/.test(lower))format=0;
+  else if(/\.(po|hdv)$/.test(lower) || data.length!==143360)format=1;
+  else format=0;
+
+  if(format===2) {
+    if(data.length!==35*6656)throw new Error('NIB image must contain 35 tracks of 6656 bytes');
+    return {kind:'floppy',format:'nib',name,data,writeProtected:true};
+  }
+  if(format===0 || (format===1 && data.length===143360 && !/\.hdv$/.test(lower))) {
+    if(data.length!==143360)throw new Error('DOS-order floppy must contain 143360 bytes');
+    if(format===1)data=prodosToDOS(data);
+    return {kind:'floppy',format:'dsk',name,data,volume,writeProtected:true};
+  }
+  if(!data.length || data.length%512 || data.length/512>65535)
+    throw new Error('Block image must contain 1–65535 blocks of 512 bytes');
+  return {kind:'block',name,data,writeProtected,physical};
+}
+
+export function mountMedia(board, media, drive=0, {preserveSession=false}={}) {
+  if(drive!==0 && drive!==1)throw new Error("Invalid drive");
+  let ok;
+  if(media.kind==='rom') {
+    if(preserveSession)throw new Error('ROM images require Load and restart');
+    if(!board.iigsEnabled)throw new Error('IIgs ROM requires IIgs mode');
+    board.loadIIgsROM(media.data);
+    return true;
+  }
+  if(media.kind==='block') {
+    ok=board.prodosBlock.load_image(media.name,media.data,media,drive);
+    if(board.iigsEnabled && board.memory && media.physical==='35') {
+      board.memory.floppy35Drives[drive].mount(media);
+    }
+  }
+  else ok=board.floppy525.load_image(drive,media.name,media.data,media);
+  if(!ok)throw new Error('Unable to mount '+media.name);
+  if(!preserveSession && board.iigsEnabled && board.memory)
+    board.memory.legacyFloppySpeed = media.kind==='floppy';
+  // Each menu drive owns one image. Clear stale media of a different type
+  // in this drive only; the other drive stays mounted.
+  if(board.iigsEnabled && media.physical!=='35') {
+    board.memory.floppy35Drives[drive].eject();
+  }
+  // Otherwise slot 7 keeps booting the previously selected hard disk.
+  if(media.kind==='floppy')board.prodosBlock.eject(drive);
+  else {
+    board.floppy525._disks[drive].medium=null;
+    board.floppy525._disks[drive].name='';
+  }
+  board.mountedMedia ??= [null,null];
+  board.mountedMedia[drive]=media;
+  return true;
+}
+
+export function ejectMedia(board,drive) {
+  if(drive!==0 && drive!==1)throw new Error('Invalid drive');
+  board.prodosBlock.eject(drive);
+  if(board.iigsEnabled)board.memory.floppy35Drives[drive].eject();
+  board.floppy525._disks[drive].medium=null;
+  board.floppy525._disks[drive].name='';
+  if(board.mountedMedia)board.mountedMedia[drive]=null;
+}
