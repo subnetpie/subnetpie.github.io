@@ -1,6 +1,6 @@
-import {Motherboard} from "./motherboard.js?v=20261102-fork-local1";
+import {Motherboard} from "./motherboard.js?v=20261102-disk-lifecycle1";
 import {AppleIIMemoryExpansion} from "./memory_expansion.js?v=20261017-slotbus4";
-import {loadIIgsConfiguration} from "./iigs_configuration.js?v=20261102-fork-local1";
+import {loadIIgsConfiguration} from "./iigs_configuration.js?v=20261102-disk-lifecycle1";
 
 const ROM_URL=new URL("./roms/341-0344a.bin",import.meta.url);
 let CARD_ROM=null;

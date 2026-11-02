@@ -1,6 +1,6 @@
-import {Motherboard} from "./motherboard.js?v=20261102-fork-local1";
-import {ProDOSBlockDevice} from "./prodos_block.js?v=20260930-persist1";
-import {loadIIgsConfiguration} from "./iigs_configuration.js?v=20261102-fork-local1";
+import {Motherboard} from "./motherboard.js?v=20261102-disk-lifecycle1";
+import {ProDOSBlockDevice} from "./prodos_block.js?v=20261102-disk-lifecycle1";
+import {loadIIgsConfiguration} from "./iigs_configuration.js?v=20261102-disk-lifecycle1";
 
 // MAME 0.289 keeps SLOTROMSEL/SLOTC3ROM and the C800 owner in machine state,
 // not in the individual cards. This module is the single IIgs policy point

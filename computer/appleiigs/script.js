@@ -130,7 +130,7 @@ var joyButtons = document.getElementById("joyButtonsCanvas");
 var joyButtonsCtx = joyButtons.getContext("2d");
 document.oncontextmenu = new Function("return false;");
 
-import {decodeMedia, isZip, readZipEntries, mountMedia, ejectMedia} from './media.js?v=20260930-gsos-drives';
+import {decodeMedia, isZip, readZipEntries, mountMedia, ejectMedia} from './media.js?v=20261102-disk-lifecycle1';
 
 function chooseArchiveImage(name, entries) {
   const dialog = document.getElementById('archiveDialog');
@@ -148,7 +148,7 @@ function chooseArchiveImage(name, entries) {
   });
 }
 
-import { Motherboard } from "./motherboard.js?v=20261102-fork-local1";
+import { Motherboard } from "./motherboard.js?v=20261102-disk-lifecycle1";
 
 class Drive {
   constructor(num, display, led, dialog, restart=true) {
@@ -238,7 +238,12 @@ function refreshDriveLabels() {
     } else status.textContent=disk?.dirty ? 'Modified in this session — download to keep changes.' : 'No writes in this session.';
   }
 }
-for(let i=0;i<2;i++)document.getElementById('ejectDrive'+i).addEventListener('click',()=>{
+for(let i=0;i<2;i++)document.getElementById('ejectDrive'+i).addEventListener('click',async()=>{
+  const storage=window.__appleIIgsStorage;
+  if(motherboard.iigsEnabled && storage) {
+    // Clear saved mounts as well as hardware when using the legacy disk menu.
+    for(const ep of storage.endpoints().filter(ep=>ep.index===i))await storage.eject(ep.id);
+  }
   ejectMedia(motherboard,i);refreshDriveLabels();
 });
 for(let i=0;i<2;i++) {

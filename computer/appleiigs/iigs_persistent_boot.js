@@ -1,6 +1,6 @@
-import {decodeMedia,isZip,readZipEntries} from './media.js?v=20260930-gsos-drives';
+import {decodeMedia,isZip,readZipEntries} from './media.js?v=20261102-disk-lifecycle1';
 import {mediaPersistenceKey,restorePersistentBlocks} from './disk_persistence.js?v=20260930-persist1';
-import {ProDOSBlockDevice} from './prodos_block.js?v=20260930-persist1';
+import {ProDOSBlockDevice} from './prodos_block.js?v=20261102-disk-lifecycle1';
 
 const DB='appleii-iigs-mounted-media';
 const STORE='mounts';

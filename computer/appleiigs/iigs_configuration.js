@@ -1,6 +1,6 @@
-import {Motherboard} from "./motherboard.js?v=20261102-fork-local1";
-import {ProDOSBlockDevice} from "./prodos_block.js?v=20260930-persist1";
-import {Floppy525} from "./FloppyWoz525.js";
+import {Motherboard} from "./motherboard.js?v=20261102-disk-lifecycle1";
+import {ProDOSBlockDevice} from "./prodos_block.js?v=20261102-disk-lifecycle1";
+import {Floppy525} from "./FloppyWoz525.js?v=20261102-disk-lifecycle1";
 import {Floppy35} from "./floppy35.js?v=20260928-trackcache1";
 
 const STORAGE_KEY = "subnetpie.apple2.iigs.configuration.v1";

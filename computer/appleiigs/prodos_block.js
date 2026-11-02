@@ -122,12 +122,14 @@ export class ProDOSBlockDevice {
 
     eject(drive = 0) {
         const disk = this.drives[drive];
-        disk.changed = !!disk.image;
+        disk.changed = disk.changed || !!disk.image;
         disk.image = null;
         disk.name = '';
         disk.blockCount = 0;
         disk.dirty = false;
         disk.writeProtected = false;
+        disk.physical = null;
+        disk.persistenceKey = null;
     }
 
     reset() {
