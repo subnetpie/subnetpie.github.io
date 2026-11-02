@@ -10,22 +10,22 @@ import {Mockingboard} from "./mockingboard.js?v=20261005-mame0289-sc01a1";
 //  ref: https://en.wikipedia.org/wiki/Apple_II_character_set
 //
 
-import {W65C02S} from "https://subnetpie.github.io/computer/appleii/w65c02s.js?v=20261004-mb-complete1";
-import {Memory} from "https://subnetpie.github.io/computer/appleii/memory.js";
-import {IIgsMemory} from "https://subnetpie.github.io/computer/appleii/iigs_memory.js?v=20261017-nox128k1";
-import {W65C816} from "https://subnetpie.github.io/computer/appleii/w65c816.js?v=20260928-blend";
-import {IOManager} from "https://subnetpie.github.io/computer/appleii/io_manager.js?v=20260930-keyboard";
-import {TextDisplay} from "https://subnetpie.github.io/computer/appleii/display_text.js";
-import {TextDisplay80} from "https://subnetpie.github.io/computer/appleii/display_text_80.js?v=20260928-pageroute1";
-import {HiresDisplay} from "https://subnetpie.github.io/computer/appleii/display_hires.js?v=20260928-pageflipram1";
-import {LoresDisplay} from "https://subnetpie.github.io/computer/appleii/display_lores.js";
-import {DoubleHiresDisplay} from "https://subnetpie.github.io/computer/appleii/display_double_hires.js?v=20260928-pageflipram1";
-import {Keyboard} from "https://subnetpie.github.io/computer/appleii/keyboard.js?v=20260930-keyboard";
-import {Floppy525} from "https://subnetpie.github.io/computer/appleii/FloppyWoz525.js";
-import {AppleAudio} from "https://subnetpie.github.io/computer/appleii/apple_audio.js?v=20261004-mb1";
-import {ProDOSBlockDevice} from "https://subnetpie.github.io/computer/appleii/prodos_block.js?v=20260930-persist1";
-import {IIgsVideo} from "https://subnetpie.github.io/computer/appleii/video_iigs.js?v=20261002-dither-blend";
-import {MachineTrace} from "https://subnetpie.github.io/computer/appleii/machine_trace.js";
+import {W65C02S} from "./w65c02s.js?v=20261004-mb-complete1";
+import {Memory} from "./memory.js";
+import {IIgsMemory} from "./iigs_memory.js?v=20261017-nox128k1";
+import {W65C816} from "./w65c816.js?v=20260928-blend";
+import {IOManager} from "./io_manager.js?v=20260930-keyboard";
+import {TextDisplay} from "./display_text.js";
+import {TextDisplay80} from "./display_text_80.js?v=20260928-pageroute1";
+import {HiresDisplay} from "./display_hires.js?v=20260928-pageflipram1";
+import {LoresDisplay} from "./display_lores.js";
+import {DoubleHiresDisplay} from "./display_double_hires.js?v=20260928-pageflipram1";
+import {Keyboard} from "./keyboard.js?v=20260930-keyboard";
+import {Floppy525} from "./FloppyWoz525.js";
+import {AppleAudio} from "./apple_audio.js?v=20261004-mb1";
+import {ProDOSBlockDevice} from "./prodos_block.js?v=20260930-persist1";
+import {IIgsVideo} from "./video_iigs.js?v=20261002-dither-blend";
+import {MachineTrace} from "./machine_trace.js";
 import {loadRom} from "./rom_loader.js?v=20261017-raw-rom2";
 const rom_342_0304_cd = await loadRom(new URL("./roms/Apple_IIe/Apple IIe CD Enhanced - 342-0304-A - 2764.bin", import.meta.url), 0x2000);
 const rom_342_0303_ef = await loadRom(new URL("./roms/Apple_IIe/Apple IIe EF Enhanced - 342-0303-A - 2764.bin", import.meta.url), 0x2000);

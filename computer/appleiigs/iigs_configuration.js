@@ -1,7 +1,7 @@
-import {Motherboard} from "https://subnetpie.github.io/computer/appleii/motherboard.js?v=20261017-nox128k1";
-import {ProDOSBlockDevice} from "https://subnetpie.github.io/computer/appleii/prodos_block.js?v=20260930-persist1";
-import {Floppy525} from "https://subnetpie.github.io/computer/appleii/FloppyWoz525.js";
-import {Floppy35} from "https://subnetpie.github.io/computer/appleii/floppy35.js?v=20260928-trackcache1";
+import {Motherboard} from "./motherboard.js?v=20261102-fork-local1";
+import {ProDOSBlockDevice} from "./prodos_block.js?v=20260930-persist1";
+import {Floppy525} from "./FloppyWoz525.js";
+import {Floppy35} from "./floppy35.js?v=20260928-trackcache1";
 
 const STORAGE_KEY = "subnetpie.apple2.iigs.configuration.v1";
 const LEGACY_MEMEXP_KEY = "subnetpie.apple2.memexp.slot.v1";
