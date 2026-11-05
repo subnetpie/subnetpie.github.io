@@ -1,0 +1,862 @@
+[
+  {
+    "id": "n43800ml",
+    "title": "Bonk 3 - Bonk's Big Adventure",
+    "fullTitle": "Bonk 3 - Bonk's Big Adventure (USA)",
+    "region": "USA",
+    "file": "roms/n43800ml.pce",
+    "cover": "native/t16003_pac.png",
+    "sha1": "b966df0281f7fab4536afc166278e1bec0d926c4",
+    "bytes": 1048576,
+    "art": "native/t16003_back.png",
+    "screens": [
+      "native/t16003_sc1.png",
+      "native/t16003_sc2.png",
+      "native/t16003_sc3.png"
+    ],
+    "nativeTitle": "Bonk's Big Adventure",
+    "copyright": "(C)1993 HUDSON SOFT\n(C)1989,1993 RED"
+  },
+  {
+    "id": "n43302el",
+    "title": "Bonk's Adventure",
+    "fullTitle": "Bonk's Adventure (USA)",
+    "region": "USA",
+    "file": "roms/n43302el.pce",
+    "cover": "native/t16001_pac.png",
+    "sha1": "403c4fbdb617cea5b8cd0c8d06ae988f6aef93bd",
+    "bytes": 393216,
+    "art": "native/pce001_back.png",
+    "screens": [
+      "native/t16001_sc1.png",
+      "native/t16001_sc2.png",
+      "native/t16001_sc3.png"
+    ],
+    "nativeTitle": "Bonk's Adventure",
+    "release": "1990",
+    "copyright": "(C)HUDSON SOFT\n(C)RED\n\"Bonk's Adventure\" is a trademark of Hudson Soft Co., Ltd.",
+    "description": "An old-school side-scrolling action game! Gameplay is simple; just headbutt your enemies as you  progress through each stage! \n\nYou receive damage when you get hit by an enemy or  when you touch something hazardous.  Try to keep Bonk from losing any life! Chow down on meat you find along the way to  power-up Bonk by 2 levels!  Headbutt the ground after Bonk has transformed to  unleash a powerful explosion!  The earth will tremble and your enemies will be  stunned! That's Bonk power! The power of his mighty rock-hard head!  The game is loaded with bonus games and hidden stages!  And, just like any great action game, there are big boss battles!"
+  },
+  {
+    "id": "n43403pd",
+    "title": "Bonk's Revenge",
+    "fullTitle": "Bonk's Revenge (USA)",
+    "region": "USA",
+    "file": "roms/n43403pd.pce",
+    "cover": "native/t16002_pac.png",
+    "sha1": "a9908331d835ce3f6ae301e2a6232fe59861c454",
+    "bytes": 524288,
+    "art": "native/pce002_back.png",
+    "screens": [
+      "native/t16002_sc1.png",
+      "native/t16002_sc2.png",
+      "native/t16002_sc3.png"
+    ],
+    "nativeTitle": "Bonk's Revenge"
+  },
+  {
+    "id": "n43201qd",
+    "title": "China Warrior",
+    "fullTitle": "China Warrior (USA)",
+    "region": "USA",
+    "file": "roms/n43201qd.pce",
+    "cover": "native/t16018_pac.png",
+    "sha1": "1933869f66f30da4bc07b9ff6b6c2897b32088f2",
+    "bytes": 262144,
+    "art": "native/pce018_back.png",
+    "screens": [
+      "native/t16018_sc1.png"
+    ],
+    "nativeTitle": "China Warrior"
+  },
+  {
+    "id": "n43302yl",
+    "title": "Devil's Crush",
+    "fullTitle": "Devil's Crush (USA)",
+    "region": "USA",
+    "file": "roms/n43302yl.pce",
+    "cover": "native/t16034_pac.png",
+    "sha1": "1c54fb80e5acf82d7346dd7f2e8db8c74c58f4ba",
+    "bytes": 393216,
+    "art": "native/pce034_back.png",
+    "screens": [
+      "native/t16034_sc1.png"
+    ],
+    "nativeTitle": "Devil's Crush"
+  },
+  {
+    "id": "n43203ld",
+    "title": "Double Dungeons",
+    "fullTitle": "Double Dungeons (USA)",
+    "region": "USA",
+    "file": "roms/n43203ld.pce",
+    "cover": "native/t16029_pac.png",
+    "sha1": "4e81f6cfa47ed941922492889be432041ff99e25",
+    "bytes": 262144,
+    "art": "native/t16029_back.png",
+    "screens": [
+      "native/t16029_sc1.png",
+      "native/t16029_sc2.png",
+      "native/t16029_sc3.png"
+    ],
+    "nativeTitle": "Double Dungeons"
+  },
+  {
+    "id": "n43203yd",
+    "title": "Dragon's Curse",
+    "fullTitle": "Dragon's Curse (USA)",
+    "region": "USA",
+    "file": "roms/n43203yd.pce",
+    "cover": "native/t16013_pac.png",
+    "sha1": "39b382725e38d6303ae2b19f1cabbd96ca661b07",
+    "bytes": 262144,
+    "art": "native/t16013_back.png",
+    "screens": [
+      "native/t16013_sc1.png",
+      "native/t16013_sc2.png",
+      "native/t16013_sc3.png"
+    ],
+    "nativeTitle": "Dragon's Curse"
+  },
+  {
+    "id": "n43300nl",
+    "title": "Dungeon Explorer",
+    "fullTitle": "Dungeon Explorer (USA)",
+    "region": "USA",
+    "file": "roms/n43300nl.pce",
+    "cover": "native/t16012_pac.png",
+    "sha1": "d6d18128d55d886a9b6a8c8ea65af76e783001f9",
+    "bytes": 393216,
+    "art": "native/pce012_back.png",
+    "screens": [
+      "native/t16012_sc1.png"
+    ],
+    "nativeTitle": "Dungeon Explorer",
+    "copyright": "(C)HUDSON SOFT\n\"Dungeon Explorer\" is a trademark of Hudson Soft Co., Ltd.",
+    "description": "Dungeon Explorer is a multi-player action RPG where  up to 5 players can play at the same time.  The story takes place in underground dungeons and  you can choose from 8 different character types:  Fighter, Thief, Warlock, Witch, Bishop, Elf, Bard,  or Knome.  Depending on the character, the types of magic you  can use, your attack strength, and your movement  will all vary. To survive, you most know all about  your enemies' weakness. You must also know about the  special attributes of each magic spell and use them  to your greatest advantage.  In team-play games, working together is the key to  victory. \n\nDungeon Explorer is a multi-player action RPG where  up to 5 players can play at the same time.  In team-play games, working together is the  key to victory. \n\nThis version of the app doesn't support the  multi-player mode."
+  },
+  {
+    "id": "n43301kl",
+    "title": "Military Madness",
+    "fullTitle": "Military Madness (USA)",
+    "region": "USA",
+    "file": "roms/n43301kl.pce",
+    "cover": "native/t16005_pac.png",
+    "sha1": "01cf6be3fc11af874d25fc64bfb74f2f044f1bce",
+    "bytes": 393216,
+    "art": "native/t16005_back.png",
+    "screens": [
+      "native/t16005_sc1.png",
+      "native/t16005_sc2.png",
+      "native/t16005_sc3.png"
+    ],
+    "nativeTitle": "Military Madness",
+    "copyright": "(C)HUDSON SOFT\n\"Military Madness\" is a trademark of Hudson Soft Co., Ltd."
+  },
+  {
+    "id": "n43202al",
+    "title": "Moto Roader",
+    "fullTitle": "Moto Roader (USA)",
+    "region": "USA",
+    "file": "roms/n43202al.pce",
+    "cover": "native/t16033_pac.png",
+    "sha1": "bd92a8e6a1e860305a0943878a3b4a56ddde5478",
+    "bytes": 262144,
+    "art": "native/pce033_back.png",
+    "screens": [
+      "native/t16033_sc1.png",
+      "native/t16033_sc2.png"
+    ],
+    "nativeTitle": "Moto Roader"
+  },
+  {
+    "id": "n43405sd",
+    "title": "New Adventure Island",
+    "fullTitle": "New Adventure Island (USA)",
+    "region": "USA",
+    "file": "roms/n43405sd.pce",
+    "cover": "native/t16007_pac.png",
+    "sha1": "bea7a4e5445d3a4f8610524471b83216e57f48e2",
+    "bytes": 524288,
+    "art": "native/pce007_back.png",
+    "screens": [
+      "native/t16007_sc1.png"
+    ],
+    "nativeTitle": "New Adventure Island",
+    "release": "1992",
+    "copyright": "(C)HUDSON SOFT\n\"New Adventure Island\" is a trademark of Hudson Soft Co., Ltd."
+  },
+  {
+    "id": "n43402bl",
+    "title": "Ninja Spirit",
+    "fullTitle": "Ninja Spirit (USA)",
+    "region": "USA",
+    "file": "roms/n43402bl.pce",
+    "cover": "native/t16017_pac.png",
+    "sha1": "515eb414fc404d798206faad33fbcc5985fbbccb",
+    "bytes": 524288,
+    "art": "native/pce017_back.png",
+    "screens": [
+      "native/t16017_sc1.png"
+    ],
+    "nativeTitle": "Ninja Spirit"
+  },
+  {
+    "id": "n43400jl",
+    "title": "R-Type",
+    "fullTitle": "R-Type (USA)",
+    "region": "USA",
+    "file": "roms/n43400jl.pce",
+    "cover": "native/t16009_pac.png",
+    "sha1": "7e3d4dc9e8d880ac8d813fa69af0c6804b75cd9a",
+    "bytes": 524288,
+    "art": "native/pce009_back.png",
+    "screens": [
+      "native/t16009_sc1.png"
+    ],
+    "nativeTitle": "R-Type",
+    "release": "1988",
+    "copyright": "(C)HUDSON SOFT\n(C)IREM SOFTWARE ENGINEERING INC.\n\"R-TYPE\" is a registered trademark of IREM SOFTWARE ENGINEERING INC.",
+    "description": "A completely faithful port, right down to the character  details, of the famous arcade shooting-game masterpiece, R-TYPE. Destroy the POW armor and 6 different units will appear  that you can use to power-up your R-9. Equip Bits and obtain Laser Units to make the Force  appear and to power-up it up. The Force can then be integrated into or separated  from your R-9. Make the most of the Reflecting Laser Beams, and the  Air-to-surface, and Anti-aircraft Lasers. Keep punching the fire button to send blasts from the  Beam Cannon. Press and hold the fire button to charge the Beam Gauge and release it to fire a devastating Wave Cannon blast! The longer you hold it, the stronger the blast! The ultimate highlights are the boss characters that  await you at the end of each stage, and a stage that  pits you against a giant warship."
+  },
+  {
+    "id": "n43600hl",
+    "title": "Raiden",
+    "fullTitle": "Raiden (USA)",
+    "region": "USA",
+    "file": "roms/n43600hl.pce",
+    "cover": null,
+    "sha1": "910e7346976b7a6e83ddb7e68b49d33ced9dbc2c",
+    "bytes": 786432,
+    "art": null,
+    "nativeTitle": "Raiden"
+  },
+  {
+    "id": "n43406kd",
+    "title": "Shockman",
+    "fullTitle": "Shockman (USA)",
+    "region": "USA",
+    "file": "roms/n43406kd.pce",
+    "cover": "native/t16031_pac.png",
+    "sha1": "f3e0f9546afe257748496a652f138dbc318bed05",
+    "bytes": 524288,
+    "art": "native/pce031_back.png",
+    "screens": [
+      "native/t16031_sc1.png"
+    ],
+    "nativeTitle": "Shockman"
+  },
+  {
+    "id": "tgx040082",
+    "title": "Soldier Blade",
+    "fullTitle": "Soldier Blade (USA)",
+    "region": "USA",
+    "file": "roms/tgx040082.pce",
+    "cover": "native/t16008_pac.png",
+    "sha1": "3b4cc242f68a1d61c83a1a0dbdee23d2ae8f1427",
+    "bytes": 524288,
+    "art": "native/pce008_back.png",
+    "screens": [
+      "native/t16008_sc1.png"
+    ],
+    "nativeTitle": "Soldier Blade"
+  },
+  {
+    "id": "n43201cl",
+    "title": "Victory Run",
+    "fullTitle": "Victory Run (USA)",
+    "region": "USA",
+    "file": "roms/n43201cl.pce",
+    "cover": "native/t16006_pac.png",
+    "sha1": "bab16031a16490415cedd5ba47cbe4cadc3d8727",
+    "bytes": 262144,
+    "art": "native/pce006_back.png",
+    "screens": [
+      "native/t16006_sc1.png"
+    ],
+    "nativeTitle": "Victory Run",
+    "release": "1989",
+    "copyright": "(C)HUDSON SOFT\n\"Victory Run\" is a trademark of Hudson Soft Co., Ltd."
+  },
+  {
+    "id": "n43300rl",
+    "title": "Vigilante",
+    "fullTitle": "Vigilante (USA)",
+    "region": "USA",
+    "file": "roms/n43300rl.pce",
+    "cover": "native/t16015_pac.png",
+    "sha1": "f77d83af4f1e733faf813b5e78ecc2cbb19d3b25",
+    "bytes": 393216,
+    "art": "native/pce015_back.png",
+    "screens": [
+      "native/t16015_sc1.png"
+    ],
+    "nativeTitle": "Vigilante"
+  },
+  {
+    "id": "n43201tl",
+    "title": "World Class Baseball",
+    "fullTitle": "World Class Baseball (USA)",
+    "region": "USA",
+    "file": "roms/n43201tl.pce",
+    "cover": "native/t16024_pac.png",
+    "sha1": "fab372a908533fd444b6c829f881f2de103d93b6",
+    "bytes": 262144,
+    "art": "native/t16024_back.png",
+    "screens": [
+      "native/t16024_sc1.png",
+      "native/t16024_sc2.png",
+      "native/t16024_sc3.png"
+    ],
+    "nativeTitle": "World Class Baseball"
+  },
+  {
+    "id": "n43406rd",
+    "title": "World Sports Competition",
+    "fullTitle": "World Sports Competition (USA)",
+    "region": "USA",
+    "file": "roms/n43406rd.pce",
+    "cover": "native/t16004_pac.png",
+    "sha1": "1f301c468197c382c98692712db2fdee0a29525f",
+    "bytes": 524288,
+    "art": "native/pce004_back.png",
+    "screens": [
+      "native/t16004_sc1.png"
+    ],
+    "nativeTitle": "World Sports Competition",
+    "release": "1993"
+  },
+  {
+    "id": "n43205gd",
+    "title": "Adventure Island",
+    "fullTitle": "Adventure Island (Japan)",
+    "region": "Japan",
+    "file": "roms/n43205gd.pce",
+    "cover": "assets/pce013_pac.png",
+    "sha1": "01ad5bbd7316740409e01917c19494cb26173ff5",
+    "bytes": 262144,
+    "art": "native/pce013_back.png",
+    "screens": [
+      "native/pce013_sc1.png",
+      "native/pce013_sc2.png",
+      "native/pce013_sc3.png"
+    ],
+    "nativeTitle": "Adventure Island"
+  },
+  {
+    "id": "n43302sl",
+    "title": "Benkei Gaiden",
+    "fullTitle": "Benkei Gaiden (Japan) (Wii Virtual Console)",
+    "region": "Japan",
+    "file": "roms/n43302sl.pce",
+    "cover": "assets/pce027_pac.png",
+    "sha1": "0be41c774e7ee75b84efdc2b05a7a45ec0201503",
+    "bytes": 393216,
+    "art": "native/pce027_back.png",
+    "screens": [
+      "native/pce027_sc1.png",
+      "native/pce027_sc2.png",
+      "native/pce027_sc3.png"
+    ],
+    "nativeTitle": "Benkei Gaiden"
+  },
+  {
+    "id": "n43800pl",
+    "title": "Bomberman '94",
+    "fullTitle": "Bomberman '94 (Japan)",
+    "region": "Japan",
+    "file": "roms/n43800pl.pce",
+    "cover": "assets/pce014_pac.png",
+    "sha1": "9085b474199531259b4ebbc05a279ae96cb7c5bd",
+    "bytes": 1048576,
+    "art": "native/pce014_back.png",
+    "screens": [
+      "native/pce014_sc1.png",
+      "native/pce014_sc2.png",
+      "native/pce014_sc3.png"
+    ],
+    "nativeTitle": "Bomberman '94"
+  },
+  {
+    "id": "n43201ld",
+    "title": "Break In",
+    "fullTitle": "Break In (Japan) (En)",
+    "region": "Japan",
+    "file": "roms/n43201ld.pce",
+    "cover": "assets/pce026_pac.png",
+    "sha1": "2a409cbe09529c6995954b3985168882bad80aa4",
+    "bytes": 262144,
+    "art": "native/pce026_back.png",
+    "screens": [
+      "native/pce026_sc1.png",
+      "native/pce026_sc2.png",
+      "native/pce026_sc3.png"
+    ],
+    "nativeTitle": "Break In"
+  },
+  {
+    "id": "n43405bd",
+    "title": "Detana!! TwinBee",
+    "fullTitle": "Detana!! TwinBee (Japan)",
+    "region": "Japan",
+    "file": "roms/n43405bd.pce",
+    "cover": "assets/pce025_pac.png",
+    "sha1": "e1d07a2f71c695b53755bade6fe81e46e4c4828c",
+    "bytes": 524288,
+    "art": "native/pce025_back.png",
+    "screens": [
+      "native/pce025_sc1.png",
+      "native/pce025_sc2.png",
+      "native/pce025_sc3.png"
+    ],
+    "nativeTitle": "Detana!! TwinBee"
+  },
+  {
+    "id": "n43302rl",
+    "title": "Devil Crash - Naxat Pinball",
+    "fullTitle": "Devil Crash - Naxat Pinball (Japan) (En)",
+    "region": "Japan",
+    "file": "roms/n43302rl.pce",
+    "cover": "assets/pce034_pac.png",
+    "sha1": "808638c33e110285d0d9415bc046b94a84b02c6a",
+    "bytes": 393216,
+    "art": "native/pce034_back.png",
+    "screens": [
+      "native/pce034_sc1.png",
+      "native/pce034_sc2.png",
+      "native/pce034_sc3.png"
+    ],
+    "nativeTitle": "Devil Crash - Naxat Pinball"
+  },
+  {
+    "id": "n43201rl",
+    "title": "Double Dungeons",
+    "fullTitle": "Double Dungeons (Japan)",
+    "region": "Japan",
+    "file": "roms/n43201rl.pce",
+    "cover": "assets/pce029_pac.png",
+    "sha1": "a5a032283f24a4e487715ffb36b3fc4615656b37",
+    "bytes": 262144,
+    "art": "native/pce029_back.png",
+    "screens": [
+      "native/pce029_sc1.png",
+      "native/pce029_sc2.png",
+      "native/pce029_sc3.png"
+    ],
+    "nativeTitle": "Double Dungeons"
+  },
+  {
+    "id": "n43300cl",
+    "title": "Dungeon Explorer",
+    "fullTitle": "Dungeon Explorer (Japan)",
+    "region": "Japan",
+    "file": "roms/n43300cl.pce",
+    "cover": "assets/pce012_pac.png",
+    "sha1": "77caece9655a0e14330884673ffb41ff2bb625c4",
+    "bytes": 393216,
+    "art": "native/pce012_back.png",
+    "screens": [
+      "native/pce012_sc1.png",
+      "native/pce012_sc2.png",
+      "native/pce012_sc3.png"
+    ],
+    "nativeTitle": "Dungeon Explorer",
+    "copyright": "(C)HUDSON SOFT\n\"Dungeon Explorer\" is a trademark of Hudson Soft Co., Ltd.",
+    "description": "Dungeon Explorer is a multi-player action RPG where  up to 5 players can play at the same time.  The story takes place in underground dungeons and  you can choose from 8 different character types:  Fighter, Thief, Warlock, Witch, Bishop, Elf, Bard,  or Knome.  Depending on the character, the types of magic you  can use, your attack strength, and your movement  will all vary. To survive, you most know all about  your enemies' weakness. You must also know about the  special attributes of each magic spell and use them  to your greatest advantage.  In team-play games, working together is the key to  victory. \n\nDungeon Explorer is a multi-player action RPG where  up to 5 players can play at the same time.  In team-play games, working together is the  key to victory. \n\nThis version of the app doesn't support the  multi-player mode."
+  },
+  {
+    "id": "n43205yd",
+    "title": "Gradius",
+    "fullTitle": "Gradius (Japan) (En)",
+    "region": "Japan",
+    "file": "roms/n43205yd.pce",
+    "cover": "assets/pce020_pac.png",
+    "sha1": "338f62b6d57f30b1850c32f5ae0d8c26c761974b",
+    "bytes": 262144,
+    "art": "native/pce020_back.png",
+    "screens": [
+      "native/pce020_sc1.png",
+      "native/pce020_sc2.png",
+      "native/pce020_sc3.png"
+    ],
+    "nativeTitle": "Gradius",
+    "release": "1991"
+  },
+  {
+    "id": "n43400ql",
+    "title": "ImageFight",
+    "fullTitle": "ImageFight (Japan) (En)",
+    "region": "Japan",
+    "file": "roms/n43400ql.pce",
+    "cover": "assets/pce016_pac.png",
+    "sha1": "4f2256e49cc71613a6b35d224be706ee95df17b9",
+    "bytes": 524288,
+    "art": "native/pce016_back.png",
+    "screens": [
+      "native/pce016_sc1.png",
+      "native/pce016_sc2.png",
+      "native/pce016_sc3.png"
+    ],
+    "nativeTitle": "Image Fight"
+  },
+  {
+    "id": "hc62005p",
+    "title": "Jaseiken Necromancer",
+    "fullTitle": "Jaseiken Necromancer (Japan) (Wii Virtual Console)",
+    "region": "Japan",
+    "file": "roms/hc62005p.pce",
+    "cover": "assets/pce011_pac.png",
+    "sha1": "c8eff40fea012983d383abffa47a953a1a217334",
+    "bytes": 262144,
+    "art": "native/pce011_back.png",
+    "screens": [
+      "native/pce011_sc1.png",
+      "native/pce011_sc2.png",
+      "native/pce011_sc3.png"
+    ],
+    "nativeTitle": "Jaseiken Necromancer",
+    "description": "This game was only available in Japan for the  PC Engine (the Japanese version of TurboGrafx-16)."
+  },
+  {
+    "id": "n43200md",
+    "title": "Kaizou Choujin Shubibinman",
+    "fullTitle": "Kaizou Choujin Shubibinman (Japan)",
+    "region": "Japan",
+    "file": "roms/n43200md.pce",
+    "cover": null,
+    "sha1": "4db72b3a934e6255135ebc0533f900e1d5d828c8",
+    "bytes": 262144,
+    "art": null,
+    "nativeTitle": "Kaizou Choujin Shubibinman"
+  },
+  {
+    "id": "ncs91001",
+    "title": "Kaizou Choujin Shubibinman 2 - Aratanaru Teki",
+    "fullTitle": "Kaizou Choujin Shubibinman 2 - Aratanaru Teki (Japan)",
+    "region": "Japan",
+    "file": "roms/ncs91001.pce",
+    "cover": "assets/pce031_pac.png",
+    "sha1": "9c6fc53a92adead994d9b44afa92f34eebee05bb",
+    "bytes": 524288,
+    "art": "native/pce031_back.png",
+    "screens": [
+      "native/pce031_sc1.png",
+      "native/pce031_sc2.png",
+      "native/pce031_sc3.png"
+    ],
+    "nativeTitle": "Kaizou Choujin Shubibinman 2 - Aratanaru Teki"
+  },
+  {
+    "id": "kunfu",
+    "title": "Kung Fu, The",
+    "fullTitle": "Kung Fu, The (Japan) (Wii Virtual Console)",
+    "region": "Japan",
+    "file": "roms/kunfu.pce",
+    "cover": "assets/pce018_pac.png",
+    "sha1": "2612f40b72ac96516678949182465839cd4ee85b",
+    "bytes": 262144,
+    "art": "native/pce018_back.png",
+    "screens": [
+      "native/pce018_sc1.png",
+      "native/pce018_sc2.png",
+      "native/pce018_sc3.png"
+    ],
+    "nativeTitle": "Kung Fu, The"
+  },
+  {
+    "id": "n43200jd",
+    "title": "Moto Roader",
+    "fullTitle": "Moto Roader (Japan) (En)",
+    "region": "Japan",
+    "file": "roms/n43200jd.pce",
+    "cover": "assets/pce033_pac.png",
+    "sha1": "9737bd5a9d4f28544ad1cb25592e428bea98aa27",
+    "bytes": 262144,
+    "art": "native/pce033_back.png",
+    "screens": [
+      "native/pce033_sc1.png",
+      "native/pce033_sc2.png",
+      "native/pce033_sc3.png"
+    ],
+    "nativeTitle": "Moto Roader"
+  },
+  {
+    "id": "n43300bl",
+    "title": "Nectaris",
+    "fullTitle": "Nectaris (Japan)",
+    "region": "Japan",
+    "file": "roms/n43300bl.pce",
+    "cover": "assets/pce005_pac.png",
+    "sha1": "e87e25f73908161a8c7b4cb1f20708cb5f8aab3b",
+    "bytes": 393216,
+    "art": "native/pce005_back.png",
+    "screens": [
+      "native/pce005_sc1.png",
+      "native/pce005_sc2.png",
+      "native/pce005_sc3.png"
+    ],
+    "nativeTitle": "Nectaris"
+  },
+  {
+    "id": "n43203jd",
+    "title": "Nekketsu Koukou Dodgeball-bu - PC Bangai Hen",
+    "fullTitle": "Nekketsu Koukou Dodgeball-bu - PC Bangai Hen (Japan)",
+    "region": "Japan",
+    "file": "roms/n43203jd.pce",
+    "cover": "assets/pce032_pac.png",
+    "sha1": "582121ade819254da31fd8867c30e60195589a9a",
+    "bytes": 262144,
+    "art": "native/pce032_back.png",
+    "screens": [
+      "native/pce032_sc1.png",
+      "native/pce032_sc2.png",
+      "native/pce032_sc3.png"
+    ],
+    "nativeTitle": "Nekketsu Koukou Dodgeball-bu - PC Bangai Hen"
+  },
+  {
+    "id": "n43200kd",
+    "title": "Out Live",
+    "fullTitle": "Out Live (Japan)",
+    "region": "Japan",
+    "file": "roms/n43200kd.pce",
+    "cover": "assets/pce035_pac.png",
+    "sha1": "985222734388586a6b8530846fc9e4701c1ccd0b",
+    "bytes": 262144,
+    "art": "native/pce035_back.png",
+    "screens": [
+      "native/pce035_sc1.png",
+      "native/pce035_sc2.png",
+      "native/pce035_sc3.png"
+    ],
+    "nativeTitle": "Out Live"
+  },
+  {
+    "id": "n43301ll",
+    "title": "PC Genjin - Pithecanthropus Computerurus",
+    "fullTitle": "PC Genjin - Pithecanthropus Computerurus (Japan)",
+    "region": "Japan",
+    "file": "roms/n43301ll.pce",
+    "cover": "assets/pce001_pac.png",
+    "sha1": "40fab9ea76d94d5569a977b1eb5a1dfb54978485",
+    "bytes": 393216,
+    "art": "native/pce001_back.png",
+    "screens": [
+      "native/pce001_sc1.png",
+      "native/pce001_sc2.png",
+      "native/pce001_sc3.png"
+    ],
+    "nativeTitle": "PC Genjin - Pithecanthropus Computerurus"
+  },
+  {
+    "id": "n43403tl",
+    "title": "PC Genjin 2 - Pithecanthropus Computerurus",
+    "fullTitle": "PC Genjin 2 - Pithecanthropus Computerurus (Japan) (Wii Virtual Console)",
+    "region": "Japan",
+    "file": "roms/n43403tl.pce",
+    "cover": "assets/pce002_pac.png",
+    "sha1": "88968b7f7d88329a18f440b78934897450f4e25d",
+    "bytes": 524288,
+    "art": "native/pce002_back.png",
+    "screens": [
+      "native/pce002_sc1.png",
+      "native/pce002_sc2.png",
+      "native/pce002_sc3.png"
+    ],
+    "nativeTitle": "PC Genjin 2 - Pithecanthropus Computerurus"
+  },
+  {
+    "id": "n43800ll",
+    "title": "PC Genjin 3 - Pithecanthropus Computerurus",
+    "fullTitle": "PC Genjin 3 - Pithecanthropus Computerurus (Japan)",
+    "region": "Japan",
+    "file": "roms/n43800ll.pce",
+    "cover": "assets/pce003_pac.png",
+    "sha1": "201aaeafccc9247cf25fd6661c5798aabcc7b329",
+    "bytes": 1048576,
+    "art": "native/pce003_back.png",
+    "screens": [
+      "native/pce003_sc1.png",
+      "native/pce003_sc2.png",
+      "native/pce003_sc3.png"
+    ],
+    "nativeTitle": "PC Genjin 3 - Pithecanthropus Computerurus"
+  },
+  {
+    "id": "hc63011",
+    "title": "Power League",
+    "fullTitle": "Power League (Japan)",
+    "region": "Japan",
+    "file": "roms/hc63011.pce",
+    "cover": "assets/pce024_pac.png",
+    "sha1": "4e50a6c422b4d8c8ea0cce64e5acca7bf13adaf6",
+    "bytes": 262144,
+    "art": "native/pce024_back.png",
+    "screens": [
+      "native/pce024_sc1.png",
+      "native/pce024_sc2.png",
+      "native/pce024_sc3.png"
+    ],
+    "nativeTitle": "Power League"
+  },
+  {
+    "id": "n43406cd",
+    "title": "Power Sports",
+    "fullTitle": "Power Sports (Japan)",
+    "region": "Japan",
+    "file": "roms/n43406cd.pce",
+    "cover": "assets/pce004_pac.png",
+    "sha1": "dfb30bc069e97c72f051fc0ab237607187d4a52e",
+    "bytes": 524288,
+    "art": "native/pce004_back.png",
+    "screens": [
+      "native/pce004_sc1.png",
+      "native/pce004_sc2.png",
+      "native/pce004_sc3.png"
+    ],
+    "nativeTitle": "Power Sports"
+  },
+  {
+    "id": "rtype001",
+    "title": "R-Type I",
+    "fullTitle": "R-Type I (Japan) (En)",
+    "region": "Japan",
+    "file": "roms/rtype001.pce",
+    "cover": null,
+    "sha1": "1170c63839fb94c754d07c4f6f49ad2de6666668",
+    "bytes": 262144,
+    "art": null,
+    "nativeTitle": "R-Type I"
+  },
+  {
+    "id": "rtype002",
+    "title": "R-Type II",
+    "fullTitle": "R-Type II (Japan) (En)",
+    "region": "Japan",
+    "file": "roms/rtype002.pce",
+    "cover": "assets/pce010_pac.png",
+    "sha1": "7667dce9f6a09f8197efe0718e476b48579760d6",
+    "bytes": 262144,
+    "art": "native/pce010_back.png",
+    "screens": [
+      "native/pce010_sc1.png",
+      "native/pce010_sc2.png",
+      "native/pce010_sc3.png"
+    ],
+    "nativeTitle": "R-Type II"
+  },
+  {
+    "id": "n43600fl",
+    "title": "Raiden",
+    "fullTitle": "Raiden (Japan) (En)",
+    "region": "Japan",
+    "file": "roms/n43600fl.pce",
+    "cover": null,
+    "sha1": "cef25446294884053442a4214434d7d97319ddca",
+    "bytes": 786432,
+    "art": null,
+    "nativeTitle": "Raiden"
+  },
+  {
+    "id": "n43401gd",
+    "title": "Saigo no Nindou - Ninja Spirit",
+    "fullTitle": "Saigo no Nindou - Ninja Spirit (Japan)",
+    "region": "Japan",
+    "file": "roms/n43401gd.pce",
+    "cover": "assets/pce017_pac.png",
+    "sha1": "14fc48758d658413f952a0b4f9465137164bdacc",
+    "bytes": 524288,
+    "art": "native/pce017_back.png",
+    "screens": [
+      "native/pce017_sc1.png",
+      "native/pce017_sc2.png",
+      "native/pce017_sc3.png"
+    ],
+    "nativeTitle": "Saigo no Nindou - Ninja Spirit"
+  },
+  {
+    "id": "n43206ad",
+    "title": "Salamander",
+    "fullTitle": "Salamander (Japan) (En)",
+    "region": "Japan",
+    "file": "roms/n43206ad.pce",
+    "cover": "assets/pce021_pac.png",
+    "sha1": "a24e3a4ff36ec9fffd5ea1f4c6b526f61f842584",
+    "bytes": 262144,
+    "art": "native/pce021_back.png",
+    "screens": [
+      "native/pce021_sc1.png",
+      "native/pce021_sc2.png",
+      "native/pce021_sc3.png"
+    ],
+    "nativeTitle": "Salamander"
+  },
+  {
+    "id": "n43405md",
+    "title": "Soldier Blade",
+    "fullTitle": "Soldier Blade (Japan) (En)",
+    "region": "Japan",
+    "file": "roms/n43405md.pce",
+    "cover": "assets/pce008_pac.png",
+    "sha1": "bb6259ecfee3cc28ddbf1b1c1416f281ecccbe31",
+    "bytes": 524288,
+    "art": "native/pce008_back.png",
+    "screens": [
+      "native/pce008_sc1.png",
+      "native/pce008_sc2.png",
+      "native/pce008_sc3.png"
+    ],
+    "nativeTitle": "Soldier Blade"
+  },
+  {
+    "id": "hc92055",
+    "title": "Takahashi Meijin no Shin Bouken-jima",
+    "fullTitle": "Takahashi Meijin no Shin Bouken-jima (Japan) (En)",
+    "region": "Japan",
+    "file": "roms/hc92055.pce",
+    "cover": "assets/pce007_pac.png",
+    "sha1": "ab179fc81694676f57d0ce2e0834c875f36271b0",
+    "bytes": 524288,
+    "art": "native/pce007_back.png",
+    "screens": [
+      "native/pce007_sc1.png",
+      "native/pce007_sc2.png",
+      "native/pce007_sc3.png"
+    ],
+    "nativeTitle": "Takahashi Meijin no Shin Bouken-jima"
+  },
+  {
+    "id": "hc62003",
+    "title": "Victory Run - Eikou no 13,000km",
+    "fullTitle": "Victory Run - Eikou no 13,000km (Japan) (En)",
+    "region": "Japan",
+    "file": "roms/hc62003.pce",
+    "cover": "assets/pce006_pac.png",
+    "sha1": "68044c5fb23f27697ff88657a22ef60ff6d61396",
+    "bytes": 262144,
+    "art": "native/pce006_back.png",
+    "screens": [
+      "native/pce006_sc1.png",
+      "native/pce006_sc2.png",
+      "native/pce006_sc3.png"
+    ],
+    "nativeTitle": "Victory Run - Eikou no 13,000km"
+  },
+  {
+    "id": "ic63001",
+    "title": "Vigilante",
+    "fullTitle": "Vigilante (Japan) (En)",
+    "region": "Japan",
+    "file": "roms/ic63001.pce",
+    "cover": "assets/pce015_pac.png",
+    "sha1": "a43ddb6b9d70c7597788abd363b5df719b70bc46",
+    "bytes": 393216,
+    "art": "native/pce015_back.png",
+    "screens": [
+      "native/pce015_sc1.png",
+      "native/pce015_sc2.png",
+      "native/pce015_sc3.png"
+    ],
+    "nativeTitle": "Vigilante"
+  }
+]
