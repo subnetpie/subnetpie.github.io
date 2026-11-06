@@ -1,0 +1,81 @@
+:root{color-scheme:dark;font:15px system-ui,sans-serif;background:#03080a;color:#ddf6ec}*{box-sizing:border-box}body{margin:0;min-height:100vh;min-height:100svh;display:flex;flex-direction:column}header{padding:20px max(18px,env(safe-area-inset-right)) 14px max(18px,env(safe-area-inset-left));border-bottom:1px solid #214038}header p{font:10px ui-monospace,monospace;letter-spacing:.15em;color:#67e4ae}h1{font-size:clamp(20px,4vw,32px);font-weight:500;margin:8px 0 18px}.controls{display:flex;gap:10px;align-items:end;flex-wrap:wrap}label{display:grid;gap:5px;color:#a6bfb7;font-size:11px}select,button{font:16px system-ui;min-height:44px;background:#10231d;color:#d8ffed;border:1px solid #375d4b;border-radius:7px;padding:8px 10px}select{max-width:100%;min-width:145px}button:focus-visible,select:focus-visible,.track-pad:focus-visible{outline:2px solid #b8ff57}main{position:relative;flex:1;min-height:300px}canvas{display:block;width:100%;height:60svh;min-height:300px;touch-action:none}#stats{position:absolute;left:max(16px,env(safe-area-inset-left));top:14px;color:#9bc5b3;font:11px ui-monospace,monospace;pointer-events:none;max-width:calc(100% - 32px);line-height:1.6}footer{padding:14px max(18px,env(safe-area-inset-right)) max(14px,env(safe-area-inset-bottom)) max(18px,env(safe-area-inset-left));color:#78978b;font-size:11px;border-top:1px solid #214038}[hidden]{display:none!important}#driving-controls{display:flex;align-items:center;gap:12px;margin-top:10px}.lab-note{font-size:11px;color:#78978b}#steering{min-width:110px}body.driving{height:100vh;height:100dvh;min-height:0;overflow:hidden;overscroll-behavior:none}body.driving header{padding-top:max(8px,env(safe-area-inset-top));padding-bottom:8px}body.driving header p,body.driving h1,body.driving #model-label,body.driving footer{display:none}body.driving .controls{flex-wrap:nowrap}body.driving #driving-controls{margin-top:6px}body.driving #driving-controls label{display:flex;align-items:center;gap:7px}body.driving main{min-height:0;overflow:hidden}body.driving canvas{height:100%;min-height:0}#thumb-controls{position:absolute;inset:auto max(18px,env(safe-area-inset-right)) max(18px,env(safe-area-inset-bottom)) max(18px,env(safe-area-inset-left));display:flex;align-items:end;justify-content:space-between;gap:12px;pointer-events:none}.track-pad{position:relative;pointer-events:auto;width:clamp(96px,25vw,150px);height:clamp(155px,30svh,220px);border:1px solid #517d64;border-radius:30px;background:#0a1c16e6;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;overflow:hidden}.track-title{position:absolute;top:12px;left:0;right:0;text-align:center;color:#9bc5b3;font:10px ui-monospace,monospace;letter-spacing:.08em}.track-rail{position:absolute;top:36px;bottom:30px;left:50%;border-left:1px solid #375d4b}.track-thumb{position:absolute;width:52px;height:42px;top:calc(50% - 21px);left:calc(50% - 26px);border:1px solid #86ffba;border-radius:18px;background:#204c3a;box-shadow:0 0 16px #3dff9a20;transform:translateY(var(--thumb-y,0px));pointer-events:none}.track-arrow{position:absolute;left:0;right:0;text-align:center;color:#67a88c;font-size:18px}.track-arrow.forward{top:32px}.track-arrow.reverse{bottom:28px}.track-value{position:absolute;bottom:10px;left:0;right:0;text-align:center;font:10px ui-monospace,monospace;color:#9bc5b3}.touch-help{text-align:center;font-size:11px;line-height:1.7;color:#78978b;align-self:center;margin:0;pointer-events:none}.track-pad.engaged{border-color:#b8ff57;background:#122f23ed}@media(max-width:420px){header{padding-left:max(12px,env(safe-area-inset-left));padding-right:max(12px,env(safe-area-inset-right))}.lab-note{font-size:10px}#mode{min-width:135px}.touch-help{font-size:10px}#thumb-controls{gap:8px}}@media(orientation:landscape) and (max-height:540px){body.driving header{position:absolute;z-index:2;left:max(12px,env(safe-area-inset-left));top:max(8px,env(safe-area-inset-top));padding:0;border:0;background:#03080acc;border-radius:8px}body.driving #driving-controls{margin-top:4px}body.driving .lab-note{display:none}body.driving #stats{left:auto;right:max(18px,env(safe-area-inset-right));text-align:right;max-width:43%}.track-pad{height:clamp(148px,52svh,190px);width:115px}.touch-help{display:none}}
+
+#driving-controls{flex-wrap:wrap}.collision-option{display:flex!important;align-items:center;gap:7px;min-height:44px;font-size:12px;color:#c6ddcf}.collision-option input{width:22px;height:22px;accent-color:#86ffba}.lab-note{flex-basis:100%}@media(orientation:landscape) and (max-height:540px){#driving-controls{flex-wrap:nowrap}}
+
+.fire-zone{pointer-events:auto;display:grid;justify-items:center;gap:8px;align-self:end;margin-bottom:20px}.fire-zone button{width:76px;height:76px;border-radius:50%;font:700 15px system-ui;letter-spacing:.1em;border-color:#a38b52;background:#241e0fea;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}.fire-zone button.held{background:#77602b;border-color:#ffe5a0}.fire-zone span{font:10px ui-monospace,monospace;color:#b8b494}@media(orientation:landscape) and (max-height:540px){.fire-zone{margin-bottom:12px}.fire-zone button{width:66px;height:66px}}
+
+@media(orientation:landscape) and (max-height:540px){body.driving #driving-controls{gap:10px;flex-wrap:wrap;max-width:440px}.collision-option{font-size:11px}}
+@media(orientation:landscape) and (max-height:540px){body.driving header,body.driving #driving-controls{max-width:420px}body.driving #stats{max-width:calc(100% - 462px)}.track-pad{height:clamp(140px,calc(100dvh - 200px),190px)}}
+@media(orientation:landscape) and (max-height:350px){body.driving .controls>label{font-size:0;gap:0}body.driving #driving-controls{margin-top:2px}body.driving #stats{display:none}}
+
+#sound-toggle{font-size:14px;min-width:90px;padding:8px}#sound-toggle[aria-pressed="true"]{border-color:#86ffba}body:not(.driving) #sound-toggle{display:none}body.driving #mode{width:135px;min-width:125px}body.driving #reset{padding:8px}
+@media(max-width:360px){body.driving .controls{gap:6px}body.driving #mode{width:110px;min-width:110px;font-size:14px}body.driving #reset{width:80px;font-size:14px}body.driving #sound-toggle{width:80px;min-width:80px;font-size:13px}}
+
+/* Platform controls sit outside the original 800x600 HUD viewport. */
+.sr-only{position:absolute;width:1px;height:1px;padding:0;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+#native-pause{position:absolute;z-index:2;min-height:44px;min-width:44px;padding:0;border:0;border-radius:0;background:transparent;touch-action:manipulation}
+#native-menu{position:absolute;z-index:4;inset:0;touch-action:manipulation}
+#native-menu-frame{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:calc(480px * var(--menu-scale,1));height:calc(320px * var(--menu-scale,1));--menu-extra:max(0px,calc(44px - 49px * var(--menu-scale,1)))}
+.native-menu-panel{position:absolute;inset:0}
+.native-menu-button,.native-menu-label{position:absolute;left:calc(var(--nx) * 1px * var(--menu-scale));top:calc(var(--ny) * 1px * var(--menu-scale) + var(--native-lower-button,0) * var(--menu-extra));width:calc(var(--nw) * 1px * var(--menu-scale));height:calc(var(--nh) * 1px * var(--menu-scale));font-family:'Trebuchet MS',sans-serif;font-size:max(18px,calc(var(--nf) * 1px * var(--menu-scale)));font-weight:400;line-height:1.15;color:var(--ncolor);opacity:var(--na);margin:0;padding:0;border-radius:0;text-align:center;background:transparent}
+.native-menu-label{display:flex;align-items:center;justify-content:center;white-space:normal;pointer-events:none}
+.native-menu-button{min-height:44px;border-style:solid;border-color:transparent;border-width:0;border-image-source:var(--native-button-outline);border-image-slice:25 var(--nright) 14 var(--nleft) fill;border-image-width:calc(25px * var(--menu-scale)) calc(var(--nright) * 1px * var(--menu-scale)) calc(14px * var(--menu-scale)) calc(var(--nleft) * 1px * var(--menu-scale));border-image-repeat:stretch;cursor:pointer;touch-action:manipulation}
+.native-menu-button:active{filter:brightness(1.3)}
+#lab-toggle{display:none;font-size:12px;min-height:44px}
+body.driving header{position:absolute;z-index:3;left:max(8px,env(safe-area-inset-left));top:max(8px,env(safe-area-inset-top));padding:0;border:0;background:#03080ae8;border-radius:8px;max-width:min(420px,calc(100vw - 16px))}
+body.driving #lab-toggle{display:block}
+body.driving:not(.lab-open) header .controls,body.driving:not(.lab-open) #driving-controls,body.driving:not(.lab-open) #stats{display:none}
+body.driving.lab-open header{padding:8px;border:1px solid #375d4b}
+body.driving.lab-open #lab-toggle{margin-bottom:8px}
+body.driving.lab-open #driving-controls{flex-wrap:wrap}
+body.driving main{width:100%;height:100%}
+body.driving #view{height:calc(100% - 180px);width:100%;margin:0}
+body.driving #thumb-controls{inset:0 max(14px,env(safe-area-inset-right)) max(10px,env(safe-area-inset-bottom)) max(14px,env(safe-area-inset-left));display:block}
+body.driving .track-pad{position:absolute;width:96px;height:155px;bottom:0}
+body.driving .track-pad[data-track="left"]{left:0}
+body.driving .track-pad[data-track="right"]{right:0}
+body.driving .fire-zone{position:absolute;left:50%;bottom:20px;transform:translateX(-50%);margin:0}
+body.driving .touch-help{display:none}
+@media(orientation:landscape){
+ body.driving #view{width:calc(100% - 224px);height:100%;margin-left:112px}
+ body.driving .track-pad{width:88px;height:140px}
+ body.driving .track-pad[data-track="left"]{top:50%;bottom:auto;transform:translateY(-50%)}
+ body.driving .track-pad[data-track="right"]{top:max(8px,env(safe-area-inset-top));bottom:auto}
+ body.driving .fire-zone{left:auto;right:0;bottom:0;transform:none;width:88px}
+ body.driving .fire-zone button{width:66px;height:66px}
+}
+
+/* Requested Vector Tanks CodePen browser controls. VT2 physics stays native. */
+#safe-probe{position:fixed;visibility:hidden;pointer-events:none;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+body.driving main{touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+body.driving #view{position:absolute;margin:0;cursor:crosshair}
+body.driving #thumb-controls{position:absolute;inset:0;pointer-events:none}
+body.driving .track-pad{position:absolute;right:auto;bottom:auto;transform:none;border:1px solid rgba(60,220,80,.35);border-radius:0;background:transparent;pointer-events:none;overflow:visible}
+body.driving .track-pad[data-track="left"],body.driving .track-pad[data-track="right"]{right:auto;bottom:auto;transform:none}
+body.driving .track-thumb{left:3px;right:3px;top:var(--thumb-top,33.333%);width:auto;height:33.333%;transform:none;border:1px solid rgba(60,220,80,.6);border-radius:6px;background:rgba(60,220,80,.28);box-shadow:0 0 5px rgba(60,220,80,.7)}
+body.driving .track-thumb::after{content:'';position:absolute;width:2px;height:16px;left:calc(50% - 1px);top:calc(50% - 8px);background:rgba(255,120,60,.8)}
+body.driving .track-title,body.driving .track-arrow,body.driving .track-rail,body.driving .track-value,body.driving .fire-zone{display:none}
+body.driving .track-pad.engaged{border-color:rgba(60,220,80,.6);background:transparent}
+
+/* Original MenuNewHighScoreLocal.nib frames, colors and fonts. The editable
+   UIKit field uses a 16px DOM font with an equivalent visual transform. */
+#native-MenuNewHighScoreLocal{margin:0;border:0;padding:0}
+#native-MenuNewHighScoreLocal .native-menu-label{font-family:var(--nfont),sans-serif;font-weight:var(--nweight);font-size:calc(var(--nf) * 1px * var(--menu-scale));text-align:var(--nalign);justify-content:var(--njustify)}
+.native-menu-input{position:absolute;left:calc(var(--nx) * 1px * var(--menu-scale));top:calc(var(--ny) * 1px * var(--menu-scale));width:calc(var(--nw) * 16px / var(--nf));height:calc(var(--nh) * 16px / var(--nf));transform:scale(calc(var(--nf) * var(--menu-scale) / 16));transform-origin:top left;margin:0;border:0;border-radius:0;padding:0;color:var(--ncolor);background:var(--nbackground);font:16px var(--nfont),sans-serif;text-align:var(--nalign);opacity:var(--na);appearance:none;-webkit-appearance:none;user-select:text;-webkit-user-select:text;touch-action:manipulation}
+.native-menu-input::-webkit-search-decoration{display:none}
+.native-controller-panel{position:absolute;left:0;top:0;width:480px;height:320px;transform:scale(var(--menu-scale,1));transform-origin:top left}
+.native-controller-node{position:absolute;box-sizing:border-box;margin:0;border:0;border-radius:0;padding:0;min-width:0;min-height:0;background:transparent;line-height:normal;letter-spacing:normal;text-transform:none;user-select:none;-webkit-user-select:none}
+.native-controller-UILabel,.native-controller-UIButton{display:flex}
+.native-controller-UILabel,.native-controller-UIImageView{pointer-events:none}
+.native-controller-UIButton{appearance:none;-webkit-appearance:none;border-style:solid;border-color:transparent;border-image-repeat:stretch;cursor:pointer;touch-action:manipulation}
+.native-controller-UIButton:disabled{cursor:default}
+.native-controller-UIScrollView{touch-action:pan-y;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+body.driving.native-menu-open main{touch-action:auto}
+
+/* Publication: keep diagnostic controls out of the game UI. */
+body.driving #lab-toggle{display:none!important}
+
+
+/* Empty native UIImageViews have no bitmap; suppress the browser image frame. */
+.native-controller-UIImageView:not([src]),
+.native-controller-UIImageView[src=""]{visibility:hidden}
