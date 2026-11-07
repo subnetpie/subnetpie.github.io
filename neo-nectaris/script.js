@@ -308,8 +308,8 @@ window.Nectaris = (() => {
     unit.retreated = true;
     if (unit.type === 28) unit.fuse = state.turn + 2;
     const factory = facilityAt(state, cell);
-    if (factory && CAPTURE.has(unit.type)) {
-      if (factory.id < 2 && factory.team !== unit.team) state.result = unit.team === 0 ? "win" : "loss";
+    if (factory) {
+      if (factory.id < 2 && factory.team !== unit.team && CAPTURE.has(unit.type)) state.result = unit.team === 0 ? "win" : "loss";
       if (factory.id >= 2) enterFactory(state, unit, factory);
     }
     outcome(state);
@@ -889,6 +889,7 @@ function prepareAudio() {
 }
 
 function syncSound(tryPlay = false) {
+  if (!sound || document.hidden) effect.pause();
 
   document.querySelectorAll("[data-sound]").forEach(button => {
 
