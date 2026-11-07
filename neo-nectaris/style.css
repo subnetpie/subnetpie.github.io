@@ -1,0 +1,212 @@
+:root {
+  color-scheme: dark;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: #edf4fb;
+  background: #08111b;
+  --panel: #0b1623;
+  --line: #2c4156;
+  --muted: #a9bed2;
+  --cyan: #78e6f5;
+  --green: #b5f7a8;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { margin: 0; overscroll-behavior: none; }
+button, select { font: inherit; }
+button, select {
+  min-height: 44px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: #17283a;
+  color: #edf4fb;
+  padding: .55rem .8rem;
+  touch-action: manipulation;
+}
+button { cursor: pointer; font-weight: 650; }
+button:active { background: #29465f; }
+button:focus-visible, select:focus-visible, canvas:focus-visible { outline: 2px solid var(--cyan); outline-offset: -2px; }
+button:disabled { opacity: .5; cursor: default; }
+button.primary { background: #9beaf2; border-color: #9beaf2; color: #061e27; }
+button.primary:active { background: #62c6d8; }
+h1, h2, p { margin: 0; }
+.eyebrow {
+  color: var(--cyan);
+  font: 700 .68rem/1.3 ui-monospace, monospace;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+}
+.menu {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: max(20px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right))
+    max(20px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+  background: radial-gradient(ellipse at 30% 25%, #22344b, #08111b 68%);
+}
+.menu-inner {
+  width: min(100%, 850px);
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  align-items: center;
+  gap: clamp(16px, 4vw, 44px);
+}
+.title-art { display: block; width: 100%; height: auto; border-radius: 9px; border: 1px solid #58748a; }
+.launch { display: grid; gap: 11px; }
+.launch h1 { font-size: clamp(2rem, 5vw, 3.6rem); letter-spacing: -.045em; line-height: 1; }
+.intro { color: var(--muted); line-height: 1.45; margin-bottom: 6px; }
+.launch label { color: var(--muted); font-weight: 700; font-size: .8rem; }
+.launch select { width: 100%; font-size: 16px; }
+.launch-actions, .menu-actions, .dialog-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.launch-actions button { flex: 1 1 auto; }
+.credits { color: var(--muted); font-size: .75rem; line-height: 1.4; }
+.game {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+  background: var(--panel);
+}
+.topbar, .command {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-left: max(10px, env(safe-area-inset-left));
+  padding-right: max(10px, env(safe-area-inset-right));
+  z-index: 1;
+}
+.topbar {
+  border-bottom: 1px solid var(--line);
+  padding-top: max(6px, env(safe-area-inset-top));
+  padding-bottom: 6px;
+}
+.mission-heading { flex: 1; min-width: 0; }
+.mission-heading h1 { font-size: clamp(1rem, 2.5vw, 1.3rem); }
+.round { font: 700 .78rem ui-monospace, monospace; color: var(--green); text-align: right; }
+.board { position: relative; min-height: 0; background: #050a11; }
+canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  cursor: crosshair;
+}
+.zoom {
+  display: flex;
+  position: absolute;
+  top: 8px;
+  right: max(8px, env(safe-area-inset-right));
+  gap: 4px;
+}
+.zoom button { min-width: 44px; padding: 0; font-size: 1.25rem; background: #111e2aee; }
+.command {
+  border-top: 1px solid var(--line);
+  padding-top: 7px;
+  padding-bottom: max(7px, env(safe-area-inset-bottom));
+  min-height: 62px;
+}
+.readout { flex: 1; min-width: 0; display: grid; gap: 2px; }
+#selection { color: #f1f8ff; font-size: .88rem; }
+#message { color: var(--muted); font-size: .76rem; line-height: 1.3; }
+.command-actions { display: flex; gap: 5px; }
+.command-actions button { white-space: nowrap; font-size: .83rem; }
+dialog {
+  width: min(92vw, 460px);
+  max-height: 85vh;
+  max-height: 85dvh;
+  border: 1px solid #4f6e89;
+  border-radius: 12px;
+  padding: 0;
+  background: #101e2b;
+  color: inherit;
+}
+dialog::backdrop { background: #030a12c9; }
+.cinema { width: min(96vw, 900px); max-height: 94dvh; overflow: auto; background: #06101a; }
+.cinema-screen { position: relative; min-height: min(55dvh, 420px); background: linear-gradient(90deg,#06101aee,#06101a99),var(--scene) center/cover; }
+.cinema canvas { width: 100%; height: auto; aspect-ratio: 2; touch-action: auto; }
+.cinema [hidden] { display: none !important; }
+.cinema-story { padding: clamp(20px,5vw,44px); display: grid; gap: 18px; }
+.cinema-story h2 { font-size: clamp(1.3rem,4vw,2rem); color: #a7edf5; }
+.cinema-copy { line-height: 1.65; font-size: clamp(.95rem,2.3vw,1.15rem); max-width: 65ch; white-space: pre-line; }
+.cinema-copy p + p { margin-top: 12px; }
+.cinema-controls { display: flex; align-items: center; gap: 8px; padding: 12px; border-top: 1px solid var(--line); }
+.cinema-controls span { flex: 1; color: var(--muted); font-size: .8rem; }
+.training-coach { position:absolute; z-index:2; top:8px; left:8px; width:min(65%,420px); padding:10px 12px; background:#0b1a29ed; border-left:3px solid var(--cyan); border-radius:5px; color:#eefaff; font-size:.8rem; line-height:1.45; pointer-events:none; }
+@media (prefers-reduced-motion: no-preference) {
+  .cinema[open] { animation: cinema-arrive .25s ease-out; }
+  @keyframes cinema-arrive { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+}
+.dialog-body { padding: 18px; display: grid; gap: 14px; }
+.dialog-body h2 { font-size: 1.25rem; }
+#dialog-content { color: var(--muted); line-height: 1.48; }
+#dialog-content p + p { margin-top: 10px; }
+#dialog-content .roster { display: grid; gap: 7px; margin-top: 9px; }
+.roster button { text-align: left; }
+@media (max-width: 620px) and (orientation: portrait) {
+  .menu-inner { grid-template-columns: 1fr; max-width: 440px; }
+}
+@media (max-width: 390px) {
+  .command-actions button { padding-inline: .55rem; }
+  .command { gap: 6px; }
+}
+@media (max-height: 440px) and (orientation: landscape) {
+  .menu { padding-top: 9px; padding-bottom: 9px; }
+  .launch { gap: 6px; }
+  .launch h1 { font-size: 1.75rem; }
+  .topbar { padding-top: max(2px, env(safe-area-inset-top)); padding-bottom: 2px; }
+  .command { min-height: 50px; padding-top: 3px; padding-bottom: max(3px, env(safe-area-inset-bottom)); }
+}
+
+/* Original Hudson screen and control artwork, with touch-sized hit targets. */
+:root { font-family: monospace; color: #b5f7a8; background:#000; --panel:#000; --muted:#a0d9a1; --line:#536658; }
+body { background:#000; }
+button,select { appearance:none; -webkit-appearance:none; font:inherit; border:0; border-radius:0; background:transparent; box-shadow:none; color:inherit; }
+button.native-icon,button.native-icon.primary { width:56px; height:56px; min-width:56px; min-height:56px; padding:0; flex:0 0 56px; background:var(--native-icon) center/contain no-repeat; color:transparent; font-size:0; image-rendering:pixelated; }
+button.native-icon:active { filter:brightness(1.35); transform:translateY(1px); }
+button:focus-visible { outline:1px solid #eaffc7; }
+.menu { min-height:100dvh; padding:0; background:#000; }
+.menu-inner { position:relative; display:block; width:min(100vw,900px); aspect-ratio:3/2; max-height:100dvh; }
+.title-art { width:100%; height:100%; object-fit:contain; border:0; border-radius:0; image-rendering:pixelated; }
+.launch { position:absolute; inset:auto 0 0; display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:0; padding:0 4px; background:#000d; }
+.launch-actions,.menu-actions { display:contents; }
+.launch .credits { display:none; }
+#native-mission.native-icon { padding:0; background:var(--native-icon) center/contain no-repeat; border:0; color:transparent; font-size:0; }
+.game { background:#000; grid-template-rows:44px minmax(0,1fr) 60px; }
+.topbar { background:#000; border:0; gap:8px; padding:0 4px; }
+.topbar .native-icon { width:44px; height:44px; min-width:44px; min-height:44px; flex-basis:44px; }
+.mission-heading .eyebrow { display:none; }
+.mission-heading h1 { font: bold 14px monospace; color:#a1f494; }
+.round { font:bold 12px monospace; color:#a1f494; }
+.board { background:#000; }
+.zoom,.training-coach { display:none !important; }
+.command { background:#000; border-top:2px solid #536658; gap:3px; padding:0 4px max(0px,env(safe-area-inset-bottom)); }
+#selection { font:bold 12px monospace; text-transform:uppercase; color:#a7f48c; }
+#message { font:11px monospace; color:#b8d5b1; }
+.command-actions { gap:0; }
+dialog { border:0; border-radius:0; width:min(96vw,600px); color:#bcf3ac; background:#000; padding:26px 27px 31px; border-image:url('https://subnetpie.github.io/neo-nectaris/assets/ui-menu.png') 45 25 37 45 fill / 36px 20px 30px 36px / 0 stretch; }
+dialog::backdrop { background:#000c; }
+.dialog-body { padding:4px; gap:12px; }
+.dialog-body h2 { font:bold 17px monospace; color:#b5f7a8; text-transform:uppercase; }
+#dialog-content { font:13px/1.5 monospace; color:#b5dcb0; }
+.dialog-actions { justify-content:flex-end; gap:2px; }
+.roster button,.native-mission-list button { min-height:44px; text-align:left; padding:8px; color:#a1f494; background:#071008; border-bottom:1px solid #536658; }
+.native-mission-list { display:grid; grid-template-columns:1fr 1fr; gap:2px; max-height:55dvh; overflow:auto; }
+.cinema { width:min(98vw,900px); background:#000; padding:0; border-image:none; }
+.cinema-screen { background:#000; min-height:0; }
+.cinema-story { min-height:min(60dvh,480px); padding:32px 38px; background:linear-gradient(#000b,#000b),var(--scene) center/cover; }
+.cinema-story .eyebrow { display:none; }
+.cinema-story h2 { font:bold 18px monospace; color:#a1f494; }
+.cinema-copy { font:14px/1.5 monospace; }
+.cinema-controls { background:#000; border:0; padding:0 8px; }
+.cinema-controls span { font:12px monospace; color:#a1f494; }
+.cinema canvas { aspect-ratio:480/316; }
+.cinema[open] { animation:none; }
+@media (orientation:landscape) {
+ .game { grid-template-rows:32px minmax(0,1fr) 56px; }
+ .topbar .native-icon { height:32px; min-height:32px; width:32px; min-width:32px; flex-basis:32px; }
+ .menu-inner { width:min(100vw,150dvh); }
+}
