@@ -17,3 +17,9 @@ GitHub Pages serves this folder from the `master` branch of `subnetpie/subnetpie
 ## Source
 
 Williams Terminator 2 Judgment Day Operations Manual (1991). Controlled lamps follow factory lamp positions; flashers and GI zone locations are approximate when the manual lacks precise coordinates.
+
+## Backglass artwork
+
+Use **Show artwork** in the backglass panel to switch between the full-color original backglass design and a white backdrop. Lamp markers remain available in both views. The CSS toggle also works without JavaScript in browsers supporting `:has()`.
+
+Backglass image: [Pinball Nirvana, Terminator 2 Judgment Day (Williams, 1991) BG](https://pinballnirvana.com/forums/media/terminator-2-judgment-day-williams-1991-bg.9284/), credited there to GetMoreSun and wtiger. Original artwork belongs to its respective owners.
