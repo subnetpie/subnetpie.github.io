@@ -30,3 +30,7 @@ Backglass artwork: [Pinball Nirvana](https://pinballnirvana.com/forums/media/ter
 All images, inventory, styles and scripts are embedded in the HTML. Download `Terminator2_Lamp_Locator_iPhone_Safari.html` to use it locally. iPhone Files Quick Look may limit scripts; the hosted Safari version provides full interaction. A static inventory, fragment links and CSS highlights remain available without JavaScript in compatible previews. See README.txt for the original iPhone instructions.
 
 GitHub Pages serves this folder from `master` in `subnetpie/subnetpie.github.io`. Both HTML files are identical. The locator previews lights; it does not operate the machine.
+
+## Physical backbox reference
+
+The backbox now defaults to **Sockets · photo**, using the supplied insert-board photograph. Twenty-one reference points mark lamps visibly illuminated in that photo; additional dark sockets are visible, and this is not a complete bulb count. Photo point numbers are not factory IDs and have no verified bulb-family or circuit assignments. The photo can be enlarged and panned. **Circuit map** retains the six approximate #906 markers and two schematic #555 GI regions. Type/area filtering applies to the circuit map, not the photograph. Selecting an area highlights all currently matching circuit entries instead of silently choosing just the first one.
