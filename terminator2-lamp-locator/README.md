@@ -31,3 +31,7 @@ Use **Find a bulb** to search and filter with large touch targets. Selecting a r
 ## Illuminate by bulb type
 
 Choose #44, #89, #555 or #906 in **Illuminate by type** to light every matching mapped point, GI zone and backbox marker at once. The list shows that type and the map opens in overview. Type selection clears search/category filters so every matching entry is included. Portrait mode shows both diagrams when the type occurs in both. Counts describe inventory entries, not physical bulb totals. Tap a marker or choose **Selected bulb only** to return to individual details.
+
+## Lighting categories and locations
+
+The type selector identifies #44 as controlled lamps, #89 as flashers, #555 as controlled lamps plus GI, and #906 as flashers. Choose **Table**, **Backbox**, or **Both** to scope the inventory, illumination and displayed diagrams. Table includes the cabinet start-button marker on the factory drawing. Combinations with no inventory entries show an empty state and no illuminated markers.
