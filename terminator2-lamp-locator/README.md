@@ -23,3 +23,7 @@ Williams Terminator 2 Judgment Day Operations Manual (1991). Controlled lamps fo
 Use **Show artwork** in the backglass panel to switch between the full-color original backglass design and a white backdrop. Lamp markers remain available in both views. The CSS toggle also works without JavaScript in browsers supporting `:has()`.
 
 Backglass image: [Pinball Nirvana, Terminator 2 Judgment Day (Williams, 1991) BG](https://pinballnirvana.com/forums/media/terminator-2-judgment-day-williams-1991-bg.9284/), credited there to GetMoreSun and wtiger. Original artwork belongs to its respective owners.
+
+## Portrait iPhone navigation
+
+Use **Find a bulb** to search and filter with large touch targets. Selecting a row opens a focused result with the bulb number, type and matching diagram. The map starts enlarged and centers the selected location; **Show full map** switches to the overview. The fixed Previous / Find a bulb / Next bar steps through the current search results. Returning to search preserves the query and category. Socket details and source notes appear below the diagram.
