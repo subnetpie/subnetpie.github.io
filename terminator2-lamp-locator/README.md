@@ -34,3 +34,7 @@ GitHub Pages serves this folder from `master` in `subnetpie/subnetpie.github.io`
 ## Physical backbox reference
 
 The backbox now defaults to **Sockets · photo**, using the supplied insert-board photograph. Twenty-one reference points mark lamps visibly illuminated in that photo; additional dark sockets are visible, and this is not a complete bulb count. Photo point numbers are not factory IDs and have no verified bulb-family or circuit assignments. The photo can be enlarged and panned. **Circuit map** retains the six approximate #906 markers and two schematic #555 GI regions. Type/area filtering applies to the circuit map, not the photograph. Selecting an area highlights all currently matching circuit entries instead of silently choosing just the first one.
+
+## Specified backbox bulb inventory
+
+The reproduced parts BOM for insert-panel assembly **50013-IN** lists **37 × #555 (24-8768)** and **6 × #906 (24-8802)**: **43 bulbs total**. It also lists matching quantities of white sockets (24-8817) and black sockets (24-8818). See https://www.moll.no/pinball/jsparts/T2.php . A 37-piece T2 backbox LED kit at https://www.pinballdecals.com/PartsByGamePages/T2_Page.html corroborates the GI count. These totals include bulbs that are not lit in the photograph. They do not establish individual socket IDs or the GI-string split. The backbox panel now includes an expandable inventory with quantities and source links.
