@@ -152,7 +152,7 @@ or minimum brightness floors in the renderer.
 | `glow` | Halo strength and spread, 0–4. Zero leaves only the sharp beam and solid endpoint dwell. |
 | `displayIntensity` | Optional 0–15 display override. `null` restores the original vector intensity. Beam-blanked vectors stay invisible. |
 | `ringRadius` | Contact ring expansion in canvas pixels, 0–32. Defaults to 8 for enemy contacts; zero disables the ring. |
-| `fillOpacity` | Optional 0–1 opacity for the existing projected convex-hull fill. Defaults to .32 for obstacles and zero otherwise. |
+| `fillOpacity` | Optional 0–1 opacity for the existing projected convex-hull fill. Defaults to .32 for obstacles and standard enemy tanks; zero otherwise. |
 
 Live console updates take effect on existing vectors without a new game frame:
 
@@ -189,3 +189,31 @@ green, brightness 1.2, glow .9. A bright leading beam caps the smooth fan.
 A red contact ring expands and fades with the same ROM envelope; duplicate
 point writes produce only one ring. Color/brightness/glow live settings still apply
 to current and retained vectors. Original mode has no added trails, rings, or modulation.
+
+## Reference enemy tank fill
+
+`reference-vector-tank-piece.json` preserves the supplied Hexfield piece. Its
+21 green (`#39ff14`) faces are imported in `tank-fill.js`: 18 hull/cannon faces
+use standard tank type `$02` vertices 0–23, and three dish faces use type `$0d`
+vertices 0–7 (reference indices 24–31). The model coordinates, tile appearance,
+radar pivot and edge styling do not replace the ROM's geometry or animation.
+The differently shaped supertank, tread lines, debris and HUD lives are unchanged.
+
+At `DrawObject` command dispatch `$5c71`, the existing semantic scope records
+move/draw vertex indices. Each emitted vector keeps an immutable `tankEdge`
+snapshot alongside its origin. The renderer recovers the projected endpoints
+per draw ID and fills only the supplied faces, preserving the spaces between
+the hull, cannon and radar. Same-winding subpaths fill once per part so overlapping
+faces do not multiply opacity. Existing glowing wire strokes draw above the fill.
+Missing or degenerate faces are skipped. No screen-position matching is used.
+
+Fill opacity defaults to .32 and follows tank brightness/source intensity.
+`battlezone.setAssetStyle('tank', {fillOpacity: .5})` adjusts it; a tank color
+override recolors both strokes and fill. Original mode disables all added fills.
+The ROM remains the authority for projection, radar animation and intensity.
+
+Validation: `node --test arcade/atari/bzone/tank-fill.test.mjs arcade/atari/bzone/radar.test.mjs`.
+The tank regression compares every frame of a 900-frame coin/start/rotate/fire
+run against tracing disabled: CPU PC/cycles, full RAM and raw AVG geometry,
+intensity and clipping must match. It also checks all supplied faces, settings,
+original mode, and complete projected vertex coverage for hull and radar.

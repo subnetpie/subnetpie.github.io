@@ -8,7 +8,7 @@ export const ASSETS = Object.freeze({
   crosshair: {color:"red", brightness:1.15, glow:0.55},
   volcanoSpark: {color:"red", brightness:1.25, glow:0.70, displayIntensity:15},
 
-  tank: {color:"green", brightness:1.00, glow:0.35, coordinateSpace:"world"},
+  tank: {color:"green", brightness:1.00, glow:0.35, fillOpacity:0.32, coordinateSpace:"world"},
   playerLives: {originalColor:"red", color:"green", brightness:1.00, glow:0.35, coordinateSpace:"hud"},
   projectile: {color:"green", brightness:1.00, glow:0.35, coordinateSpace:"world"},
   debris: {color:"green", brightness:0.95, glow:0.30, coordinateSpace:"world"},
@@ -99,6 +99,19 @@ export class AssetTrace {
       const top=this.scopes.at(-1);
       if(pc!==top.end || cpu.s!==top.sp) break;
       this.scopes.pop();
+    }
+    // Track semantic shape commands alongside the CPU, including blank moves.
+    // Snapshot edge identity into each RAM tag; old display lists stay immutable.
+    if(pc===0x5c71) {
+      const scope=this.scopes.at(-1);
+      if(scope?.origin.asset==="tank" && [2,0x0d].includes(scope.origin.type)) {
+        const command=cpu.a&7, vertex=cpu.a>>>3;
+        const previous=scope.tankVertex;
+        scope.origin=Object.freeze({...scope.origin,tankEdge:
+          command===4&&previous!==undefined?[previous,vertex]:null});
+        if([0,2,3,4].includes(command))scope.tankVertex=vertex;
+      }
+      return;
     }
     let asset, fields={}, end, sp;
     if(pc===0x6d3c) {

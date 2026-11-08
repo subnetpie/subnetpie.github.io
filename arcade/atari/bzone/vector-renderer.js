@@ -1,4 +1,5 @@
-import {assetStyle,PALETTE} from './assets.js?v=20261001-radar-fan';
+import {tankPolygons,TANK_FACES} from './tank-fill.js?v=20261107-tank-fill';
+import {assetStyle,PALETTE} from './assets.js?v=20261107-tank-fill';
 const clamp=v=>Math.max(0,Math.min(1,v));
 function colorValue(name) {
  const value=PALETTE[name]??name;
@@ -39,10 +40,23 @@ export function renderVectors(ctx,vectors,{width=580,height=400,colorized=true,s
  for(const {v,style} of prepared) {
   if(style.fillOpacity<=0||v[8]?.id==null)continue;
   const key=style.asset+':'+v[8].id;
-  if(!groups.has(key))groups.set(key,{points:[],style,alpha:0});
-  const group=groups.get(key);group.points.push([v[0],v[1]],[v[2],v[3]]);group.alpha=Math.max(group.alpha,style.alpha);
+  if(!groups.has(key))groups.set(key,{points:[],vectors:[],style,alpha:0});
+  const group=groups.get(key);group.vectors.push(v);group.points.push([v[0],v[1]],[v[2],v[3]]);group.alpha=Math.max(group.alpha,style.alpha);
  }
- for(const {points,style,alpha} of groups.values()) {
+ for(const {points,vectors:objectVectors,style,alpha} of groups.values()) {
+  if(style.asset==='tank') {
+   const type=objectVectors[0][8].type;
+   // Other tank parts and the differently shaped supertank keep their vectors.
+   if(!TANK_FACES[type])continue;
+   const faces=tankPolygons(objectVectors,type);
+   if(!faces.length)continue;
+   ctx.fillStyle=colorValue(settings.tank?.color??faces[0].color);
+   ctx.globalAlpha=clamp(alpha*style.fillOpacity);ctx.beginPath();
+   for(const {points:polygon} of faces) {
+    ctx.moveTo(...polygon[0]);for(const p of polygon.slice(1))ctx.lineTo(...p);ctx.closePath();
+   }
+   ctx.fill();continue;
+  }
   const polygon=hull(points);if(polygon.length<3)continue;
   ctx.fillStyle=style.ink;ctx.globalAlpha=clamp(alpha*style.fillOpacity);
   ctx.beginPath();ctx.moveTo(...polygon[0]);for(const p of polygon.slice(1))ctx.lineTo(...p);ctx.closePath();ctx.fill();

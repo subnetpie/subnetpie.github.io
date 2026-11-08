@@ -28,7 +28,7 @@ test('radar uses ROM provenance, never short-vector length, for contacts',()=>{
 });
 
 test('ROM radar has four green compass ticks and separate red contacts without geometry changes',async()=>{
- const source=readFileSync(new URL('./script.js',import.meta.url),'utf8').replace(/^import .*;\n/gm,'').split('const game=new Battlezone();')[0];
+ const source=readFileSync(new URL('./script.js',import.meta.url),'utf8').replace(/^import .*;\r?\n/gm,'').split('const game=new Battlezone();')[0];
  const canvas={getContext:()=>({})};
  const context={M6502,BzoneAudio,PokeyRandom,AssetTrace,ASSETS,console,document:{querySelector:()=>canvas}};
  vm.createContext(context);vm.runInContext(source+'\nBattlezone.prototype.bind=()=>{};Battlezone.prototype.draw=()=>{};globalThis.Battlezone=Battlezone;',context);
