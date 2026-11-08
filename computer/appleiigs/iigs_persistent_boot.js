@@ -66,17 +66,30 @@ async function decodeStored(record){
 }
 function ensureSP(board){while(board.prodosBlock.drives.length<4)board.prodosBlock.drives.push({image:null,name:'',dirty:false,writeProtected:false,blockCount:0,changed:false,physical:null,persistenceKey:null});}
 export async function mountRecord(board,record){
+  if(!targetIds.includes(record.id))throw new Error('Unknown saved drive '+record.id);
   const media=await decodeStored(record);const d=Number(record.id.slice(3))-1;
+  let controller,mounted;
+  // Saved records name physical endpoints. A legacy generic-drive preference
+  // must not reject or redirect the mount after reset reinstates its filters.
   if(record.id.startsWith('s7')){
     if(media.kind!=='block'||media.physical==='35')throw new Error(record.id+' is not SmartPort media');
-    ensureSP(board);board.prodosBlock.load_image(media.name,media.data,media,d);
+    ensureSP(board);board.prodosBlock._iigsDriveTargets=null;
+    mounted=board.prodosBlock.load_image(media.name,media.data,media,d);
+    controller='smartport';
   } else if(record.id.startsWith('s5')){
     if(media.kind!=='block'||media.physical!=='35')throw new Error(record.id+' is not 3.5-inch media');
-    board.memory.floppy35Drives[d].mount(media);
-  } else if(record.id.startsWith('s6')){
+    board.memory.floppy35Drives[d]._iigsDriveTargets=null;
+    mounted=board.memory.floppy35Drives[d].mount(media);
+    controller='iigs35';
+  } else {
     if(media.kind!=='floppy')throw new Error(record.id+' is not 5.25-inch media');
-    board.floppy525.load_image(d,media.name,media.data,media);
+    board.floppy525._iigsDriveTargets=null;
+    mounted=board.floppy525.load_image(d,media.name,media.data,media);
+    controller='disk2';
   }
+  if(!mounted)throw new Error('Unable to restore '+record.id+': '+media.name);
+  board.iigsPhysicalMedia??=Object.create(null);
+  board.iigsPhysicalMedia[controller+':d'+(d+1)]=media;
   board.mountedMedia??=[];
   if(record.id.startsWith('s7'))board.mountedMedia[d]=media;
   return media;

@@ -24,7 +24,7 @@ await import('../iigs_configuration.js?v=20261102-35boot1');
 await import('../iigs_slot4_devices.js?v=20261102-35boot1');
 await import('../iigs_slot_bus.js?v=20261102-35boot1');
 await import('../iigs_extra_drives.js?v=20261102-35boot1');
-await import('../iigs_persistent_boot.js?v=20261102-35boot1');
+await import('../iigs_persistent_boot.js?v=20261108-startup-mount1');
 await import('../iigs_storage_registry.js?v=20261102-35boot1');
 const {Motherboard}=await import('../motherboard.js?v=20261102-35boot1');
 

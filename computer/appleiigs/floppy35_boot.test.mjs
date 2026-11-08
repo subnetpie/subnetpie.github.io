@@ -4,7 +4,7 @@ import {readFileSync} from 'node:fs';
 import vm from 'node:vm';
 import {createBrowserMachine} from './test-support/browser-machine.mjs';
 import {createKeyboardInput,resetWithKeyboard} from './keyboard_input.js?v=20261102-keyboard-reset1';
-const {mountRecord}=await import('./iigs_persistent_boot.js?v=20261102-35boot1');
+const {mountRecord}=await import('./iigs_persistent_boot.js?v=20261108-startup-mount1');
 
 const file=(name,data)=>({name,arrayBuffer:async()=>data.buffer.slice(data.byteOffset,data.byteOffset+data.byteLength)});
 function floppy(marker){
