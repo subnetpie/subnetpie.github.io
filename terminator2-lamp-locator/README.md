@@ -39,3 +39,9 @@ The type selector identifies #44 as controlled lamps, #89 as flashers, #555 as c
 ## Lighting help and LED advice
 
 Tap the ⓘ beside **Bulb type** for controlled/GI/flasher explanations. Each individual bulb or type/location group gets role-specific LED advice below its diagrams. The LED ⓘ opens a sourced comparison of Comet, Tilt Graphics and Marco T2 kits. Recommendations synthesize supplier guidance and distinguish preference from product specifications; they are not an independent test. Source review: November 8, 2026.
+
+## Backbox GI correction
+
+The six #906 backbox markers are flashers, not the total backbox lamp inventory. GI-01 Top Insert GI and GI-05 Bottom Insert GI belong to the backbox insert board; both use #555 lamps and feed multiple physical sockets. Their former playfield polygons were removed and replaced with explicitly schematic backbox regions. There are eight backbox circuit entries, not eight physical lamps. Individual bulb totals, positions and string membership remain unverified. The original operations manual p. 2-38 marks GI-04 Not Used; a separate modern tech chart differs and was not used to overwrite the original. The original backbox assembly (p. 2-3) identifies the insert board, and the interboard table (p. 3-9) shows its GI feeds. The bottom insert feed also routes to the playfield; that physical distribution is not mapped here.
+
+Source: https://arcarc.xmission.com/Pinball/PDF%20Pinball%20Williams%20%281979-2000%29/Terminator%202%3A%20Judgement%20Day/Terminator%202%20Judgement%20Day%20Operations%20Manual.pdf
