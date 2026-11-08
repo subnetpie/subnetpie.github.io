@@ -27,3 +27,7 @@ Backglass image: [Pinball Nirvana, Terminator 2 Judgment Day (Williams, 1991) BG
 ## Portrait iPhone navigation
 
 Use **Find a bulb** to search and filter with large touch targets. Selecting a row opens a focused result with the bulb number, type and matching diagram. The map starts enlarged and centers the selected location; **Show full map** switches to the overview. The fixed Previous / Find a bulb / Next bar steps through the current search results. Returning to search preserves the query and category. Socket details and source notes appear below the diagram.
+
+## Illuminate by bulb type
+
+Choose #44, #89, #555 or #906 in **Illuminate by type** to light every matching mapped point, GI zone and backbox marker at once. The list shows that type and the map opens in overview. Type selection clears search/category filters so every matching entry is included. Portrait mode shows both diagrams when the type occurs in both. Counts describe inventory entries, not physical bulb totals. Tap a marker or choose **Selected bulb only** to return to individual details.
