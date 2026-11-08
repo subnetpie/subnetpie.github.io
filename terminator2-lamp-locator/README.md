@@ -35,3 +35,7 @@ Choose #44, #89, #555 or #906 in **Illuminate by type** to light every matching 
 ## Lighting categories and locations
 
 The type selector identifies #44 as controlled lamps, #89 as flashers, #555 as controlled lamps plus GI, and #906 as flashers. Choose **Table**, **Backbox**, or **Both** to scope the inventory, illumination and displayed diagrams. Table includes the cabinet start-button marker on the factory drawing. Combinations with no inventory entries show an empty state and no illuminated markers.
+
+## Lighting help and LED advice
+
+Tap the ⓘ beside **Bulb type** for controlled/GI/flasher explanations. Each individual bulb or type/location group gets role-specific LED advice below its diagrams. The LED ⓘ opens a sourced comparison of Comet, Tilt Graphics and Marco T2 kits. Recommendations synthesize supplier guidance and distinguish preference from product specifications; they are not an independent test. Source review: November 8, 2026.
