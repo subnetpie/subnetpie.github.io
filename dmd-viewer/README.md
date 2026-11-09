@@ -35,3 +35,13 @@ node check-controls.mjs
 The repository contains only original synthetic sample files. No game ROMs, third-party colorization packages, or user-specific decoding keys are included.
 
 PAC implementation references: [native PAC loader](https://github.com/freezy/dmd-extensions/blob/master/LibDmd/Converter/Vni/VniLoader.cs) and [Pin2Color plugin discussion](https://vpuniverse.com/forums/topic/7504-new-version-dmd-extensions-with-pin2dmd-coloring-plugin-and-pac-file-support/). The browser implementation does not load or redistribute pin2color DLLs.
+
+## PuP-Pack preview
+
+Open `screens.pup`, `playlists.pup`, and `triggers.pup` together, a full pack folder, or a complete ZIP. The viewer switches to PuP-Pack preview. Configurations alone show screen layouts, trigger details, and missing-media indicators. Add the media folder or files for playback; file contents remain local. ZIP media is extracted on demand, with a 512 MB limit per compressed clip. Extract ZIP64 archives and choose the folder instead.
+
+Select a trigger and use **Preview selected**, or enter an event such as `D7` and use **Fire event** to run every enabled row for that event. **Start pack** loads configured screen backgrounds and fires `D0`. CustomPos layers appear inside their parent screen. The screen selector changes the visible monitor; media on other screens stays loaded. Videos, audio, and images use the browser's supported codecs. Playback starts muted.
+
+Normal, Loop, SetBG, SkipSamePrty, QueueSameP, StopPlayer, and StopFile are recognized. Preview selected bypasses priority, counter, queue, and cooldown checks; Fire event can apply them with the rules checkbox. Unsupported actions are reported. This is a manual media/layout preview, not the native PinUP Player: no live game connection, PuPCapture matching, hardware routing, script execution, or advanced labels/SendMSG emulation is implemented. Default monitor aspect ratios are approximate; CustomPos percentages come from the pack.
+
+Run `node check-pup.mjs` for CSV, layout, media-path, and ZIP checks. Configuration reference: https://www.nailbuster.com/wikipinup/doku.php?id=pup_capture.
