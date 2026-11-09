@@ -15,4 +15,4 @@ If you cannot open it in Safari, a hosted https:// URL (for example GitHub Pages
 is needed for the full interactive experience. Nothing in the HTML requires a network connection after loading.
 
 Source: Williams Terminator 2 Judgment Day Operations Manual (1991).
-Controlled lamps follow factory lamp positions; flashers/GI zone locations are approximate when the manual lacks precise coordinates.
+Table markers identify features in the factory drawing. Unverified GI/flasher locations are not plotted. Backbox images are unannotated references.
