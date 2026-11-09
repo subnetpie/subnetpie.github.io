@@ -1,40 +1,31 @@
-# Terminator 2 Lamp Locator
+# T2 Lamp Locator — evidence audit
 
-[Open the locator](https://subnetpie.github.io/terminator2-lamp-locator/)
+[Open the locator](https://subnetpie.github.io/terminator2-lamp-locator/) · [Read the complete audit](https://subnetpie.github.io/terminator2-lamp-locator/validation-audit.html)
 
-A self-contained service reference for Williams Terminator 2: Judgment Day (1991), with 83 inventory entries covering controlled lamps, flashers and GI strings.
+The location layer was audited November 8, 2026 after unsupported bulb positions were reported. All 83 original inventory rows and every marker/region class were reviewed. The app now contains 81 records: 63 controlled references, 16 area-specific flasher records, and 2 aggregate GI inventory records. Records are not physical bulb totals.
 
-## Find and preview
+## Supported and unsupported locations
 
-- Search by reference, name, bulb family or lighting role. Category buttons narrow the list.
-- Open **Edit filters** on a portrait phone to choose #44, #89, #555 or #906 and Table / Backbox / Both. On desktop these controls stay visible.
-- Choosing a bulb type highlights all current matches. **View locations** opens the result view on a phone.
-- Tap an entry or marker to inspect one bulb/circuit. Previous and Next stay within the active search, category, type and area filters.
-- **Highlight matches** lights the current filtered set; **Lights off / Lights on** toggles the preview.
-- Use **Reset** for an empty filter combination. The map supports an overview and an enlarged, scrollable view.
+61 controlled references retain 63 manually retraced feature markers from factory manual p. 2-35. A marker identifies a drawn insert/feature, not an inspected under-playfield bulb-holder center. L52 is inside a skull assembly and L84 is on the cabinet; neither is assigned an invented table socket point.
 
-## Information and LEDs
+All 17 table-flasher points, six backbox-flasher dots, four GI regions and 21 numbered photo overlays were removed. They had no verified per-socket location evidence. The unannotated photo and contextual artwork remain available. Flasher circuits and printed quantities remain documented in the inventory without invented coordinates.
 
-The selected result identifies its bulb family, role and location. Exact lamp references, approximate flasher positions and schematic GI regions are described separately. Bulb details, LED recommendations, and map accuracy/source notes expand on demand. The header has lighting explanations and a sourced LED guide comparing Comet, Tilt Graphics and Marco T2 kits. Recommendations depend on role and location; the kit recommendation is a synthesis of supplier guidance, not an independent product test. Sources were reviewed November 8, 2026.
+## Source conflicts
 
-## Mapping limits
+- Upper eyes L52: two lamps are shown in the skull assembly. Manual p. 2-27 and the reproduced assembly BOM specify #555 wedge sockets; p. 2-35 says #44. Supplier documentation reports both variants. Inspect the installed sockets before ordering. No definite replacement is selected automatically.
+- Mouth 2 L17 and Eyes Lower L51 are drawn playfield features. They no longer receive upper-skull LED advice based on their names.
+- GI labels differ within the manual: p. 2-38 and p. 2-39 disagree about outputs 02, 04 and 05. GI 04 is not asserted fitted or absent. The app uses aggregate GI records instead of pretending these circuit labels establish socket routing.
+- Playfield GI includes #44 socket assemblies and #555 lamp boards in the reproduced BOM. The former blanket #555 shaded polygons were not a complete physical inventory and were removed.
+- The 50013-IN insert-panel BOM lists 37 #555 bulbs and six #906 flashers (43 total), with matching socket quantities. No per-socket circuit assignments follow from that total.
 
-The backbox contains six #906 flasher entries plus GI-01 Top Insert GI and GI-05 Bottom Insert GI, both #555 strings feeding multiple sockets. Eight entries does not mean eight physical bulbs. GI rectangles are schematic and do not identify individual sockets or traced wiring boundaries. The original manual marks GI-04 Not Used. Its bottom-insert GI feed also routes to the playfield; that physical distribution is not mapped. Table includes the cabinet start-button marker on the original drawing.
+## Audit artifacts
 
-Source: [Williams operations manual](https://arcarc.xmission.com/Pinball/PDF%20Pinball%20Williams%20%281979-2000%29/Terminator%202%3A%20Judgement%20Day/Terminator%202%20Judgement%20Day%20Operations%20Manual.pdf), pp. 2-3, 2-35, 2-38 and 3-9.
+`validation-audit.html`, `.json` and `.csv` contain every original row, status, source references, old/new values and retained feature coordinates. The report distinguishes documentation review from physical inspection. The actual machine’s installed bulbs, modifications, socket types and wire-to-lamp mapping cannot be fully validated from the available photo and documents alone.
 
-Backglass artwork: [Pinball Nirvana](https://pinballnirvana.com/forums/media/terminator-2-judgment-day-williams-1991-bg.9284/), credited there to GetMoreSun and wtiger. Original artwork belongs to its respective owners. The Artwork checkbox switches to a white backdrop.
+## Sources
 
-## Offline and hosting
+- [Original Williams manual](https://arcarc.xmission.com/Pinball/PDF%20Pinball%20Williams%20%281979-2000%29/Terminator%202%3A%20Judgement%20Day/Terminator%202%20Judgement%20Day%20Operations%20Manual.pdf): pp. 2-13, 2-27, 2-35, 2-38, 2-39, 3-9.
+- [Reproduced T2 parts BOM](https://www.moll.no/pinball/jsparts/T2.php).
+- [Pinball Life upper-eye socket variants](https://www.pinballlife.com/briteeyes-terminator-eye-mod-for-terminator-2-pinball-machines.html).
 
-All images, inventory, styles and scripts are embedded in the HTML. Download `Terminator2_Lamp_Locator_iPhone_Safari.html` to use it locally. iPhone Files Quick Look may limit scripts; the hosted Safari version provides full interaction. A static inventory, fragment links and CSS highlights remain available without JavaScript in compatible previews. See README.txt for the original iPhone instructions.
-
-GitHub Pages serves this folder from `master` in `subnetpie/subnetpie.github.io`. Both HTML files are identical. The locator previews lights; it does not operate the machine.
-
-## Physical backbox reference
-
-The backbox now defaults to **Sockets · photo**, using the supplied insert-board photograph. Twenty-one reference points mark lamps visibly illuminated in that photo; additional dark sockets are visible, and this is not a complete bulb count. Photo point numbers are not factory IDs and have no verified bulb-family or circuit assignments. The photo can be enlarged and panned. **Circuit map** retains the six approximate #906 markers and two schematic #555 GI regions. Type/area filtering applies to the circuit map, not the photograph. Selecting an area highlights all currently matching circuit entries instead of silently choosing just the first one.
-
-## Specified backbox bulb inventory
-
-The reproduced parts BOM for insert-panel assembly **50013-IN** lists **37 × #555 (24-8768)** and **6 × #906 (24-8802)**: **43 bulbs total**. It also lists matching quantities of white sockets (24-8817) and black sockets (24-8818). See https://www.moll.no/pinball/jsparts/T2.php . A 37-piece T2 backbox LED kit at https://www.pinballdecals.com/PartsByGamePages/T2_Page.html corroborates the GI count. These totals include bulbs that are not lit in the photograph. They do not establish individual socket IDs or the GI-string split. The backbox panel now includes an expandable inventory with quantities and source links.
+Both HTML files are identical self-contained locator copies. The audit is linked as separate files. GitHub Pages serves this folder from `master` in `subnetpie/subnetpie.github.io`.

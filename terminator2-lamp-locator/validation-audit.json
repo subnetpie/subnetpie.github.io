@@ -1,0 +1,2706 @@
+{
+  "review_date": "2026-11-08",
+  "scope": "Every one of the 83 pre-audit inventory rows, all drawn marker/region classes and the photo markers. Desk audit, not physical inspection.",
+  "sources": [
+    {
+      "title": "Williams original operations manual",
+      "url": "https://arcarc.xmission.com/Pinball/PDF%20Pinball%20Williams%20%281979-2000%29/Terminator%202%3A%20Judgement%20Day/Terminator%202%20Judgement%20Day%20Operations%20Manual.pdf",
+      "pages": [
+        "2-13",
+        "2-27",
+        "2-35",
+        "2-38",
+        "2-39",
+        "3-9"
+      ]
+    },
+    {
+      "title": "Reproduced T2 assembly BOM",
+      "url": "https://www.moll.no/pinball/jsparts/T2.php"
+    },
+    {
+      "title": "Pinball Life skull-eye socket variant documentation",
+      "url": "https://www.pinballlife.com/briteeyes-terminator-eye-mod-for-terminator-2-pinball-machines.html"
+    }
+  ],
+  "entries": [
+    {
+      "original_id": "L11",
+      "name": "Multiplier 2X",
+      "status": "manual_feature",
+      "source": "Manual pp. 2-35",
+      "source_url": "https://arcarc.xmission.com/Pinball/PDF%20Pinball%20Williams%20%281979-2000%29/Terminator%202%3A%20Judgement%20Day/Terminator%202%20Judgement%20Day%20Operations%20Manual.pdf",
+      "old": {
+        "type": "#555",
+        "qty": 1,
+        "points": [
+          [
+            235,
+            1300
+          ]
+        ],
+        "back": null,
+        "poly": null,
+        "backZone": null
+      },
+      "new_type": "#555",
+      "new_quantity": null,
+      "quantity_evidence": "The lamp chart names a circuit/feature; a single symbol is not treated as an assembly bulb count.",
+      "location_status": "manual_feature",
+      "new_points": [
+        [
+          231.55,
+          1303.85
+        ]
+      ],
+      "displayed_markers": 1,
+      "finding": "Identity and bulb family checked against manual p. 2-35. Marker retraced to the drawn insert/feature, not its printed number. It identifies a manual feature location, not an inspected under-playfield socket."
+    },
+    {
+      "original_id": "L12",
+      "name": "Multiplier 4X",
+      "status": "manual_feature",
+      "source": "Manual pp. 2-35",
+      "source_url": "https://arcarc.xmission.com/Pinball/PDF%20Pinball%20Williams%20%281979-2000%29/Terminator%202%3A%20Judgement%20Day/Terminator%202%20Judgement%20Day%20Operations%20Manual.pdf",
+      "old": {
+        "type": "#555",
+        "qty": 1,
+        "points": [
+          [
+            284,
+            1251
+          ]
+        ],
+        "back": null,
+        "poly": null,
+        "backZone": null
+      },
+      "new_type": "#555",
+      "new_quantity": null,
+      "quantity_evidence": "The lamp chart names a circuit/feature; a single symbol is not treated as an assembly bulb count.",
+      "location_status": "manual_feature",
+      "new_points": [
+        [
+          284.02,
+          1277.61
+        ]
+      ],
+      "displayed_markers": 1,
+      "finding": "Identity and bulb family checked against manual p. 2-35. Marker retraced to the drawn insert/feature, not its printed number. It identifies a manual feature location, not an inspected under-playfield socket."
+    },
+    {
+      "original_id": "L13",
+      "name": "Hold Bonus",
+      "status": "manual_feature",
+      "source": "Manual pp. 2-35",
+      "source_url": "https://arcarc.xmission.com/Pinball/PDF%20Pinball%20Williams%20%281979-2000%29/Terminator%202%3A%20Judgement%20Day/Terminator%202%20Judgement%20Day%20Operations%20Manual.pdf",
+      "old": {
+        "type": "#555",
+        "qty": 1,
+        "points": [
+          [
+            330,
+            1260
+          ]
+        ],
+        "back": null,
+        "poly": null,
+        "backZone": null
+      },
+      "new_type": "#555",
+      "new_quantity": null,
+      "quantity_evidence": "The lamp chart names a circuit/feature; a single symbol is not treated as an assembly bulb count.",
+      "location_status": "manual_feature",
+      "new_points": [
+        [
+          336.48,
+          1267.35
+        ]
+      ],
+      "displayed_markers": 1,
+      "finding": "Identity and bulb family checked against manual p. 2-35. Marker retraced to the drawn insert/feature, not its printed number. It identifies a manual feature location, not an inspected under-playfield socket."
+    },
+    {
+      "original_id": "L14",
+      "name": "Multiplier 6X",
+      "status": "manual_feature",
+      "source": "Manual pp. 2-35",
+      "source_url": "https://arcarc.xmission.com/Pinball/PDF%20Pinball%20Williams%20%281979-2000%29/Terminator%202%3A%20Judgement%20Day/Terminator%202%20Judgement%20Day%20Operations%20Manual.pdf",
+      "old": {
+        "type": "#555",
+        "qty": 1,
+        "points": [
+          [
+            383,
+            1254
+          ]
+        ],
+        "back": null,
+        "poly": null,
+        "backZone": null
+      },
+      "new_type": "#555",
+      "new_quantity": null,
+      "quantity_evidence": "The lamp chart names a circuit/feature; a single symbol is not treated as an assembly bulb count.",
+      "location_status": "manual_feature",
+      "new_points": [
+        [
+          384.39,
+          1284.46
+        ]
+      ],
+      "displayed_markers": 1,
+      "finding": "Identity and bulb family checked against manual p. 2-35. Marker retraced to the drawn insert/feature, not its printed number. It identifies a manual feature location, not an inspected under-playfield socket."
+    },
+    {
+      "original_id": "L15",
+      "name": "Multiplier 8X",
+      "status": "manual_feature",
+      "source": "Manual pp. 2-35",
+      "source_url": "https://arcarc.xmission.com/Pinball/PDF%20Pinball%20Williams%20%281979-2000%29/Terminator%202%3A%20Judgement%20Day/Terminator%202%20Judgement%20Day%20Operations%20Manual.pdf",
+      "old": {
+        "type": "#555",
+        "qty": 1,
+        "points": [
+          [
+            447,
+            1298
+          ]
+        ],
+        "back": null,
+        "poly": null,
+        "backZone": null
+      },
+      "new_type": "#555",
+      "new_quantity": null,
+      "quantity_evidence": "The lamp chart names a circuit/feature; a single symbol is not treated as an assembly bulb count.",
+      "location_status": "manual_feature",
+      "new_points": [
+        [
+          438.0,
+          1304.99
+        ]
+      ],
+      "displayed_markers": 1,
+      "finding": "Identity and bulb family checked against manual p. 2-35. Marker retraced to the drawn insert/feature, not its printed number. It identifies a manual feature location, not an inspected under-playfield socket."
+    },
+    {
+      "original_id": "L16",
+      "name": "Shoot Again",
+      "status": "manual_feature",
+      "source": "Manual pp. 2-35",
+      "source_url": "https://arcarc.xmission.com/Pinball/PDF%20Pinball%20Williams%20%281979-2000%29/Terminator%202%3A%20Judgement%20Day/Terminator%202%20Judgement%20Day%20Operations%20Manual.pdf",
+      "old": {
+        "type": "#44",
+        "qty": 1,
+        "points": [
+          [
+            334,
+            1519
+          ]
+        ],
+        "back": null,
+        "poly": null,
+        "backZone": null
+      },
+      "new_type": "#44",
+      "new_quantity": null,
+      "quantity_evidence": "The lamp chart names a circuit/feature; a single symbol is not treated as an assembly bulb count.",
+      "location_status": "manual_feature",
+      "new_points": [
+        [
+          335.34,
+          1514.88
+        ]
+      ],
+      "displayed_markers": 1,
+      "finding": "Identity and bulb family checked against manual p. 2-35. Marker retraced to the drawn insert/feature, not its printed number. It identifies a manual feature location, not an inspected under-playfield socket."
+    },
+    {
+      "original_id": "L17",
+      "name": "Mouth 2",
+      "status": "manual_feature",
+      "source": "Manual pp. 2-35",
+      "source_url": "https://arcarc.xmission.com/Pinball/PDF%20Pinball%20Williams%20%281979-2000%29/Terminator%202%3A%20Judgement%20Day/Terminator%202%20Judgement%20Day%20Operations%20Manual.pdf",
+      "old": {
+        "type": "#44",
+        "qty": 1,
+        "points": [
+          [
+            329,
+            1190
+          ]
+        ],
+        "back": null,
+        "poly": null,
+        "backZone": null
+      },
+      "new_type": "#44",
+      "new_quantity": null,
+      "quantity_evidence": "The lamp chart names a circuit/feature; a single symbol is not treated as an assembly bulb count.",
+      "location_status": "manual_feature",
+      "new_points": [
+        [
+          326.22,
+          1176.09
+        ]
+      ],
+      "displayed_markers": 1,
+      "finding": "Identity and bulb family checked against manual p. 2-35. Marker retraced to the drawn insert/feature, not its printed number. It identifies a manual feature location, not an inspected under-playfield socket.",
+      "led_note": "This is a drawn playfield feature, not the upper skull-eye assembly. The old name-based skull LED recommendation was removed."
+    },
+    {
+      "original_id": "L21",
+      "name": "Kickback",
+      "status": "manual_feature",
+      "source": "Manual pp. 2-35",
+      "source_url": "https://arcarc.xmission.com/Pinball/PDF%20Pinball%20Williams%20%281979-2000%29/Terminator%202%3A%20Judgement%20Day/Terminator%202%20Judgement%20Day%20Operations%20Manual.pdf",
+      "old": {
+        "type": "#555",
+        "qty": 1,
+        "points": [
+          [
+            37,
+            1250
+          ]
+        ],
+        "back": null,
+        "poly": null,
+        "backZone": null
+      },
+      "new_type": "#555",
+      "new_quantity": null,
+      "quantity_evidence": "The lamp chart names a circuit/feature; a single symbol is not treated as an assembly bulb count.",
+      "location_status": "manual_feature",
+      "new_points": [
+        [
+          41.06,
+          1266.21
+        ]
+      ],
+      "displayed_markers": 1,
+      "finding": "Identity and bulb family checked against manual p. 2-35. Marker retraced to the drawn insert/feature, not its printed number. It identifies a manual feature location, not an inspected under-playfield socket."
+    },
+    {
+      "original_id": "L22",
+      "name": "Special 2",
+      "status": "manual_feature",
+      "source": "Manual pp. 2-35",
+      "source_url": "https://arcarc.xmission.com/Pinball/PDF%20Pinball%20Williams%20%281979-2000%29/Terminator%202%3A%20Judgement%20Day/Terminator%202%20Judgement%20Day%20Operations%20Manual.pdf",
+      "old": {
+        "type": "#555",
+        "qty": 2,
+        "points": [
+          [
+            38,
+            1189
+          ],
+          [
+            628,
+            1221
+          ]
+        ],
+        "back": null,
+        "poly": null,
+        "backZone": null
+      },
+      "new_type": "#555",
+      "new_quantity": null,
+      "quantity_evidence": "The drawing shows two feature positions on this circuit; physical assembly count has not been inspected.",
+      "location_status": "manual_feature",
+      "new_points": [
+        [
+          41.06,
+          1198.9
+        ],
+        [
+          627.34,
+          1214.87
+        ]
+      ],
+      "displayed_markers": 2,
+      "finding": "Identity and bulb family checked against manual p. 2-35. Marker retraced to the drawn insert/feature, not its printed number. It identifies a manual feature location, not an inspected under-playfield socket."
+    },
+    {
+      "original_id": "L23",
+      "name": "Left Return Lane",
+      "status": "manual_feature",
+      "source": "Manual pp. 2-35",
+      "source_url": "https://arcarc.xmission.com/Pinball/PDF%20Pinball%20Williams%20%281979-2000%29/Terminator%202%3A%20Judgement%20Day/Terminator%202%20Judgement%20Day%20Operations%20Manual.pdf",
+      "old": {
+        "type": "#555",
+        "qty": 1,
+        "points": [
+          [
+            93,
+            1190
+          ]
+        ],
+        "back": null,
+        "poly": null,
+        "backZone": null
+      },
+      "new_type": "#555",
+      "new_quantity": null,
+      "quantity_evidence": "The lamp chart names a circuit/feature; a single symbol is not treated as an assembly bulb count.",
+      "location_status": "manual_feature",
+      "new_points": [
+        [
+          98.09,
+          1211.45
+        ]
+      ],
+      "displayed_markers": 1,
+      "finding": "Identity and bulb family checked against manual p. 2-35. Marker retraced to the drawn insert/feature, not its printed number. It identifies a manual feature location, not an inspected under-playfield socket."
+    },
+    {
+      "original_id": "L24",
+      "name": "Right Return Lane",
+      "status": "manual_feature",
+      "source": "Manual pp. 2-35",
+      "source_url": "https://arcarc.xmission.com/Pinball/PDF%20Pinball%20Williams%20%281979-2000%29/Terminator%202%3A%20Judgement%20Day/Terminator%202%20Judgement%20Day%20Operations%20Manual.pdf",
+      "old": {
+        "type": "#555",
+        "qty": 1,
+        "points": [
+          [
+            575,
+            1146
+          ]
+        ],
+        "back": null,
+        "poly": null,
+        "backZone": null
+      },
+      "new_type": "#555",
+      "new_quantity": null,
+      "quantity_evidence": "The lamp chart names a circuit/feature; a single symbol is not treated as an assembly bulb count.",
+      "location_status": "manual_feature",
+      "new_points": [
+        [
+          572.59,
+          1129.32
+        ]
+      ],
+      "displayed_markers": 1,
+      "finding": "Identity and bulb family checked against manual p. 2-35. Marker retraced to the drawn insert/feature, not its printed number. It identifies a manual feature location, not an inspected under-playfield socket."
+    },
+    {
+      "original_id": "L25",
+      "name": "Database 3",
+      "status": "manual_feature",
+      "source": "Manual pp. 2-35",
+      "source_url": "https://arcarc.xmission.com/Pinball/PDF%20Pinball%20Williams%20%281979-2000%29/Terminator%202%3A%20Judgement%20Day/Terminator%202%20Judgement%20Day%20Operations%20Manual.pdf",
+      "old": {
+        "type": "#555",
+        "qty": 1,
+        "points": [
+          [
+            244,
+            649
+          ]
+        ],
+        "back": null,
+        "poly": null,
+        "backZone": null
+      },
+      "new_type": "#555",
+      "new_quantity": null,
+      "quantity_evidence": "The lamp chart names a circuit/feature; a single symbol is not treated as an assembly bulb count.",
+      "location_status": "manual_feature",
+      "new_points": [
+        [
+          281.73,
+          628.54
+        ]
+      ],
+      "displayed_markers": 1,
+      "finding": "Identity and bulb family checked against manual p. 2-35. Marker retraced to the drawn insert/feature, not its printed number. It identifies a manual feature location, not an inspected under-playfield socket."
+    },
+    {
+      "original_id": "L26",
+      "name": "Load Gun",
+      "status": "manual_feature",
+      "source": "Manual pp. 2-35",
+      "source_url": "https://arcarc.xmission.com/Pinball/PDF%20Pinball%20Williams%20%281979-2000%29/Terminator%202%3A%20Judgement%20Day/Terminator%202%20Judgement%20Day%20Operations%20Manual.pdf",
+      "old": {
+        "type": "#555",
+        "qty": 1,
+        "points": [
+          [
+            266,
+            550
+          ]
+        ],
+        "back": null,
+        "poly": null,
+        "backZone": null
+      },
+      "new_type": "#555",
+      "new_quantity": null,
+      "quantity_evidence": "The lamp chart names a circuit/feature; a single symbol is not treated as an assembly bulb count.",
+      "location_status": "manual_feature",
+      "new_points": [
+        [
+          270.33,
+          550.97
+        ]
+      ],
+      "displayed_markers": 1,
+      "finding": "Identity and bulb family checked against manual p. 2-35. Marker retraced to the drawn insert/feature, not its printed number. It identifies a manual feature location, not an inspected under-playfield socket."
+    },
+    {
+      "original_id": "L27",
+      "name": "Extra Ball",
+      "status": "manual_feature",
+      "source": "Manual pp. 2-35",
+      "source_url": "https://arcarc.xmission.com/Pinball/PDF%20Pinball%20Williams%20%281979-2000%29/Terminator%202%3A%20Judgement%20Day/Terminator%202%20Judgement%20Day%20Operations%20Manual.pdf",
+      "old": {
+        "type": "#555",
+        "qty": 1,
+        "points": [
+          [
+            250,
+            467
+          ]
+        ],
+        "back": null,
+        "poly": null,
+        "backZone": null
+      },
+      "new_type": "#555",
+      "new_quantity": null,
+      "quantity_evidence": "The lamp chart names a circuit/feature; a single symbol is not treated as an assembly bulb count.",
+      "location_status": "manual_feature",
+      "new_points": [
+        [
+          254.36,
+          461.99
+        ]
+      ],
+      "displayed_markers": 1,
+      "finding": "Identity and bulb family checked against manual p. 2-35. Marker retraced to the drawn insert/feature, not its printed number. It identifies a manual feature location, not an inspected under-playfield socket."
+    },
+    {
+      "original_id": "L28",
+      "name": "Load For Jackpot",
+      "status": "manual_feature",
+      "source": "Manual pp. 2-35",
+      "source_url": "https://arcarc.xmission.com/Pinball/PDF%20Pinball%20Williams%20%281979-2000%29/Terminator%202%3A%20Judgement%20Day/Terminator%202%20Judgement%20Day%20Operations%20Manual.pdf",
+      "old": {
+        "type": "#555",
+        "qty": 1,
+        "points": [
+          [
+            236,
+            384
+          ]
+        ],
+        "back": null,
+        "poly": null,
+        "backZone": null
+      },
+      "new_type": "#555",
+      "new_quantity": null,
+      "quantity_evidence": "The lamp chart names a circuit/feature; a single symbol is not treated as an assembly bulb count.",
+      "location_status": "manual_feature",
+      "new_points": [
+        [
+          239.53,
+          377.58
+        ]
+      ],
+      "displayed_markers": 1,
+      "finding": "Identity and bulb family checked against manual p. 2-35. Marker retraced to the drawn insert/feature, not its printed number. It identifies a manual feature location, not an inspected under-playfield socket."
+    },
+    {
+      "original_id": "L31",
+      "name": "Target 1 High",
+      "status": "manual_feature",
+      "source": "Manual pp. 2-35",
+      "source_url": "https://arcarc.xmission.com/Pinball/PDF%20Pinball%20Williams%20%281979-2000%29/Terminator%202%3A%20Judgement%20Day/Terminator%202%20Judgement%20Day%20Operations%20Manual.pdf",
+      "old": {
+        "type": "#555",
+        "qty": 1,
+        "points": [
+          [
+            208,
+            583
+          ]
+        ],
+        "back": null,
+        "poly": null,
+        "backZone": null
+      },
+      "new_type": "#555",
+      "new_quantity": null,
+      "quantity_evidence": "The lamp chart names a circuit/feature; a single symbol is not treated as an assembly bulb count.",
+      "location_status": "manual_feature",
+      "new_points": [
+        [
+          197.33,
+          579.49
+        ]
+      ],
+      "displayed_markers": 1,
+      "finding": "Identity and bulb family checked against manual p. 2-35. Marker retraced to the drawn insert/feature, not its printed number. It identifies a manual feature location, not an inspected under-playfield socket."
+    },
+    {
+      "original_id": "L32",
+      "name": "Target 2",
+      "status": "manual_feature",
+      "source": "Manual pp. 2-35",
+      "source_url": "https://arcarc.xmission.com/Pinball/PDF%20Pinball%20Williams%20%281979-2000%29/Terminator%202%3A%20Judgement%20Day/Terminator%202%20Judgement%20Day%20Operations%20Manual.pdf",
+      "old": {
+        "type": "#555",
+        "qty": 1,
+        "points": [
+          [
+            216,
+            620
+          ]
+        ],
+        "back": null,
+        "poly": null,
+        "backZone": null
+      },
+      "new_type": "#555",
+      "new_quantity": null,
+      "quantity_evidence": "The lamp chart names a circuit/feature; a single symbol is not treated as an assembly bulb count.",
+      "location_status": "manual_feature",
+      "new_points": [
+        [
+          199.61,
+          619.41
+        ]
+      ],
+      "displayed_markers": 1,
+      "finding": "Identity and bulb family checked against manual p. 2-35. Marker retraced to the drawn insert/feature, not its printed number. It identifies a manual feature location, not an inspected under-playfield socket."
+    },
+    {
+      "original_id": "L33",
+      "name": "Target 3",
+      "status": "manual_feature",
+      "source": "Manual pp. 2-35",
+      "source_url": "https://arcarc.xmission.com/Pinball/PDF%20Pinball%20Williams%20%281979-2000%29/Terminator%202%3A%20Judgement%20Day/Terminator%202%20Judgement%20Day%20Operations%20Manual.pdf",
+      "old": {
+        "type": "#555",
+        "qty": 1,
+        "points": [
+          [
+            231,
+            670
+          ]
+        ],
+        "back": null,
+        "poly": null,
+        "backZone": null
+      },
+      "new_type": "#555",
+      "new_quantity": null,
+      "quantity_evidence": "The lamp chart names a circuit/feature; a single symbol is not treated as an assembly bulb count.",
+      "location_status": "manual_feature",
+      "new_points": [
+        [
+          213.3,
+          660.48
+        ]
+      ],
+      "displayed_markers": 1,
+      "finding": "Identity and bulb family checked against manual p. 2-35. Marker retraced to the drawn insert/feature, not its printed number. It identifies a manual feature location, not an inspected under-playfield socket."
+    },
+    {
+      "original_id": "L34",
+      "name": "Target 4",
+      "status": "manual_feature",
+      "source": "Manual pp. 2-35",
+      "source_url": "https://arcarc.xmission.com/Pinball/PDF%20Pinball%20Williams%20%281979-2000%29/Terminator%202%3A%20Judgement%20Day/Terminator%202%20Judgement%20Day%20Operations%20Manual.pdf",
+      "old": {
+        "type": "#555",
+        "qty": 1,
+        "points": [
+          [
+            237,
+            713
+          ]
+        ],
+        "back": null,
+        "poly": null,
+        "backZone": null
+      },
+      "new_type": "#555",
+      "new_quantity": null,
+      "quantity_evidence": "The lamp chart names a circuit/feature; a single symbol is not treated as an assembly bulb count.",
+      "location_status": "manual_feature",
+      "new_points": [
+        [
+          220.14,
+          696.98
+        ]
+      ],
+      "displayed_markers": 1,
+      "finding": "Identity and bulb family checked against manual p. 2-35. Marker retraced to the drawn insert/feature, not its printed number. It identifies a manual feature location, not an inspected under-playfield socket."
+    },
+    {
+      "original_id": "L35",
+      "name": "Target 5 Low",
+      "status": "manual_feature",
+      "source": "Manual pp. 2-35",
+      "source_url": "https://arcarc.xmission.com/Pinball/PDF%20Pinball%20Williams%20%281979-2000%29/Terminator%202%3A%20Judgement%20Day/Terminator%202%20Judgement%20Day%20Operations%20Manual.pdf",
+      "old": {
+        "type": "#555",
+        "qty": 1,
+        "points": [
+          [
+            247,
+            744
+          ]
+        ],
+        "back": null,
+        "poly": null,
+        "backZone": null
+      },
+      "new_type": "#555",
+      "new_quantity": null,
+      "quantity_evidence": "The lamp chart names a circuit/feature; a single symbol is not treated as an assembly bulb count.",
+      "location_status": "manual_feature",
+      "new_points": [
+        [
+          237.25,
+          733.49
+        ]
+      ],
+      "displayed_markers": 1,
+      "finding": "Identity and bulb family checked against manual p. 2-35. Marker retraced to the drawn insert/feature, not its printed number. It identifies a manual feature location, not an inspected under-playfield socket."
+    },
+    {
+      "original_id": "L36",
+      "name": "Mid Left Target Bank",
+      "status": "manual_feature",
+      "source": "Manual pp. 2-35",
+      "source_url": "https://arcarc.xmission.com/Pinball/PDF%20Pinball%20Williams%20%281979-2000%29/Terminator%202%3A%20Judgement%20Day/Terminator%202%20Judgement%20Day%20Operations%20Manual.pdf",
+      "old": {
+        "type": "#555",
+        "qty": 1,
+        "points": [
+          [
+            345,
+            551
+          ]
+        ],
+        "back": null,
+        "poly": null,
+        "backZone": null
+      },
+      "new_type": "#555",
+      "new_quantity": null,
+      "quantity_evidence": "The lamp chart names a circuit/feature; a single symbol is not treated as an assembly bulb count.",
+      "location_status": "manual_feature",
+      "new_points": [
+        [
+          327.36,
+          603.44
+        ]
+      ],
+      "displayed_markers": 1,
+      "finding": "Identity and bulb family checked against manual p. 2-35. Marker retraced to the drawn insert/feature, not its printed number. It identifies a manual feature location, not an inspected under-playfield socket."
+    },
+    {
+      "original_id": "L37",
+      "name": "Mid Center Target Bank",
+      "status": "manual_feature",
+      "source": "Manual pp. 2-35",
+      "source_url": "https://arcarc.xmission.com/Pinball/PDF%20Pinball%20Williams%20%281979-2000%29/Terminator%202%3A%20Judgement%20Day/Terminator%202%20Judgement%20Day%20Operations%20Manual.pdf",
+      "old": {
+        "type": "#555",
+        "qty": 1,
+        "points": [
+          [
+            376,
+            586
+          ]
+        ],
+        "back": null,
+        "poly": null,
+        "backZone": null
+      },
+      "new_type": "#555",
+      "new_quantity": null,
+      "quantity_evidence": "The lamp chart names a circuit/feature; a single symbol is not treated as an assembly bulb count.",
+      "location_status": "manual_feature",
+      "new_points": [
+        [
+          357.02,
+          633.1
+        ]
+      ],
+      "displayed_markers": 1,
+      "finding": "Identity and bulb family checked against manual p. 2-35. Marker retraced to the drawn insert/feature, not its printed number. It identifies a manual feature location, not an inspected under-playfield socket."
+    },
+    {
+      "original_id": "L38",
+      "name": "Mid Right Target Bank",
+      "status": "manual_feature",
+      "source": "Manual pp. 2-35",
+      "source_url": "https://arcarc.xmission.com/Pinball/PDF%20Pinball%20Williams%20%281979-2000%29/Terminator%202%3A%20Judgement%20Day/Terminator%202%20Judgement%20Day%20Operations%20Manual.pdf",
+      "old": {
+        "type": "#555",
+        "qty": 1,
+        "points": [
+          [
+            383,
+            648
+          ]
+        ],
+        "back": null,
+        "poly": null,
+        "backZone": null
+      },
+      "new_type": "#555",
+      "new_quantity": null,
+      "quantity_evidence": "The lamp chart names a circuit/feature; a single symbol is not treated as an assembly bulb count.",
+      "location_status": "manual_feature",
+      "new_points": [
+        [
+          385.53,
+          662.76
+        ]
+      ],
+      "displayed_markers": 1,
+      "finding": "Identity and bulb family checked against manual p. 2-35. Marker retraced to the drawn insert/feature, not its printed number. It identifies a manual feature location, not an inspected under-playfield socket."
+    },
+    {
+      "original_id": "L41",
+      "name": "Lock Two",
+      "status": "manual_feature",
+      "source": "Manual pp. 2-35",
+      "source_url": "https://arcarc.xmission.com/Pinball/PDF%20Pinball%20Williams%20%281979-2000%29/Terminator%202%3A%20Judgement%20Day/Terminator%202%20Judgement%20Day%20Operations%20Manual.pdf",
+      "old": {
+        "type": "#555",
+        "qty": 1,
+        "points": [
+          [
+            143,
+            721
+          ]
+        ],
+        "back": null,
+        "poly": null,
+        "backZone": null
+      },
+      "new_type": "#555",
+      "new_quantity": null,
+      "quantity_evidence": "The lamp chart names a circuit/feature; a single symbol is not treated as an assembly bulb count.",
+      "location_status": "manual_feature",
+      "new_points": [
+        [
+          120.91,
+          722.08
+        ]
+      ],
+      "displayed_markers": 1,
+      "finding": "Identity and bulb family checked against manual p. 2-35. Marker retraced to the drawn insert/feature, not its printed number. It identifies a manual feature location, not an inspected under-playfield socket."
+    },
+    {
+      "original_id": "L42",
+      "name": "Database 2",
+      "status": "manual_feature",
+      "source": "Manual pp. 2-35",
+      "source_url": "https://arcarc.xmission.com/Pinball/PDF%20Pinball%20Williams%20%281979-2000%29/Terminator%202%3A%20Judgement%20Day/Terminator%202%20Judgement%20Day%20Operations%20Manual.pdf",
+      "old": {
+        "type": "#555",
+        "qty": 1,
+        "points": [
+          [
+            166,
+            808
+          ]
+        ],
+        "back": null,
+        "poly": null,
+        "backZone": null
+      },
+      "new_type": "#555",
+      "new_quantity": null,
+      "quantity_evidence": "The lamp chart names a circuit/feature; a single symbol is not treated as an assembly bulb count.",
+      "location_status": "manual_feature",
+      "new_points": [
+        [
+          139.16,
+          801.93
+        ]
+      ],
+      "displayed_markers": 1,
+      "finding": "Identity and bulb family checked against manual p. 2-35. Marker retraced to the drawn insert/feature, not its printed number. It identifies a manual feature location, not an inspected under-playfield socket."
+    },
+    {
+      "original_id": "L43",
+      "name": "10 Million",
+      "status": "manual_feature",
+      "source": "Manual pp. 2-35",
+      "source_url": "https://arcarc.xmission.com/Pinball/PDF%20Pinball%20Williams%20%281979-2000%29/Terminator%202%3A%20Judgement%20Day/Terminator%202%20Judgement%20Day%20Operations%20Manual.pdf",
+      "old": {
+        "type": "#555",
+        "qty": 1,
+        "points": [
+          [
+            174,
+            888
+          ]
+        ],
+        "back": null,
+        "poly": null,
+        "backZone": null
+      },
+      "new_type": "#555",
+      "new_quantity": null,
+      "quantity_evidence": "The lamp chart names a circuit/feature; a single symbol is not treated as an assembly bulb count.",
+      "location_status": "manual_feature",
+      "new_points": [
+        [
+          164.25,
+          889.77
+        ]
+      ],
+      "displayed_markers": 1,
+      "finding": "Identity and bulb family checked against manual p. 2-35. Marker retraced to the drawn insert/feature, not its printed number. It identifies a manual feature location, not an inspected under-playfield socket."
+    },
+    {
+      "original_id": "L44",
+      "name": "Extra Ball",
+      "status": "manual_feature",
+      "source": "Manual pp. 2-35",
+      "source_url": "https://arcarc.xmission.com/Pinball/PDF%20Pinball%20Williams%20%281979-2000%29/Terminator%202%3A%20Judgement%20Day/Terminator%202%20Judgement%20Day%20Operations%20Manual.pdf",
+      "old": {
+        "type": "#555",
+        "qty": 1,
+        "points": [
+          [
+            186,
+            955
+          ]
+        ],
+        "back": null,
+        "poly": null,
+        "backZone": null
+      },
+      "new_type": "#555",
+      "new_quantity": null,
+      "quantity_evidence": "The lamp chart names a circuit/feature; a single symbol is not treated as an assembly bulb count.",
+      "location_status": "manual_feature",
+      "new_points": [
+        [
+          180.22,
+          946.8
+        ]
+      ],
+      "displayed_markers": 1,
+      "finding": "Identity and bulb family checked against manual p. 2-35. Marker retraced to the drawn insert/feature, not its printed number. It identifies a manual feature location, not an inspected under-playfield socket."
+    },
+    {
+      "original_id": "L45",
+      "name": "Multiball",
+      "status": "manual_feature",
+      "source": "Manual pp. 2-35",
+      "source_url": "https://arcarc.xmission.com/Pinball/PDF%20Pinball%20Williams%20%281979-2000%29/Terminator%202%3A%20Judgement%20Day/Terminator%202%20Judgement%20Day%20Operations%20Manual.pdf",
+      "old": {
+        "type": "#555",
+        "qty": 1,
+        "points": [
+          [
+            202,
+            1014
+          ]
+        ],
+        "back": null,
+        "poly": null,
+        "backZone": null
+      },
+      "new_type": "#555",
+      "new_quantity": null,
+      "quantity_evidence": "The lamp chart names a circuit/feature; a single symbol is not treated as an assembly bulb count.",
+      "location_status": "manual_feature",
+      "new_points": [
+        [
+          197.33,
+          1004.98
+        ]
+      ],
+      "displayed_markers": 1,
+      "finding": "Identity and bulb family checked against manual p. 2-35. Marker retraced to the drawn insert/feature, not its printed number. It identifies a manual feature location, not an inspected under-playfield socket."
+    },
+    {
+      "original_id": "L46",
+      "name": "Hurry Up Lit",
+      "status": "manual_feature",
+      "source": "Manual pp. 2-35",
+      "source_url": "https://arcarc.xmission.com/Pinball/PDF%20Pinball%20Williams%20%281979-2000%29/Terminator%202%3A%20Judgement%20Day/Terminator%202%20Judgement%20Day%20Operations%20Manual.pdf",
+      "old": {
+        "type": "#555",
+        "qty": 1,
+        "points": [
+          [
+            219,
+            1066
+          ]
+        ],
+        "back": null,
+        "poly": null,
+        "backZone": null
+      },
+      "new_type": "#555",
+      "new_quantity": null,
+      "quantity_evidence": "The lamp chart names a circuit/feature; a single symbol is not treated as an assembly bulb count.",
+      "location_status": "manual_feature",
+      "new_points": [
+        [
+          215.58,
+          1068.86
+        ]
+      ],
+      "displayed_markers": 1,
+      "finding": "Identity and bulb family checked against manual p. 2-35. Marker retraced to the drawn insert/feature, not its printed number. It identifies a manual feature location, not an inspected under-playfield socket."
+    },
+    {
+      "original_id": "L47",
+      "name": "Hold Bonus",
+      "status": "manual_feature",
+      "source": "Manual pp. 2-35",
+      "source_url": "https://arcarc.xmission.com/Pinball/PDF%20Pinball%20Williams%20%281979-2000%29/Terminator%202%3A%20Judgement%20Day/Terminator%202%20Judgement%20Day%20Operations%20Manual.pdf",
+      "old": {
+        "type": "#555",
+        "qty": 1,
+        "points": [
+          [
+            245,
+            1121
+          ]
+        ],
+        "back": null,
+        "poly": null,
+        "backZone": null
+      },
+      "new_type": "#555",
+      "new_quantity": null,
+      "quantity_evidence": "The lamp chart names a circuit/feature; a single symbol is not treated as an assembly bulb count.",
+      "location_status": "manual_feature",
+      "new_points": [
+        [
+          229.27,
+          1125.9
+        ]
+      ],
+      "displayed_markers": 1,
+      "finding": "Identity and bulb family checked against manual p. 2-35. Marker retraced to the drawn insert/feature, not its printed number. It identifies a manual feature location, not an inspected under-playfield socket."
+    },
+    {
+      "original_id": "L48",
+      "name": "Security Pass",
+      "status": "manual_feature",
+      "source": "Manual pp. 2-35",
+      "source_url": "https://arcarc.xmission.com/Pinball/PDF%20Pinball%20Williams%20%281979-2000%29/Terminator%202%3A%20Judgement%20Day/Terminator%202%20Judgement%20Day%20Operations%20Manual.pdf",
+      "old": {
+        "type": "#555",
+        "qty": 1,
+        "points": [
+          [
+            251,
+            1187
+          ]
+        ],
+        "back": null,
+        "poly": null,
+        "backZone": null
+      },
+      "new_type": "#555",
+      "new_quantity": null,
+      "quantity_evidence": "The lamp chart names a circuit/feature; a single symbol is not treated as an assembly bulb count.",
+      "location_status": "manual_feature",
+      "new_points": [
+        [
+          240.67,
+          1185.21
+        ]
+      ],
+      "displayed_markers": 1,
+      "finding": "Identity and bulb family checked against manual p. 2-35. Marker retraced to the drawn insert/feature, not its printed number. It identifies a manual feature location, not an inspected under-playfield socket."
+    },
+    {
+      "original_id": "L51",
+      "name": "Eyes Lower",
+      "status": "manual_feature",
+      "source": "Manual pp. 2-35",
+      "source_url": "https://arcarc.xmission.com/Pinball/PDF%20Pinball%20Williams%20%281979-2000%29/Terminator%202%3A%20Judgement%20Day/Terminator%202%20Judgement%20Day%20Operations%20Manual.pdf",
+      "old": {
+        "type": "#44",
+        "qty": 2,
+        "points": [
+          [
+            308,
+            1098
+          ],
+          [
+            358,
+            1098
+          ]
+        ],
+        "back": null,
+        "poly": null,
+        "backZone": null
+      },
+      "new_type": "#44",
+      "new_quantity": null,
+      "quantity_evidence": "The drawing shows two feature positions on this circuit; physical assembly count has not been inspected.",
+      "location_status": "manual_feature",
+      "new_points": [
+        [
+          304.55,
+          1108.79
+        ],
+        [
+          358.16,
+          1108.79
+        ]
+      ],
+      "displayed_markers": 2,
+      "finding": "Identity and bulb family checked against manual p. 2-35. Marker retraced to the drawn insert/feature, not its printed number. It identifies a manual feature location, not an inspected under-playfield socket.",
+      "led_note": "This is a drawn playfield feature, not the upper skull-eye assembly. The old name-based skull LED recommendation was removed."
+    },
+    {
+      "original_id": "L52",
+      "name": "Eyes Upper",
+      "status": "documented_variant",
+      "source": "Manual pp. 2-27; 2-35",
+      "source_url": "https://arcarc.xmission.com/Pinball/PDF%20Pinball%20Williams%20%281979-2000%29/Terminator%202%3A%20Judgement%20Day/Terminator%202%20Judgement%20Day%20Operations%20Manual.pdf",
+      "old": {
+        "type": "#44",
+        "qty": 1,
+        "points": [
+          [
+            214,
+            191
+          ]
+        ],
+        "back": null,
+        "poly": null,
+        "backZone": null
+      },
+      "new_type": "#555 / #44",
+      "new_quantity": 2,
+      "quantity_evidence": "Two holders shown on p. 2-27 and two A-12887 socket/#555 assemblies in the reproduced BOM.",
+      "location_status": "assembly_only",
+      "new_points": [],
+      "displayed_markers": 0,
+      "finding": "Two lamps in the upper skull-eye assembly A-14773. The assembly drawing/BOM specifies #555 wedge, while the lamp chart says #44; supplier documentation also reports both socket variants. No point is drawn on the playfield because the chart provides an in-head callout, not a socket coordinate."
+    },
+    {
+      "original_id": "L53",
+      "name": "5,000,000",
+      "status": "manual_feature",
+      "source": "Manual pp. 2-35",
+      "source_url": "https://arcarc.xmission.com/Pinball/PDF%20Pinball%20Williams%20%281979-2000%29/Terminator%202%3A%20Judgement%20Day/Terminator%202%20Judgement%20Day%20Operations%20Manual.pdf",
+      "old": {
+        "type": "#555",
+        "qty": 1,
+        "points": [
+          [
+            514,
+            890
+          ]
+        ],
+        "back": null,
+        "poly": null,
+        "backZone": null
+      },
+      "new_type": "#555",
+      "new_quantity": null,
+      "quantity_evidence": "The lamp chart names a circuit/feature; a single symbol is not treated as an assembly bulb count.",
+      "location_status": "manual_feature",
+      "new_points": [
+        [
+          520.12,
+          887.49
+        ]
+      ],
+      "displayed_markers": 1,
+      "finding": "Identity and bulb family checked against manual p. 2-35. Marker retraced to the drawn insert/feature, not its printed number. It identifies a manual feature location, not an inspected under-playfield socket."
+    },
+    {
+      "original_id": "L54",
+      "name": "3,000,000",
+      "status": "manual_feature",
+      "source": "Manual pp. 2-35",
+      "source_url": "https://arcarc.xmission.com/Pinball/PDF%20Pinball%20Williams%20%281979-2000%29/Terminator%202%3A%20Judgement%20Day/Terminator%202%20Judgement%20Day%20Operations%20Manual.pdf",
+      "old": {
+        "type": "#555",
+        "qty": 1,
+        "points": [
+          [
+            494,
+            950
+          ]
+        ],
+        "back": null,
+        "poly": null,
+        "backZone": null
+      },
+      "new_type": "#555",
+      "new_quantity": null,
+      "quantity_evidence": "The lamp chart names a circuit/feature; a single symbol is not treated as an assembly bulb count.",
+      "location_status": "manual_feature",
+      "new_points": [
+        [
+          503.02,
+          943.38
+        ]
+      ],
+      "displayed_markers": 1,
+      "finding": "Identity and bulb family checked against manual p. 2-35. Marker retraced to the drawn insert/feature, not its printed number. It identifies a manual feature location, not an inspected under-playfield socket."
+    },
+    {
+      "original_id": "L55",
+      "name": "1,000,000",
+      "status": "manual_feature",
+      "source": "Manual pp. 2-35",
+      "source_url": "https://arcarc.xmission.com/Pinball/PDF%20Pinball%20Williams%20%281979-2000%29/Terminator%202%3A%20Judgement%20Day/Terminator%202%20Judgement%20Day%20Operations%20Manual.pdf",
+      "old": {
+        "type": "#555",
+        "qty": 1,
+        "points": [
+          [
+            484,
+            1010
+          ]
+        ],
+        "back": null,
+        "poly": null,
+        "backZone": null
+      },
+      "new_type": "#555",
+      "new_quantity": null,
+      "quantity_evidence": "The lamp chart names a circuit/feature; a single symbol is not treated as an assembly bulb count.",
+      "location_status": "manual_feature",
+      "new_points": [
+        [
+          480.2,
+          1001.56
+        ]
+      ],
+      "displayed_markers": 1,
+      "finding": "Identity and bulb family checked against manual p. 2-35. Marker retraced to the drawn insert/feature, not its printed number. It identifies a manual feature location, not an inspected under-playfield socket."
+    },
+    {
+      "original_id": "L56",
+      "name": "750,000",
+      "status": "manual_feature",
+      "source": "Manual pp. 2-35",
+      "source_url": "https://arcarc.xmission.com/Pinball/PDF%20Pinball%20Williams%20%281979-2000%29/Terminator%202%3A%20Judgement%20Day/Terminator%202%20Judgement%20Day%20Operations%20Manual.pdf",
+      "old": {
+        "type": "#555",
+        "qty": 1,
+        "points": [
+          [
+            461,
+            1062
+          ]
+        ],
+        "back": null,
+        "poly": null,
+        "backZone": null
+      },
+      "new_type": "#555",
+      "new_quantity": null,
+      "quantity_evidence": "The lamp chart names a circuit/feature; a single symbol is not treated as an assembly bulb count.",
+      "location_status": "manual_feature",
+      "new_points": [
+        [
+          464.23,
+          1060.88
+        ]
+      ],
+      "displayed_markers": 1,
+      "finding": "Identity and bulb family checked against manual p. 2-35. Marker retraced to the drawn insert/feature, not its printed number. It identifies a manual feature location, not an inspected under-playfield socket."
+    },
+    {
+      "original_id": "L57",
+      "name": "500,000",
+      "status": "manual_feature",
+      "source": "Manual pp. 2-35",
+      "source_url": "https://arcarc.xmission.com/Pinball/PDF%20Pinball%20Williams%20%281979-2000%29/Terminator%202%3A%20Judgement%20Day/Terminator%202%20Judgement%20Day%20Operations%20Manual.pdf",
+      "old": {
+        "type": "#555",
+        "qty": 1,
+        "points": [
+          [
+            446,
+            1123
+          ]
+        ],
+        "back": null,
+        "poly": null,
+        "backZone": null
+      },
+      "new_type": "#555",
+      "new_quantity": null,
+      "quantity_evidence": "The lamp chart names a circuit/feature; a single symbol is not treated as an assembly bulb count.",
+      "location_status": "manual_feature",
+      "new_points": [
+        [
+          443.7,
+          1116.77
+        ]
+      ],
+      "displayed_markers": 1,
+      "finding": "Identity and bulb family checked against manual p. 2-35. Marker retraced to the drawn insert/feature, not its printed number. It identifies a manual feature location, not an inspected under-playfield socket."
+    },
+    {
+      "original_id": "L58",
+      "name": "250,000",
+      "status": "manual_feature",
+      "source": "Manual pp. 2-35",
+      "source_url": "https://arcarc.xmission.com/Pinball/PDF%20Pinball%20Williams%20%281979-2000%29/Terminator%202%3A%20Judgement%20Day/Terminator%202%20Judgement%20Day%20Operations%20Manual.pdf",
+      "old": {
+        "type": "#555",
+        "qty": 1,
+        "points": [
+          [
+            426,
+            1183
+          ]
+        ],
+        "back": null,
+        "poly": null,
+        "backZone": null
+      },
+      "new_type": "#555",
+      "new_quantity": null,
+      "quantity_evidence": "The lamp chart names a circuit/feature; a single symbol is not treated as an assembly bulb count.",
+      "location_status": "manual_feature",
+      "new_points": [
+        [
+          427.73,
+          1174.95
+        ]
+      ],
+      "displayed_markers": 1,
+      "finding": "Identity and bulb family checked against manual p. 2-35. Marker retraced to the drawn insert/feature, not its printed number. It identifies a manual feature location, not an inspected under-playfield socket."
+    },
+    {
+      "original_id": "L61",
+      "name": "Left CPU Lit",
+      "status": "manual_feature",
+      "source": "Manual pp. 2-35",
+      "source_url": "https://arcarc.xmission.com/Pinball/PDF%20Pinball%20Williams%20%281979-2000%29/Terminator%202%3A%20Judgement%20Day/Terminator%202%20Judgement%20Day%20Operations%20Manual.pdf",
+      "old": {
+        "type": "#555",
+        "qty": 1,
+        "points": [
+          [
+            231,
+            792
+          ]
+        ],
+        "back": null,
+        "poly": null,
+        "backZone": null
+      },
+      "new_type": "#555",
+      "new_quantity": null,
+      "quantity_evidence": "The lamp chart names a circuit/feature; a single symbol is not treated as an assembly bulb count.",
+      "location_status": "manual_feature",
+      "new_points": [
+        [
+          234.97,
+          795.09
+        ]
+      ],
+      "displayed_markers": 1,
+      "finding": "Identity and bulb family checked against manual p. 2-35. Marker retraced to the drawn insert/feature, not its printed number. It identifies a manual feature location, not an inspected under-playfield socket."
+    },
+    {
+      "original_id": "L62",
+      "name": "Left Vault Key",
+      "status": "manual_feature",
+      "source": "Manual pp. 2-35",
+      "source_url": "https://arcarc.xmission.com/Pinball/PDF%20Pinball%20Williams%20%281979-2000%29/Terminator%202%3A%20Judgement%20Day/Terminator%202%20Judgement%20Day%20Operations%20Manual.pdf",
+      "old": {
+        "type": "#555",
+        "qty": 1,
+        "points": [
+          [
+            242,
+            842
+          ]
+        ],
+        "back": null,
+        "poly": null,
+        "backZone": null
+      },
+      "new_type": "#555",
+      "new_quantity": null,
+      "quantity_evidence": "The lamp chart names a circuit/feature; a single symbol is not treated as an assembly bulb count.",
+      "location_status": "manual_feature",
+      "new_points": [
+        [
+          247.52,
+          847.56
+        ]
+      ],
+      "displayed_markers": 1,
+      "finding": "Identity and bulb family checked against manual p. 2-35. Marker retraced to the drawn insert/feature, not its printed number. It identifies a manual feature location, not an inspected under-playfield socket."
+    },
+    {
+      "original_id": "L63",
+      "name": "Left Silent Alarm",
+      "status": "manual_feature",
+      "source": "Manual pp. 2-35",
+      "source_url": "https://arcarc.xmission.com/Pinball/PDF%20Pinball%20Williams%20%281979-2000%29/Terminator%202%3A%20Judgement%20Day/Terminator%202%20Judgement%20Day%20Operations%20Manual.pdf",
+      "old": {
+        "type": "#555",
+        "qty": 1,
+        "points": [
+          [
+            261,
+            891
+          ]
+        ],
+        "back": null,
+        "poly": null,
+        "backZone": null
+      },
+      "new_type": "#555",
+      "new_quantity": null,
+      "quantity_evidence": "The lamp chart names a circuit/feature; a single symbol is not treated as an assembly bulb count.",
+      "location_status": "manual_feature",
+      "new_points": [
+        [
+          258.92,
+          902.31
+        ]
+      ],
+      "displayed_markers": 1,
+      "finding": "Identity and bulb family checked against manual p. 2-35. Marker retraced to the drawn insert/feature, not its printed number. It identifies a manual feature location, not an inspected under-playfield socket."
+    },
+    {
+      "original_id": "L64",
+      "name": "Left Passcode",
+      "status": "manual_feature",
+      "source": "Manual pp. 2-35",
+      "source_url": "https://arcarc.xmission.com/Pinball/PDF%20Pinball%20Williams%20%281979-2000%29/Terminator%202%3A%20Judgement%20Day/Terminator%202%20Judgement%20Day%20Operations%20Manual.pdf",
+      "old": {
+        "type": "#555",
+        "qty": 1,
+        "points": [
+          [
+            268,
+            949
+          ]
+        ],
+        "back": null,
+        "poly": null,
+        "backZone": null
+      },
+      "new_type": "#555",
+      "new_quantity": null,
+      "quantity_evidence": "The lamp chart names a circuit/feature; a single symbol is not treated as an assembly bulb count.",
+      "location_status": "manual_feature",
+      "new_points": [
+        [
+          269.19,
+          951.37
+        ]
+      ],
+      "displayed_markers": 1,
+      "finding": "Identity and bulb family checked against manual p. 2-35. Marker retraced to the drawn insert/feature, not its printed number. It identifies a manual feature location, not an inspected under-playfield socket."
+    },
+    {
+      "original_id": "L65",
+      "name": "Left Checkpoint",
+      "status": "manual_feature",
+      "source": "Manual pp. 2-35",
+      "source_url": "https://arcarc.xmission.com/Pinball/PDF%20Pinball%20Williams%20%281979-2000%29/Terminator%202%3A%20Judgement%20Day/Terminator%202%20Judgement%20Day%20Operations%20Manual.pdf",
+      "old": {
+        "type": "#555",
+        "qty": 1,
+        "points": [
+          [
+            283,
+            997
+          ]
+        ],
+        "back": null,
+        "poly": null,
+        "backZone": null
+      },
+      "new_type": "#555",
+      "new_quantity": null,
+      "quantity_evidence": "The lamp chart names a circuit/feature; a single symbol is not treated as an assembly bulb count.",
+      "location_status": "manual_feature",
+      "new_points": [
+        [
+          281.73,
+          1001.56
+        ]
+      ],
+      "displayed_markers": 1,
+      "finding": "Identity and bulb family checked against manual p. 2-35. Marker retraced to the drawn insert/feature, not its printed number. It identifies a manual feature location, not an inspected under-playfield socket."
+    },
+    {
+      "original_id": "L66",
+      "name": "Lock 1",
+      "status": "manual_feature",
+      "source": "Manual pp. 2-35",
+      "source_url": "https://arcarc.xmission.com/Pinball/PDF%20Pinball%20Williams%20%281979-2000%29/Terminator%202%3A%20Judgement%20Day/Terminator%202%20Judgement%20Day%20Operations%20Manual.pdf",
+      "old": {
+        "type": "#555",
+        "qty": 1,
+        "points": [
+          [
+            77,
+            955
+          ]
+        ],
+        "back": null,
+        "poly": null,
+        "backZone": null
+      },
+      "new_type": "#555",
+      "new_quantity": null,
+      "quantity_evidence": "The lamp chart names a circuit/feature; a single symbol is not treated as an assembly bulb count.",
+      "location_status": "manual_feature",
+      "new_points": [
+        [
+          95.81,
+          962.77
+        ]
+      ],
+      "displayed_markers": 1,
+      "finding": "Identity and bulb family checked against manual p. 2-35. Marker retraced to the drawn insert/feature, not its printed number. It identifies a manual feature location, not an inspected under-playfield socket."
+    },
+    {
+      "original_id": "L67",
+      "name": "Database 1",
+      "status": "manual_feature",
+      "source": "Manual pp. 2-35",
+      "source_url": "https://arcarc.xmission.com/Pinball/PDF%20Pinball%20Williams%20%281979-2000%29/Terminator%202%3A%20Judgement%20Day/Terminator%202%20Judgement%20Day%20Operations%20Manual.pdf",
+      "old": {
+        "type": "#555",
+        "qty": 1,
+        "points": [
+          [
+            80,
+            1037
+          ]
+        ],
+        "back": null,
+        "poly": null,
+        "backZone": null
+      },
+      "new_type": "#555",
+      "new_quantity": null,
+      "quantity_evidence": "The lamp chart names a circuit/feature; a single symbol is not treated as an assembly bulb count.",
+      "location_status": "manual_feature",
+      "new_points": [
+        [
+          111.78,
+          1032.36
+        ]
+      ],
+      "displayed_markers": 1,
+      "finding": "Identity and bulb family checked against manual p. 2-35. Marker retraced to the drawn insert/feature, not its printed number. It identifies a manual feature location, not an inspected under-playfield socket."
+    },
+    {
+      "original_id": "L68",
+      "name": "Left Ramp",
+      "status": "manual_feature",
+      "source": "Manual pp. 2-35",
+      "source_url": "https://arcarc.xmission.com/Pinball/PDF%20Pinball%20Williams%20%281979-2000%29/Terminator%202%3A%20Judgement%20Day/Terminator%202%20Judgement%20Day%20Operations%20Manual.pdf",
+      "old": {
+        "type": "#555",
+        "qty": 1,
+        "points": [
+          [
+            175,
+            515
+          ]
+        ],
+        "back": null,
+        "poly": null,
+        "backZone": null
+      },
+      "new_type": "#555",
+      "new_quantity": null,
+      "quantity_evidence": "The lamp chart names a circuit/feature; a single symbol is not treated as an assembly bulb count.",
+      "location_status": "manual_feature",
+      "new_points": [
+        [
+          174.52,
+          503.06
+        ]
+      ],
+      "displayed_markers": 1,
+      "finding": "Identity and bulb family checked against manual p. 2-35. Marker retraced to the drawn insert/feature, not its printed number. It identifies a manual feature location, not an inspected under-playfield socket."
+    },
+    {
+      "original_id": "L71",
+      "name": "Right CPU Lit",
+      "status": "manual_feature",
+      "source": "Manual pp. 2-35",
+      "source_url": "https://arcarc.xmission.com/Pinball/PDF%20Pinball%20Williams%20%281979-2000%29/Terminator%202%3A%20Judgement%20Day/Terminator%202%20Judgement%20Day%20Operations%20Manual.pdf",
+      "old": {
+        "type": "#555",
+        "qty": 1,
+        "points": [
+          [
+            470,
+            795
+          ]
+        ],
+        "back": null,
+        "poly": null,
+        "backZone": null
+      },
+      "new_type": "#555",
+      "new_quantity": null,
+      "quantity_evidence": "The lamp chart names a circuit/feature; a single symbol is not treated as an assembly bulb count.",
+      "location_status": "manual_feature",
+      "new_points": [
+        [
+          472.22,
+          798.51
+        ]
+      ],
+      "displayed_markers": 1,
+      "finding": "Identity and bulb family checked against manual p. 2-35. Marker retraced to the drawn insert/feature, not its printed number. It identifies a manual feature location, not an inspected under-playfield socket."
+    },
+    {
+      "original_id": "L72",
+      "name": "Right Vault Key",
+      "status": "manual_feature",
+      "source": "Manual pp. 2-35",
+      "source_url": "https://arcarc.xmission.com/Pinball/PDF%20Pinball%20Williams%20%281979-2000%29/Terminator%202%3A%20Judgement%20Day/Terminator%202%20Judgement%20Day%20Operations%20Manual.pdf",
+      "old": {
+        "type": "#555",
+        "qty": 1,
+        "points": [
+          [
+            459,
+            848
+          ]
+        ],
+        "back": null,
+        "poly": null,
+        "backZone": null
+      },
+      "new_type": "#555",
+      "new_quantity": null,
+      "quantity_evidence": "The lamp chart names a circuit/feature; a single symbol is not treated as an assembly bulb count.",
+      "location_status": "manual_feature",
+      "new_points": [
+        [
+          453.97,
+          848.7
+        ]
+      ],
+      "displayed_markers": 1,
+      "finding": "Identity and bulb family checked against manual p. 2-35. Marker retraced to the drawn insert/feature, not its printed number. It identifies a manual feature location, not an inspected under-playfield socket."
+    },
+    {
+      "original_id": "L73",
+      "name": "Right Silent Alarm",
+      "status": "manual_feature",
+      "source": "Manual pp. 2-35",
+      "source_url": "https://arcarc.xmission.com/Pinball/PDF%20Pinball%20Williams%20%281979-2000%29/Terminator%202%3A%20Judgement%20Day/Terminator%202%20Judgement%20Day%20Operations%20Manual.pdf",
+      "old": {
+        "type": "#555",
+        "qty": 1,
+        "points": [
+          [
+            443,
+            889
+          ]
+        ],
+        "back": null,
+        "poly": null,
+        "backZone": null
+      },
+      "new_type": "#555",
+      "new_quantity": null,
+      "quantity_evidence": "The lamp chart names a circuit/feature; a single symbol is not treated as an assembly bulb count.",
+      "location_status": "manual_feature",
+      "new_points": [
+        [
+          438.0,
+          897.75
+        ]
+      ],
+      "displayed_markers": 1,
+      "finding": "Identity and bulb family checked against manual p. 2-35. Marker retraced to the drawn insert/feature, not its printed number. It identifies a manual feature location, not an inspected under-playfield socket."
+    },
+    {
+      "original_id": "L74",
+      "name": "Right Passcode",
+      "status": "manual_feature",
+      "source": "Manual pp. 2-35",
+      "source_url": "https://arcarc.xmission.com/Pinball/PDF%20Pinball%20Williams%20%281979-2000%29/Terminator%202%3A%20Judgement%20Day/Terminator%202%20Judgement%20Day%20Operations%20Manual.pdf",
+      "old": {
+        "type": "#555",
+        "qty": 1,
+        "points": [
+          [
+            425,
+            946
+          ]
+        ],
+        "back": null,
+        "poly": null,
+        "backZone": null
+      },
+      "new_type": "#555",
+      "new_quantity": null,
+      "quantity_evidence": "The lamp chart names a circuit/feature; a single symbol is not treated as an assembly bulb count.",
+      "location_status": "manual_feature",
+      "new_points": [
+        [
+          422.03,
+          949.08
+        ]
+      ],
+      "displayed_markers": 1,
+      "finding": "Identity and bulb family checked against manual p. 2-35. Marker retraced to the drawn insert/feature, not its printed number. It identifies a manual feature location, not an inspected under-playfield socket."
+    },
+    {
+      "original_id": "L75",
+      "name": "Right Checkpoint",
+      "status": "manual_feature",
+      "source": "Manual pp. 2-35",
+      "source_url": "https://arcarc.xmission.com/Pinball/PDF%20Pinball%20Williams%20%281979-2000%29/Terminator%202%3A%20Judgement%20Day/Terminator%202%20Judgement%20Day%20Operations%20Manual.pdf",
+      "old": {
+        "type": "#555",
+        "qty": 1,
+        "points": [
+          [
+            409,
+            990
+          ]
+        ],
+        "back": null,
+        "poly": null,
+        "backZone": null
+      },
+      "new_type": "#555",
+      "new_quantity": null,
+      "quantity_evidence": "The lamp chart names a circuit/feature; a single symbol is not treated as an assembly bulb count.",
+      "location_status": "manual_feature",
+      "new_points": [
+        [
+          404.92,
+          1000.42
+        ]
+      ],
+      "displayed_markers": 1,
+      "finding": "Identity and bulb family checked against manual p. 2-35. Marker retraced to the drawn insert/feature, not its printed number. It identifies a manual feature location, not an inspected under-playfield socket."
+    },
+    {
+      "original_id": "L76",
+      "name": "Right Top Bank Target",
+      "status": "manual_feature",
+      "source": "Manual pp. 2-35",
+      "source_url": "https://arcarc.xmission.com/Pinball/PDF%20Pinball%20Williams%20%281979-2000%29/Terminator%202%3A%20Judgement%20Day/Terminator%202%20Judgement%20Day%20Operations%20Manual.pdf",
+      "old": {
+        "type": "#555",
+        "qty": 1,
+        "points": [
+          [
+            558,
+            984
+          ]
+        ],
+        "back": null,
+        "poly": null,
+        "backZone": null
+      },
+      "new_type": "#555",
+      "new_quantity": null,
+      "quantity_evidence": "The lamp chart names a circuit/feature; a single symbol is not treated as an assembly bulb count.",
+      "location_status": "manual_feature",
+      "new_points": [
+        [
+          558.91,
+          985.59
+        ]
+      ],
+      "displayed_markers": 1,
+      "finding": "Identity and bulb family checked against manual p. 2-35. Marker retraced to the drawn insert/feature, not its printed number. It identifies a manual feature location, not an inspected under-playfield socket."
+    },
+    {
+      "original_id": "L77",
+      "name": "Right Middle Bank Target",
+      "status": "manual_feature",
+      "source": "Manual pp. 2-35",
+      "source_url": "https://arcarc.xmission.com/Pinball/PDF%20Pinball%20Williams%20%281979-2000%29/Terminator%202%3A%20Judgement%20Day/Terminator%202%20Judgement%20Day%20Operations%20Manual.pdf",
+      "old": {
+        "type": "#555",
+        "qty": 1,
+        "points": [
+          [
+            557,
+            1033
+          ]
+        ],
+        "back": null,
+        "poly": null,
+        "backZone": null
+      },
+      "new_type": "#555",
+      "new_quantity": null,
+      "quantity_evidence": "The lamp chart names a circuit/feature; a single symbol is not treated as an assembly bulb count.",
+      "location_status": "manual_feature",
+      "new_points": [
+        [
+          558.91,
+          1025.51
+        ]
+      ],
+      "displayed_markers": 1,
+      "finding": "Identity and bulb family checked against manual p. 2-35. Marker retraced to the drawn insert/feature, not its printed number. It identifies a manual feature location, not an inspected under-playfield socket."
+    },
+    {
+      "original_id": "L78",
+      "name": "Right Bottom Bank Target",
+      "status": "manual_feature",
+      "source": "Manual pp. 2-35",
+      "source_url": "https://arcarc.xmission.com/Pinball/PDF%20Pinball%20Williams%20%281979-2000%29/Terminator%202%3A%20Judgement%20Day/Terminator%202%20Judgement%20Day%20Operations%20Manual.pdf",
+      "old": {
+        "type": "#555",
+        "qty": 1,
+        "points": [
+          [
+            556,
+            1076
+          ]
+        ],
+        "back": null,
+        "poly": null,
+        "backZone": null
+      },
+      "new_type": "#555",
+      "new_quantity": null,
+      "quantity_evidence": "The lamp chart names a circuit/feature; a single symbol is not treated as an assembly bulb count.",
+      "location_status": "manual_feature",
+      "new_points": [
+        [
+          558.91,
+          1067.72
+        ]
+      ],
+      "displayed_markers": 1,
+      "finding": "Identity and bulb family checked against manual p. 2-35. Marker retraced to the drawn insert/feature, not its printed number. It identifies a manual feature location, not an inspected under-playfield socket."
+    },
+    {
+      "original_id": "L81",
+      "name": "Chase Value",
+      "status": "manual_feature",
+      "source": "Manual pp. 2-35",
+      "source_url": "https://arcarc.xmission.com/Pinball/PDF%20Pinball%20Williams%20%281979-2000%29/Terminator%202%3A%20Judgement%20Day/Terminator%202%20Judgement%20Day%20Operations%20Manual.pdf",
+      "old": {
+        "type": "#555",
+        "qty": 1,
+        "points": [
+          [
+            569,
+            769
+          ]
+        ],
+        "back": null,
+        "poly": null,
+        "backZone": null
+      },
+      "new_type": "#555",
+      "new_quantity": null,
+      "quantity_evidence": "The lamp chart names a circuit/feature; a single symbol is not treated as an assembly bulb count.",
+      "location_status": "manual_feature",
+      "new_points": [
+        [
+          572.59,
+          752.88
+        ]
+      ],
+      "displayed_markers": 1,
+      "finding": "Identity and bulb family checked against manual p. 2-35. Marker retraced to the drawn insert/feature, not its printed number. It identifies a manual feature location, not an inspected under-playfield socket."
+    },
+    {
+      "original_id": "L82",
+      "name": "Right Ramp",
+      "status": "manual_feature",
+      "source": "Manual pp. 2-35",
+      "source_url": "https://arcarc.xmission.com/Pinball/PDF%20Pinball%20Williams%20%281979-2000%29/Terminator%202%3A%20Judgement%20Day/Terminator%202%20Judgement%20Day%20Operations%20Manual.pdf",
+      "old": {
+        "type": "#555",
+        "qty": 1,
+        "points": [
+          [
+            491,
+            744
+          ]
+        ],
+        "back": null,
+        "poly": null,
+        "backZone": null
+      },
+      "new_type": "#555",
+      "new_quantity": null,
+      "quantity_evidence": "The lamp chart names a circuit/feature; a single symbol is not treated as an assembly bulb count.",
+      "location_status": "manual_feature",
+      "new_points": [
+        [
+          484.77,
+          731.21
+        ]
+      ],
+      "displayed_markers": 1,
+      "finding": "Identity and bulb family checked against manual p. 2-35. Marker retraced to the drawn insert/feature, not its printed number. It identifies a manual feature location, not an inspected under-playfield socket."
+    },
+    {
+      "original_id": "L83",
+      "name": "Hurry Up",
+      "status": "manual_feature",
+      "source": "Manual pp. 2-35",
+      "source_url": "https://arcarc.xmission.com/Pinball/PDF%20Pinball%20Williams%20%281979-2000%29/Terminator%202%3A%20Judgement%20Day/Terminator%202%20Judgement%20Day%20Operations%20Manual.pdf",
+      "old": {
+        "type": "#555",
+        "qty": 1,
+        "points": [
+          [
+            553,
+            840
+          ]
+        ],
+        "back": null,
+        "poly": null,
+        "backZone": null
+      },
+      "new_type": "#555",
+      "new_quantity": null,
+      "quantity_evidence": "The lamp chart names a circuit/feature; a single symbol is not treated as an assembly bulb count.",
+      "location_status": "manual_feature",
+      "new_points": [
+        [
+          546.36,
+          830.45
+        ]
+      ],
+      "displayed_markers": 1,
+      "finding": "Identity and bulb family checked against manual p. 2-35. Marker retraced to the drawn insert/feature, not its printed number. It identifies a manual feature location, not an inspected under-playfield socket."
+    },
+    {
+      "original_id": "L84",
+      "name": "Start Button",
+      "status": "documented",
+      "source": "Manual pp. 2-35",
+      "source_url": "https://arcarc.xmission.com/Pinball/PDF%20Pinball%20Williams%20%281979-2000%29/Terminator%202%3A%20Judgement%20Day/Terminator%202%20Judgement%20Day%20Operations%20Manual.pdf",
+      "old": {
+        "type": "#44",
+        "qty": 1,
+        "points": [
+          [
+            173,
+            1659
+          ]
+        ],
+        "back": null,
+        "poly": null,
+        "backZone": null
+      },
+      "new_type": "#44",
+      "new_quantity": null,
+      "quantity_evidence": "The lamp chart names a circuit/feature; a single symbol is not treated as an assembly bulb count.",
+      "location_status": "cabinet_unmapped",
+      "new_points": [],
+      "displayed_markers": 0,
+      "finding": "The start button is on the cabinet. The 84 printed below the factory drawing is a reference callout, not a physical socket position on the playfield. The invented table coordinate was removed."
+    },
+    {
+      "original_id": "L85",
+      "name": "Drop Target",
+      "status": "manual_feature",
+      "source": "Manual pp. 2-35",
+      "source_url": "https://arcarc.xmission.com/Pinball/PDF%20Pinball%20Williams%20%281979-2000%29/Terminator%202%3A%20Judgement%20Day/Terminator%202%20Judgement%20Day%20Operations%20Manual.pdf",
+      "old": {
+        "type": "#44",
+        "qty": 1,
+        "points": [
+          [
+            226,
+            315
+          ]
+        ],
+        "back": null,
+        "poly": null,
+        "backZone": null
+      },
+      "new_type": "#44",
+      "new_quantity": null,
+      "quantity_evidence": "The lamp chart names a circuit/feature; a single symbol is not treated as an assembly bulb count.",
+      "location_status": "manual_feature",
+      "new_points": [
+        [
+          228.12,
+          304.57
+        ]
+      ],
+      "displayed_markers": 1,
+      "finding": "Identity and bulb family checked against manual p. 2-35. Marker retraced to the drawn insert/feature, not its printed number. It identifies a manual feature location, not an inspected under-playfield socket."
+    },
+    {
+      "original_id": "L86",
+      "name": "Top Left Lane",
+      "status": "manual_feature",
+      "source": "Manual pp. 2-35",
+      "source_url": "https://arcarc.xmission.com/Pinball/PDF%20Pinball%20Williams%20%281979-2000%29/Terminator%202%3A%20Judgement%20Day/Terminator%202%20Judgement%20Day%20Operations%20Manual.pdf",
+      "old": {
+        "type": "#555",
+        "qty": 1,
+        "points": [
+          [
+            355,
+            100
+          ]
+        ],
+        "back": null,
+        "poly": null,
+        "backZone": null
+      },
+      "new_type": "#555",
+      "new_quantity": null,
+      "quantity_evidence": "The lamp chart names a circuit/feature; a single symbol is not treated as an assembly bulb count.",
+      "location_status": "manual_feature",
+      "new_points": [
+        [
+          357.02,
+          93.54
+        ]
+      ],
+      "displayed_markers": 1,
+      "finding": "Identity and bulb family checked against manual p. 2-35. Marker retraced to the drawn insert/feature, not its printed number. It identifies a manual feature location, not an inspected under-playfield socket."
+    },
+    {
+      "original_id": "L87",
+      "name": "Top Center Lane",
+      "status": "manual_feature",
+      "source": "Manual pp. 2-35",
+      "source_url": "https://arcarc.xmission.com/Pinball/PDF%20Pinball%20Williams%20%281979-2000%29/Terminator%202%3A%20Judgement%20Day/Terminator%202%20Judgement%20Day%20Operations%20Manual.pdf",
+      "old": {
+        "type": "#555",
+        "qty": 1,
+        "points": [
+          [
+            417,
+            130
+          ]
+        ],
+        "back": null,
+        "poly": null,
+        "backZone": null
+      },
+      "new_type": "#555",
+      "new_quantity": null,
+      "quantity_evidence": "The lamp chart names a circuit/feature; a single symbol is not treated as an assembly bulb count.",
+      "location_status": "manual_feature",
+      "new_points": [
+        [
+          419.75,
+          125.48
+        ]
+      ],
+      "displayed_markers": 1,
+      "finding": "Identity and bulb family checked against manual p. 2-35. Marker retraced to the drawn insert/feature, not its printed number. It identifies a manual feature location, not an inspected under-playfield socket."
+    },
+    {
+      "original_id": "L88",
+      "name": "Top Right Lane",
+      "status": "manual_feature",
+      "source": "Manual pp. 2-35",
+      "source_url": "https://arcarc.xmission.com/Pinball/PDF%20Pinball%20Williams%20%281979-2000%29/Terminator%202%3A%20Judgement%20Day/Terminator%202%20Judgement%20Day%20Operations%20Manual.pdf",
+      "old": {
+        "type": "#555",
+        "qty": 1,
+        "points": [
+          [
+            482,
+            145
+          ]
+        ],
+        "back": null,
+        "poly": null,
+        "backZone": null
+      },
+      "new_type": "#555",
+      "new_quantity": null,
+      "quantity_evidence": "The lamp chart names a circuit/feature; a single symbol is not treated as an assembly bulb count.",
+      "location_status": "manual_feature",
+      "new_points": [
+        [
+          493.89,
+          136.89
+        ]
+      ],
+      "displayed_markers": 1,
+      "finding": "Identity and bulb family checked against manual p. 2-35. Marker retraced to the drawn insert/feature, not its printed number. It identifies a manual feature location, not an inspected under-playfield socket."
+    },
+    {
+      "original_id": "S17-PL",
+      "name": "Hot Dog Flashlamps (Playfield)",
+      "status": "circuit_documented",
+      "source": "Manual pp. 2-38",
+      "source_url": "https://arcarc.xmission.com/Pinball/PDF%20Pinball%20Williams%20%281979-2000%29/Terminator%202%3A%20Judgement%20Day/Terminator%202%20Judgement%20Day%20Operations%20Manual.pdf",
+      "old": {
+        "type": "#906",
+        "qty": 4,
+        "points": [
+          [
+            225,
+            300
+          ],
+          [
+            295,
+            325
+          ],
+          [
+            420,
+            340
+          ],
+          [
+            490,
+            370
+          ]
+        ],
+        "back": [],
+        "poly": null,
+        "backZone": null
+      },
+      "new_type": "#906",
+      "new_quantity": 4,
+      "quantity_evidence": "Explicit bulb quantity in the p. 2-38 flasher table; not physically inspected.",
+      "location_status": "unmapped",
+      "new_points": [],
+      "displayed_markers": 0,
+      "finding": "Circuit, bulb family, location area and quantity are printed in the factory solenoid table. Previously guessed individual socket coordinates were removed. The p. 2-39 effect callouts do not establish each socket center."
+    },
+    {
+      "original_id": "S18-BB",
+      "name": "Right Sling Flashlamps (Backbox)",
+      "status": "circuit_documented",
+      "source": "Manual pp. 2-38",
+      "source_url": "https://arcarc.xmission.com/Pinball/PDF%20Pinball%20Williams%20%281979-2000%29/Terminator%202%3A%20Judgement%20Day/Terminator%202%20Judgement%20Day%20Operations%20Manual.pdf",
+      "old": {
+        "type": "#906",
+        "qty": 1,
+        "points": [],
+        "back": [
+          [
+            73,
+            80
+          ]
+        ],
+        "poly": null,
+        "backZone": null
+      },
+      "new_type": "#906",
+      "new_quantity": 1,
+      "quantity_evidence": "Explicit bulb quantity in the p. 2-38 flasher table; not physically inspected.",
+      "location_status": "unmapped",
+      "new_points": [],
+      "displayed_markers": 0,
+      "finding": "Circuit, bulb family, location area and quantity are printed in the factory solenoid table. Previously guessed individual socket coordinates were removed. The p. 2-39 effect callouts do not establish each socket center."
+    },
+    {
+      "original_id": "S18-PL",
+      "name": "Right Sling Flashlamps (Playfield)",
+      "status": "circuit_documented",
+      "source": "Manual pp. 2-38",
+      "source_url": "https://arcarc.xmission.com/Pinball/PDF%20Pinball%20Williams%20%281979-2000%29/Terminator%202%3A%20Judgement%20Day/Terminator%202%20Judgement%20Day%20Operations%20Manual.pdf",
+      "old": {
+        "type": "#89",
+        "qty": 1,
+        "points": [
+          [
+            570,
+            1310
+          ]
+        ],
+        "back": [],
+        "poly": null,
+        "backZone": null
+      },
+      "new_type": "#89",
+      "new_quantity": 1,
+      "quantity_evidence": "Explicit bulb quantity in the p. 2-38 flasher table; not physically inspected.",
+      "location_status": "unmapped",
+      "new_points": [],
+      "displayed_markers": 0,
+      "finding": "Circuit, bulb family, location area and quantity are printed in the factory solenoid table. Previously guessed individual socket coordinates were removed. The p. 2-39 effect callouts do not establish each socket center."
+    },
+    {
+      "original_id": "S19-BB",
+      "name": "Left Sling Flashlamps (Backbox)",
+      "status": "circuit_documented",
+      "source": "Manual pp. 2-38",
+      "source_url": "https://arcarc.xmission.com/Pinball/PDF%20Pinball%20Williams%20%281979-2000%29/Terminator%202%3A%20Judgement%20Day/Terminator%202%20Judgement%20Day%20Operations%20Manual.pdf",
+      "old": {
+        "type": "#906",
+        "qty": 1,
+        "points": [],
+        "back": [
+          [
+            27,
+            80
+          ]
+        ],
+        "poly": null,
+        "backZone": null
+      },
+      "new_type": "#906",
+      "new_quantity": 1,
+      "quantity_evidence": "Explicit bulb quantity in the p. 2-38 flasher table; not physically inspected.",
+      "location_status": "unmapped",
+      "new_points": [],
+      "displayed_markers": 0,
+      "finding": "Circuit, bulb family, location area and quantity are printed in the factory solenoid table. Previously guessed individual socket coordinates were removed. The p. 2-39 effect callouts do not establish each socket center."
+    },
+    {
+      "original_id": "S19-PL",
+      "name": "Left Sling Flashlamps (Playfield)",
+      "status": "circuit_documented",
+      "source": "Manual pp. 2-38",
+      "source_url": "https://arcarc.xmission.com/Pinball/PDF%20Pinball%20Williams%20%281979-2000%29/Terminator%202%3A%20Judgement%20Day/Terminator%202%20Judgement%20Day%20Operations%20Manual.pdf",
+      "old": {
+        "type": "#89",
+        "qty": 1,
+        "points": [
+          [
+            135,
+            1320
+          ]
+        ],
+        "back": [],
+        "poly": null,
+        "backZone": null
+      },
+      "new_type": "#89",
+      "new_quantity": 1,
+      "quantity_evidence": "Explicit bulb quantity in the p. 2-38 flasher table; not physically inspected.",
+      "location_status": "unmapped",
+      "new_points": [],
+      "displayed_markers": 0,
+      "finding": "Circuit, bulb family, location area and quantity are printed in the factory solenoid table. Previously guessed individual socket coordinates were removed. The p. 2-39 effect callouts do not establish each socket center."
+    },
+    {
+      "original_id": "S20-BB",
+      "name": "Left Lock Flashlamps (Backbox)",
+      "status": "circuit_documented",
+      "source": "Manual pp. 2-38",
+      "source_url": "https://arcarc.xmission.com/Pinball/PDF%20Pinball%20Williams%20%281979-2000%29/Terminator%202%3A%20Judgement%20Day/Terminator%202%20Judgement%20Day%20Operations%20Manual.pdf",
+      "old": {
+        "type": "#906",
+        "qty": 1,
+        "points": [],
+        "back": [
+          [
+            35,
+            48
+          ]
+        ],
+        "poly": null,
+        "backZone": null
+      },
+      "new_type": "#906",
+      "new_quantity": 1,
+      "quantity_evidence": "Explicit bulb quantity in the p. 2-38 flasher table; not physically inspected.",
+      "location_status": "unmapped",
+      "new_points": [],
+      "displayed_markers": 0,
+      "finding": "Circuit, bulb family, location area and quantity are printed in the factory solenoid table. Previously guessed individual socket coordinates were removed. The p. 2-39 effect callouts do not establish each socket center."
+    },
+    {
+      "original_id": "S20-PL",
+      "name": "Left Lock Flashlamps (Playfield)",
+      "status": "circuit_documented",
+      "source": "Manual pp. 2-38",
+      "source_url": "https://arcarc.xmission.com/Pinball/PDF%20Pinball%20Williams%20%281979-2000%29/Terminator%202%3A%20Judgement%20Day/Terminator%202%20Judgement%20Day%20Operations%20Manual.pdf",
+      "old": {
+        "type": "#89",
+        "qty": 1,
+        "points": [
+          [
+            152,
+            703
+          ]
+        ],
+        "back": [],
+        "poly": null,
+        "backZone": null
+      },
+      "new_type": "#89",
+      "new_quantity": 1,
+      "quantity_evidence": "Explicit bulb quantity in the p. 2-38 flasher table; not physically inspected.",
+      "location_status": "unmapped",
+      "new_points": [],
+      "displayed_markers": 0,
+      "finding": "Circuit, bulb family, location area and quantity are printed in the factory solenoid table. Previously guessed individual socket coordinates were removed. The p. 2-39 effect callouts do not establish each socket center."
+    },
+    {
+      "original_id": "S21-PL",
+      "name": "Gun Flashlamps (Playfield)",
+      "status": "circuit_documented",
+      "source": "Manual pp. 2-38",
+      "source_url": "https://arcarc.xmission.com/Pinball/PDF%20Pinball%20Williams%20%281979-2000%29/Terminator%202%3A%20Judgement%20Day/Terminator%202%20Judgement%20Day%20Operations%20Manual.pdf",
+      "old": {
+        "type": "#89",
+        "qty": 2,
+        "points": [
+          [
+            293,
+            470
+          ],
+          [
+            356,
+            515
+          ]
+        ],
+        "back": [],
+        "poly": null,
+        "backZone": null
+      },
+      "new_type": "#89",
+      "new_quantity": 2,
+      "quantity_evidence": "Explicit bulb quantity in the p. 2-38 flasher table; not physically inspected.",
+      "location_status": "unmapped",
+      "new_points": [],
+      "displayed_markers": 0,
+      "finding": "Circuit, bulb family, location area and quantity are printed in the factory solenoid table. Previously guessed individual socket coordinates were removed. The p. 2-39 effect callouts do not establish each socket center."
+    },
+    {
+      "original_id": "S22-BB",
+      "name": "Right Ramp Flashlamps (Backbox)",
+      "status": "circuit_documented",
+      "source": "Manual pp. 2-38",
+      "source_url": "https://arcarc.xmission.com/Pinball/PDF%20Pinball%20Williams%20%281979-2000%29/Terminator%202%3A%20Judgement%20Day/Terminator%202%20Judgement%20Day%20Operations%20Manual.pdf",
+      "old": {
+        "type": "#906",
+        "qty": 1,
+        "points": [],
+        "back": [
+          [
+            79,
+            50
+          ]
+        ],
+        "poly": null,
+        "backZone": null
+      },
+      "new_type": "#906",
+      "new_quantity": 1,
+      "quantity_evidence": "Explicit bulb quantity in the p. 2-38 flasher table; not physically inspected.",
+      "location_status": "unmapped",
+      "new_points": [],
+      "displayed_markers": 0,
+      "finding": "Circuit, bulb family, location area and quantity are printed in the factory solenoid table. Previously guessed individual socket coordinates were removed. The p. 2-39 effect callouts do not establish each socket center."
+    },
+    {
+      "original_id": "S22-PL",
+      "name": "Right Ramp Flashlamps (Playfield)",
+      "status": "circuit_documented",
+      "source": "Manual pp. 2-38",
+      "source_url": "https://arcarc.xmission.com/Pinball/PDF%20Pinball%20Williams%20%281979-2000%29/Terminator%202%3A%20Judgement%20Day/Terminator%202%20Judgement%20Day%20Operations%20Manual.pdf",
+      "old": {
+        "type": "#89",
+        "qty": 1,
+        "points": [
+          [
+            560,
+            365
+          ]
+        ],
+        "back": [],
+        "poly": null,
+        "backZone": null
+      },
+      "new_type": "#89",
+      "new_quantity": 1,
+      "quantity_evidence": "Explicit bulb quantity in the p. 2-38 flasher table; not physically inspected.",
+      "location_status": "unmapped",
+      "new_points": [],
+      "displayed_markers": 0,
+      "finding": "Circuit, bulb family, location area and quantity are printed in the factory solenoid table. Previously guessed individual socket coordinates were removed. The p. 2-39 effect callouts do not establish each socket center."
+    },
+    {
+      "original_id": "S23-BB",
+      "name": "Left Ramp Flashlamps (Backbox)",
+      "status": "circuit_documented",
+      "source": "Manual pp. 2-38",
+      "source_url": "https://arcarc.xmission.com/Pinball/PDF%20Pinball%20Williams%20%281979-2000%29/Terminator%202%3A%20Judgement%20Day/Terminator%202%20Judgement%20Day%20Operations%20Manual.pdf",
+      "old": {
+        "type": "#906",
+        "qty": 1,
+        "points": [],
+        "back": [
+          [
+            19,
+            50
+          ]
+        ],
+        "poly": null,
+        "backZone": null
+      },
+      "new_type": "#906",
+      "new_quantity": 1,
+      "quantity_evidence": "Explicit bulb quantity in the p. 2-38 flasher table; not physically inspected.",
+      "location_status": "unmapped",
+      "new_points": [],
+      "displayed_markers": 0,
+      "finding": "Circuit, bulb family, location area and quantity are printed in the factory solenoid table. Previously guessed individual socket coordinates were removed. The p. 2-39 effect callouts do not establish each socket center."
+    },
+    {
+      "original_id": "S23-PL",
+      "name": "Left Ramp Flashlamps (Playfield)",
+      "status": "circuit_documented",
+      "source": "Manual pp. 2-38",
+      "source_url": "https://arcarc.xmission.com/Pinball/PDF%20Pinball%20Williams%20%281979-2000%29/Terminator%202%3A%20Judgement%20Day/Terminator%202%20Judgement%20Day%20Operations%20Manual.pdf",
+      "old": {
+        "type": "#89",
+        "qty": 1,
+        "points": [
+          [
+            165,
+            300
+          ]
+        ],
+        "back": [],
+        "poly": null,
+        "backZone": null
+      },
+      "new_type": "#89",
+      "new_quantity": 1,
+      "quantity_evidence": "Explicit bulb quantity in the p. 2-38 flasher table; not physically inspected.",
+      "location_status": "unmapped",
+      "new_points": [],
+      "displayed_markers": 0,
+      "finding": "Circuit, bulb family, location area and quantity are printed in the factory solenoid table. Previously guessed individual socket coordinates were removed. The p. 2-39 effect callouts do not establish each socket center."
+    },
+    {
+      "original_id": "S24-BB",
+      "name": "Backglass Flashlamps (Backbox)",
+      "status": "circuit_documented",
+      "source": "Manual pp. 2-38",
+      "source_url": "https://arcarc.xmission.com/Pinball/PDF%20Pinball%20Williams%20%281979-2000%29/Terminator%202%3A%20Judgement%20Day/Terminator%202%20Judgement%20Day%20Operations%20Manual.pdf",
+      "old": {
+        "type": "#906",
+        "qty": 1,
+        "points": [],
+        "back": [
+          [
+            50,
+            22
+          ]
+        ],
+        "poly": null,
+        "backZone": null
+      },
+      "new_type": "#906",
+      "new_quantity": 1,
+      "quantity_evidence": "Explicit bulb quantity in the p. 2-38 flasher table; not physically inspected.",
+      "location_status": "unmapped",
+      "new_points": [],
+      "displayed_markers": 0,
+      "finding": "Circuit, bulb family, location area and quantity are printed in the factory solenoid table. Previously guessed individual socket coordinates were removed. The p. 2-39 effect callouts do not establish each socket center."
+    },
+    {
+      "original_id": "S25-PL",
+      "name": "Targets Flashlamps (Playfield)",
+      "status": "circuit_documented",
+      "source": "Manual pp. 2-38",
+      "source_url": "https://arcarc.xmission.com/Pinball/PDF%20Pinball%20Williams%20%281979-2000%29/Terminator%202%3A%20Judgement%20Day/Terminator%202%20Judgement%20Day%20Operations%20Manual.pdf",
+      "old": {
+        "type": "#89",
+        "qty": 2,
+        "points": [
+          [
+            238,
+            601
+          ],
+          [
+            384,
+            595
+          ]
+        ],
+        "back": [],
+        "poly": null,
+        "backZone": null
+      },
+      "new_type": "#89",
+      "new_quantity": 2,
+      "quantity_evidence": "Explicit bulb quantity in the p. 2-38 flasher table; not physically inspected.",
+      "location_status": "unmapped",
+      "new_points": [],
+      "displayed_markers": 0,
+      "finding": "Circuit, bulb family, location area and quantity are printed in the factory solenoid table. Previously guessed individual socket coordinates were removed. The p. 2-39 effect callouts do not establish each socket center."
+    },
+    {
+      "original_id": "S26-PL",
+      "name": "Left Popper Flashlamps (Playfield)",
+      "status": "circuit_documented",
+      "source": "Manual pp. 2-38",
+      "source_url": "https://arcarc.xmission.com/Pinball/PDF%20Pinball%20Williams%20%281979-2000%29/Terminator%202%3A%20Judgement%20Day/Terminator%202%20Judgement%20Day%20Operations%20Manual.pdf",
+      "old": {
+        "type": "#89",
+        "qty": 2,
+        "points": [
+          [
+            220,
+            390
+          ],
+          [
+            215,
+            480
+          ]
+        ],
+        "back": [],
+        "poly": null,
+        "backZone": null
+      },
+      "new_type": "#89",
+      "new_quantity": 2,
+      "quantity_evidence": "Explicit bulb quantity in the p. 2-38 flasher table; not physically inspected.",
+      "location_status": "unmapped",
+      "new_points": [],
+      "displayed_markers": 0,
+      "finding": "Circuit, bulb family, location area and quantity are printed in the factory solenoid table. Previously guessed individual socket coordinates were removed. The p. 2-39 effect callouts do not establish each socket center."
+    },
+    {
+      "original_id": "S27-PL",
+      "name": "Right Popper Flashlamps (Playfield)",
+      "status": "circuit_documented",
+      "source": "Manual pp. 2-38",
+      "source_url": "https://arcarc.xmission.com/Pinball/PDF%20Pinball%20Williams%20%281979-2000%29/Terminator%202%3A%20Judgement%20Day/Terminator%202%20Judgement%20Day%20Operations%20Manual.pdf",
+      "old": {
+        "type": "#89",
+        "qty": 2,
+        "points": [
+          [
+            570,
+            450
+          ],
+          [
+            570,
+            550
+          ]
+        ],
+        "back": [],
+        "poly": null,
+        "backZone": null
+      },
+      "new_type": "#89",
+      "new_quantity": 2,
+      "quantity_evidence": "Explicit bulb quantity in the p. 2-38 flasher table; not physically inspected.",
+      "location_status": "unmapped",
+      "new_points": [],
+      "displayed_markers": 0,
+      "finding": "Circuit, bulb family, location area and quantity are printed in the factory solenoid table. Previously guessed individual socket coordinates were removed. The p. 2-39 effect callouts do not establish each socket center."
+    },
+    {
+      "original_id": "GI-01",
+      "name": "Top Insert G.I.",
+      "status": "retired_unverified_region",
+      "source": "Manual pp. 2-38, 2-39, 3-9; insert-panel BOM",
+      "source_url": "https://arcarc.xmission.com/Pinball/PDF%20Pinball%20Williams%20%281979-2000%29/Terminator%202%3A%20Judgement%20Day/Terminator%202%20Judgement%20Day%20Operations%20Manual.pdf",
+      "old": {
+        "type": "#555",
+        "qty": null,
+        "points": null,
+        "back": null,
+        "poly": null,
+        "backZone": [
+          3,
+          3,
+          94,
+          45
+        ]
+      },
+      "new_id": "GI-BB",
+      "displayed_markers": 0,
+      "finding": "Named GI function is documented, but the old shaded region did not identify verified physical sockets. Replaced by an aggregate inventory record; no coordinates retained."
+    },
+    {
+      "original_id": "GI-02",
+      "name": "Left Playfield G.I.",
+      "status": "retired_source_conflict",
+      "source": "Manual pp. 2-38, 2-39, 3-9; insert-panel BOM",
+      "source_url": "https://arcarc.xmission.com/Pinball/PDF%20Pinball%20Williams%20%281979-2000%29/Terminator%202%3A%20Judgement%20Day/Terminator%202%20Judgement%20Day%20Operations%20Manual.pdf",
+      "old": {
+        "type": "#555",
+        "qty": null,
+        "points": null,
+        "back": null,
+        "poly": [
+          [
+            65,
+            390
+          ],
+          [
+            355,
+            390
+          ],
+          [
+            349,
+            1370
+          ],
+          [
+            65,
+            1370
+          ]
+        ],
+        "backZone": null
+      },
+      "new_id": "GI-PL",
+      "displayed_markers": 0,
+      "finding": "Previous per-string area, bulb-family certainty and shaded region removed. GI numbering/function labels conflict between pp. 2-38 and 2-39. The previous record is retired in favor of aggregate GI inventory without socket coordinates."
+    },
+    {
+      "original_id": "GI-03",
+      "name": "Right Playfield G.I.",
+      "status": "retired_unverified_region",
+      "source": "Manual pp. 2-38, 2-39, 3-9; insert-panel BOM",
+      "source_url": "https://arcarc.xmission.com/Pinball/PDF%20Pinball%20Williams%20%281979-2000%29/Terminator%202%3A%20Judgement%20Day/Terminator%202%20Judgement%20Day%20Operations%20Manual.pdf",
+      "old": {
+        "type": "#555",
+        "qty": null,
+        "points": null,
+        "back": null,
+        "poly": [
+          [
+            370,
+            395
+          ],
+          [
+            675,
+            395
+          ],
+          [
+            675,
+            1370
+          ],
+          [
+            378,
+            1370
+          ]
+        ],
+        "backZone": null
+      },
+      "new_id": "GI-PL",
+      "displayed_markers": 0,
+      "finding": "Named GI function is documented, but the old shaded region did not identify verified physical sockets. Replaced by an aggregate inventory record; no coordinates retained."
+    },
+    {
+      "original_id": "GI-05",
+      "name": "Bottom Insert G.I.",
+      "status": "retired_source_conflict",
+      "source": "Manual pp. 2-38, 2-39, 3-9; insert-panel BOM",
+      "source_url": "https://arcarc.xmission.com/Pinball/PDF%20Pinball%20Williams%20%281979-2000%29/Terminator%202%3A%20Judgement%20Day/Terminator%202%20Judgement%20Day%20Operations%20Manual.pdf",
+      "old": {
+        "type": "#555",
+        "qty": null,
+        "points": null,
+        "back": null,
+        "poly": null,
+        "backZone": [
+          3,
+          52,
+          94,
+          45
+        ]
+      },
+      "new_id": "GI-BB",
+      "displayed_markers": 0,
+      "finding": "Previous per-string area, bulb-family certainty and shaded region removed. GI numbering/function labels conflict between pp. 2-38 and 2-39. The previous record is retired in favor of aggregate GI inventory without socket coordinates."
+    }
+  ],
+  "new_aggregate_records": [
+    {
+      "id": "GI-BB",
+      "n": "GI-BB",
+      "name": "Backbox general illumination \u2014 assembly total",
+      "category": "GI",
+      "type": "#555",
+      "types": [
+        "#555"
+      ],
+      "qty": 37,
+      "area": "Backbox",
+      "socket": "#555 wedge; BOM lists 37 white sockets, part 24-8817.",
+      "source": "50013-IN BOM; manual 2-27/2-38/2-39/3-9",
+      "points": [],
+      "exact": false,
+      "validation": "assembly_total",
+      "locationStatus": "unmapped",
+      "note": "The reproduced 50013-IN insert-panel BOM lists 37 #555 bulbs, in addition to six #906 flashers. No per-socket coordinates or split between GI strings has been validated. GI output labels conflict between factory manual pages.",
+      "quantityEvidence": "37 \u00d7 24-8768 and 37 \u00d7 24-8817 under 50013-IN."
+    },
+    {
+      "id": "GI-PL",
+      "n": "GI-PL",
+      "name": "Playfield general illumination \u2014 verify installed sockets",
+      "category": "GI",
+      "type": "#44 / #555",
+      "types": [
+        "#44",
+        "#555"
+      ],
+      "qty": null,
+      "area": "Playfield",
+      "socket": "Mixed/uncertain per-position families. The BOM lists #44 socket assemblies and #555 GI lamp boards; inspect each installed holder.",
+      "source": "Playfield BOM; manual 2-13, 2-38, 2-39, 3-9",
+      "points": [],
+      "exact": false,
+      "validation": "requires_inspection",
+      "locationStatus": "unmapped",
+      "note": "Do not interpret the old all-#555 GI polygons as a physical inventory. The reproduced playfield BOM includes 35 A-11905 #44 socket/bulb assemblies and #555 GI lamp-board assemblies. Individual assignments, exact installed total and GI-string labels are not established here. No shaded region or individual GI socket is drawn.",
+      "quantityEvidence": "No reconciled per-socket total; do not sum overlapping assembly and circuit records."
+    }
+  ],
+  "exclusions": [
+    {
+      "id": "L18",
+      "finding": "Not Used on p. 2-35; no bulb or marker added."
+    },
+    {
+      "id": "S28",
+      "finding": "Drop-target coil AE-26-1200 in p. 2-38 is not a flasher bulb, despite conflicting p. 2-39 wording; no lamp added."
+    },
+    {
+      "id": "Photo P1-P21",
+      "finding": "All 21 overlays removed. The photo is a visual reference and cannot validate factory IDs, families, circuit membership or a complete inventory."
+    },
+    {
+      "id": "GI-04",
+      "finding": "p. 2-38 says Not Used; p. 2-39 says CPU String. No fitted/absent claim or socket location is assigned from these conflicting labels."
+    }
+  ],
+  "limits": [
+    "61 circuit references have retraced manual feature markers (63 drawn positions). These are feature/insert locations, not inspected socket centers.",
+    "L52 is documented as two lamps within a skull assembly, with a #555/#44 source conflict. No playfield dot.",
+    "L84 is a cabinet button with no verified map coordinate.",
+    "All flasher and GI socket coordinates are withheld. Quantities printed in a table or BOM do not validate individual locations.",
+    "Actual machine modifications, every installed bulb, and wire-to-socket mapping require inspection/testing of the machine."
+  ],
+  "summary": {
+    "original_rows_audited": 83,
+    "published_records": 81,
+    "manual_feature_circuits": 61,
+    "manual_feature_points": 63,
+    "withdrawn_playfield_flasher_points": 17,
+    "withdrawn_backbox_flasher_points": 6,
+    "withdrawn_GI_regions": 4,
+    "withdrawn_photo_points": 21
+  }
+}
