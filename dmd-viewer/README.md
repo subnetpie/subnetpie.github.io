@@ -8,7 +8,7 @@ Hosted alternate: https://dmd-viewer.subnetpie.chatgpt.site
 
 Run `python -m http.server 8766 --bind 127.0.0.1 --directory dist`, then open http://127.0.0.1:8766. Run `node check-formats.mjs` for parser checks and synthetic sample files.
 
-Supports encrypted PAC v1–2 containers with a user-provided decoding key and embedded VNI v1–5 or FSQ v0–3 scenes. The key is used in browser memory and is never saved or uploaded. Supports PIN2DMD PAL v1–2, VNI v1–5 (uncompressed and Heatshrink 10/5), hexadecimal TXT and GZip TXT recordings, PAL-indexed FSQ v0–3 scenes, and headerless indexed/planar/RGB888 frames. Open Format guide to configure raw layout. Sample files in `dist/samples` are synthetic test fixtures, not game assets.
+Supports encrypted PAC v1–2 containers with automatic compatibility-key decoding, an optional key override, and embedded VNI v1–5 or FSQ v0–3 scenes. Overrides are used in browser memory and are never saved or uploaded. Both zero-padded and PKCS#7-padded PAC exports are supported. Supports PIN2DMD PAL v1–2, VNI v1–5 (uncompressed and Heatshrink 10/5), hexadecimal TXT and GZip TXT recordings, PAL-indexed FSQ v0–3 scenes, and headerless indexed/planar/RGB888 frames. Open Format guide to configure raw layout. Sample files in `dist/samples` are synthetic test fixtures, not game assets.
 
 Controls: play/pause, frame stepping, scrubbing, loop, speed, palette selection, brightness, dot mode, fullscreen, hover inspection, and PNG snapshot. Space toggles playback; Left/Right step frames; Alt+Left/Right switch animations; Home restarts the current animation. Shortcuts work after focusing playback buttons and are ignored while editing form fields.
 
@@ -32,4 +32,6 @@ node check-zip.mjs
 node check-controls.mjs
 ```
 
-The repository contains only original synthetic sample files. No game ROMs, third-party colorization packages, or decoding keys are included.
+The repository contains only original synthetic sample files. No game ROMs, third-party colorization packages, or user-specific decoding keys are included.
+
+PAC implementation references: [native PAC loader](https://github.com/freezy/dmd-extensions/blob/master/LibDmd/Converter/Vni/VniLoader.cs) and [Pin2Color plugin discussion](https://vpuniverse.com/forums/topic/7504-new-version-dmd-extensions-with-pin2dmd-coloring-plugin-and-pac-file-support/). The browser implementation does not load or redistribute pin2color DLLs.
