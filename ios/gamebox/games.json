@@ -526,10 +526,15 @@
     "fullTitle": "Kaizou Choujin Shubibinman (Japan)",
     "region": "Japan",
     "file": "roms/n43200md.pce",
-    "cover": null,
+    "cover": "native/pce030_pac.png",
     "sha1": "4db72b3a934e6255135ebc0533f900e1d5d828c8",
     "bytes": 262144,
-    "art": null,
+    "art": "native/pce030_back.png",
+    "screens": [
+      "native/pce030_sc1.png",
+      "native/pce030_sc2.png",
+      "native/pce030_sc3.png"
+    ],
     "nativeTitle": "Kaizou Choujin Shubibinman"
   },
   {
