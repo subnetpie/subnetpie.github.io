@@ -543,14 +543,14 @@
     "fullTitle": "Kaizou Choujin Shubibinman 2 - Aratanaru Teki (Japan)",
     "region": "Japan",
     "file": "roms/ncs91001.pce",
-    "cover": "assets/pce031_pac.png",
+    "cover": "assets/pce033_pac.png",
     "sha1": "9c6fc53a92adead994d9b44afa92f34eebee05bb",
     "bytes": 524288,
-    "art": "native/pce031_back.png",
+    "art": "native/pce033_back.png",
     "screens": [
-      "native/pce031_sc1.png",
-      "native/pce031_sc2.png",
-      "native/pce031_sc3.png"
+      "native/pce033_sc1.png",
+      "native/pce033_sc2.png",
+      "native/pce033_sc3.png"
     ],
     "nativeTitle": "Kaizou Choujin Shubibinman 2 - Aratanaru Teki"
   },
@@ -577,14 +577,14 @@
     "fullTitle": "Moto Roader (Japan) (En)",
     "region": "Japan",
     "file": "roms/n43200jd.pce",
-    "cover": "assets/pce033_pac.png",
+    "cover": "assets/pce031_pac.png",
     "sha1": "9737bd5a9d4f28544ad1cb25592e428bea98aa27",
     "bytes": 262144,
-    "art": "native/pce033_back.png",
+    "art": "native/pce031_back.png",
     "screens": [
-      "native/pce033_sc1.png",
-      "native/pce033_sc2.png",
-      "native/pce033_sc3.png"
+      "native/pce031_sc1.png",
+      "native/pce031_sc2.png",
+      "native/pce031_sc3.png"
     ],
     "nativeTitle": "Moto Roader"
   },
@@ -628,14 +628,14 @@
     "fullTitle": "Out Live (Japan)",
     "region": "Japan",
     "file": "roms/n43200kd.pce",
-    "cover": "assets/pce035_pac.png",
+    "cover": "assets/pce036_pac.png",
     "sha1": "985222734388586a6b8530846fc9e4701c1ccd0b",
     "bytes": 262144,
-    "art": "native/pce035_back.png",
+    "art": "native/pce036_back.png",
     "screens": [
-      "native/pce035_sc1.png",
-      "native/pce035_sc2.png",
-      "native/pce035_sc3.png"
+      "native/pce036_sc1.png",
+      "native/pce036_sc2.png",
+      "native/pce036_sc3.png"
     ],
     "nativeTitle": "Out Live"
   },
