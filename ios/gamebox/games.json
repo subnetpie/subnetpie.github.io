@@ -730,10 +730,15 @@
     "fullTitle": "R-Type I (Japan) (En)",
     "region": "Japan",
     "file": "roms/rtype001.pce",
-    "cover": null,
+    "cover": "native/pce009_pac.png",
     "sha1": "1170c63839fb94c754d07c4f6f49ad2de6666668",
     "bytes": 262144,
-    "art": null,
+    "art": "native/pce009_back.png",
+    "screens": [
+      "native/pce009_sc1.png",
+      "native/pce009_sc2.png",
+      "native/pce009_sc3.png"
+    ],
     "nativeTitle": "R-Type I"
   },
   {
