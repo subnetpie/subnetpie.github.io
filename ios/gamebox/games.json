@@ -225,7 +225,7 @@
     "fullTitle": "Raiden (USA)",
     "region": "USA",
     "file": "roms/n43600hl.pce",
-    "cover": null,
+    "cover": "native/t16035_pac.png",
     "sha1": "910e7346976b7a6e83ddb7e68b49d33ced9dbc2c",
     "bytes": 786432,
     "art": null,
