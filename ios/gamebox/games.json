@@ -159,13 +159,12 @@
     "fullTitle": "Moto Roader (USA)",
     "region": "USA",
     "file": "roms/n43202al.pce",
-    "cover": "native/t16033_pac.png",
+    "cover": "native/t16031_pac.png",
     "sha1": "bd92a8e6a1e860305a0943878a3b4a56ddde5478",
     "bytes": 262144,
-    "art": "native/pce033_back.png",
+    "art": "native/pce031_back.png",
     "screens": [
-      "native/t16033_sc1.png",
-      "native/t16033_sc2.png"
+      "native/t16031_sc1.png"
     ],
     "nativeTitle": "Moto Roader"
   },
@@ -240,12 +239,13 @@
     "fullTitle": "Shockman (USA)",
     "region": "USA",
     "file": "roms/n43406kd.pce",
-    "cover": "native/t16031_pac.png",
+    "cover": "native/t16033_pac.png",
     "sha1": "f3e0f9546afe257748496a652f138dbc318bed05",
     "bytes": 524288,
-    "art": "native/pce031_back.png",
+    "art": "native/pce033_back.png",
     "screens": [
-      "native/t16031_sc1.png"
+      "native/t16033_sc1.png",
+      "native/t16033_sc2.png"
     ],
     "nativeTitle": "Shockman"
   },
