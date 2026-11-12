@@ -759,10 +759,15 @@
     "fullTitle": "Raiden (Japan) (En)",
     "region": "Japan",
     "file": "roms/n43600fl.pce",
-    "cover": null,
+    "cover": "native/pce035_pac.png",
     "sha1": "cef25446294884053442a4214434d7d97319ddca",
     "bytes": 786432,
-    "art": null,
+    "art": "native/pce035_back.png",
+    "screens": [
+      "native/pce035_sc1.png",
+      "native/pce035_sc2.png",
+      "native/pce035_sc3.png"
+    ],
     "nativeTitle": "Raiden"
   },
   {
