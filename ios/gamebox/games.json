@@ -229,6 +229,9 @@
     "sha1": "910e7346976b7a6e83ddb7e68b49d33ced9dbc2c",
     "bytes": 786432,
     "art": null,
+    "screens": [
+      "native/t16035_sc1.png"
+    ],
     "nativeTitle": "Raiden"
   },
   {
