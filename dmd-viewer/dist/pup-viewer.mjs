@@ -9,7 +9,7 @@ export function createPupViewer({onMode=()=>{}}={}){
   const files=()=>[...media.values()];
   const candidates=row=>mediaCandidates(files(),row.PlayList,row.PlayFile);
   const playlist=row=>config.playlists.find(p=>normalizePath(p.Folder)===normalizePath(row.PlayList))||{};
-  function setMode(value){mode=value;$('dmdWorkspace').hidden=value!=='dmd';$('pupPanel').hidden=value!=='pup';$('dmdMode').setAttribute('aria-pressed',String(value==='dmd'));$('pupMode').setAttribute('aria-pressed',String(value==='pup'));if(value!=='pup')pauseAll();onMode(value)}
+  function setMode(value){mode=value;if($('romPanel'))$('romPanel').hidden=value!=='rom';$('romMode')?.setAttribute('aria-pressed',String(value==='rom'));$('dmdWorkspace').hidden=value!=='dmd';$('pupPanel').hidden=value!=='pup';$('dmdMode').setAttribute('aria-pressed',String(value==='dmd'));$('pupMode').setAttribute('aria-pressed',String(value==='pup'));if(value!=='pup')pauseAll();onMode(value)}
   function clean(state){state.token=(state.token||0)+1;if(state.element){state.element.pause?.();state.element.removeAttribute?.('src');state.element.load?.();state.element.remove?.();state.element=null}if(state.url){URL.revokeObjectURL(state.url);state.url=null}}
   function stopAll(){epoch++;for(const state of states.values())clean(state);states.clear();counters.clear();cooldowns.clear();$('pupStage').replaceChildren();renderedLayout='';renderStage();status('All PuP media stopped.')}
   function pauseAll(){for(const state of states.values())state.element?.pause?.()}

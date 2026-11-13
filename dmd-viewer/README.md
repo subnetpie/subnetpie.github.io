@@ -12,7 +12,7 @@ Supports encrypted PAC v1–2 containers with automatic compatibility-key decodi
 
 Controls: play/pause, frame stepping, scrubbing, loop, speed, palette selection, brightness, dot mode, fullscreen, hover inspection, and PNG snapshot. Space toggles playback; Left/Right step frames; Alt+Left/Right switch animations; Home restarts the current animation. Shortcuts work after focusing playback buttons and are ignored while editing form fields.
 
-This app previews stored frames and manually selected palettes. It does not execute game ROMs, implement the PAL keyframe/mask rule engine, reconstruct color-mask scenes with game output, drive PIN2DMD hardware, or decode ColorDMD CHROMA.ROM, Serum CRZ, or VNI v6+. No claim of complete PIN2DMD firmware emulation is made.
+This app previews stored frames and manually selected palettes. The separate experimental ROM + PAC mode executes game ROMs and applies live frame matching; see emulator/README.md for its current limits. Animation-preview mode does not reconstruct color-mask scenes with game output or drive PIN2DMD hardware. The viewer does not decode ColorDMD CHROMA.ROM, Serum CRZ, or VNI v6+. No claim of complete PIN2DMD firmware emulation is made.
 
 Format references: https://pin2dmd.com/editor/ and https://github.com/freezy/dmd-extensions/tree/master/LibDmd/Converter/Vni. All demo scenes and test fixtures are original.
 
@@ -49,3 +49,10 @@ Run `node check-pup.mjs` for CSV, layout, media-path, and ZIP checks. Configurat
 ## Included DMD files
 
 Use **Included DMD files → Game → Load game** to load Popeye or Terminator 2. Loading a game replaces the DMD animation list and starts a standalone scene. The complete PAC files are downloaded only when selected. Direct links: `?game=popeye` and `?game=terminator-2`. The included PAC assets were supplied by the repository owner.
+
+
+## Browser ROM + PAC mode
+
+Choose **ROM + PAC**, enable browser emulation once if requested (the page reloads), then load the original game ROM ZIP and matching PAC together. Add any needed parent ROM ZIPs in the same selection, choose the game set, and press **Start ROM**. ROMs stay on the device. Controls include pause/resume, reset, stop, coin/start, service keys, coin-door toggle, manual numbered switches, and audio volume/mute. Losing focus or switching viewer modes pauses emulation. Stopping discards runtime NVRAM.
+
+The WebAssembly runtime is a noncommercial derivative of PinMAME 3.7.0. Source, build instructions, upstream revision, licensing notices, and verification limits are in [emulator/README.md](emulator/README.md). No game ROMs are included. Valid-ROM boot, game audio, and real PAC synchronization await a supplied ROM set; live colorization is experimental.

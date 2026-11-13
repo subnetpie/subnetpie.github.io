@@ -45,7 +45,7 @@ export async function parsePac(bytes,keyHex=''){
     if(scene.mode!==undefined)return [scene];
     const mappings=pal.mappings.filter(m=>m.offset===scene.offset&&m.mode!==0&&m.mode!==3);
     const variants=mappings.length?[...new Map(mappings.map(m=>[m.paletteId+':'+m.mode,m])).values()]:[{paletteId:scene.paletteId}];
-    return variants.map(mapping=>({...scene,paletteId:mapping.paletteId,mode:mapping.mode,partial:[2,4,5,7,8].includes(mapping.mode),colors:pal.palettes.find(p=>p.id===mapping.paletteId)?.colors||scene.colors}));
+    return variants.map(mapping=>({...scene,paletteId:mapping.paletteId,mode:mapping.mode,partial:[2,4,5,7,9].includes(mapping.mode),colors:pal.palettes.find(p=>p.id===mapping.paletteId)?.colors||scene.colors}));
   });
-  return {version,palettes:pal.palettes,scenes};
+  return {version,palettes:pal.palettes,mappings:pal.mappings,masks:pal.masks,scenes};
 }

@@ -9,6 +9,9 @@ scenes=parseFsq(file([frame(256)]),pal);assert.equal(scenes[0].frames[0].data[10
 scenes=parseFsq(file([frame()]),{...pal,mappings:[{offset:7,mode:2,paletteId:0}]});assert.equal(scenes[0].frames[0].data[0],4);assert.equal(scenes[0].frames[0].data[1],8);assert.equal(scenes[0].partial,true);
 scenes=parseFsq(file([frame(512,3,0),frame()]),{...pal,mappings:[{offset:7,mode:5,paletteId:0}]});assert.equal(scenes[0].frames.length,1);
 const encodedPal=Uint8Array.from([1,...u16(1),...u16(0),...u16(1),1,0,0,0,...u16(1),...u32(123),1,...u16(0),...u32(7)]);assert.equal(parsePalMappings(encodedPal).mappings[0].offset,7);
+const withMasks=Uint8Array.from([...encodedPal,1,...new Uint8Array(512).fill(0xff)]);assert.equal(parsePalMappings(withMasks).masks[0].length,512);
+const metadata=frame(512,2,0);metadata.splice(13+513,4,0x78,0x56,0x34,0x12);
+scenes=parseFsq(file([metadata,frame()]),{...pal,mappings:[{offset:7,mode:5,paletteId:0}]});assert.equal(scenes[0].masks.length,1);assert.equal(scenes[0].frames[0].hash,0x12345678);
 assert.throws(()=>parseFsq(file([frame()]).slice(0,-1),pal),/Truncated/);
 assert.throws(()=>parseFsq(file([frame()]),null),/matching PAL/);
 console.log('Passed: FSQ v3 offsets, PAL mappings, LSB pixels, color-mask planes, metadata frames, 128x16 padding, invalid input.');

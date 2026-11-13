@@ -6,10 +6,12 @@ class Element{
   constructor(id=''){this.id=id;this.value=defaults[id]??'';this.checked=['dots','glow'].includes(id);this.tagName='BUTTON';this.style={};this.children=[];this.attrs={};this.classList={toggle(){},add(){},remove(){}}}
   replaceChildren(...children){this.children=children}append(...children){this.children.push(...children)}
   setAttribute(name,value){this.attrs[name]=value}querySelector(){return null}add(option){this.children.push(option)}
+  querySelectorAll(){return []}addEventListener(){}
   click(){this.onclick?.()}getContext(){return {fillRect(){},beginPath(){},arc(){},fill(){}}}
 }
 globalThis.document={getElementById(id){if(!elements.has(id))elements.set(id,new Element(id));return elements.get(id)},createElement(){return new Element()},addEventListener(name,callback){events.set(name,callback)},activeElement:{tagName:'BODY'}};
 globalThis.Option=class{constructor(text,value){this.textContent=text;this.value=value}};
+globalThis.addEventListener=()=>{};
 globalThis.requestAnimationFrame=callback=>{globalThis.nextTick=callback};globalThis.location={search:''};
 await import('./dist/app.mjs');
 const $=id=>elements.get(id);
