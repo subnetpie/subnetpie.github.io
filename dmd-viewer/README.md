@@ -56,3 +56,13 @@ Use **Included DMD files → Game → Load game** to load Popeye or Terminator 2
 Choose **ROM + PAC**, enable browser emulation once if requested (the page reloads), then load the original game ROM ZIP and matching PAC together. Add any needed parent ROM ZIPs in the same selection, choose the game set, and press **Start ROM**. ROMs stay on the device. Controls include pause/resume, reset, stop, coin/start, service keys, coin-door toggle, manual numbered switches, and audio volume/mute. Losing focus or switching viewer modes pauses emulation. Stopping discards runtime NVRAM.
 
 The WebAssembly runtime is a noncommercial derivative of PinMAME 3.7.0. Source, build instructions, upstream revision, licensing notices, and verification limits are in [emulator/README.md](emulator/README.md). No game ROMs are included. Valid-ROM boot, game audio, and real PAC synchronization await a supplied ROM set; live colorization is experimental.
+
+
+## Supplied ROM archives
+
+The repository owner supplied these original game-program archives alongside the PAC files in `dist/library/`:
+
+- [Popeye program ROM: peye_lx5.zip](dist/library/peye_lx5.zip) with [Popeye.pac](dist/library/popeye.pac).
+- [Terminator 2 program ROM: t2_l8.zip](dist/library/t2_l8.zip) with [Terminator 2.pac](dist/library/terminator-2.pac).
+
+These archives are published unchanged, including their original license/readme files. They contain the game-program ROMs, not complete sound ROM sets. They also use legacy Implode/Shrink ZIP compression; the current browser runtime requires Store/Deflate archives. Repacking and matching sound ROMs are needed before these can pass the emulator's complete-set audit. Game ROMs are copyrighted; download and use them only if you are legally entitled to do so.
