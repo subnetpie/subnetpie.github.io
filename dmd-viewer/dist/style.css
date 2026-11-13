@@ -36,3 +36,5 @@ html{touch-action:manipulation}button,a,input,select,label,canvas{touch-action:m
 .simple-player .rom-inputs{padding:16px 20px}.simple-player .rom-buttons{margin-top:12px}
 .simple-player footer>span:last-child{display:none}
 @media(max-width:680px){.included-picker label[for=includedGame]{display:block}.included-picker .included-sound{display:flex}}
+
+.rom-history{padding:16px 18px}.rom-history-buttons{display:flex;align-items:center;flex-wrap:wrap;gap:10px}.rom-history-buttons button{min-height:44px}.rom-history select{flex:1;min-width:160px;max-width:100%;min-height:44px}.rom-history p{font-size:12px;color:#aab1bb;line-height:1.6;margin:12px 0 0}@media(max-width:680px){.rom-history-buttons button{flex:1 1 135px}.rom-history select{flex-basis:100%;order:-1}}

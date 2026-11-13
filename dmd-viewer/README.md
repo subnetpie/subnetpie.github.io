@@ -84,3 +84,9 @@ The complete ZIP passed every native ROM audit and a six-second compiled-WASM bo
 The owner-supplied L8 program ROM and three L3 sound ROMs are packaged in [t2_l8-complete.zip](dist/library/t2_l8-complete.zip) using browser-compatible Deflate compression. Choose **Terminator 2 → DMD + sound ROMs → Load game**, then **Start ROM**. The viewer mounts the archive under the emulator-required name `t2_l8.zip` and loads the matching PAC automatically. **Sound on** enables or mutes ROM audio.
 
 All four files match PinMAME's CRC32 and SHA-1 definitions: `t2_l8.rom`, `t2_u18.l3`, `t2_u15.l3`, and `t2_u14.l3`. The original program-only `t2_l8.zip`, including its license and revision notes, remains unchanged. Run `node check-t2-runtime.mjs` for the complete-set audit and compiled-WASM DMD/audio boot check. Browser audio playback and live PAC synchronization still require browser verification.
+
+## Stepping through animations with sound
+
+Run a game to capture its rendered color DMD and original ROM audio in memory. **Previous animation**, **Next animation**, and the **Captured animation** dropdown replay captured sections with their matching sound. **Replay animation** restarts the section; Pause/Resume works during replay. **Return to live** resumes the paused game and captures more animations. Recent history is limited to 60 seconds and 48 MB, split at observed colorization changes or eight seconds. Reset, Stop, and switching games clear it.
+
+This browses animations the game has actually displayed during this session. PAC files do not contain sound cues, so arbitrary PAC-only scenes cannot automatically trigger matching ROM audio.
