@@ -1,0 +1,11 @@
+{
+  "name": "dmd-viewer",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node check-formats.mjs && node check-fsq.mjs && node check-pac.mjs && node check-zip.mjs && node check-controls.mjs && node check-pup.mjs && node check-live-colorizer.mjs && node check-published-library.mjs"
+  },
+  "devDependencies": {
+    "jsdom": "^26.1.0"
+  }
+}

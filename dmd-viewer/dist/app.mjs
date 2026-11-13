@@ -1,9 +1,9 @@
-import {createRomViewer} from './rom-viewer.mjs';
+import {createRomViewer} from './rom-viewer.mjs?v=finish-20261113';
 import {parsePal,parseVni,parseDump,parseRaw} from './formats.mjs';
 import {parsePac} from './pac.mjs';
 import {extractDmdZip} from './zip.mjs';
 import {createPupViewer} from './pup-viewer.mjs';
-import {fetchIncludedGame,includedGames} from './library.mjs';
+import {fetchIncludedGame,fetchIncludedRomGame,includedGames} from './library.mjs?v=finish-20261113';
 import {parseFsq,parsePalMappings} from './fsq.mjs';
 let currentPal=null;
 let pendingPac=null;
@@ -11,7 +11,8 @@ const $=id=>document.getElementById(id),canvas=$('dmd'),ctx=canvas.getContext('2
 let sources=[],scenes=[],palettes=[],scene=null,index=0,playing=true,loop=true,elapsed=0,last=0,totalLoaded=0;
 let rom=null;
 const pup=createPupViewer({onMode:mode=>{if(mode!=='dmd'){playing=false;updatePlay()}rom?.setActive(mode==='rom')}});
-rom=createRomViewer({setMode:()=>pup.setMode('rom')});
+rom=createRomViewer({setMode:()=>pup.setMode('rom'),onSoundChange:enabled=>{$('includedSound').checked=enabled}});
+$('includedSound').oninput=()=>rom.setSound($('includedSound').checked);
 $('romMode').onclick=()=>pup.setMode('rom');
 const bases={amber:[255,135,36],green:[105,255,139],ice:[85,204,255],gray:[240,242,255]};
 function message(text,error=false){$('status').textContent=text;$('status').classList.toggle('error',error)}
@@ -59,19 +60,26 @@ $('retryPac').onclick=()=>{if(pendingPac){$('guide').close();load([pendingPac])}
 
 if(new URLSearchParams(location.search).has('localPair')){(async()=>{try{const response=await fetch('/__local__/manifest.json');if(!response.ok)throw Error('Local pair is unavailable');const manifest=await response.json();const files=await Promise.all(manifest.map(async item=>{const r=await fetch(item.url);if(!r.ok)throw Error('Could not load '+item.name);return new File([await r.arrayBuffer()],item.name)}));await load(files);const ready=scenes.find(s=>s.mode===1&&s.frames.length>20);if(ready)selectScene(ready);playing=$('pupPanel').hidden;updatePlay()}catch(e){message(e.message,true)}})()}
 
+function includedMessage(text,error=false){message(text,error);$('includedStatus').hidden=false;$('includedStatus').textContent=text;$('includedStatus').classList.toggle('error',error)}
 $('includedGame').onchange=()=>{$('loadIncludedGame').disabled=!$('includedGame').value};
 $('loadIncludedGame').onclick=async()=>{
-  const select=$('includedGame'),button=$('loadIncludedGame'),id=select.value;
+  const select=$('includedGame'),playback=$('includedPlayback'),button=$('loadIncludedGame'),id=select.value,mode=playback.value;
   if(!id)return;
-  select.disabled=true;button.disabled=true;button.textContent='Loading…';message('Downloading the selected game…');
+  select.disabled=true;playback.disabled=true;button.disabled=true;button.textContent='Loading…';includedMessage('Downloading the selected game…');
   try{
+    if(mode==='rom'){
+      const {game,files}=await fetchIncludedRomGame(id);
+      if(await rom.accept(files))includedMessage('Loaded '+game.title+' · '+game.rom.description+'. Choose ROM + PAC → Start ROM to begin.');
+      return;
+    }
     const {game,file}=await fetchIncludedGame(id);
     if(!await load([file],{replace:true}))return;
     $('search').value='';$('sceneFilter').value='complete';
     const initial=scenes.find(s=>!s.partial&&s.frames.length>1)||scenes.find(s=>!s.partial)||scenes[0];
     selectScene(initial);playing=true;updatePlay();
-    message('Loaded '+game.title+' · '+scenes.length+' scene entries · '+scenes.filter(s=>!s.partial).length+' standalone animations.');
-  }catch(error){message(error.message,true)}finally{select.disabled=false;button.disabled=!select.value;button.textContent='Load game'}
+    includedMessage('Loaded '+game.title+' · '+scenes.length+' scene entries · '+scenes.filter(s=>!s.partial).length+' standalone animations.');
+  }catch(error){includedMessage(error.message,true)}finally{select.disabled=false;playback.disabled=false;button.disabled=!select.value;button.textContent='Load game'}
 };
 const includedId=new URLSearchParams(location.search).get('game');
+if(new URLSearchParams(location.search).get('playback')==='rom')$('includedPlayback').value='rom';
 if(includedGames.some(game=>game.id===includedId)){$('includedGame').value=includedId;$('loadIncludedGame').disabled=false;$('loadIncludedGame').click()}

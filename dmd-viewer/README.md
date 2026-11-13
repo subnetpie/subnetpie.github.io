@@ -1,6 +1,6 @@
 # DMD Viewer
 
-A static, browser-based pinball display test bench. File contents are processed in memory on the visitor’s device.
+A static, browser-based pinball display test bench. File contents are processed in memory on the visitorâ€™s device.
 
 Live app: https://subnetpie.github.io/dmd-viewer/
 
@@ -8,7 +8,7 @@ Hosted alternate: https://dmd-viewer.subnetpie.chatgpt.site
 
 Run `python -m http.server 8766 --bind 127.0.0.1 --directory dist`, then open http://127.0.0.1:8766. Run `node check-formats.mjs` for parser checks and synthetic sample files.
 
-Supports encrypted PAC v1–2 containers with automatic compatibility-key decoding, an optional key override, and embedded VNI v1–5 or FSQ v0–3 scenes. Overrides are used in browser memory and are never saved or uploaded. Both zero-padded and PKCS#7-padded PAC exports are supported. Supports PIN2DMD PAL v1–2, VNI v1–5 (uncompressed and Heatshrink 10/5), hexadecimal TXT and GZip TXT recordings, PAL-indexed FSQ v0–3 scenes, and headerless indexed/planar/RGB888 frames. Open Format guide to configure raw layout. Sample files in `dist/samples` are synthetic test fixtures, not game assets.
+Supports encrypted PAC v1â€“2 containers with automatic compatibility-key decoding, an optional key override, and embedded VNI v1â€“5 or FSQ v0â€“3 scenes. Overrides are used in browser memory and are never saved or uploaded. Both zero-padded and PKCS#7-padded PAC exports are supported. Supports PIN2DMD PAL v1â€“2, VNI v1â€“5 (uncompressed and Heatshrink 10/5), hexadecimal TXT and GZip TXT recordings, PAL-indexed FSQ v0â€“3 scenes, and headerless indexed/planar/RGB888 frames. Open Format guide to configure raw layout. Sample files in `dist/samples` are synthetic test fixtures, not game assets.
 
 Controls: play/pause, frame stepping, scrubbing, loop, speed, palette selection, brightness, dot mode, fullscreen, hover inspection, and PNG snapshot. Space toggles playback; Left/Right step frames; Alt+Left/Right switch animations; Home restarts the current animation. Shortcuts work after focusing playback buttons and are ignored while editing form fields.
 
@@ -48,12 +48,12 @@ Run `node check-pup.mjs` for CSV, layout, media-path, and ZIP checks. Configurat
 
 ## Included DMD files
 
-Use **Included DMD files → Game → Load game** to load Popeye or Terminator 2. Loading a game replaces the DMD animation list and starts a standalone scene. The complete PAC files are downloaded only when selected. Direct links: `?game=popeye` and `?game=terminator-2`. The included PAC assets were supplied by the repository owner.
+Use **Included DMD files â†’ Game â†’ Playback â†’ Load game** to load published assets. **DMD animations** loads Popeye or Terminator 2 PAC scenes. **DMD + sound ROMs** loads the complete Popeye LX5 ZIP (including all six L2 sound ROMs) or Terminator 2 L8 ZIP (including all three L3 sound ROMs) and matching PAC directly into ROM + PAC mode; press **Start ROM** to run. **Sound on** controls ROM audio and stays synchronized with the emulator checkbox. Both games support animation playback and ROM playback from the published library. Loading a game replaces the DMD animation list and starts a standalone scene. The complete PAC files are downloaded only when selected. Direct links: `?game=popeye` and `?game=terminator-2`. The included PAC assets were supplied by the repository owner.
 
 
 ## Browser ROM + PAC mode
 
-Choose **ROM + PAC**, enable browser emulation once if requested (the page reloads), then load the original game ROM ZIP and matching PAC together. Add any needed parent ROM ZIPs in the same selection, choose the game set, and press **Start ROM**. ROMs stay on the device. Controls include pause/resume, reset, stop, coin/start, service keys, coin-door toggle, manual numbered switches, and audio volume/mute. Losing focus or switching viewer modes pauses emulation. Stopping discards runtime NVRAM.
+Choose **ROM + PAC**, enable browser emulation once if requested (the page reloads), then load the original game ROM ZIP and matching PAC together. Add any needed parent ROM ZIPs in the same selection, choose the game set, and press **Start ROM**. ROMs stay on the device. Controls include pause/resume, reset, stop, coin/start, service keys, coin-door toggle, manual numbered switches, and audio volume/Sound on. Losing focus or switching viewer modes pauses emulation. Stopping discards runtime NVRAM.
 
 The WebAssembly runtime is a noncommercial derivative of PinMAME 3.7.0. Source, build instructions, upstream revision, licensing notices, and verification limits are in [emulator/README.md](emulator/README.md). The owner-supplied Popeye LX5 set now passes native audits and boots with DMD output and non-silent PCM audio in the compiled runtime. Live PAC synchronization remains experimental and unverified.
 
@@ -76,4 +76,11 @@ The six original sound ROMs are also available separately: [U2](dist/library/pop
 
 [The supplied WAV sound-effects archive](dist/library/popeye-sound-effects.zip) is uploaded unchanged as a separate asset. It is not required by ROM emulation.
 
-The complete ZIP passed every native ROM audit and a six-second compiled-WASM boot check: running state, 128×32 DMD frames, and non-silent PCM audio. This was a Node-hosted WASM check; real-browser playback and PAC trigger synchronization are still unverified.
+The complete ZIP passed every native ROM audit and a six-second compiled-WASM boot check: running state, 128Ã—32 DMD frames, and non-silent PCM audio. This was a Node-hosted WASM check; real-browser playback and PAC trigger synchronization are still unverified.
+
+
+## Complete Terminator 2 L8 set
+
+The owner-supplied L8 program ROM and three L3 sound ROMs are packaged in [t2_l8-complete.zip](dist/library/t2_l8-complete.zip) using browser-compatible Deflate compression. Choose **Terminator 2 → DMD + sound ROMs → Load game**, then **Start ROM**. The viewer mounts the archive under the emulator-required name `t2_l8.zip` and loads the matching PAC automatically. **Sound on** enables or mutes ROM audio.
+
+All four files match PinMAME's CRC32 and SHA-1 definitions: `t2_l8.rom`, `t2_u18.l3`, `t2_u15.l3`, and `t2_u14.l3`. The original program-only `t2_l8.zip`, including its license and revision notes, remains unchanged. Run `node check-t2-runtime.mjs` for the complete-set audit and compiled-WASM DMD/audio boot check. Browser audio playback and live PAC synchronization still require browser verification.
