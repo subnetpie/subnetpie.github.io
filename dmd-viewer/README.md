@@ -32,7 +32,7 @@ node check-zip.mjs
 node check-controls.mjs
 ```
 
-The repository contains only original synthetic sample files. No game ROMs, third-party colorization packages, or user-specific decoding keys are included.
+The repository includes original synthetic test fixtures and the Popeye and Terminator 2 PAC colorization files supplied by the repository owner. No game CPU ROMs or user-specific decoding keys are included.
 
 PAC implementation references: [native PAC loader](https://github.com/freezy/dmd-extensions/blob/master/LibDmd/Converter/Vni/VniLoader.cs) and [Pin2Color plugin discussion](https://vpuniverse.com/forums/topic/7504-new-version-dmd-extensions-with-pin2dmd-coloring-plugin-and-pac-file-support/). The browser implementation does not load or redistribute pin2color DLLs.
 
@@ -45,3 +45,7 @@ Select a trigger and use **Preview selected**, or enter an event such as `D7` an
 Normal, Loop, SetBG, SkipSamePrty, QueueSameP, StopPlayer, and StopFile are recognized. Preview selected bypasses priority, counter, queue, and cooldown checks; Fire event can apply them with the rules checkbox. Unsupported actions are reported. This is a manual media/layout preview, not the native PinUP Player: no live game connection, PuPCapture matching, hardware routing, script execution, or advanced labels/SendMSG emulation is implemented. Default monitor aspect ratios are approximate; CustomPos percentages come from the pack.
 
 Run `node check-pup.mjs` for CSV, layout, media-path, and ZIP checks. Configuration reference: https://www.nailbuster.com/wikipinup/doku.php?id=pup_capture.
+
+## Included DMD files
+
+Use **Included DMD files → Game → Load game** to load Popeye or Terminator 2. Loading a game replaces the DMD animation list and starts a standalone scene. The complete PAC files are downloaded only when selected. Direct links: `?game=popeye` and `?game=terminator-2`. The included PAC assets were supplied by the repository owner.
