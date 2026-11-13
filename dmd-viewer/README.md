@@ -32,7 +32,7 @@ node check-zip.mjs
 node check-controls.mjs
 ```
 
-The repository includes original synthetic test fixtures and the Popeye and Terminator 2 PAC colorization files supplied by the repository owner. No game CPU ROMs or user-specific decoding keys are included.
+The repository includes original synthetic test fixtures and the Popeye and Terminator 2 PAC colorization files supplied by the repository owner. The owner-supplied game ROM archives are listed below; no user-specific decoding keys are included.
 
 PAC implementation references: [native PAC loader](https://github.com/freezy/dmd-extensions/blob/master/LibDmd/Converter/Vni/VniLoader.cs) and [Pin2Color plugin discussion](https://vpuniverse.com/forums/topic/7504-new-version-dmd-extensions-with-pin2dmd-coloring-plugin-and-pac-file-support/). The browser implementation does not load or redistribute pin2color DLLs.
 
@@ -55,7 +55,7 @@ Use **Included DMD files → Game → Load game** to load Popeye or Terminator 2
 
 Choose **ROM + PAC**, enable browser emulation once if requested (the page reloads), then load the original game ROM ZIP and matching PAC together. Add any needed parent ROM ZIPs in the same selection, choose the game set, and press **Start ROM**. ROMs stay on the device. Controls include pause/resume, reset, stop, coin/start, service keys, coin-door toggle, manual numbered switches, and audio volume/mute. Losing focus or switching viewer modes pauses emulation. Stopping discards runtime NVRAM.
 
-The WebAssembly runtime is a noncommercial derivative of PinMAME 3.7.0. Source, build instructions, upstream revision, licensing notices, and verification limits are in [emulator/README.md](emulator/README.md). No game ROMs are included. Valid-ROM boot, game audio, and real PAC synchronization await a supplied ROM set; live colorization is experimental.
+The WebAssembly runtime is a noncommercial derivative of PinMAME 3.7.0. Source, build instructions, upstream revision, licensing notices, and verification limits are in [emulator/README.md](emulator/README.md). The owner-supplied Popeye LX5 set now passes native audits and boots with DMD output and non-silent PCM audio in the compiled runtime. Live PAC synchronization remains experimental and unverified.
 
 
 ## Supplied ROM archives
@@ -66,3 +66,14 @@ The repository owner supplied these original game-program archives alongside the
 - [Terminator 2 program ROM: t2_l8.zip](dist/library/t2_l8.zip) with [Terminator 2.pac](dist/library/terminator-2.pac).
 
 These archives are published unchanged, including their original license/readme files. They contain the game-program ROMs, not complete sound ROM sets. They also use legacy Implode/Shrink ZIP compression; the current browser runtime requires Store/Deflate archives. Repacking and matching sound ROMs are needed before these can pass the emulator's complete-set audit. Game ROMs are copyrighted; download and use them only if you are legally entitled to do so.
+
+
+## Complete Popeye LX5 set and sound files
+
+[Download the complete browser-compatible Popeye ROM ZIP: pop_lx5.zip](dist/library/pop_lx5.zip). It combines the verified LX5 program ROM, all six L2 sound ROMs, and the original program archive's license/readme files, using Deflate ZIP compression. Load `pop_lx5.zip` together with [Popeye.pac](dist/library/popeye.pac) in ROM + PAC mode. Select ROM set `pop_lx5`.
+
+The six original sound ROMs are also available separately: [U2](dist/library/popsndl2.u2), [U3](dist/library/popsndl2.u3), [U4](dist/library/popsndl2.u4), [U5](dist/library/popsndl2.u5), [U6](dist/library/popsndl2.u6), [U7](dist/library/popsndl2.u7). Their CRC32 and SHA-1 values match the upstream Popeye L2 sound definitions.
+
+[The supplied WAV sound-effects archive](dist/library/popeye-sound-effects.zip) is uploaded unchanged as a separate asset. It is not required by ROM emulation.
+
+The complete ZIP passed every native ROM audit and a six-second compiled-WASM boot check: running state, 128×32 DMD frames, and non-silent PCM audio. This was a Node-hosted WASM check; real-browser playback and PAC trigger synchronization are still unverified.

@@ -1,6 +1,6 @@
 # DMD Viewer browser runtime 3.7.0
 
-This is an experimental browser derivative powered by PinMAME, not an official PinMAME distribution. No game ROMs are shipped or uploaded. The user's ROM ZIPs and PAC are held in browser memory. Reloading or stopping the runtime discards its NVRAM; persistence is not implemented yet.
+This is an experimental browser derivative powered by PinMAME, not an official PinMAME distribution. Owner-supplied ROM archives are available in the repository library; locally selected ROMs are never uploaded by the viewer. The user's ROM ZIPs and PAC are held in browser memory. Reloading or stopping the runtime discards its NVRAM; persistence is not implemented yet.
 
 Upstream source: [vpinball/pinmame, commit 9ddb1c36f03a6e3db616af6c8aef82bb32754842](https://github.com/vpinball/pinmame/tree/9ddb1c36f03a6e3db616af6c8aef82bb32754842), version 3.7.0. Its mixed BSD, old MAME, and component license terms apply. Notices are distributed in `dist/emulator/notices/`. This runtime is for noncommercial use under those terms.
 
@@ -34,4 +34,4 @@ Format references: [DMD Extensions VNI/PAC implementation](https://github.com/fr
 
 ## Verification limits
 
-Automated checks instantiate the compiled WASM, recognize both game drivers, audit missing ROMs, start and stop the real emulation thread with missing-ROM failure handling, exercise the compressed worker-loading path, and test colorizer modes with synthetic frames. UI tests pair the actual supplied PAC with a synthetic ZIP and verify controls/cleanup. No valid game ROM set has been supplied, so a successful game boot, audible game sound, and real PAC trigger synchronization have not yet been verified. Real-browser rendering and isolation behavior also require browser verification.
+Automated checks instantiate the compiled WASM, recognize both game drivers, audit missing ROMs, start and stop the real emulation thread with missing-ROM failure handling, exercise the compressed worker-loading path, and test colorizer modes with synthetic frames. UI tests pair the actual supplied PAC with a synthetic ZIP and verify controls/cleanup. The supplied complete Popeye LX5 set now passes native audits and boots with 128×32 DMD output and non-silent PCM audio in a Node-hosted compiled-WASM check. Real-browser game playback and PAC trigger synchronization remain unverified. Real-browser rendering and isolation behavior also require browser verification.
