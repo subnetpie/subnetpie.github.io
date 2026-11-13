@@ -48,7 +48,7 @@ Run `node check-pup.mjs` for CSV, layout, media-path, and ZIP checks. Configurat
 
 ## Included DMD files
 
-Use **Included DMD files â†’ Game â†’ Playback â†’ Load game** to load published assets. **DMD animations** loads Popeye or Terminator 2 PAC scenes. **DMD + sound ROMs** loads the complete Popeye LX5 ZIP (including all six L2 sound ROMs) or Terminator 2 L8 ZIP (including all three L3 sound ROMs) and matching PAC directly into ROM + PAC mode; press **Start ROM** to run. **Sound on** controls ROM audio and stays synchronized with the emulator checkbox. Both games support animation playback and ROM playback from the published library. Loading a game replaces the DMD animation list and starts a standalone scene. The complete PAC files are downloaded only when selected. Direct links: `?game=popeye` and `?game=terminator-2`. The included PAC assets were supplied by the repository owner.
+Choose **Popeye** or **Terminator 2** from **Game** to load and start its complete ROM set, matching PAC colorization, and original sound together. **Sound on** controls audio. **Play game** starts or restarts the selection. On the first visit, browser setup reloads the page once; press **Play game** afterward to allow sound. Extra animation previews, local files, and PuP-Pack tools are available under **Advanced tools**. Both games load their published assets automatically. Direct links: `?game=popeye` and `?game=terminator-2`.
 
 
 ## Browser ROM + PAC mode

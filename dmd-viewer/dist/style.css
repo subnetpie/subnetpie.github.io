@@ -27,3 +27,12 @@ html{touch-action:manipulation}button,a,input,select,label,canvas{touch-action:m
 .included-library{flex-wrap:wrap}.included-picker{flex-wrap:wrap}.included-picker .included-sound{display:flex;align-items:center;gap:7px;white-space:nowrap;color:#d7dce2}.included-sound input{accent-color:var(--accent)}
 
 .included-library .included-status{flex-basis:100%;margin:0;overflow-wrap:anywhere}
+
+/* Keep the game player focused; file and format tools remain available on demand. */
+.advanced-toggle{margin:0 0 18px;font-size:12px;color:#aab1bb}
+.simple-player .viewer-modes,.simple-player #open,.simple-player #help,.simple-player .header-right .local,.simple-player .rom-loader,.simple-player .rom-selection,.simple-player .rom-switch,.simple-player .rom-inputs>p,.simple-player .rom-controls>label:has(#romSound){display:none}
+.simple-player #dmdWorkspace,.simple-player #pupPanel{display:none!important}
+.simple-player .intro{padding-bottom:22px}.simple-player .rom-panel{max-width:1100px;margin:auto}
+.simple-player .rom-inputs{padding:16px 20px}.simple-player .rom-buttons{margin-top:12px}
+.simple-player footer>span:last-child{display:none}
+@media(max-width:680px){.included-picker label[for=includedGame]{display:block}.included-picker .included-sound{display:flex}}
