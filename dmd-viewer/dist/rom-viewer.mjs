@@ -156,7 +156,7 @@ export function createRomViewer({setMode,onSoundChange=()=>{}}){
   };
   function key(code,state){if(!running||paused)return;if(state)pressed.add(code);else pressed.delete(code);send({type:'key',code,state});}
   const keyCodes={Digit0:26,Digit1:27,Digit2:28,Digit3:29,Digit4:30,Digit5:31,Digit6:32,Digit7:33,Digit8:34,Digit9:35,Enter:66,ArrowLeft:81,ArrowRight:82,ArrowUp:83,ArrowDown:84,ShiftLeft:93,ShiftRight:94,ControlLeft:95,ControlRight:96};
-  function inputFocused(){return ['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName)||document.activeElement?.isContentEditable;}
+  function inputFocused(){return ['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName)||document.activeElement?.isContentEditable||!!document.activeElement?.closest?.('#romMatrix');}
   document.addEventListener('keydown',event=>{if(!active||!running||inputFocused()||event.ctrlKey||event.metaKey)return;if(event.code==='Space'){event.preventDefault();if(!event.repeat)pause(replay?replay.playing:!paused);return}if(keyCodes[event.code]!==undefined){event.preventDefault();key(keyCodes[event.code],1)}});
   document.addEventListener('keyup',event=>{if(keyCodes[event.code]!==undefined&&pressed.has(keyCodes[event.code])){event.preventDefault();key(keyCodes[event.code],0)}});
   globalThis.addEventListener?.('blur',()=>{release();if(running&&(!paused||replay?.playing))pause(true)});
