@@ -50,6 +50,14 @@ export function createRomViewer({setMode,onSoundChange=()=>{}}){
   const audio=new RomAudio(),history=new SavedRomHistory(),pressed=new Set(),timers=new Set();
   let exporting=false,replay=null,replayRequest=0,historyVersion='',machineState=null,sceneGroups=new Map();
   const canvas=$('romDmd'),ctx=canvas.getContext('2d');
+  function pinDmd(){
+    document.body?.classList.toggle('rom-dmd-pinned',active);
+    const height=panel.querySelector('.display-panel')?.getBoundingClientRect?.().height;
+    if(active&&height)document.documentElement?.style.setProperty('--pinned-dmd-height',Math.ceil(height)+'px');
+    else if(!active)document.documentElement?.style.removeProperty('--pinned-dmd-height');
+  }
+  if(globalThis.ResizeObserver)new ResizeObserver(pinDmd).observe(panel.querySelector('.display-panel'));
+  addEventListener('resize',pinDmd);
   function status(text,error=false){$('romStatus').textContent=text;$('romStatus').classList.toggle('error',error);}
   function appendLog(text){$('romLog').textContent=($('romLog').textContent+'\n'+text).slice(-20000);}
   function send(data){worker?.postMessage(data)}
@@ -240,5 +248,5 @@ export function createRomViewer({setMode,onSoundChange=()=>{}}){
   for(const type of ['pointerdown','keydown'])addEventListener(type,()=>{if(!audio.muted&&audio.context?.state!=='running')audio.unlock().catch(error=>status(error.message,true));});
   addEventListener('pagehide',()=>history.flush());
   addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')history.flush()});
-  controls();return {accept,start,stop,setSound,prepareAudio:()=>audio.muted?Promise.resolve():audio.unlock(),setActive(value){active=value;if(!value&&running&&(!paused||replay?.playing))pause(true);},get running(){return running}};
+  controls();return {accept,start,stop,setSound,prepareAudio:()=>audio.muted?Promise.resolve():audio.unlock(),setActive(value){active=value;pinDmd();if(!value&&running&&(!paused||replay?.playing))pause(true);},get running(){return running}};
 }
