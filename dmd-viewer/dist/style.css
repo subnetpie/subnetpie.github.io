@@ -38,3 +38,5 @@ html{touch-action:manipulation}button,a,input,select,label,canvas{touch-action:m
 @media(max-width:680px){.included-picker label[for=includedGame]{display:block}.included-picker .included-sound{display:flex}}
 
 .rom-history{padding:16px 18px}.rom-history-buttons{display:flex;align-items:center;flex-wrap:wrap;gap:10px}.rom-history-buttons button{min-height:44px}.rom-history select{flex:1;min-width:160px;max-width:100%;min-height:44px}.rom-history p{font-size:12px;color:#aab1bb;line-height:1.6;margin:12px 0 0}@media(max-width:680px){.rom-history-buttons button{flex:1 1 135px}.rom-history select{flex-basis:100%;order:-1}}
+
+.rom-events{padding:16px 20px}.rom-events[hidden]{display:none}.rom-events .panel-heading{padding:0;gap:12px;flex-wrap:wrap}.rom-events p{font-size:12px;color:#aab1bb;line-height:1.6}.rom-event-buttons{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:10px}.rom-event-buttons button{min-height:44px}.rom-events #romBallState{color:#d5e8dd}

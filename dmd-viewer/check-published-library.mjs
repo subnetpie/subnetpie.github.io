@@ -18,13 +18,20 @@ $('includedGame').value='popeye';await $('includedGame').onchange();
 assert.deepEqual(requests.sort(),['pop_lx5.zip','popeye.pac']);assert.equal($('romGame').value,'pop_lx5');
 assert.equal(Worker.last.data.game,'pop_lx5');assert.equal(Worker.last.data.files[0].bytes.byteLength,3391042);assert.equal(Audio.unlocked,true);
 Worker.last.onmessage({data:{type:'started',info:'Popeye LX5'}});
+assert.equal($('romEvents').hidden,false);
+Worker.last.onmessage({data:{type:'machine',trough:6,shooter:false,playfield:0,event:'Ready',busy:false,starting:false}});
+assert.equal($('romCoinStart').disabled,false);await $('romCoinStart').onclick();assert.equal(Worker.last.data.id,'begin-game');
+const bumper=document.querySelector('[data-popeye-event="left-bumper"]');assert.equal(bumper.disabled,true);
+Worker.last.onmessage({data:{type:'machine',trough:5,shooter:false,playfield:1,event:'Launched',busy:false,starting:false}});
+assert.equal(bumper.disabled,false);bumper.onclick();assert.deepEqual(Worker.last.data,{type:'event',id:'left-bumper'});
+
 $('includedSound').checked=false;await $('includedSound').oninput();assert.equal($('romSound').checked,false);
-await $('romPause').onclick();assert.equal($('romState').textContent,'PAUSED');
+await $('romPause').onclick();assert.equal($('romState').textContent,'PAUSED');assert.equal(bumper.disabled,true);
 $('romSound').checked=true;await $('romSound').oninput();assert.equal($('includedSound').checked,true);
 // Switching the dropdown stops the old worker and starts the new matched pair.
 requests=[];const oldWorker=Worker.last;$('includedGame').value='terminator-2';await $('includedGame').onchange();
 assert.deepEqual(requests.sort(),['t2_l8-complete.zip','terminator-2.pac']);assert.notEqual(Worker.last,oldWorker);
-assert.equal(Worker.last.data.game,'t2_l8');assert.equal(Worker.last.data.files[0].name,'t2_l8.zip');
+assert.equal(Worker.last.data.game,'t2_l8');assert.equal(Worker.last.data.files[0].name,'t2_l8.zip');assert.equal($('romEvents').hidden,true);
 assert.match($('includedStatus').textContent,/Terminator 2.*live color DMD and sound/);
 // Play can restart without downloading the selected assets again, muted and without Audio.
 requests=[];globalThis.AudioContext=undefined;$('includedSound').checked=false;await $('includedSound').oninput();await $('loadIncludedGame').onclick();assert.deepEqual(requests,[]);assert.equal(Worker.last.data.game,'t2_l8');

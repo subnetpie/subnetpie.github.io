@@ -90,3 +90,9 @@ All four files match PinMAME's CRC32 and SHA-1 definitions: `t2_l8.rom`, `t2_u18
 Run a game to capture its rendered color DMD and original ROM audio in memory. **Previous animation**, **Next animation**, and the **Captured animation** dropdown replay captured sections with their matching sound. **Replay animation** restarts the section; Pause/Resume works during replay. **Return to live** resumes the paused game and captures more animations. Recent history is limited to 60 seconds and 48 MB, split at observed colorization changes or eight seconds. Reset, Stop, and switching games clear it.
 
 This browses animations the game has actually displayed during this session. PAC files do not contain sound cues, so arbitrary PAC-only scenes cannot automatically trigger matching ROM audio.
+
+## Popeye event simulator
+
+Select Popeye, then use **Coin + start game** and **Launch ball** in **Popeye shot controls**. Named controls cover the inlanes, three bumpers, a bumper sequence, slingshots, wheel exit, and left/right drains. A six-ball trough and shooter-lane model responds to the ROM’s trough and launch coils. The game ROM selects its own animation, scoring, music, and effects; a shot can produce different results in different modes.
+
+The event panel does not require a VPX table. It is an initial set of supported shots, not a complete table or an index of every animation. Switch and coil numbers come from PinMAME’s `src/wpc/sims/wpc/prelim/pop.c`. The Popeye input bridge uses direct WPC cabinet switches to avoid a second keyboard-driven ball simulator competing with the event model.

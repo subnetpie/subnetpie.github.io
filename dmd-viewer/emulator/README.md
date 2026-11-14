@@ -35,3 +35,9 @@ Format references: [DMD Extensions VNI/PAC implementation](https://github.com/fr
 ## Verification limits
 
 Automated checks instantiate the compiled WASM, recognize both game drivers, audit missing ROMs, start and stop the real emulation thread with missing-ROM failure handling, exercise the compressed worker-loading path, and test colorizer modes with synthetic frames. UI tests pair the actual supplied PAC with a synthetic ZIP and verify controls/cleanup. The supplied complete Popeye LX5 set now passes native audits and boots with 128×32 DMD output and non-silent PCM audio in a Node-hosted compiled-WASM check. Real-browser game playback and PAC trigger synchronization remain unverified. Real-browser rendering and isolation behavior also require browser verification.
+
+## Popeye event input bridge
+
+Popeye LX5 uses direct WPC cabinet switches, with keyboard handling disabled before PinmameRun. This prevents PinMAME’s keyboard-driven ball simulator from competing with the browser’s six-ball trough model. `viewer_solenoid` and `viewer_get_switch` expose native outputs/inputs for the event worker and verification. Other ROM sets retain their existing keyboard input path.
+
+The worker installs a small, factory-initialized Popeye NVRAM seed in memory to avoid the first-boot factory-reset/restart cycle. Session NVRAM is still discarded when the worker stops. The seed was generated in a fresh local ROM test; it contains no user-supplied settings. The source model is `dist/popeye-events.mjs`; `node check-popeye-runtime.mjs` tests real ROM startup, serve, launch, bumper shots, drain/re-serve, audio, and live PAC matching.

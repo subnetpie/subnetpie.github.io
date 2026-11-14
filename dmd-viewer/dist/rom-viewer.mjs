@@ -1,6 +1,7 @@
 import {parsePac} from './pac.mjs';
 import {LiveColorizer} from './live-colorizer.mjs';
 import {RomHistory} from './rom-history.mjs';
+import {popeyeEvents} from './popeye-events.mjs';
 
 export class RomAudio {
   constructor(){this.context=null;this.nodes=new Set();this.next=0;this.volume=0.7;this.muted=false;}
@@ -27,18 +28,19 @@ export function createRomViewer({setMode,onSoundChange=()=>{}}){
   <div class="panel display-panel"><div class="display-top"><span id="romTitle">Choose a game above</span><span id="romSourceBadge" class="badge">LIVE COLOR + SOUND</span></div><div class="screen-wrap" id="romScreen"><canvas id="romDmd" width="1024" height="256" aria-label="Live ROM dot matrix display"></canvas><div class="screen-label"><span id="romDimensions">128 × 32</span><span>LIVE DMD</span></div></div><div class="display-bottom"><span id="romState">STOPPED</span><span id="romMatch">Live color DMD</span></div></div>
   <div class="panel rom-history"><div class="rom-history-buttons"><button id="romPreviousAnimation" disabled>← Previous animation</button><select id="romAnimation" aria-label="Captured animation" disabled><option value="">Live game</option></select><button id="romNextAnimation" disabled>Next animation →</button><button id="romReplayAnimation" disabled>↶ Replay animation</button><button id="romLive" disabled>Return to live</button></div><p id="romHistoryInfo" role="status">Animations and their sound are captured while the game runs. Up to 60 seconds are kept.</p></div>
   <div class="panel rom-controls"><button id="romPause" disabled>Ⅱ Pause</button><button id="romReset" disabled>↶ Reset ROM</button><button id="romStop" disabled>■ Stop</button><label><input id="romSound" type="checkbox" checked> Sound on</label><label>Volume <input id="romVolume" type="range" min="0" max="100" value="70" aria-label="ROM audio volume"></label><button id="romFullscreen">⛶ Fullscreen</button></div>
+  <section id="romEvents" class="panel rom-events" hidden><div class="panel-heading"><h2>Popeye shot controls</h2><button id="romCoinStart" disabled>Coin + start game</button></div><p id="romBallState" role="status">Start Popeye to enable the shot controls.</p><div class="rom-event-buttons">${popeyeEvents.map(event=>`<button data-popeye-event="${event.id}" disabled>${event.label}</button>`).join('')}</div><p>Press Coin + start game, wait for a ball, then Launch ball. Choose shots to let the game produce its own color DMD and sound. Results depend on the current game mode.</p></section>
   <div class="panel rom-inputs"><h2>Game controls</h2><div class="rom-buttons"><button data-rom-key="31">Coin · 5</button><button data-rom-key="27">Start · 1</button><button data-rom-key="33">Service escape · 7</button><button data-rom-key="34">Service − · 8</button><button data-rom-key="35">Service + · 9</button><button data-rom-key="26">Service enter · 0</button><button id="romDoor" aria-pressed="false">Coin door · closed</button></div><div class="rom-switch"><label>Switch number <input id="romSwitch" type="number" min="1" max="1023" value="13"></label><button id="romPulse">Pulse switch</button><button id="romHold" aria-pressed="false">Hold switch</button></div><p>Use the game’s service menus to test animations and sound. Switch numbers depend on the game. This is a ROM test bench; ball movement is controlled manually. Live PAC colorization is experimental until checked with your ROM/PAC pair.</p></div>
   <p id="romStatus" role="status" class="status">Select a game above to run its ROMs with color DMD and sound.</p><details class="panel rom-log"><summary>Emulator log</summary><pre id="romLog"></pre></details>`;
   let files=[],pac=null,colorizer=null,worker=null,active=false,running=false,busy=false,paused=false,raw=null,frameCount=0,tick=0,hold=null,door=false,generation=0;
   const audio=new RomAudio(),history=new RomHistory(),pressed=new Set(),timers=new Set();
-  let replay=null,historyVersion='';
+  let replay=null,historyVersion='',machineState=null;
   const canvas=$('romDmd'),ctx=canvas.getContext('2d');
   function status(text,error=false){$('romStatus').textContent=text;$('romStatus').classList.toggle('error',error);}
   function appendLog(text){$('romLog').textContent=($('romLog').textContent+'\n'+text).slice(-20000);}
   function send(data){worker?.postMessage(data)}
-  function controls(){historyControls();$('romSourceBadge').textContent=replay?'CAPTURED COLOR + SOUND':'LIVE COLOR + SOUND';for(const id of ['romPause','romReset','romStop','romPulse','romHold','romDoor'])$(id).disabled=id==='romStop'?!(running||busy):!running;panel.querySelectorAll('[data-rom-key]').forEach(b=>b.disabled=!running||!!replay);$('romStart').disabled=busy||running||!pac||!files.length||!globalThis.crossOriginIsolated;$('romGame').disabled=busy||running;$('romOpen').disabled=busy||running;$('romIsolation').hidden=!!globalThis.crossOriginIsolated;$('romPause').textContent=(replay?!replay.playing:paused)?'▶ Resume':'Ⅱ Pause';}
+  function controls(){eventControls();historyControls();$('romSourceBadge').textContent=replay?'CAPTURED COLOR + SOUND':'LIVE COLOR + SOUND';for(const id of ['romPause','romReset','romStop','romPulse','romHold','romDoor'])$(id).disabled=id==='romStop'?!(running||busy):!running;panel.querySelectorAll('[data-rom-key]').forEach(b=>b.disabled=!running||!!replay);$('romStart').disabled=busy||running||!pac||!files.length||!globalThis.crossOriginIsolated;$('romGame').disabled=busy||running;$('romOpen').disabled=busy||running;$('romIsolation').hidden=!!globalThis.crossOriginIsolated;$('romPause').textContent=(replay?!replay.playing:paused)?'▶ Resume':'Ⅱ Pause';}
   function release(){for(const code of pressed)send({type:'key',code,state:0});pressed.clear();if(hold!==null)send({type:'switch',number:hold,state:0});hold=null;$('romHold').setAttribute('aria-pressed','false');}
-  function stop(){replay=null;history.clear();historyVersion='';generation++;release();for(const timer of timers)clearTimeout(timer);timers.clear();send({type:'stop'});worker?.terminate();worker=null;audio.clear();running=false;busy=false;paused=false;door=false;$('romDoor').setAttribute('aria-pressed','false');$('romDoor').textContent='Coin door · closed';$('romState').textContent='STOPPED';controls();}
+  function stop(){machineState=null;replay=null;history.clear();historyVersion='';generation++;release();for(const timer of timers)clearTimeout(timer);timers.clear();send({type:'stop'});worker?.terminate();worker=null;audio.clear();running=false;busy=false;paused=false;door=false;$('romDoor').setAttribute('aria-pressed','false');$('romDoor').textContent='Coin door · closed';$('romState').textContent='STOPPED';controls();}
   function pause(value){if(replay){pauseReplay(value);return}if(!running)return;release();paused=value;send({type:'pause',paused});audio.clear();$('romState').textContent=paused?'PAUSED':'RUNNING';controls();}
   function drawFrame(f){
     const {w,h}=f;
@@ -111,10 +113,12 @@ export function createRomViewer({setMode,onSoundChange=()=>{}}){
     try{
       if(!audio.muted)await audio.unlock();
       const payload=await Promise.all(files.map(async file=>({name:file.name,bytes:await file.arrayBuffer()})));
-      if(session!==generation)return;worker=new Worker(new URL('./rom-worker.mjs',import.meta.url),{type:'module'});const currentWorker=worker;
+      if(session!==generation)return;worker=new Worker(new URL('./rom-worker.mjs?v=popeye-events-1',import.meta.url),{type:'module'});const currentWorker=worker;
       worker.onerror=e=>{if(worker!==currentWorker)return;appendLog(e.message);stop();status('Emulator error: '+e.message,true)};
       worker.onmessage=({data})=>{if(worker!==currentWorker)return;
         if(data.type==='started'){busy=false;running=true;paused=false;$('romTitle').textContent=data.info.split('\n')[0];$('romState').textContent='RUNNING';controls();if(!active)pause(true);status('ROM running. Use game controls or the service menus to test DMD animations and sound.');}
+        if(data.type==='machine'){machineState=data;eventControls();}
+        if(data.type==='event-status')status(data.text,!!data.error);
         if(data.type==='frame'){raw=data;frameCount++;$('romDimensions').textContent=data.w+' × '+data.h;}
         if(data.type==='audio'&&!paused&&!replay){history.recordAudio(tick,data);audio.play(data);}
         if(data.type==='log')appendLog(data.text);
@@ -124,6 +128,20 @@ export function createRomViewer({setMode,onSoundChange=()=>{}}){
       worker.postMessage({type:'start',files:payload,game:$('romGame').value},payload.map(f=>f.bytes));
     }catch(error){stop();status(error.message,true);}
   }
+  function eventControls(){
+    const popeye=$('romGame').value==='pop_lx5',enabled=popeye&&running&&!paused&&!replay;
+    $('romEvents').hidden=!popeye;$('romCoinStart').disabled=!enabled||!machineState||machineState.starting;
+    if(machineState)$('romBallState').textContent='Trough: '+machineState.trough+' / 6 · Shooter: '+(machineState.shooter?'ball ready':'empty')+' · In play: '+machineState.playfield+' · '+machineState.event;
+    else $('romBallState').textContent='Start Popeye to enable the shot controls.';
+    panel.querySelectorAll('[data-popeye-event]').forEach(button=>{button.disabled=!enabled||!machineState||machineState.busy||(button.dataset.popeyeEvent==='launch'?!machineState.shooter:!machineState.playfield);});
+  }
+  panel.querySelectorAll('[data-popeye-event]').forEach(button=>{button.onclick=()=>{if(running&&!paused&&!replay)send({type:'event',id:button.dataset.popeyeEvent});};});
+  $('romCoinStart').onclick=async()=>{
+    try{if(!audio.muted)await audio.unlock();if(!running||paused||replay)return;
+      send({type:'event',id:'begin-game'});
+      status('Adding credit and pressing Start. The ROM will serve a ball when ready.');
+    }catch(error){status(error.message,true)}
+  };
   function key(code,state){if(!running||paused)return;if(state)pressed.add(code);else pressed.delete(code);send({type:'key',code,state});}
   const keyCodes={Digit0:26,Digit1:27,Digit2:28,Digit3:29,Digit4:30,Digit5:31,Digit6:32,Digit7:33,Digit8:34,Digit9:35,Enter:66,ArrowLeft:81,ArrowRight:82,ArrowUp:83,ArrowDown:84,ShiftLeft:93,ShiftRight:94,ControlLeft:95,ControlRight:96};
   function inputFocused(){return ['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName)||document.activeElement?.isContentEditable;}
@@ -138,7 +156,7 @@ export function createRomViewer({setMode,onSoundChange=()=>{}}){
     button.onclick=event=>{if(event.detail===0){key(code,1);const timer=setTimeout(()=>{key(code,0);timers.delete(timer)},120);timers.add(timer)}};
   });
   $('romOpen').onclick=()=>$('romFiles').click();$('romFiles').onchange=async event=>{await accept(event.target.files);event.target.value=''};$('romStart').onclick=start;
-  $('romPause').onclick=async()=>{try{if(!audio.muted)await audio.unlock();pause(replay?replay.playing:!paused)}catch(error){status(error.message,true)}};$('romReset').onclick=()=>{replay=null;history.clear();historyVersion='';pause(false);release();audio.clear();colorizer.reset();raw=null;tick=0;send({type:'reset'});};$('romStop').onclick=()=>{stop();status('ROM stopped. Your selected ROM/PAC pair is ready to start again.')};
+  $('romPause').onclick=async()=>{try{if(!audio.muted)await audio.unlock();pause(replay?replay.playing:!paused)}catch(error){status(error.message,true)}};$('romReset').onclick=()=>{machineState=null;replay=null;history.clear();historyVersion='';pause(false);release();audio.clear();colorizer.reset();raw=null;tick=0;send({type:'reset'});};$('romStop').onclick=()=>{stop();status('ROM stopped. Your selected ROM/PAC pair is ready to start again.')};
   async function setSound(enabled){audio.muted=!enabled;audio.update();audio.clear();$('romSound').checked=enabled;onSoundChange(enabled);if(replay){replay.offset=replayTime();if(replay.playing)resumeReplay()}if(enabled&&running){try{await audio.unlock()}catch(error){audio.muted=true;audio.update();$('romSound').checked=false;onSoundChange(false);status(error.message,true)}}}
   $('romSound').oninput=()=>setSound($('romSound').checked);$('romVolume').oninput=()=>{audio.volume=+$('romVolume').value/100;audio.update()};
   $('romFullscreen').onclick=async()=>{try{if(document.fullscreenElement)await document.exitFullscreen();else await $('romScreen').requestFullscreen()}catch{status('Fullscreen is unavailable in this browser.',true)}};
