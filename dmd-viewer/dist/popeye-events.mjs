@@ -39,6 +39,11 @@ export class PopeyeMachine {
     else this.pulse(number);
     this.lastEvent=(item.code||number)+' · '+item.label+(hold?(this.holds.has(number)?' — held':' — released'):' — pulse');return this.lastEvent;
   }
+  setHeld(number,pressed){
+    const item=popeyeSwitchByNumber.get(number);if(!item||item.managed)throw Error('This input is not manually controlled.');
+    if(pressed)this.holds.add(number);else this.holds.delete(number);this.setSwitch(number,pressed?1:0);
+    return this.lastEvent=(item.code||number)+' · '+item.label+(pressed?' — pressed':' — released');
+  }
   releaseHeld(){for(const n of this.holds)this.setSwitch(n,0);this.holds.clear();}
   beginGame(){
     if(this.pending.some(p=>p.begin))return;

@@ -1,7 +1,7 @@
 import createRuntime from './emulator/dmd-runtime.mjs?v=lamps-t2-2';
-import {PopeyeMachine} from './popeye-events.mjs?v=matrix-1';
-import {T2MatrixInputs} from './t2-matrix.mjs';
-import {popeyeLamps} from './popeye-playfield.mjs';
+import {PopeyeMachine} from './popeye-events.mjs?v=flippers-1';
+import {T2MatrixInputs} from './t2-matrix.mjs?v=flippers-1';
+import {popeyeLamps} from './popeye-playfield.mjs?v=flippers-1';
 import {popeyeInitialNvram} from './popeye-initial-nvram.mjs';
 let core,timer,framePtr,audioPtr,metaPtr,machine=null,gameName='',paused=false,lastPoll=0,simTime=0,lastMachineState='',lastMatrixScan=0,hasRun=false,startRequestedAt=0,startInfo='';
 const call=(name,result,types=[],args=[])=>core.ccall('viewer_'+name,result,types,args);
@@ -43,7 +43,7 @@ onmessage=async({data})=>{
     if(data.type==='start')await start(data);
     else if(core){
       if(data.type==='event'){try{if(!machine||paused||gameName!=='pop_lx5')throw Error('Resume the running Popeye game first.');postMessage({type:'event-status',text:data.id==='begin-game'?machine.beginGame():machine.event(data.id)});}catch(error){postMessage({type:'event-status',text:error.message,error:true});}}
-      if(data.type==='matrix'){try{if(!machine||paused)throw Error('Resume the running game first.');postMessage({type:'event-status',text:data.release?(machine.releaseHeld(),'Held switches released.'):machine.trigger(data.number,!!data.hold)});}catch(error){postMessage({type:'event-status',text:error.message,error:true});}}
+      if(data.type==='matrix'){try{if(!machine||paused)throw Error('Resume the running game first.');postMessage({type:'event-status',text:data.release?(machine.releaseHeld(),'Held switches released.'):data.pressed!==undefined?machine.setHeld(data.number,!!data.pressed):machine.trigger(data.number,!!data.hold)});}catch(error){postMessage({type:'event-status',text:error.message,error:true});}}
       if(data.type==='key')core._viewer_key(data.code,data.state);
       if(data.type==='switch')core._viewer_switch(data.number,data.state);
       if(data.type==='pause'){paused=data.paused;if(paused)machine?.releaseHeld();lastPoll=0;core._viewer_pause(paused?1:0);}

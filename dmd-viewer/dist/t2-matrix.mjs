@@ -29,6 +29,7 @@ export class T2MatrixInputs {
   if(hold){if(this.held.has(n)){this.held.delete(n);this.setSwitch(n,0)}else{this.held.add(n);this.setSwitch(n,1)}}else{this.setSwitch(n,1);this.pending.set(n,this.now+120);if([25,28].includes(n)&&this.playfield){this.playfield--;this.transfer.push({at:this.now+500,run:()=>{this.outhole=true}});}}
   return this.lastEvent=(s.code||n)+' · '+s.label;
  }
+ setHeld(n,pressed){const item=t2SwitchByNumber.get(n);if(!item||item.managed||item.unused)throw Error('This input is not manually controlled.');if(pressed)this.held.add(n);else this.held.delete(n);this.setSwitch(n,pressed?1:0);return this.lastEvent=(item.code||n)+' · '+item.label;}
  releaseHeld(){for(const n of new Set([...this.held,...this.pending.keys()]))this.setSwitch(n,0);this.held.clear();this.pending.clear();}
  snapshot(read){return {active:t2Switches.filter(s=>read(s.number)).map(s=>s.number),held:[...this.held],event:this.lastEvent,trough:this.trough,shooter:this.shooter,playfield:this.playfield};}
 }
