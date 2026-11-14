@@ -1,7 +1,8 @@
 import {parsePac} from './pac.mjs';
 import {LiveColorizer} from './live-colorizer.mjs';
 import {RomHistory} from './rom-history.mjs';
-import {popeyeEvents} from './popeye-events.mjs';
+import {popeyeEvents} from './popeye-events.mjs?v=matrix-1';
+import {popeyeSwitchByNumber,popeyeColumnColors} from './popeye-matrix.mjs';
 
 export class RomAudio {
   constructor(){this.context=null;this.nodes=new Set();this.next=0;this.volume=0.7;this.muted=false;}
@@ -22,6 +23,8 @@ export class RomAudio {
 
 export function createRomViewer({setMode,onSoundChange=()=>{}}){
   const $=id=>document.getElementById(id),panel=$('romPanel');
+  const matrixCell=number=>{const item=popeyeSwitchByNumber.get(number);return `<button data-popeye-switch="${number}" class="matrix-switch${item.opto?' matrix-opto':''}${item.managed?' matrix-auto':''}" aria-pressed="false" aria-label="${item.code||number}: ${item.label}${item.opto?', opto':''}${item.managed?', automatic':''}" disabled><strong>${item.code||number}</strong><span>${item.label}</span><small>${number===24?'FIXED':item.managed?'AUTO':item.opto?'OPTO':''}</small></button>`};
+  const matrixRows=Array.from({length:8},(_,row)=>`<tr><td>${matrixCell(row+1)}</td><th scope="row">${row+1}</th>${Array.from({length:8},(_,col)=>`<td>${matrixCell((col+1)*10+row+1)}</td>`).join('')}<td>${matrixCell(111+row)}</td></tr>`).join('');
   panel.innerHTML=`<div class="panel rom-loader"><div><h2>ROM + PAC emulator</h2><p>Load a game’s ROM ZIP and matching PAC together. Everything runs on this device.</p></div><button id="romOpen" class="primary">＋ Load ROM + PAC</button><input id="romFiles" type="file" multiple hidden></div>
   <p id="romIsolation" class="rom-notice" hidden>Browser emulation needs an isolated page. <button id="romEnable">Enable browser emulation</button> This reloads the page. Published selections reload automatically; choose local files again.</p>
   <div class="panel rom-selection"><label>ROM set <select id="romGame"><option value="">Choose ROM + PAC files first</option></select></label><span id="romPair">No ROM/PAC pair loaded</span><button id="romStart" class="primary" disabled>Start ROM</button></div>
@@ -29,6 +32,7 @@ export function createRomViewer({setMode,onSoundChange=()=>{}}){
   <div class="panel rom-history"><div class="rom-history-buttons"><button id="romPreviousAnimation" disabled>← Previous animation</button><select id="romAnimation" aria-label="Captured animation" disabled><option value="">Live game</option></select><button id="romNextAnimation" disabled>Next animation →</button><button id="romReplayAnimation" disabled>↶ Replay animation</button><button id="romLive" disabled>Return to live</button></div><p id="romHistoryInfo" role="status">Animations and their sound are captured while the game runs. Up to 60 seconds are kept.</p></div>
   <div class="panel rom-controls"><button id="romPause" disabled>Ⅱ Pause</button><button id="romReset" disabled>↶ Reset ROM</button><button id="romStop" disabled>■ Stop</button><label><input id="romSound" type="checkbox" checked> Sound on</label><label>Volume <input id="romVolume" type="range" min="0" max="100" value="70" aria-label="ROM audio volume"></label><button id="romFullscreen">⛶ Fullscreen</button></div>
   <section id="romEvents" class="panel rom-events" hidden><div class="panel-heading"><h2>Popeye shot controls</h2><button id="romCoinStart" disabled>Coin + start game</button></div><p id="romBallState" role="status">Start Popeye to enable the shot controls.</p><div class="rom-event-buttons">${popeyeEvents.map(event=>`<button data-popeye-event="${event.id}" disabled>${event.label}</button>`).join('')}</div><p>Press Coin + start game, wait for a ball, then Launch ball. Choose shots to let the game produce its own color DMD and sound. Results depend on the current game mode.</p></section>
+  <section id="romMatrix" class="panel rom-matrix" hidden><div class="matrix-heading"><div><h2>Popeye switch matrix</h2><p>Choose a switch to trigger the game’s DMD and sound.</p></div><div class="matrix-actions"><label>Input <select id="romMatrixMode"><option value="pulse">Pulse</option><option value="hold">Hold / release</option></select></label><button id="romMatrixRelease" disabled>Release held switches</button></div></div><div class="matrix-key"><span><i class="matrix-key-opto"></i> Opto, typically closed</span><span><i class="matrix-key-active"></i> Active input</span><span>AUTO · ball simulator / flipper EOS</span></div><div class="matrix-scroll" tabindex="0" role="region" aria-label="Popeye switch matrix; scroll horizontally for all columns"><table class="popeye-matrix"><caption>Columns across, rows down. Switch number = column × 10 + row.</caption><thead><tr><th scope="col">Dedicated<br>grounded</th><th scope="col">Row</th>${popeyeColumnColors.map((color,i)=>`<th scope="col"><strong>${i+1}</strong><span>${color}</span></th>`).join('')}<th scope="col">Flipper<br>grounded</th></tr></thead><tbody>${matrixRows}</tbody></table></div><p class="matrix-hint">Pulse briefly activates a switch. Hold / release toggles it until released. Trough, shooter, and end-of-stroke inputs are automatic; switch 24 stays closed. Pause or leaving the player releases held inputs.</p></section>
   <div class="panel rom-inputs"><h2>Game controls</h2><div class="rom-buttons"><button data-rom-key="31">Coin · 5</button><button data-rom-key="27">Start · 1</button><button id="romDoor" aria-pressed="false">Coin door · closed</button></div><section class="service-panel" aria-label="Coin-door service buttons"><div class="service-heading"><h3>Service buttons</h3><span>COIN DOOR PANEL</span></div><div class="service-assembly"><i class="service-screw screw-left" aria-hidden="true"></i><i class="service-screw screw-right" aria-hidden="true"></i><div class="service-legend" aria-hidden="true"><span>SERVICE<br>CREDITS</span><span class="service-volume">VOLUME</span><span>BEGIN<br>TEST</span></div><div class="service-switches">${[
     [33,'black','Service credits / Escape','7'],[34,'red','Volume down / Test minus','8'],[35,'red','Volume up / Test plus','9'],[26,'black','Begin test / Enter','0']
   ].map(([code,color,label,shortcut])=>`<button class="service-button service-${color}" data-rom-key="${code}" aria-label="${label} · ${shortcut}" title="${label} (keyboard ${shortcut})"><span class="service-hardware" aria-hidden="true"><span class="service-bezel"></span><span class="service-cap"></span></span></button>`).join('')}</div><div class="service-functions" aria-hidden="true"><span>ESCAPE</span><span>−</span><span>+</span><span>ENTER</span></div><div class="service-function-caption" aria-hidden="true"><span>TEST MODE FUNCTION</span></div></div></section><div class="rom-switch"><label>Switch number <input id="romSwitch" type="number" min="1" max="1023" value="13"></label><button id="romPulse">Pulse switch</button><button id="romHold" aria-pressed="false">Hold switch</button></div><p>Use the game’s service menus to test animations and sound. Switch numbers depend on the game. This is a ROM test bench; ball movement is controlled manually. Live PAC colorization is experimental until checked with your ROM/PAC pair.</p></div>
@@ -115,7 +119,7 @@ export function createRomViewer({setMode,onSoundChange=()=>{}}){
     try{
       if(!audio.muted)await audio.unlock();
       const payload=await Promise.all(files.map(async file=>({name:file.name,bytes:await file.arrayBuffer()})));
-      if(session!==generation)return;worker=new Worker(new URL('./rom-worker.mjs?v=popeye-events-1',import.meta.url),{type:'module'});const currentWorker=worker;
+      if(session!==generation)return;worker=new Worker(new URL('./rom-worker.mjs?v=popeye-matrix-1',import.meta.url),{type:'module'});const currentWorker=worker;
       worker.onerror=e=>{if(worker!==currentWorker)return;appendLog(e.message);stop();status('Emulator error: '+e.message,true)};
       worker.onmessage=({data})=>{if(worker!==currentWorker)return;
         if(data.type==='started'){busy=false;running=true;paused=false;$('romTitle').textContent=data.info.split('\n')[0];$('romState').textContent='RUNNING';controls();if(!active)pause(true);status('ROM running. Use game controls or the service menus to test DMD animations and sound.');}
@@ -132,12 +136,18 @@ export function createRomViewer({setMode,onSoundChange=()=>{}}){
   }
   function eventControls(){
     const popeye=$('romGame').value==='pop_lx5',enabled=popeye&&running&&!paused&&!replay;
-    $('romEvents').hidden=!popeye;$('romCoinStart').disabled=!enabled||!machineState||machineState.starting;
+    $('romEvents').hidden=!popeye;$('romMatrix').hidden=!popeye;
+    const active=new Set(machineState?.active||[]),held=new Set(machineState?.held||[]);
+    $('romMatrixMode').disabled=!enabled||!machineState;$('romMatrixRelease').disabled=!enabled||!held.size;
+    panel.querySelectorAll('[data-popeye-switch]').forEach(button=>{const n=+button.dataset.popeyeSwitch;button.disabled=!enabled||!machineState||popeyeSwitchByNumber.get(n).managed;button.setAttribute('aria-pressed',String(active.has(n)));button.classList.toggle('matrix-held',held.has(n));});$('romCoinStart').disabled=!enabled||!machineState||machineState.starting;
     if(machineState)$('romBallState').textContent='Trough: '+machineState.trough+' / 6 · Shooter: '+(machineState.shooter?'ball ready':'empty')+' · In play: '+machineState.playfield+' · '+machineState.event;
     else $('romBallState').textContent='Start Popeye to enable the shot controls.';
     panel.querySelectorAll('[data-popeye-event]').forEach(button=>{button.disabled=!enabled||!machineState||machineState.busy||(button.dataset.popeyeEvent==='launch'?!machineState.shooter:!machineState.playfield);});
   }
   panel.querySelectorAll('[data-popeye-event]').forEach(button=>{button.onclick=()=>{if(running&&!paused&&!replay)send({type:'event',id:button.dataset.popeyeEvent});};});
+  panel.querySelectorAll('[data-popeye-switch]').forEach(button=>{button.onclick=()=>{if(!button.disabled)send({type:'matrix',number:+button.dataset.popeyeSwitch,hold:$('romMatrixMode').value==='hold'});};});
+  $('romMatrixRelease').onclick=()=>send({type:'matrix',release:true});
+  $('romMatrixMode').onchange=()=>send({type:'matrix',release:true});
   $('romCoinStart').onclick=async()=>{
     try{if(!audio.muted)await audio.unlock();if(!running||paused||replay)return;
       send({type:'event',id:'begin-game'});

@@ -1,7 +1,13 @@
+import {popeyeSwitches,popeyeSwitchByNumber} from './popeye-matrix.mjs';
 // Switch/coil numbers: PinMAME src/wpc/sims/wpc/prelim/pop.c (BSD-3-Clause).
 // This supplies ball-presence switches, not table graphics or recreated rules.
 export const popeyeEvents=[
   {id:'launch',label:'Launch ball',switches:[23]},
+  {id:'ramp',label:'Ramp entrance → completion',switches:[34,35]},
+  {id:'left-loop',label:'Left loop',switches:[25]},
+  {id:'right-loop',label:'Right loop',switches:[33]},
+  {id:'popeye-targets',label:'P-O-P-E-Y-E targets',switches:[71,72,73,26,27,28]},
+  {id:'animal-targets',label:'Animal targets',switches:[64,65,66,67,68]},
   {id:'left-inlane',label:'Left inlane',switches:[75]},
   {id:'right-inlane',label:'Right inlane',switches:[78]},
   {id:'left-bumper',label:'Left bumper',switches:[16]},
@@ -15,16 +21,25 @@ export const popeyeEvents=[
   {id:'drain-right',label:'Drain right',switches:[85],drain:true},
 ];
 export class PopeyeMachine {
-  constructor({setSwitch}){this.setSwitch=setSwitch;this.now=0;this.reset();}
+  constructor({setSwitch}){this.states=new Map();this.setSwitch=(n,v)=>{this.states.set(n,!!v);setSwitch(n,v)};this.now=0;this.reset();}
   reset(){
     this.bootAt=this.now+12000;
-    this.pending=[];this.trough=6;this.shooter=false;this.playfield=0;this.coils={3:0,5:0};this.flight=false;
-    for(const n of [1,5,13,16,17,18,23,37,57,74,75,76,77,78,85,86])this.setSwitch(n,0);
+    this.pending=[];this.holds=new Set();this.pulses=new Map();this.trough=6;this.shooter=false;this.playfield=0;this.coils={3:0,5:0};this.flight=false;
+    for(const {number} of popeyeSwitches)this.setSwitch(number,number===24?1:0);
     this.updateTrough();this.lastEvent='Ready — add a coin, then start a game.';
   }
   updateTrough(){for(let i=0;i<6;i++)this.setSwitch(51+i,i<this.trough?1:0);}
   later(delay,run){this.pending.push({at:this.now+delay,run});}
-  pulse(number,delay=0){this.later(delay,()=>this.setSwitch(number,1));this.later(delay+120,()=>this.setSwitch(number,0));}
+  pulse(number,delay=0){const token={};this.later(delay,()=>{this.pulses.set(number,token);this.setSwitch(number,1)});this.later(delay+120,()=>{if(this.pulses.get(number)===token){this.pulses.delete(number);if(!this.holds.has(number))this.setSwitch(number,0)}});}
+  trigger(number,hold=false){
+    const item=popeyeSwitchByNumber.get(number);if(!item)throw Error('Unknown Popeye switch.');
+    if(item.managed)throw Error('This switch follows the ball simulator or its automatic end-of-stroke state.');
+    if(hold){if(this.holds.has(number)){this.holds.delete(number);this.setSwitch(number,0)}else{this.holds.add(number);this.setSwitch(number,1)}}
+    else if((number===74||number===85)&&this.playfield)return this.event(number===74?'drain-left':'drain-right');
+    else this.pulse(number);
+    this.lastEvent=(item.code||number)+' · '+item.label+(hold?(this.holds.has(number)?' — held':' — released'):' — pulse');return this.lastEvent;
+  }
+  releaseHeld(){for(const n of this.holds)this.setSwitch(n,0);this.holds.clear();}
   beginGame(){
     if(this.pending.some(p=>p.begin))return;
     const delay=Math.max(0,this.bootAt-this.now);
@@ -51,7 +66,7 @@ export class PopeyeMachine {
     const due=this.pending.filter(p=>p.at<=now);this.pending=this.pending.filter(p=>p.at>now);
     for(const p of due)p.run();
     // ROM startup/reset may rebuild the input matrix after the worker starts.
-    this.updateTrough();this.setSwitch(86,this.shooter?1:0);
+    this.updateTrough();this.setSwitch(86,this.shooter?1:0);this.setSwitch(24,1);
   }
   event(id){
     const event=popeyeEvents.find(e=>e.id===id);if(!event)throw Error('Unknown Popeye event.');
@@ -64,5 +79,5 @@ export class PopeyeMachine {
     if(event.drain){this.playfield--;this.later(500,()=>{this.trough++;this.updateTrough();});}
     this.lastEvent=event.label;return event.label;
   }
-  snapshot(){return {trough:this.trough,shooter:this.shooter,playfield:this.playfield,event:this.lastEvent,busy:this.pending.some(p=>p.event),starting:this.pending.some(p=>p.begin)};}
+  snapshot(readSwitch){return {active:popeyeSwitches.filter(s=>readSwitch?readSwitch(s.number):this.states.get(s.number)).map(s=>s.number),held:[...this.holds],trough:this.trough,shooter:this.shooter,playfield:this.playfield,event:this.lastEvent,busy:this.pending.some(p=>p.event),starting:this.pending.some(p=>p.begin)};}
 }

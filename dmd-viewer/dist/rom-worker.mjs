@@ -1,14 +1,14 @@
 import createRuntime from './emulator/dmd-runtime.mjs?v=popeye-events-1';
-import {PopeyeMachine} from './popeye-events.mjs';
+import {PopeyeMachine} from './popeye-events.mjs?v=matrix-1';
 import {popeyeInitialNvram} from './popeye-initial-nvram.mjs';
-let core,timer,framePtr,audioPtr,metaPtr,machine=null,gameName='',paused=false,lastPoll=0,simTime=0,lastMachineState='';
+let core,timer,framePtr,audioPtr,metaPtr,machine=null,gameName='',paused=false,lastPoll=0,simTime=0,lastMachineState='',lastMatrixScan=0;
 const call=(name,result,types=[],args=[])=>core.ccall('viewer_'+name,result,types,args);
 function poll(){
   const now=performance.now(),delta=lastPoll?Math.min(100,now-lastPoll):0;lastPoll=now;
   if(gameName==='pop_lx5'&&core._viewer_running()){
     machine??=new PopeyeMachine({setSwitch:(number,state)=>core._viewer_switch(number,state)});
     if(!paused){simTime+=delta;machine.update(simTime,n=>core._viewer_solenoid(n));}
-    const state=machine.snapshot(),json=JSON.stringify(state);if(json!==lastMachineState){lastMachineState=json;postMessage({type:'machine',...state});}
+    if(now-lastMatrixScan>=50){lastMatrixScan=now;const state=machine.snapshot(n=>core._viewer_get_switch(n)),json=JSON.stringify(state);if(json!==lastMachineState){lastMachineState=json;postMessage({type:'machine',...state});}}
   }
   const size=core._viewer_frame(framePtr,metaPtr);
   if(size){const meta=Array.from(core.HEAP32.subarray(metaPtr/4,metaPtr/4+5)),pixels=meta[0]*meta[1],data=new Uint8Array(pixels);data.set(core.HEAPU8.subarray(framePtr,framePtr+pixels));const planes=[];for(let i=0;i<meta[3];i++){const plane=new Uint8Array(meta[4]);plane.set(core.HEAPU8.subarray(framePtr+pixels+i*meta[4],framePtr+pixels+(i+1)*meta[4]));planes.push(plane)}postMessage({type:'frame',w:meta[0],h:meta[1],depth:meta[2],data,planes},[data.buffer,...planes.map(p=>p.buffer)]);}
@@ -38,9 +38,10 @@ onmessage=async({data})=>{
     if(data.type==='start')await start(data);
     else if(core){
       if(data.type==='event'){try{if(!machine||paused)throw Error('Resume the running Popeye game first.');postMessage({type:'event-status',text:data.id==='begin-game'?machine.beginGame():machine.event(data.id)});}catch(error){postMessage({type:'event-status',text:error.message,error:true});}}
+      if(data.type==='matrix'){try{if(!machine||paused)throw Error('Resume the running Popeye game first.');postMessage({type:'event-status',text:data.release?(machine.releaseHeld(),'Held switches released.'):machine.trigger(data.number,!!data.hold)});}catch(error){postMessage({type:'event-status',text:error.message,error:true});}}
       if(data.type==='key')core._viewer_key(data.code,data.state);
       if(data.type==='switch')core._viewer_switch(data.number,data.state);
-      if(data.type==='pause'){paused=data.paused;lastPoll=0;core._viewer_pause(paused?1:0);}
+      if(data.type==='pause'){paused=data.paused;if(paused)machine?.releaseHeld();lastPoll=0;core._viewer_pause(paused?1:0);}
       if(data.type==='reset'){machine?.reset();core._viewer_reset();}
       if(data.type==='stop'){clearInterval(timer);core._viewer_stop();postMessage({type:'stopped'});}
     }

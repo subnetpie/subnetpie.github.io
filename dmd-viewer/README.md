@@ -96,3 +96,9 @@ This browses animations the game has actually displayed during this session. PAC
 Select Popeye, then use **Coin + start game** and **Launch ball** in **Popeye shot controls**. Named controls cover the inlanes, three bumpers, a bumper sequence, slingshots, wheel exit, and left/right drains. A six-ball trough and shooter-lane model responds to the ROM’s trough and launch coils. The game ROM selects its own animation, scoring, music, and effects; a shot can produce different results in different modes.
 
 The event panel does not require a VPX table. It is an initial set of supported shots, not a complete table or an index of every animation. Switch and coil numbers come from PinMAME’s `src/wpc/sims/wpc/prelim/pop.c`. The Popeye input bridge uses direct WPC cabinet switches to avoid a second keyboard-driven ball simulator competing with the event model.
+
+## Popeye switch matrix
+
+The Popeye player includes the supplied 8×8 switch chart, plus dedicated D1–D8 cabinet inputs and F1–F8 flipper inputs. Yellow cells identify optos; green highlighting shows active logical inputs read from the ROM interface. Select **Pulse** for a short activation or **Hold / release** to toggle an input. **Release held switches** clears held inputs; pausing, leaving the player, reset, and stop also release them. Automatic trough/shooter/EOS cells are read-only; switch 24 remains closed.
+
+Ramp entrance/completion, left/right loops, P-O-P-E-Y-E targets, and animal-target sequences are also available as shot buttons. Results depend on the current ROM state. Opto electrical polarity is handled by PinMAME's game-specific input inversion; the matrix sends logical activations.

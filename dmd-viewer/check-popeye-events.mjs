@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import {PopeyeMachine,popeyeEvents} from './dist/popeye-events.mjs';
+import {popeyeSwitches,popeyeSwitchByNumber} from './dist/popeye-matrix.mjs';
 const switches=new Map(),machine=new PopeyeMachine({setSwitch:(n,state)=>switches.set(n,state)});
 assert.equal([...switches].filter(([n,v])=>n>=51&&n<=56&&v).length,6);
 assert.throws(()=>machine.event('left-bumper'),/launch/);
@@ -18,3 +19,15 @@ machine.reset();assert.equal(machine.trough,6);assert.equal(machine.shooter,fals
 machine.beginGame();assert.equal(machine.snapshot().starting,true);const queued=machine.pending.length;machine.beginGame();assert.equal(machine.pending.length,queued);machine.reset();assert.equal(machine.snapshot().starting,false);
 assert.equal(new Set(popeyeEvents.map(e=>e.id)).size,popeyeEvents.length);
 console.log('Popeye events passed: six-ball trough, coil-driven serving and launch, timed switches, event guards, drain return, and reset cleanup.');
+
+assert.equal(popeyeSwitches.length,80);assert.equal(new Set(popeyeSwitches.map(s=>s.number)).size,80);
+for(let c=1;c<=8;c++)for(let r=1;r<=8;r++)assert(popeyeSwitchByNumber.has(c*10+r));
+assert.equal(popeyeSwitchByNumber.get(34).label,'Ramp entrance');assert(popeyeSwitchByNumber.get(34).opto);
+assert.equal(popeyeSwitchByNumber.get(118).code,'F8');assert(popeyeSwitchByNumber.get(24).managed);
+assert.throws(()=>machine.trigger(51),/simulator/);assert.throws(()=>machine.trigger(999),/Unknown/);
+machine.trigger(34);machine.update(3000,()=>0);assert.equal(switches.get(34),1);assert(machine.snapshot().active.includes(34));machine.update(3200,()=>0);assert.equal(switches.get(34),0);
+machine.trigger(35,true);assert(machine.snapshot().held.includes(35));assert.equal(switches.get(35),1);
+machine.pulse(35);machine.update(3210,()=>0);machine.update(3400,()=>0);assert.equal(switches.get(35),1,'Pulse completion must not release a held input');
+machine.releaseHeld();assert.equal(switches.get(35),0);assert.equal(machine.snapshot().held.length,0);
+machine.trigger(112,true);machine.reset();assert.equal(switches.get(112),0);assert.equal(switches.get(24),1);
+console.log('Matrix passed: all 80 chart entries, switch numbering, optos, managed inputs, pulse/hold, overlapping input release, and reset.');

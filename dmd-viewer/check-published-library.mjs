@@ -18,12 +18,14 @@ $('includedGame').value='popeye';await $('includedGame').onchange();
 assert.deepEqual(requests.sort(),['pop_lx5.zip','popeye.pac']);assert.equal($('romGame').value,'pop_lx5');
 assert.equal(Worker.last.data.game,'pop_lx5');assert.equal(Worker.last.data.files[0].bytes.byteLength,3391042);assert.equal(Audio.unlocked,true);
 Worker.last.onmessage({data:{type:'started',info:'Popeye LX5'}});
-assert.equal($('romEvents').hidden,false);
+assert.equal($('romEvents').hidden,false);assert.equal($('romMatrix').hidden,false);assert.equal(document.querySelectorAll('[data-popeye-switch]').length,80);
 Worker.last.onmessage({data:{type:'machine',trough:6,shooter:false,playfield:0,event:'Ready',busy:false,starting:false}});
 assert.equal($('romCoinStart').disabled,false);await $('romCoinStart').onclick();assert.equal(Worker.last.data.id,'begin-game');
 const bumper=document.querySelector('[data-popeye-event="left-bumper"]');assert.equal(bumper.disabled,true);
 Worker.last.onmessage({data:{type:'machine',trough:5,shooter:false,playfield:1,event:'Launched',busy:false,starting:false}});
 assert.equal(bumper.disabled,false);bumper.onclick();assert.deepEqual(Worker.last.data,{type:'event',id:'left-bumper'});
+const ramp=document.querySelector('[data-popeye-switch="34"]');ramp.onclick();assert.deepEqual(Worker.last.data,{type:'matrix',number:34,hold:false});$('romMatrixMode').value='hold';ramp.onclick();assert.equal(Worker.last.data.hold,true);
+Worker.last.onmessage({data:{type:'machine',trough:5,shooter:false,playfield:1,event:'Ramp',busy:false,starting:false,active:[24,34],held:[34]}});assert.equal(ramp.getAttribute('aria-pressed'),'true');assert.equal($('romMatrixRelease').disabled,false);$('romMatrixRelease').onclick();assert.equal(Worker.last.data.release,true);
 
 $('includedSound').checked=false;await $('includedSound').oninput();assert.equal($('romSound').checked,false);
 await $('romPause').onclick();assert.equal($('romState').textContent,'PAUSED');assert.equal(bumper.disabled,true);
