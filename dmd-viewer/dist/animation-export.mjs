@@ -53,10 +53,14 @@ export async function readAnimationPack(blob){
  const clips=[];
  for(const item of manifest.animations){
   if(!files.has(item.frameFile)||!files.has(item.audioFile))throw Error('Missing animation data');
-  const pixels=await gunzip(files.get(item.frameFile)),pcm=await gunzip(files.get(item.audioFile)),view=new DataView(pcm.buffer,pcm.byteOffset,pcm.byteLength);
-  const frames=item.frames.map(f=>{if(f.offset<0||f.offset+f.length>pixels.length||f.length!==f.w*f.h)throw Error('Invalid DMD frame range');return {...f,data:pixels.slice(f.offset,f.offset+f.length),colors:item.palettes[f.palette]};});
-  const audio=item.audio.map(a=>{if(a.offset<0||a.length%4||a.offset+a.length>pcm.length)throw Error('Invalid PCM audio range');const data=new Float32Array(a.length/4);for(let i=0;i<data.length;i++)data[i]=view.getFloat32(a.offset+i*4,true);return {...a,data};});
-  clips.push({...item,start:0,end:item.duration,frames,audio});
+  clips.push(await decodeAnimationFiles(item,files.get(item.frameFile),files.get(item.audioFile)));
  }
  return {manifest,clips};
+}
+
+export async function decodeAnimationFiles(item,frameBytes,audioBytes){
+ const pixels=await gunzip(frameBytes),pcm=await gunzip(audioBytes),view=new DataView(pcm.buffer,pcm.byteOffset,pcm.byteLength);
+  const frames=item.frames.map(f=>{if(f.offset<0||f.offset+f.length>pixels.length||f.length!==f.w*f.h)throw Error('Invalid DMD frame range');return {...f,data:pixels.slice(f.offset,f.offset+f.length),colors:item.palettes[f.palette]};});
+  const audio=item.audio.map(a=>{if(a.offset<0||a.length%4||a.offset+a.length>pcm.length)throw Error('Invalid PCM audio range');const data=new Float32Array(a.length/4);for(let i=0;i<data.length;i++)data[i]=view.getFloat32(a.offset+i*4,true);return {...a,data};});
+ return {...item,start:0,end:item.duration,frames,audio};
 }

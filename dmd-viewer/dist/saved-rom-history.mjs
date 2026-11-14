@@ -1,13 +1,15 @@
+import {builtInCatalog,builtInClip} from './built-in-animations.mjs?v=popeye-1';
 import {RomHistory} from './rom-history.mjs?v=saved-1';
 const sessionId=()=>globalThis.crypto?.randomUUID?.()||Date.now().toString(36)+'-'+Math.random().toString(36).slice(2);
 const done=tx=>new Promise((resolve,reject)=>{tx.oncomplete=resolve;tx.onerror=tx.onabort=()=>reject(tx.error||Error('Could not save animation'));});
 const request=req=>new Promise((resolve,reject)=>{req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);});
 export class SavedRomHistory{
- constructor(){this.current=new RomHistory({maxDuration:Infinity,maxBytes:Infinity});this.saved=[];this.session=sessionId();this.game='';this.frames=[];this.audio=[];this.queue=Promise.resolve();this.lastSave=0;this.error='';this.previousInputs=new Set();}
- get clips(){return [...this.saved,...this.metadata()];}
+ constructor(){this.current=new RomHistory({maxDuration:Infinity,maxBytes:Infinity});this.saved=[];this.builtIn=[];this.session=sessionId();this.game='';this.frames=[];this.audio=[];this.queue=Promise.resolve();this.lastSave=0;this.error='';this.previousInputs=new Set();}
+ get clips(){return [...this.builtIn,...this.saved,...this.metadata()];}
  metadata(){return this.current.clips.map(c=>({...c,id:this.session+':'+c.id,session:this.session,game:this.game,switches:[...(c.switches||[])]}));}
  async open(game){
-  await this.flush();this.clear();await this.queue;this.game=game;this.saved=[];
+  await this.flush();this.clear();await this.queue;this.game=game;this.saved=[];this.builtIn=[];
+  try{this.builtIn=await builtInCatalog(game)}catch(error){this.error=error.message;}
   if(!globalThis.indexedDB){this.error='Local saving unavailable; recordings last for this session.';return;}
   try{
    this.db??=await new Promise((resolve,reject)=>{const req=indexedDB.open('dmd-learned-animations',1);req.onupgradeneeded=()=>{const db=req.result;db.createObjectStore('frames',{keyPath:['session','time']});db.createObjectStore('audio',{keyPath:['session','end']});db.createObjectStore('clips',{keyPath:'id'}).createIndex('game','game');};req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);});
@@ -46,6 +48,7 @@ export class SavedRomHistory{
   return this.queue;
  }
  async clip(id){
+  const builtIn=this.builtIn.find(c=>c.id===id);if(builtIn)return builtInClip(builtIn);
   if(!this.db){const number=Number(String(id).split(':').at(-1));return this.current.clip(number)&&{...this.current.clip(number),id};}
   await this.flush();const clip=this.clips.find(c=>c.id===id);if(!clip)return null;
   const tx=this.db.transaction(['frames','audio'],'readonly'),finished=done(tx);

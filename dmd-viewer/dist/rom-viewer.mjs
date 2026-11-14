@@ -1,7 +1,7 @@
 import {createAnimationPack} from './animation-export.mjs?v=export-1';
 import {parsePac} from './pac.mjs';
 import {LiveColorizer} from './live-colorizer.mjs';
-import {SavedRomHistory} from './saved-rom-history.mjs?v=saved-1';
+import {SavedRomHistory} from './saved-rom-history.mjs?v=builtin-1';
 import {animationGroups} from './animation-groups.mjs';
 import {popeyeEvents} from './popeye-events.mjs?v=flippers-1';
 import {popeyeSwitchByNumber,popeyeColumnColors} from './popeye-matrix.mjs';
@@ -73,18 +73,18 @@ export function createRomViewer({setMode,onSoundChange=()=>{}}){
   }
   function historyControls(){
     const clips=history.clips,version=clips.map(c=>c.id+':'+!!c.truncated).join(',');
-    if(version!==historyVersion){$('romAnimation').replaceChildren(new Option('Live game',''),...clips.map((c,i)=>new Option((i+1)+'. '+c.label+(c.truncated?' (partial capture)':''),String(c.id))));historyVersion=version;}
+    if(version!==historyVersion){$('romAnimation').replaceChildren(new Option('Live game',''),...clips.map((c,i)=>new Option((i+1)+'. '+c.label+(c.builtIn?' · built-in':'')+(c.truncated?' (partial capture)':''),String(c.id))));historyVersion=version;}
     $('romAnimation').value=replay?String(replay.clip.id):'';$('romAnimation').disabled=!clips.length;
     const index=replay?clips.findIndex(c=>c.id===replay.clip.id):clips.length;
     $('romPreviousAnimation').disabled=!clips.length||index===0;
     $('romNextAnimation').disabled=!replay||index>=clips.length-1;
-    $('romExportSelected').disabled=exporting||!replay;$('romExportAll').disabled=exporting||!clips.length;
+    $('romExportSelected').disabled=exporting||!replay;$('romExportAll').disabled=exporting||!clips.some(c=>!c.builtIn);
     $('romReplayAnimation').disabled=!replay;$('romLive').disabled=!replay;
-    $('romHistoryInfo').textContent=replay?'Captured animation '+(index+1)+' / '+clips.length+' · all captured parts with original sound'+(replay.clip.truncated?' · beginning no longer buffered':'')+' · Return to live to capture more.':clips.length+' learned animation'+(clips.length===1?'':'s')+' · Saved on this device with matching sound. No recording time limit.'+(history.error?' · '+history.error:'');
+    $('romHistoryInfo').textContent=replay?'Captured animation '+(index+1)+' / '+clips.length+' · all captured parts with original sound'+(replay.clip.truncated?' · beginning no longer buffered':'')+' · Return to live to capture more.':clips.filter(c=>c.builtIn).length+' built-in · '+clips.filter(c=>!c.builtIn).length+' learned animations · Saved on this device with matching sound. No recording time limit.'+(history.error?' · '+history.error:'');
   }
   async function exportAnimations(all){
     if(exporting)return;
-    const entries=all?[...history.clips]:history.clips.filter(c=>c.id===replay?.clip.id);if(!entries.length)return;
+    const entries=all?history.clips.filter(c=>!c.builtIn):history.clips.filter(c=>c.id===replay?.clip.id);if(!entries.length)return;
     const session=generation,resume=running&&!paused&&!replay;
     exporting=true;if(resume)pause(true);historyControls();
     const progress=$('romExportStatus');progress.hidden=false;progress.classList.remove('error');progress.textContent='Preparing animation export…';
