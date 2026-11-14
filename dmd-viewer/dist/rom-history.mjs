@@ -1,17 +1,23 @@
 // A bounded, in-memory recording of rendered game frames and original PCM audio.
 export class RomHistory {
-  constructor({maxDuration=60000,maxBytes=48*1024*1024,maxClipDuration=8000}={}){
-    Object.assign(this,{maxDuration,maxBytes,maxClipDuration});this.clear();
+  constructor({maxDuration=60000,maxBytes=48*1024*1024,boundaryDelay=600}={}){
+    Object.assign(this,{maxDuration,maxBytes,boundaryDelay});this.clear();
   }
-  clear(){this.frames=[];this.audio=[];this.clips=[];this.bytes=0;this.end=0;this.serial=0;}
+  clear(){this.frames=[];this.audio=[];this.clips=[];this.bytes=0;this.end=0;this.serial=0;this.pending=null;}
   recordFrame(time,frame,key,label){
     const last=this.frames.at(-1);if(last&&time-last.time<32)return;
     const item={...frame,data:frame.data.slice(),time};this.frames.push(item);this.bytes+=item.data.byteLength;
-    const clip=this.clips.at(-1);
-    if(!clip||(key!==clip.key&&time-clip.start>=250)||time-clip.start>=this.maxClipDuration){
-      if(clip)clip.end=time;
-      this.clips.push({id:++this.serial,key,label,start:time,end:time});
-    }
+    let clip=this.clips.at(-1);
+    if(!clip){clip={id:++this.serial,key,label,start:time,end:time};this.clips.push(clip)}
+    // Palette changes and unrecognized interstitial frames do not end a scene.
+    // Confirm a different animation before moving the boundary back to its first frame.
+    if(key&&key!==clip.key){
+      if(this.pending?.key!==key)this.pending={key,label,start:time};
+      if(time-this.pending.start>=this.boundaryDelay){
+        const next=this.pending;clip.end=next.start;
+        clip={id:++this.serial,...next,end:time};this.clips.push(clip);this.pending=null;
+      }
+    }else if(key===clip.key)this.pending=null;
     this.end=Math.max(this.end,time);this.clips.at(-1).end=this.end;this.trim();
   }
   recordAudio(end,{data,channels,rate}){
@@ -25,18 +31,25 @@ export class RomHistory {
   }
   trim(){
     const cutoff=this.end-this.maxDuration;
+    // Evict completed recordings as whole animations, rather than keeping short tails.
+    while(this.clips.length>1&&(this.clips[0].start<cutoff||this.bytes>this.maxBytes)){
+      const start=this.clips[1].start;this.clips.shift();
+      while(this.frames.length&&this.frames[0].time<start)this.bytes-=this.frames.shift().data.byteLength;
+      while(this.audio.length&&this.audio[0].end<=start)this.bytes-=this.audio.shift().data.byteLength;
+    }
     while(this.frames.length>1&&(this.frames[1].time<cutoff||this.bytes>this.maxBytes)){
       this.bytes-=this.frames.shift().data.byteLength;
       const start=this.frames[0].time;
       while(this.audio.length&&this.audio[0].end<=start)this.bytes-=this.audio.shift().data.byteLength;
       while(this.clips.length>1&&this.clips[1].start<=start)this.clips.shift();
-      if(this.clips.length)this.clips[0].start=Math.max(this.clips[0].start,start);
+      if(this.clips.length&&start>this.clips[0].start){this.clips[0].start=start;this.clips[0].truncated=true;}
     }
     while(this.audio.length&&(this.audio[0].end<cutoff||this.bytes>this.maxBytes))this.bytes-=this.audio.shift().data.byteLength;
   }
   clip(id){
     const clip=this.clips.find(c=>c.id===id);if(!clip)return null;
-    const frames=this.frames.filter(f=>f.time>=clip.start&&(f.time<clip.end||clip.start===clip.end));
+    const end=clip.end;
+    const frames=this.frames.filter(f=>f.time>=clip.start&&(f.time<end||clip.start===end));
     if(!frames.length)return null;
     const audio=this.audio.filter(a=>a.end>clip.start&&a.start<clip.end).map(a=>{
       const first=Math.max(0,Math.ceil((clip.start-a.start)*a.rate/1000)),last=Math.min(a.data.length/a.channels,Math.floor((clip.end-a.start)*a.rate/1000));

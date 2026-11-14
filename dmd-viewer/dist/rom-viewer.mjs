@@ -1,6 +1,7 @@
 import {parsePac} from './pac.mjs';
 import {LiveColorizer} from './live-colorizer.mjs';
-import {RomHistory} from './rom-history.mjs';
+import {RomHistory} from './rom-history.mjs?v=whole-animations-1';
+import {animationGroups} from './animation-groups.mjs';
 import {popeyeEvents} from './popeye-events.mjs?v=flippers-1';
 import {popeyeSwitchByNumber,popeyeColumnColors} from './popeye-matrix.mjs';
 import {t2SwitchByNumber} from './t2-matrix.mjs';
@@ -46,7 +47,7 @@ export function createRomViewer({setMode,onSoundChange=()=>{}}){
   <p id="romStatus" role="status" class="status">Select a game above to run its ROMs with color DMD and sound.</p><details class="panel rom-log"><summary>Emulator log</summary><pre id="romLog"></pre></details>`;
   let files=[],pac=null,colorizer=null,worker=null,active=false,running=false,busy=false,paused=false,raw=null,frameCount=0,tick=0,hold=null,door=false,generation=0;
   const audio=new RomAudio(),history=new RomHistory(),pressed=new Set(),timers=new Set();
-  let replay=null,historyVersion='',machineState=null;
+  let replay=null,historyVersion='',machineState=null,sceneGroups=new Map();
   const canvas=$('romDmd'),ctx=canvas.getContext('2d');
   function status(text,error=false){$('romStatus').textContent=text;$('romStatus').classList.toggle('error',error);}
   function appendLog(text){$('romLog').textContent=($('romLog').textContent+'\n'+text).slice(-20000);}
@@ -62,14 +63,14 @@ export function createRomViewer({setMode,onSoundChange=()=>{}}){
     for(let i=0;i<f.data.length;i++){const value=f.data[i],c=f.colors?.[value]||[Math.round(255*value/(f.levels-1)),Math.round(135*value/(f.levels-1)),Math.round(36*value/(f.levels-1))];ctx.fillStyle='rgb('+c.join(',')+')';ctx.beginPath();ctx.arc((i%w)*8+4,Math.floor(i/w)*8+4,3,0,Math.PI*2);ctx.fill();}
   }
   function historyControls(){
-    const clips=history.clips,version=clips.map(c=>c.id).join(',');
-    if(version!==historyVersion){$('romAnimation').replaceChildren(new Option('Live game',''),...clips.map((c,i)=>new Option((i+1)+'. '+c.label,String(c.id))));historyVersion=version;}
+    const clips=history.clips,version=clips.map(c=>c.id+':'+!!c.truncated).join(',');
+    if(version!==historyVersion){$('romAnimation').replaceChildren(new Option('Live game',''),...clips.map((c,i)=>new Option((i+1)+'. '+c.label+(c.truncated?' (partial capture)':''),String(c.id))));historyVersion=version;}
     $('romAnimation').value=replay?String(replay.clip.id):'';$('romAnimation').disabled=!clips.length;
     const index=replay?clips.findIndex(c=>c.id===replay.clip.id):clips.length;
     $('romPreviousAnimation').disabled=!clips.length||index===0;
     $('romNextAnimation').disabled=!replay||index>=clips.length-1;
     $('romReplayAnimation').disabled=!replay;$('romLive').disabled=!replay;
-    $('romHistoryInfo').textContent=replay?'Captured animation '+(index+1)+' / '+clips.length+' · original game sound · Return to live to capture more.':clips.length+' captured animation'+(clips.length===1?'':'s')+' · Previous animation replays with original sound. Up to 60 seconds are kept.';
+    $('romHistoryInfo').textContent=replay?'Captured animation '+(index+1)+' / '+clips.length+' · all captured parts with original sound'+(replay.clip.truncated?' · beginning no longer buffered':'')+' · Return to live to capture more.':clips.length+' captured animation'+(clips.length===1?'':'s')+' · Previous animation replays with original sound. Up to 60 seconds are kept.';
   }
   function replayTime(){return Math.min(replay.clip.duration,replay.offset+(replay.playing?Math.max(0,performance.now()-replay.started):0));}
   function resumeReplay(){replay.started=performance.now()+30;replay.audioStart=(audio.context?.currentTime||0)+0.03;replay.audioIndex=0;replay.playing=true;}
@@ -93,8 +94,8 @@ export function createRomViewer({setMode,onSoundChange=()=>{}}){
   function render(){
     if(!raw)return;
     const f={...colorizer.render(raw.data,raw.w,raw.h,raw.depth,tick,raw.planes),w:raw.w,h:raw.h};drawFrame(f);
-    const scene=colorizer.active?.scene,key=scene?scene.offset+':'+scene.mode+':'+scene.paletteId:colorizer.lastMatch;
-    history.recordFrame(tick,f,key,scene?.name||'Game display');historyControls();
+    const scene=colorizer.active?.scene,group=sceneGroups.get(scene),key=scene?(group?.key||scene.name||String(scene.offset)):null;
+    history.recordFrame(tick,f,key,group?.label||scene?.name||'Game display');historyControls();
     $('romMatch').textContent=colorizer.matches+' triggers · '+colorizer.lastMatch;
   }
   function renderReplay(){
@@ -116,7 +117,7 @@ export function createRomViewer({setMode,onSoundChange=()=>{}}){
     if(selected.some(f=>f.size>64*1024*1024)||roms.reduce((n,f)=>n+f.size,0)>128*1024*1024){status('ROM selection exceeds the 128 MB session limit (64 MB per ZIP).',true);return false;}
     stop();const session=generation;setMode();busy=true;controls();status('Decoding PAC and preparing the ROM pair…');
     try{const decoded=await parsePac(new Uint8Array(await pacs[0].arrayBuffer()),$('pacKey')?.value||'');if(session!==generation)return false;if(!decoded.mappings?.length)throw Error('This PAC contains no live frame mappings.');
-      files=roms;pac=pacs[0];colorizer=new LiveColorizer(decoded);$('romGame').replaceChildren(...files.map(f=>new Option(f.name.replace(/\.zip$/i,''),f.name.replace(/\.zip$/i,'').toLowerCase())));$('romPair').textContent=pac.name+' · '+decoded.mappings.length+' mappings';status('ROM/PAC pair ready. Select the game ROM set, then Start ROM.');return true;
+      files=roms;pac=pacs[0];colorizer=new LiveColorizer(decoded);sceneGroups=animationGroups(decoded.scenes);$('romGame').replaceChildren(...files.map(f=>new Option(f.name.replace(/\.zip$/i,''),f.name.replace(/\.zip$/i,'').toLowerCase())));$('romPair').textContent=pac.name+' · '+decoded.mappings.length+' mappings';status('ROM/PAC pair ready. Select the game ROM set, then Start ROM.');return true;
     }catch(error){files=[];pac=null;colorizer=null;status(error.message,true);return false;}finally{busy=false;controls();}
   }
   async function start(){
