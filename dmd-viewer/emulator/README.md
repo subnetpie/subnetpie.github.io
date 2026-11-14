@@ -38,6 +38,6 @@ Automated checks instantiate the compiled WASM, recognize both game drivers, aud
 
 ## Popeye event input bridge
 
-Popeye LX5 uses direct WPC cabinet switches, with keyboard handling disabled before PinmameRun. This prevents PinMAME’s keyboard-driven ball simulator from competing with the browser’s six-ball trough model. `viewer_solenoid` and `viewer_get_switch` expose native outputs/inputs for the event worker and verification. Other ROM sets retain their existing keyboard input path.
+Popeye LX5 and Terminator 2 L8 use direct WPC cabinet switches, with keyboard handling disabled before PinmameRun. This prevents PinMAME’s keyboard-driven ball simulator from competing with the browser’s six-ball trough model. `viewer_solenoid` and `viewer_get_switch` expose native outputs/inputs for the event worker and verification. Other ROM sets retain their existing keyboard input path. Terminator 2 flipper switches are routed through the WPC flipper input column so the core maps them to switches 11 and 12. `viewer_lamp` reads numbered native lamp outputs for the playfield overlays.
 
 The worker installs a small, factory-initialized Popeye NVRAM seed in memory to avoid the first-boot factory-reset/restart cycle. Session NVRAM is still discarded when the worker stops. The seed was generated in a fresh local ROM test; it contains no user-supplied settings. The source model is `dist/popeye-events.mjs`; `node check-popeye-runtime.mjs` tests real ROM startup, serve, launch, bumper shots, drain/re-serve, audio, and live PAC matching.

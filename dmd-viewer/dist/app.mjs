@@ -1,9 +1,9 @@
-import {createRomViewer} from './rom-viewer.mjs?v=popeye-matrix-20261113b';
+import {createRomViewer} from './rom-viewer.mjs?v=playfield-t2-20261114';
 import {parsePal,parseVni,parseDump,parseRaw} from './formats.mjs';
 import {parsePac} from './pac.mjs';
 import {extractDmdZip} from './zip.mjs';
 import {createPupViewer} from './pup-viewer.mjs';
-import {fetchIncludedRomGame,includedGames} from './library.mjs?v=popeye-matrix-20261113b';
+import {fetchIncludedRomGame,includedGames} from './library.mjs?v=playfield-t2-20261114';
 import {parseFsq,parsePalMappings} from './fsq.mjs';
 let currentPal=null;
 let pendingPac=null;

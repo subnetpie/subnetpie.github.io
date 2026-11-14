@@ -5,6 +5,7 @@ import createRuntime from './dist/emulator/dmd-runtime.mjs';
 import {PopeyeMachine} from './dist/popeye-events.mjs';
 import {popeyeInitialNvram} from './dist/popeye-initial-nvram.mjs';
 import {parsePac} from './dist/pac.mjs';
+import {popeyeLamps} from './dist/popeye-playfield.mjs';
 import {LiveColorizer} from './dist/live-colorizer.mjs';
 const core=await createRuntime({wasmBinary:gunzipSync(await readFile('dist/emulator/dmd-runtime.wasm.gz')),print(){},printErr(){}});
 try{
@@ -16,9 +17,10 @@ try{
   const machine=new PopeyeMachine({setSwitch:(n,v)=>core._viewer_switch(n,v)});
   const colorizer=new LiveColorizer(await parsePac(await readFile('dist/library/popeye.pac')));
   const frame=core._malloc(131072),meta=core._malloc(32),audio=core._malloc(262144);
-  const began=performance.now();let phase=0,frames=0,samples=0,peak=0,phaseAt=0,secondServe=false;
+  const began=performance.now();let phase=0,frames=0,samples=0,peak=0,phaseAt=0,secondServe=false,lastLamps='',lampChanges=0;const litLamps=new Set();
   machine.beginGame();
   while(performance.now()-began<32000){
+    const lights=popeyeLamps.filter(l=>core._viewer_lamp(l.number)).map(l=>l.number);lights.forEach(n=>litLamps.add(n));const signature=lights.join(',');if(signature!==lastLamps){lampChanges++;lastLamps=signature;}
     const t=performance.now()-began;machine.update(t,n=>core._viewer_solenoid(n));
     if(phase===0&&machine.shooter){phase=1;phaseAt=t;machine.event('launch');console.log('ROM trough coil served a ball.');}
     if(phase===1&&machine.playfield&&!machine.snapshot().busy){phase=2;phaseAt=t;machine.event('bumpers');console.log('ROM launch coil launched the ball; bumper sequence fired.');}
@@ -33,7 +35,7 @@ try{
     await new Promise(r=>setTimeout(r,8));
   }
   assert.equal(secondServe,true,'ROM must serve the next ball after draining');
-  assert(frames>100);assert(samples>0);assert(peak>0);assert(colorizer.matches>0);
+  assert(litLamps.size>0);assert(lampChanges>1);assert(frames>100);assert(samples>0);assert(peak>0);assert(colorizer.matches>0);
   assert.equal(machine.trough,5);assert.equal(machine.playfield,0);assert(machine.shooter);
-  core._viewer_stop();console.log(JSON.stringify({frames,samples,peak,pacTriggers:colorizer.matches,secondServe}));
+  core._viewer_stop();console.log(JSON.stringify({frames,samples,peak,pacTriggers:colorizer.matches,secondServe,lampsObserved:litLamps.size,lampChanges}));
 }finally{core.PThread.terminateAllThreads();}

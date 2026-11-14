@@ -102,3 +102,9 @@ The event panel does not require a VPX table. It is an initial set of supported 
 The Popeye player includes the supplied 8×8 switch chart, plus dedicated D1–D8 cabinet inputs and F1–F8 flipper inputs. Yellow cells identify optos; green highlighting shows active logical inputs read from the ROM interface. Select **Pulse** for a short activation or **Hold / release** to toggle an input. **Release held switches** clears held inputs; pausing, leaving the player, reset, and stop also release them. Automatic trough/shooter/EOS cells are read-only; switch 24 remains closed.
 
 Ramp entrance/completion, left/right loops, P-O-P-E-Y-E targets, and animal-target sequences are also available as shot buttons. Results depend on the current ROM state. Opto electrical polarity is handled by PinMAME's game-specific input inversion; the matrix sends logical activations.
+
+## Playfield touch controls and lamps
+
+Popeye now includes main and upper playfield illustrations extracted from the supplied Operators Handbook. Amber overlays follow the ROM’s 64 lamp outputs; 60 numbered touch locations activate the corresponding switches. Choose Pulse or Hold / release; use the zoom slider for dense areas. The three backbox lamps are listed separately because the handbook does not place them on the playfield illustration. Trough/shooter locations remain automatic. Lamp locations come from printed page 3, with switch positions aligned from printed page 5.
+
+Terminator 2 has its own 8×8 matrix and dedicated inputs. Targets 71–75 have the red bank outline from the supplied chart; unused positions are disabled. It uses direct switch inputs with a small three-ball trough, shooter, launch, and outhole model. Targets and other inputs activate their numbered switches directly. Gun positioning can be tested with the gun switches; full gun mechanics are not simulated.
