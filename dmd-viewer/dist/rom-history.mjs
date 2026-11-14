@@ -1,6 +1,6 @@
 // A bounded, in-memory recording of rendered game frames and original PCM audio.
 export class RomHistory {
-  constructor({maxDuration=60000,maxBytes=48*1024*1024,boundaryDelay=600}={}){
+  constructor({maxDuration=Infinity,maxBytes=48*1024*1024,boundaryDelay=600}={}){
     Object.assign(this,{maxDuration,maxBytes,boundaryDelay});this.clear();
   }
   clear(){this.frames=[];this.audio=[];this.clips=[];this.bytes=0;this.end=0;this.serial=0;this.pending=null;}

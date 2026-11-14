@@ -1,10 +1,10 @@
 import {joinAnimationParts} from './animation-groups.mjs';
-import {createRomViewer} from './rom-viewer.mjs?v=inputs-first-20261114';
+import {createRomViewer} from './rom-viewer.mjs?v=learned-library-20261114';
 import {parsePal,parseVni,parseDump,parseRaw} from './formats.mjs';
 import {parsePac} from './pac.mjs';
 import {extractDmdZip} from './zip.mjs';
 import {createPupViewer} from './pup-viewer.mjs';
-import {fetchIncludedRomGame,includedGames} from './library.mjs?v=inputs-first-20261114';
+import {fetchIncludedRomGame,includedGames} from './library.mjs?v=learned-library-20261114';
 import {parseFsq,parsePalMappings} from './fsq.mjs';
 let currentPal=null;
 let pendingPac=null;
@@ -64,31 +64,28 @@ if(new URLSearchParams(location.search).has('localPair')){(async()=>{try{const r
 function includedMessage(text,error=false){message(text,error);$('includedStatus').hidden=false;$('includedStatus').textContent=text;$('includedStatus').classList.toggle('error',error)}
 let loadedGame=null;
 $('advancedTools').onclick=()=>{const open=$('advancedTools').getAttribute('aria-expanded')!=='true';document.body.classList.toggle('simple-player',!open);$('advancedTools').setAttribute('aria-expanded',String(open));$('advancedTools').textContent=open?'Hide advanced tools':'Advanced tools';if(!open)pup.setMode('rom')};
-async function playIncludedGame({autostart=true}={}){
-  const select=$('includedGame'),button=$('loadIncludedGame'),id=select.value;
-  if(!id)return;
-  select.disabled=true;button.disabled=true;button.textContent='Loadingâ€¦';
+async function playIncludedGame({background=false}={}){
+  const select=$('includedGame'),id=select.value;if(!id)return;
+  select.disabled=true;
   try{
-    // Unlock during the dropdown/button gesture, before any network requests.
-    if(autostart)await rom.prepareAudio();
-    if(!globalThis.crossOriginIsolated){
-      pup.setMode('rom');includedMessage('Preparing the player. This page will reload onceâ€¦');
-      $('romEnable').click();return;
-    }
+    if(!globalThis.crossOriginIsolated){pup.setMode('rom');includedMessage('Preparing player…');$('romEnable').click();return;}
+    if(!background)await rom.prepareAudio();
     pup.setMode('rom');
     if(loadedGame!==id){
-      rom.stop();loadedGame=null;includedMessage('Loading game, color display, and soundâ€¦');
-      const {game,files}=await fetchIncludedRomGame(id);
+      rom.stop();loadedGame=null;includedMessage('Loading…');
+      const {files}=await fetchIncludedRomGame(id);
       if(!await rom.accept(files))throw Error($('romStatus').textContent);
-      loadedGame=id;includedMessage(game.title+' is ready. Press Play game to start with sound.');
+      loadedGame=id;
     }
-    if(autostart){rom.stop();await rom.start();if($('romStatus').classList.contains('error'))throw Error($('romStatus').textContent);includedMessage('Starting '+includedGames.find(game=>game.id===id).title+' with live color DMD'+($('includedSound').checked?' and sound.':'.'));}
-  }catch(error){includedMessage(error.message,true)}finally{select.disabled=false;button.disabled=!select.value;button.textContent='Play game'}
+    rom.stop();await rom.start({background});
+    if($('romStatus').classList.contains('error'))throw Error($('romStatus').textContent);
+    includedMessage('');$('includedStatus').hidden=true;
+    try{localStorage.setItem('dmd-selected-game',id)}catch{}
+  }catch(error){includedMessage(error.message,true)}finally{select.disabled=false;}
 }
-$('includedGame').onchange=()=>{if(!$('includedGame').value){rom.stop();loadedGame=null;$('loadIncludedGame').disabled=true;return}return playIncludedGame()};
-$('loadIncludedGame').onclick=()=>playIncludedGame();
+$('includedGame').onchange=()=>playIncludedGame();
 const includedId=new URLSearchParams(location.search).get('game');
-// The isolated page reload cannot preserve the browser's audio gesture.
-// Prepare the selected pair, then leave one clear Play button for sound.
-if(includedGames.some(game=>game.id===includedId)){$('includedGame').value=includedId;playIncludedGame({autostart:false})}
-else if(document.body?.classList.contains('simple-player'))pup.setMode('rom');
+let preferredGame=includedId;try{preferredGame||=localStorage.getItem('dmd-selected-game')}catch{}
+if(includedGames.some(game=>game.id===preferredGame))$('includedGame').value=preferredGame;
+// Automatic reload startup does not wait for a browser audio gesture.
+export const includedStartup=document.body?.classList.contains('simple-player')?(pup.setMode('rom'),$('includedGame').value?playIncludedGame({background:true}):Promise.resolve()):Promise.resolve();
