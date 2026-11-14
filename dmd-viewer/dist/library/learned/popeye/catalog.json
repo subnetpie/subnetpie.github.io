@@ -61,6 +61,101 @@
       "start": 0,
       "end": 155291.6200001703,
       "manifest": "0051/manifest.json.gz"
+    },
+    {
+      "id": "builtin:popeye:3",
+      "label": "Credits score",
+      "sourceLabel": "ATT3_punteggio credit",
+      "key": "128:32:att3_punteggio credit",
+      "duration": 2933.1800000000003,
+      "switches": [],
+      "game": "pop_lx5.zip:popeye.pac",
+      "builtIn": true,
+      "start": 0,
+      "end": 2933.1800000000003,
+      "manifest": "0003/manifest.json.gz"
+    },
+    {
+      "id": "builtin:popeye:7",
+      "label": "Credits/start",
+      "sourceLabel": "ATT2_credit start",
+      "key": "128:32:att2_credit start",
+      "duration": 2504.1399999999994,
+      "switches": [
+        23
+      ],
+      "game": "pop_lx5.zip:popeye.pac",
+      "builtIn": true,
+      "start": 0,
+      "end": 2504.1399999999994,
+      "manifest": "0007/manifest.json.gz"
+    },
+    {
+      "id": "builtin:popeye:8",
+      "label": "Skill shot",
+      "sourceLabel": "FP4_skill shot",
+      "key": "128:32:fp4_skill shot",
+      "duration": 25241.640000000003,
+      "switches": [
+        37,
+        118,
+        116,
+        11,
+        42
+      ],
+      "game": "pop_lx5.zip:popeye.pac",
+      "builtIn": true,
+      "start": 0,
+      "end": 25241.640000000003,
+      "manifest": "0008/manifest.json.gz"
+    },
+    {
+      "id": "builtin:popeye:9",
+      "label": "Olive Oyl",
+      "sourceLabel": "FP8_oyl",
+      "key": "FP8_oyl",
+      "duration": 2616.779999999999,
+      "switches": [
+        15
+      ],
+      "game": "pop_lx5.zip:popeye.pac",
+      "builtIn": true,
+      "start": 0,
+      "end": 2616.779999999999,
+      "manifest": "0009/manifest.json.gz"
+    },
+    {
+      "id": "builtin:popeye:10",
+      "label": "Fight Bluto is lit",
+      "sourceLabel": "FP_fight bluto is lit",
+      "key": "128:32:fp_fight bluto is lit",
+      "duration": 10545.719999999994,
+      "switches": [
+        71,
+        73,
+        72
+      ],
+      "game": "pop_lx5.zip:popeye.pac",
+      "builtIn": true,
+      "start": 0,
+      "end": 10545.719999999994,
+      "manifest": "0010/manifest.json.gz"
+    },
+    {
+      "id": "builtin:popeye:14",
+      "label": "Pop targets",
+      "sourceLabel": "FP1_pop targets",
+      "key": "FP1_pop targets",
+      "duration": 11250.01999999999,
+      "switches": [
+        58,
+        38
+      ],
+      "game": "pop_lx5.zip:popeye.pac",
+      "builtIn": true,
+      "start": 0,
+      "end": 11250.01999999999,
+      "manifest": "0014/manifest.json.gz"
     }
   ]
 }

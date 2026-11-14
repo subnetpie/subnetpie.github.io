@@ -2,7 +2,7 @@ import {decodeAnimationFiles} from './animation-export.mjs?v=builtin-1';
 const root=new URL('./library/learned/popeye/',import.meta.url);
 export async function builtInCatalog(game){
  if(game!=='pop_lx5.zip:popeye.pac')return [];
- const response=await fetch(new URL('catalog.json',root));if(!response.ok)throw Error('Could not load built-in animation list.');
+ const response=await fetch(new URL('catalog.json',root),{cache:'no-cache'});if(!response.ok)throw Error('Could not load built-in animation list.');
  const catalog=await response.json();if(catalog.format!=='dmd-built-in-catalog'||catalog.version!==1||catalog.game!==game)throw Error('Invalid built-in animation list.');
  return catalog.animations;
 }

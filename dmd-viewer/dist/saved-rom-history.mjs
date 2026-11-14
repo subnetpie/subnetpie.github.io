@@ -1,4 +1,4 @@
-import {builtInCatalog,builtInClip} from './built-in-animations.mjs?v=popeye-1';
+import {builtInCatalog,builtInClip} from './built-in-animations.mjs?v=popeye-2';
 import {RomHistory} from './rom-history.mjs?v=saved-1';
 const sessionId=()=>globalThis.crypto?.randomUUID?.()||Date.now().toString(36)+'-'+Math.random().toString(36).slice(2);
 const done=tx=>new Promise((resolve,reject)=>{tx.oncomplete=resolve;tx.onerror=tx.onabort=()=>reject(tx.error||Error('Could not save animation'));});
