@@ -1,3 +1,4 @@
+import {createAnimationPack} from './animation-export.mjs?v=export-1';
 import {parsePac} from './pac.mjs';
 import {LiveColorizer} from './live-colorizer.mjs';
 import {SavedRomHistory} from './saved-rom-history.mjs?v=saved-1';
@@ -42,12 +43,12 @@ export function createRomViewer({setMode,onSoundChange=()=>{}}){
   <div id="romManualInputs" class="panel rom-inputs" hidden><h2>Service and manual controls</h2><div class="rom-buttons"><button id="romDoor" aria-pressed="false">Coin door · closed</button></div><section class="service-panel" aria-label="Coin-door service buttons"><div class="service-heading"><h3>Service buttons</h3><span>COIN DOOR PANEL</span></div><div class="service-assembly"><i class="service-screw screw-left" aria-hidden="true"></i><i class="service-screw screw-right" aria-hidden="true"></i><div class="service-legend" aria-hidden="true"><span>SERVICE<br>CREDITS</span><span class="service-volume">VOLUME</span><span>BEGIN<br>TEST</span></div><div class="service-switches">${[
     [33,'black','Service credits / Escape','7'],[34,'red','Volume down / Test minus','8'],[35,'red','Volume up / Test plus','9'],[26,'black','Begin test / Enter','0']
   ].map(([code,color,label,shortcut])=>`<button class="service-button service-${color}" data-rom-key="${code}" aria-label="${label} · ${shortcut}" title="${label} (keyboard ${shortcut})"><span class="service-hardware" aria-hidden="true"><span class="service-bezel"></span><span class="service-cap"></span></span></button>`).join('')}</div><div class="service-functions" aria-hidden="true"><span>ESCAPE</span><span>−</span><span>+</span><span>ENTER</span></div><div class="service-function-caption" aria-hidden="true"><span>TEST MODE FUNCTION</span></div></div></section><div class="rom-switch"><label>Switch number <input id="romSwitch" type="number" min="1" max="1023" value="13"></label><button id="romPulse">Pulse switch</button><button id="romHold" aria-pressed="false">Hold switch</button></div><p>Use the game’s service menus to test animations and sound. Switch numbers depend on the game. This is a ROM test bench; ball movement is controlled manually. Live PAC colorization is experimental until checked with your ROM/PAC pair.</p></div>
-  <div class="panel rom-history"><div class="rom-history-buttons"><button id="romPreviousAnimation" disabled>← Previous animation</button><select id="romAnimation" aria-label="Captured animation" disabled><option value="">Live game</option></select><button id="romNextAnimation" disabled>Next animation →</button><button id="romReplayAnimation" disabled>↶ Replay animation</button><button id="romLive" disabled>Return to live</button></div><p id="romHistoryInfo" role="status">Animations and matching sound are learned as you play and saved on this device.</p></div>
+  <div class="panel rom-history"><div class="rom-history-buttons"><button id="romPreviousAnimation" disabled>← Previous animation</button><select id="romAnimation" aria-label="Captured animation" disabled><option value="">Live game</option></select><button id="romNextAnimation" disabled>Next animation →</button><button id="romReplayAnimation" disabled>↶ Replay animation</button><button id="romLive" disabled>Return to live</button></div><div class="rom-export-buttons"><button id="romExportSelected" disabled>Export selected animation</button><button id="romExportAll" disabled>Export learned library</button></div><p id="romExportStatus" role="status" hidden></p><p id="romHistoryInfo" role="status">Animations and matching sound are learned as you play and saved on this device.</p></div>
   <div class="panel rom-controls"><button id="romPause" disabled>Ⅱ Pause</button><button id="romReset" disabled>↶ Reset ROM</button><button id="romStop" disabled>■ Stop</button><label><input id="romSound" type="checkbox" checked> Sound on</label><label>Volume <input id="romVolume" type="range" min="0" max="100" value="70" aria-label="ROM audio volume"></label><button id="romFullscreen">⛶ Fullscreen</button></div>
   <p id="romStatus" role="status" class="status">Select a game above to run its ROMs with color DMD and sound.</p><details class="panel rom-log"><summary>Emulator log</summary><pre id="romLog"></pre></details>`;
   let files=[],pac=null,colorizer=null,worker=null,active=false,running=false,busy=false,paused=false,raw=null,frameCount=0,tick=0,hold=null,door=false,generation=0;
   const audio=new RomAudio(),history=new SavedRomHistory(),pressed=new Set(),timers=new Set();
-  let replay=null,replayRequest=0,historyVersion='',machineState=null,sceneGroups=new Map();
+  let exporting=false,replay=null,replayRequest=0,historyVersion='',machineState=null,sceneGroups=new Map();
   const canvas=$('romDmd'),ctx=canvas.getContext('2d');
   function status(text,error=false){$('romStatus').textContent=text;$('romStatus').classList.toggle('error',error);}
   function appendLog(text){$('romLog').textContent=($('romLog').textContent+'\n'+text).slice(-20000);}
@@ -69,9 +70,26 @@ export function createRomViewer({setMode,onSoundChange=()=>{}}){
     const index=replay?clips.findIndex(c=>c.id===replay.clip.id):clips.length;
     $('romPreviousAnimation').disabled=!clips.length||index===0;
     $('romNextAnimation').disabled=!replay||index>=clips.length-1;
+    $('romExportSelected').disabled=exporting||!replay;$('romExportAll').disabled=exporting||!clips.length;
     $('romReplayAnimation').disabled=!replay;$('romLive').disabled=!replay;
     $('romHistoryInfo').textContent=replay?'Captured animation '+(index+1)+' / '+clips.length+' · all captured parts with original sound'+(replay.clip.truncated?' · beginning no longer buffered':'')+' · Return to live to capture more.':clips.length+' learned animation'+(clips.length===1?'':'s')+' · Saved on this device with matching sound. No recording time limit.'+(history.error?' · '+history.error:'');
   }
+  async function exportAnimations(all){
+    if(exporting)return;
+    const entries=all?[...history.clips]:history.clips.filter(c=>c.id===replay?.clip.id);if(!entries.length)return;
+    const session=generation,resume=running&&!paused&&!replay;
+    exporting=true;if(resume)pause(true);historyControls();
+    const progress=$('romExportStatus');progress.hidden=false;progress.classList.remove('error');progress.textContent='Preparing animation export…';
+    try{
+      const clips=(async function*(){for(const entry of entries){if(session!==generation)throw Error('Game changed during export. Please export again.');const clip=await history.clip(entry.id);if(!clip)throw Error('Could not load '+entry.label+' for export.');yield clip;}})();
+      const pack=await createAnimationPack({game:history.game,clips,onProgress:count=>{progress.textContent='Exporting '+count+' / '+entries.length+' animations…';}});
+      if(session!==generation)throw Error('Game changed during export. Please export again.');
+      const url=URL.createObjectURL(pack.blob),link=document.createElement('a');link.href=url;link.download=pack.filename;document.body.append(link);link.click();link.remove();const cleanup=setTimeout(()=>URL.revokeObjectURL(url),60000);cleanup.unref?.();
+      progress.textContent='Exported '+pack.manifest.animations.length+' animation'+(entries.length===1?'':'s')+' with DMD frames, sound, timing, and switch triggers. Send the ZIP back to add it to the built-in library.';
+    }catch(error){progress.textContent=error.message;progress.classList.add('error');}
+    finally{exporting=false;if(resume&&session===generation&&!replay)pause(false);historyControls();}
+  }
+  $('romExportSelected').onclick=()=>exportAnimations(false);$('romExportAll').onclick=()=>exportAnimations(true);
   function replayTime(){return Math.min(replay.clip.duration,replay.offset+(replay.playing?Math.max(0,performance.now()-replay.started):0));}
   function resumeReplay(){replay.started=performance.now()+30;replay.audioStart=(audio.context?.currentTime||0)+0.03;replay.audioIndex=0;replay.playing=true;}
   function pauseReplay(value){if(!replay)return;if(value){replay.offset=replayTime();replay.playing=false;audio.clear()}else {if(replay.offset>=replay.clip.duration)replay.offset=0;resumeReplay()}$('romState').textContent=value?'REPLAY PAUSED':'REPLAYING';controls();}

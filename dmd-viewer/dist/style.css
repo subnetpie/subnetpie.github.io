@@ -69,3 +69,5 @@ html{touch-action:manipulation}button,a,input,select,label,canvas{touch-action:m
 .included-library{display:block;padding:10px 14px}.included-library .included-picker{display:flex;flex-wrap:nowrap;gap:10px;min-width:0}.included-picker select{min-width:0;flex:1;max-width:340px}.included-library .included-status{flex:1 1 auto;min-width:0;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.included-picker .included-sound{flex-shrink:0}.simple-player .intro{display:none}@media(max-width:680px){.included-library{padding:8px 10px}.included-picker label[for=includedGame]{display:block}.included-picker .included-sound{font-size:11px}.included-library .included-status{max-width:28vw}}
 
 .simple-player #romStatus:not(.error){display:none}
+
+.rom-export-buttons{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;padding-top:12px;border-top:1px solid var(--edge)}.rom-export-buttons button{min-height:44px;font-size:11px}.rom-history #romExportStatus{font-size:12px;line-height:1.5;color:#b9d8cb}.rom-history #romExportStatus.error{color:#f7a6a6}@media(max-width:480px){.rom-export-buttons button{flex:1}}
