@@ -1,11 +1,13 @@
 import {parsePac} from '../dmd-viewer/dist/pac.mjs';
 import {LiveColorizer} from '../dmd-viewer/dist/live-colorizer.mjs';
 import {games,gameById,shared} from './games.mjs';
+import {bindSwitch,tapGuard} from './switch-input.mjs';
 
 const select=document.querySelector('#game'),status=document.querySelector('#status'),tables=document.querySelector('#tables'),service=document.querySelector('#serviceSwitches'),canvas=document.querySelector('#dmd'),ctx=canvas.getContext('2d');
 let worker,abort,generation=0,ready=false,paused=false,colorizer,audio,nextAudio=0,pendingFrame,lastPaint=0;
 function paint(now){if(pendingFrame&&now-lastPaint>=33){const frame=pendingFrame;pendingFrame=null;lastPaint=now;draw(frame);}requestAnimationFrame(paint);}requestAnimationFrame(paint);
-const held=new Map(),sources=new Set();
+const held=new Map(),sources=new Set(),taps=tapGuard();
+document.addEventListener('dblclick',event=>event.preventDefault());
 function message(text,error=false){status.textContent=text;status.hidden=!text;status.classList.toggle('error',error);}
 function send(data){worker?.postMessage(data);}
 function clearAudio(){for(const source of sources){try{source.stop()}catch{}}sources.clear();nextAudio=0;}
@@ -21,19 +23,14 @@ function sound({data,channels,rate}){
  sources.add(source);source.onended=()=>sources.delete(source);source.start(nextAudio);nextAudio+=buffer.duration;
 }
 function clearInputs(){for(const [number,item] of held){clearTimeout(item.timer);send({type:'input',number,pressed:false});}held.clear();}
-function press(number){if(!ready||paused)return;const previous=held.get(number);if(previous){clearTimeout(previous.timer);previous.timer=null;return;}held.set(number,{at:performance.now(),timer:null});send({type:'input',number,pressed:true});}
-function release(number){const item=held.get(number);if(!item)return;clearTimeout(item.timer);item.timer=setTimeout(()=>{if(held.get(number)!==item)return;held.delete(number);send({type:'input',number,pressed:false});},Math.max(0,120-(performance.now()-item.at)));}
+function press(number){if(!ready||paused||held.has(number)||!taps.accept(number))return false;held.set(number,{at:performance.now(),timer:null});send({type:'input',number,pressed:true});return true;}
+function release(number){const item=held.get(number);if(!item)return;taps.release(number);clearTimeout(item.timer);item.timer=setTimeout(()=>{if(held.get(number)!==item)return;held.delete(number);send({type:'input',number,pressed:false});},Math.max(0,120-(performance.now()-item.at)));}
 function switchButton(item,point){
  const button=document.createElement('button');button.type='button';button.dataset.switch=item.number;button.dataset.managed=String(!!item.managed);button.setAttribute('aria-pressed','false');button.title=`${item.code||item.number} · ${item.label}${item.managed?' (automatic)':''}`;button.setAttribute('aria-label',button.title);button.disabled=true;
  if(point){button.className='switch';button.style.left=point.x+'%';button.style.top=point.y+'%';button.textContent=item.number;
   if(/flipper/i.test(item.label)){button.classList.add('flipper');if(item.managed)button.classList.add('auto');const small=document.createElement('small');small.textContent=/left/i.test(item.label)?'LEFT':'RIGHT';button.append(small);}
  }else{button.textContent=`${item.code||item.number} · ${item.label}`;}
- button.addEventListener('pointerdown',event=>{if(event.button!==0)return;event.preventDefault();button.setPointerCapture?.(event.pointerId);press(item.number);});
- for(const event of ['pointerup','pointercancel','lostpointercapture'])button.addEventListener(event,()=>release(item.number));
- button.addEventListener('keydown',event=>{if([' ','Enter'].includes(event.key)){event.preventDefault();if(!event.repeat)press(item.number);}});
- button.addEventListener('keyup',event=>{if([' ','Enter'].includes(event.key)){event.preventDefault();release(item.number);}});
- button.addEventListener('blur',()=>release(item.number));
- button.addEventListener('click',event=>{if(event.detail===0&&!held.has(item.number)){press(item.number);release(item.number);}});
+ bindSwitch(button,{down:()=>press(item.number),up:()=>release(item.number)});
  return button;
 }
 function lamp(item,point){const el=document.createElement('span');el.className='lamp';el.dataset.lamp=item.number;el.style.left=point.x+'%';el.style.top=point.y+'%';el.title=`${item.number} · ${item.name}`;return el;}
@@ -53,8 +50,11 @@ function renderTable(game){
  const outside=document.createElement('div');outside.className='outside-lamps';
  for(const item of game.lamps.filter(l=>!l.unused&&!Number.isFinite(l.x))){const el=document.createElement('span');el.className='outside-lamp';el.dataset.lamp=item.number;const dot=document.createElement('i');el.append(dot,`${item.number} · ${item.name}`);outside.append(el);}
  if(outside.childElementCount)tables.lastElementChild.append(outside);
- for(let n=1;n<=8;n++){const button=switchButton(game.map.get(n));if([6,7].includes(n))button.classList.add('red');service.append(button);}
- const door=document.createElement('button');door.type='button';door.dataset.door='';door.disabled=true;door.textContent='22 · Coin door closed';door.setAttribute('aria-pressed','true');door.addEventListener('click',()=>{if(ready&&!paused)send({type:'door'});});service.append(door);
+ const diagram=document.createElement('div');diagram.className='service-diagram';diagram.setAttribute('role','group');diagram.setAttribute('aria-label','Coin-door switch diagram');
+ diagram.innerHTML='<svg preserveAspectRatio="none" viewBox="0 0 700 300" aria-hidden="true"><rect class="door-panel" x="2" y="2" width="696" height="296" rx="16"/><g class="screws"><circle cx="18" cy="18" r="4"/><circle cx="682" cy="18" r="4"/><circle cx="18" cy="282" r="4"/><circle cx="682" cy="282" r="4"/></g><text x="34" y="32">COIN CHUTES</text><rect class="service-bracket" x="24" y="162" width="534" height="116" rx="8"/><text x="40" y="184">SERVICE BUTTON ASSEMBLY</text><path class="interlock" d="M620 85v85m-16-74h32v28h-32z"/><text x="585" y="32">INTERLOCK</text></svg>';
+ const captions=['Left coin','Center coin','Right coin','4th coin','Service credits','Volume down','Volume up','Begin test'];
+ for(let n=1;n<=8;n++){const button=switchButton(game.map.get(n));button.className='service-contact '+(n<5?'coin-contact':[6,7].includes(n)?'red-contact':'black-contact');button.style.left=(5+((n-1)%4)*19)+'%';button.style.top=(n<5?18:65)+'%';button.replaceChildren();const cap=document.createElement('span');cap.className='contact-cap';cap.textContent='D'+n;const label=document.createElement('span');label.className='contact-label';label.textContent=captions[n-1];const second=document.createElement('small');second.textContent=n===5?'Escape':n===6?'Down':n===7?'Up':n===8?'Enter':'';label.append(second);button.append(cap,label);diagram.append(button);}
+ const door=document.createElement('button');door.type='button';door.className='door-contact';door.dataset.door='';door.disabled=true;door.textContent='22 · Coin door open';door.setAttribute('aria-pressed','false');door.addEventListener('click',event=>{if(ready&&!paused&&event.detail<2&&taps.accept('door'))send({type:'door'});});diagram.append(door);service.append(diagram);
 }
 function state(data){
  ready=data.ready;paused=data.paused;const active=new Set([...data.active,...data.held]),lamps=new Set(data.lamps);
@@ -67,7 +67,7 @@ function draw(frame){const rendered=colorizer.render(frame.data,frame.w,frame.h,
  for(let i=0;i<rendered.data.length;i++){const value=rendered.data[i],color=rendered.colors?.[value];ctx.fillStyle=color?`rgb(${color[0]},${color[1]},${color[2]})`:`rgb(${Math.round(value*255/(rendered.levels-1))},${Math.round(value*140/(rendered.levels-1))},0)`;ctx.beginPath();ctx.ellipse((i%frame.w+.5)*sx,(Math.floor(i/frame.w)+.5)*sy,sx*.42,sy*.42,0,0,Math.PI*2);ctx.fill();}
 }
 async function loadGame(id){
- const game=gameById(id)||games[0],token=++generation;clearInputs();worker?.terminate();worker=null;pendingFrame=null;abort?.abort();abort=new AbortController();clearAudio();ready=false;paused=false;select.value=game.id;renderTable(game);ctx.clearRect(0,0,canvas.width,canvas.height);message('Loading game…');
+ const game=gameById(id)||games[0],token=++generation;clearInputs();taps.clear();worker?.terminate();worker=null;pendingFrame=null;abort?.abort();abort=new AbortController();clearAudio();ready=false;paused=false;select.value=game.id;renderTable(game);ctx.clearRect(0,0,canvas.width,canvas.height);message('Loading game…');
  try{
   const options={signal:abort.signal};const [rom,pac]=await Promise.all([fetch(new URL('library/'+game.rom,shared),options),fetch(new URL('library/'+game.pac,shared),options)]);if(!rom.ok||!pac.ok)throw Error('Could not load the selected game.');
   const [bytes,pacBytes]=await Promise.all([rom.arrayBuffer(),pac.arrayBuffer()]);const parsed=await parsePac(new Uint8Array(pacBytes));if(token!==generation)return;colorizer=new LiveColorizer(parsed);
