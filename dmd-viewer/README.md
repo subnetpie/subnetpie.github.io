@@ -88,11 +88,11 @@ All four files match PinMAME's CRC32 and SHA-1 definitions: `t2_l8.rom`, `t2_u18
 
 The game selector starts the selected ROM automatically. Browser audio starts after the first interaction if autoplay audio is blocked. DMD frames and sound are played live; no recordings are captured, saved, or exported.
 
-## Popeye event simulator
+## Popeye table inputs
 
-Select Popeye, then use **Coin + start game** and **Launch ball** in **Popeye shot controls**. Named controls cover the inlanes, three bumpers, a bumper sequence, slingshots, wheel exit, and left/right drains. A six-ball trough and shooter-lane model responds to the ROM’s trough and launch coils. The game ROM selects its own animation, scoring, music, and effects; a shot can produce different results in different modes.
+Select Popeye, use **Coin + start game**, then **Launch ball**. The table diagram's numbered switches and the trigger recipes drive the original ROM's scoring, DMD, lamps, music and effects. The six-ball trough and shooter-lane model responds to the ROM's coils. No VPX table is required. There is no separate shot-controls panel.
 
-The event panel does not require a VPX table. It is an initial set of supported shots, not a complete table or an index of every animation. Switch and coil numbers come from PinMAME’s `src/wpc/sims/wpc/prelim/pop.c`. The Popeye input bridge uses direct WPC cabinet switches to avoid a second keyboard-driven ball simulator competing with the event model.
+Switch and coil numbers come from PinMAME's `src/wpc/sims/wpc/prelim/pop.c`. The Popeye input bridge uses direct WPC cabinet switches to keep the browser's ball model in control.
 
 ## Popeye switch matrix
 
@@ -124,3 +124,9 @@ Running a recipe observes its DMD event names and sound activity, then saves onl
 Open **Trigger recipes → Unique recipe events** to see the list or use **Download recipe list**. The initial metadata list is compiled by `node compile-recipe-events.mjs` using the real local emulator for both games, including repeated bumper/jet runs to check deduplication. No audio or pixel files are generated. New observations are kept as small JSON metadata in browser local storage; the retired media-recording database is still cleared.
 
 Sound activity is measured during the recipe and may include background music. It is not an extracted sound-command identifier or a guarantee that the same scene/sound will occur in another game state. Run a recipe with Sound on to hear the original ROM output live.
+
+## Terminator 2 table diagram
+
+Terminator 2 defaults to **Table diagram**, with the supplied Operations Manual's lamp-location illustration (printed p. 2-35) and switch positions aligned from p. 2-37. Amber highlights follow the ROM's 63 used lamp addresses; lamp 18 is unused. Special 2 (22) and Eyes Lower (51) illuminate their two printed bulbs together. Eyes Upper (52), marked "in head" by the manual, has a separate indicator.
+
+The table has 45 numbered switch locations. Fifteen other inputs appear beside it, covering cabinet switches and entries without a reliable printed location. Together these expose all 60 used T2 inputs; unused matrix positions have no table control. Trough, shooter, outhole and always-closed inputs stay automatic. Switches support pulse/hold, while the 11/12 flipper buttons hold for pointer or keyboard presses. The matrix and service views remain available. **Shot controls** has been removed from both games; trigger recipes remain available.

@@ -1,10 +1,10 @@
 import {joinAnimationParts} from './animation-groups.mjs';
-import {createRomViewer} from './rom-viewer.mjs?v=recipe-events-20261114g';
+import {createRomViewer} from './rom-viewer.mjs?v=t2-table-20261115a';
 import {parsePal,parseVni,parseDump,parseRaw} from './formats.mjs';
 import {parsePac} from './pac.mjs';
 import {extractDmdZip} from './zip.mjs';
 import {createPupViewer} from './pup-viewer.mjs';
-import {fetchIncludedRomGame,includedGames} from './library.mjs?v=recipe-events-20261114g';
+import {fetchIncludedRomGame,includedGames} from './library.mjs?v=t2-table-20261115a';
 import {parseFsq,parsePalMappings} from './fsq.mjs';
 let currentPal=null;
 let pendingPac=null;

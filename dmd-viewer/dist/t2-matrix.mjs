@@ -1,7 +1,7 @@
 // Transcribed from the owner's Terminator 2 switch-matrix chart.
 const columns=[
  ['Right flipper','Left flipper','Start button','Plumb bob tilt','Trough left','Trough center','Trough right','Outhole'],
- ['Slam tilt','Coin door closed','Ticket dispenser','Always closed','Left outlane','Left return lane','Right return lane','Right outlane'],
+ ['Slam tilt','Coin door closed','Token dispenser (optional)','Always closed','Left outlane','Left return lane','Right return lane','Right outlane'],
  ['Gun loaded','Gun mark','Gun home','Grip trigger','Not used','Mid left stand-up target','Mid center stand-up target','Mid right stand-up target'],
  ['Left jet','Right jet','Bottom jet','Left slingshot','Right slingshot','Top right stand-up target','Mid right stand-up target','Bottom right stand-up target'],
  ['Left lock','Not used','Low escape route','High escape route','Top lock','Top lane left','Top lane center','Top lane right'],

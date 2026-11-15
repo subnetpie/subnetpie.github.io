@@ -1,7 +1,8 @@
 import createRuntime from './emulator/dmd-runtime.mjs?v=lamps-t2-2';
 import {PopeyeMachine} from './popeye-events.mjs?v=flippers-1';
-import {T2MatrixInputs} from './t2-matrix.mjs?v=flippers-1';
+import {T2MatrixInputs} from './t2-matrix.mjs?v=t2-table-1';
 import {popeyeLamps} from './popeye-playfield.mjs?v=flippers-1';
+import {t2Lamps} from './t2-playfield.mjs';
 import {popeyeInitialNvram} from './popeye-initial-nvram.mjs';
 import {TriggerRunner} from './trigger-runner.mjs?v=recipe-events-1';
 let recipeRunner=null;
@@ -15,7 +16,7 @@ function poll(){
     machine??=gameName==='pop_lx5'?new PopeyeMachine({setSwitch:(n,v)=>core._viewer_switch(n,v)}):new T2MatrixInputs({setSwitch:(n,v)=>core._viewer_switch(n===11?112:n===12?114:n,v)});
     recipeRunner??=new TriggerRunner(machine,gameName,data=>postMessage({type:'recipe-status',...data}));
     if(!paused){simTime+=delta;machine.update(simTime,n=>core._viewer_solenoid(n));recipeRunner.tick(simTime);}
-    if(now-lastMatrixScan>=50){lastMatrixScan=now;const state=machine.snapshot(n=>core._viewer_get_switch(n));if(gameName==='pop_lx5')state.lamps=popeyeLamps.filter(l=>core._viewer_lamp(l.number)).map(l=>l.number);const json=JSON.stringify(state);if(json!==lastMachineState){lastMachineState=json;postMessage({type:'machine',...state});}}
+    if(now-lastMatrixScan>=50){lastMatrixScan=now;const state=machine.snapshot(n=>core._viewer_get_switch(n));state.lamps=(gameName==='pop_lx5'?popeyeLamps:t2Lamps).filter(l=>!l.unused&&core._viewer_lamp(l.number)).map(l=>l.number);const json=JSON.stringify(state);if(json!==lastMachineState){lastMachineState=json;postMessage({type:'machine',...state});}}
   }
   const size=core._viewer_frame(framePtr,metaPtr);
   if(size){const meta=Array.from(core.HEAP32.subarray(metaPtr/4,metaPtr/4+5)),pixels=meta[0]*meta[1],data=new Uint8Array(pixels);data.set(core.HEAPU8.subarray(framePtr,framePtr+pixels));const planes=[];for(let i=0;i<meta[3];i++){const plane=new Uint8Array(meta[4]);plane.set(core.HEAPU8.subarray(framePtr+pixels+i*meta[4],framePtr+pixels+(i+1)*meta[4]));planes.push(plane)}postMessage({type:'frame',w:meta[0],h:meta[1],depth:meta[2],data,planes},[data.buffer,...planes.map(p=>p.buffer)]);}
