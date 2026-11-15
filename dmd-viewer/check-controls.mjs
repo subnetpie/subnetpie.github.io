@@ -32,3 +32,5 @@ document.activeElement={tagName:'BODY'};key('Space');assert.equal($('playState')
 $('prevScene').click();assert.equal($('displayName').textContent,second);
 assert.match($('play').innerHTML,/<svg/);assert.notEqual($('first').innerHTML,$('prev').innerHTML);assert.notEqual($('next').innerHTML,$('play').innerHTML);
 console.log('Passed controls: next animation resets frame and changes scene; focused-button keyboard shortcuts; held Space; frame stepping; restart; distinct SVG icons.');
+
+$('scenes').children[0].click();assert.equal($('playState').textContent,'PLAYING','Selecting an animation should play every part from its beginning');assert.match($('frameInfo').textContent,/FRAME 001/);

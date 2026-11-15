@@ -1,10 +1,10 @@
 import {joinAnimationParts} from './animation-groups.mjs';
-import {createRomViewer} from './rom-viewer.mjs?v=popeye-builtin-20261114b';
+import {createRomViewer} from './rom-viewer.mjs?v=recordings-removed-20261114f';
 import {parsePal,parseVni,parseDump,parseRaw} from './formats.mjs';
 import {parsePac} from './pac.mjs';
 import {extractDmdZip} from './zip.mjs';
 import {createPupViewer} from './pup-viewer.mjs';
-import {fetchIncludedRomGame,includedGames} from './library.mjs?v=popeye-builtin-20261114b';
+import {fetchIncludedRomGame,includedGames} from './library.mjs?v=recordings-removed-20261114f';
 import {parseFsq,parsePalMappings} from './fsq.mjs';
 let currentPal=null;
 let pendingPac=null;

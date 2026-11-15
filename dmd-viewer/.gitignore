@@ -3,3 +3,6 @@ __pycache__/
 .openai/
 local-data/
 node_modules/
+
+# Retired recording payloads must not be republished.
+dist/library/learned/

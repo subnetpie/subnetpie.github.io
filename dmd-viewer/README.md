@@ -22,7 +22,7 @@ ZIP packages containing one matching PAL/FSQ or PAL/VNI pair can be opened direc
 
 ## Checks
 
-Requires Node.js 22 or newer. No npm dependencies are needed.
+Requires Node.js 22 or newer. Run `npm install` for the jsdom and fake-indexeddb test dependencies, then `npm test`.
 
 ```sh
 node check-formats.mjs
@@ -74,7 +74,6 @@ These archives are published unchanged, including their original license/readme 
 
 The six original sound ROMs are also available separately: [U2](dist/library/popsndl2.u2), [U3](dist/library/popsndl2.u3), [U4](dist/library/popsndl2.u4), [U5](dist/library/popsndl2.u5), [U6](dist/library/popsndl2.u6), [U7](dist/library/popsndl2.u7). Their CRC32 and SHA-1 values match the upstream Popeye L2 sound definitions.
 
-[The supplied WAV sound-effects archive](dist/library/popeye-sound-effects.zip) is uploaded unchanged as a separate asset. It is not required by ROM emulation.
 
 The complete ZIP passed every native ROM audit and a six-second compiled-WASM boot check: running state, 128Ã—32 DMD frames, and non-silent PCM audio. This was a Node-hosted WASM check; real-browser playback and PAC trigger synchronization are still unverified.
 
@@ -85,11 +84,9 @@ The owner-supplied L8 program ROM and three L3 sound ROMs are packaged in [t2_l8
 
 All four files match PinMAME's CRC32 and SHA-1 definitions: `t2_l8.rom`, `t2_u18.l3`, `t2_u15.l3`, and `t2_u14.l3`. The original program-only `t2_l8.zip`, including its license and revision notes, remains unchanged. Run `node check-t2-runtime.mjs` for the complete-set audit and compiled-WASM DMD/audio boot check. Browser audio playback and live PAC synchronization still require browser verification.
 
-## Stepping through animations with sound
+## Live emulator playback
 
-Run a game to capture its rendered color DMD and original ROM audio in memory. **Previous animation**, **Next animation**, and the **Captured animation** dropdown replay captured sections with their matching sound. **Replay animation** restarts the section; Pause/Resume works during replay. **Return to live** resumes the paused game and captures more animations. Recent history is limited to 60 seconds and 48 MB, split at observed colorization changes or eight seconds. Reset, Stop, and switching games clear it.
-
-This browses animations the game has actually displayed during this session. PAC files do not contain sound cues, so arbitrary PAC-only scenes cannot automatically trigger matching ROM audio.
+The game selector starts the selected ROM automatically. Browser audio starts after the first interaction if autoplay audio is blocked. DMD frames and sound are played live; no recordings are captured, saved, or exported.
 
 ## Popeye event simulator
 
@@ -108,3 +105,14 @@ Ramp entrance/completion, left/right loops, P-O-P-E-Y-E targets, and animal-targ
 Popeye now includes main and upper playfield illustrations extracted from the supplied Operators Handbook. Amber overlays follow the ROM’s 64 lamp outputs; 60 numbered touch locations activate the corresponding switches. Choose Pulse or Hold / release; use the zoom slider for dense areas. The three backbox lamps are listed separately because the handbook does not place them on the playfield illustration. Trough/shooter locations remain automatic. Lamp locations come from printed page 3, with switch positions aligned from printed page 5.
 
 Terminator 2 has its own 8×8 matrix and dedicated inputs. Targets 71–75 have the red bank outline from the supplied chart; unused positions are disabled. It uses direct switch inputs with a small three-ball trough, shooter, launch, and outhole model. Targets and other inputs activate their numbered switches directly. Gun positioning can be tested with the gun switches; full gun mechanics are not simulated.
+
+
+## Built-in live trigger recipes
+
+Choose a game, then use **Trigger recipes → Credits and start → Run recipe**. Wait for a ball, run **Ball launch**, and then choose a shot recipe. Popeye has ten recipes and Terminator 2 has eight. Attract runs while idle; reset the ROM first if a game is already in progress. A fresh Terminator 2 ROM may request its initial factory-reset restart on the DMD; use Reset ROM, wait for startup, then run Credits and start.
+
+Recipes are small built-in switch instructions and execute against the live emulator with its original DMD and audio. Selecting a recipe does not load a recorded clip. Results depend on the current ROM state. Switch sequences run on emulator time. Cancel, pause, reset, stop, changing games, and manual input cancel the active recipe and release its held inputs. Automatic ball return after an already-triggered drain continues normally.
+
+`node check-trigger-recipes.mjs` checks scheduling, prerequisites, cancellation, timeout and ball handling. `node check-trigger-player.mjs` checks UI wiring and lifecycle. `node check-trigger-worker.mjs` runs real WASM start/serve/launch/shot recipes for both games.
+
+The app includes recipes only; pre-recorded frame/audio catalogs and baked-in recordings are not shipped or fetched. The retired recording database is deleted automatically when the updated viewer opens. If another old viewer tab keeps it open, close that tab to let deletion finish. The emulator and selected game ROM/PAC assets are still required.

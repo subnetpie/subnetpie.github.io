@@ -31,3 +31,5 @@ machine.pulse(35);machine.update(3210,()=>0);machine.update(3400,()=>0);assert.e
 machine.releaseHeld();assert.equal(switches.get(35),0);assert.equal(machine.snapshot().held.length,0);
 machine.trigger(112,true);machine.reset();assert.equal(switches.get(112),0);assert.equal(switches.get(24),1);
 console.log('Matrix passed: all 80 chart entries, switch numbering, optos, managed inputs, pulse/hold, overlapping input release, and reset.');
+
+for(const n of [112,114,116,118]){machine.setHeld(n,true);machine.setHeld(n,true);assert.equal(switches.get(n),1);machine.setHeld(n,false);assert.equal(switches.get(n),0);}assert.throws(()=>machine.setHeld(111,true),/manually/);

@@ -1,9 +1,8 @@
-import {createAnimationPack} from './animation-export.mjs?v=export-1';
 import {parsePac} from './pac.mjs';
 import {LiveColorizer} from './live-colorizer.mjs';
-import {SavedRomHistory} from './saved-rom-history.mjs?v=builtin-2';
-import {animationGroups} from './animation-groups.mjs';
+import {deleteStoredRecordings} from './recording-cleanup.mjs';
 import {popeyeEvents} from './popeye-events.mjs?v=flippers-1';
+import {recipesForGame} from './trigger-recipes.mjs';
 import {popeyeSwitchByNumber,popeyeColumnColors} from './popeye-matrix.mjs';
 import {t2SwitchByNumber} from './t2-matrix.mjs';
 import {popeyeLamps,popeyeHotspots} from './popeye-playfield.mjs?v=flippers-1';
@@ -37,18 +36,18 @@ export function createRomViewer({setMode,onSoundChange=()=>{}}){
   <div class="panel rom-selection"><label>ROM set <select id="romGame"><option value="">Choose ROM + PAC files first</option></select></label><span id="romPair">No ROM/PAC pair loaded</span><button id="romStart" class="primary" disabled>Start ROM</button></div>
   <div class="panel display-panel"><div class="display-top"><span id="romTitle">Choose a game above</span><span id="romSourceBadge" class="badge">LIVE COLOR + SOUND</span></div><div class="screen-wrap" id="romScreen"><canvas id="romDmd" width="1024" height="256" aria-label="Live ROM dot matrix display"></canvas><div class="screen-label"><span id="romDimensions">128 × 32</span><span>LIVE DMD</span></div></div><div class="display-bottom"><span id="romState">STOPPED</span><span id="romMatch">Live color DMD</span></div></div>
   <section class="panel rom-input-picker"><div class="rom-input-start"><button id="romCoinStart" disabled>Coin + start game</button><button id="romQuickLaunch" disabled>Launch ball</button><div id="romStartKeys"><button data-rom-key="31">Coin · 5</button><button data-rom-key="27">Start · 1</button></div></div><p id="romBallState" role="status">Choose a game to enable input controls.</p><div class="rom-input-views" role="group" aria-label="Input controls"><button data-input-view="table" aria-controls="romPlayfield" aria-pressed="true">Table diagram</button><button data-input-view="matrix" aria-controls="romMatrix" aria-pressed="false">Switch matrix</button><button data-input-view="shots" aria-controls="romEvents" aria-pressed="false">Shot controls</button><button data-input-view="service" aria-controls="romManualInputs" aria-pressed="false">Service buttons</button></div></section>
+  <section id="romRecipes" class="panel rom-events"><div class="panel-heading"><h2>Trigger recipes</h2></div><div class="rom-event-buttons"><select id="romRecipe" aria-label="Trigger recipe" disabled></select><button id="romRunRecipe" disabled>Run recipe</button><button id="romCancelRecipe" disabled>Cancel recipe</button></div><p id="romRecipeHint">Start a game to run its built-in switch sequences.</p><p id="romRecipeStatus" role="status">Recipes use the live emulator’s DMD and sound.</p></section>
   <section id="romEvents" class="panel rom-events" hidden><div class="panel-heading"><h2>Popeye shot controls</h2></div><div class="rom-event-buttons">${popeyeEvents.map(event=>`<button data-popeye-event="${event.id}" disabled>${event.label}</button>`).join('')}</div><p>Press Coin + start game, wait for a ball, then Launch ball. Choose shots to let the game produce its own color DMD and sound. Results depend on the current game mode.</p></section>
   <section id="romPlayfield" class="panel rom-playfield" hidden><div class="matrix-heading"><div><h2>Popeye playfield</h2><p>Touch a numbered switch to trigger the ROM. Amber lamps follow the game.</p></div><div class="playfield-options"><label>Touch <select id="romPlayfieldMode"><option value="pulse">Pulse</option><option value="hold">Hold / release</option></select></label><button id="romPlayfieldRelease" disabled>Release held</button><label>Zoom <input id="romPlayfieldZoom" type="range" min="100" max="250" step="25" value="100"><output id="romPlayfieldZoomValue">100%</output></label><label><input id="romShowSwitches" type="checkbox" checked> Switch markers</label></div></div><div class="playfield-boards"><div><h3>Main playfield</h3>${board('main')}</div><div><h3>Upper playfield</h3>${board('upper')}<div class="playfield-backbox">${popeyeLamps.filter(l=>l.area==='backbox').map(l=>`<span class="backbox-lamp" data-lamp="${l.number}"><i></i>${l.number} ${l.name}</span>`).join('')}</div><div id="romPlayfieldStatus" class="playfield-status" role="status">Start Popeye to illuminate lamps and enable touch controls.</div><p class="matrix-hint">Uses the matrix’s Pulse / Hold mode. Zoom in for closely spaced switches. Hold the blue F2/F4 buttons for the lower flippers and F6/F8 for the upper flippers. EOS indicators and ball handling are automatic.</p><p class="playfield-source">Operators Handbook: lamp locations p. 3; switch locations p. 5.</p></div></div></section>
   <section id="romMatrix" class="panel rom-matrix" hidden><div class="matrix-heading"><div><h2 id="romMatrixTitle">Popeye switch matrix</h2><p>Choose a switch to trigger the game’s DMD and sound.</p></div><div class="matrix-actions"><label>Input <select id="romMatrixMode"><option value="pulse">Pulse</option><option value="hold">Hold / release</option></select></label><button id="romMatrixRelease" disabled>Release held switches</button></div></div><div class="matrix-key"><span><i class="matrix-key-opto"></i> Opto, typically closed</span><span><i class="matrix-key-active"></i> Active input</span><span>AUTO · ball simulator / flipper EOS</span></div><div class="matrix-scroll" tabindex="0" role="region" aria-label="Popeye switch matrix; scroll horizontally for all columns"><table class="popeye-matrix"><caption>Columns across, rows down. Switch number = column × 10 + row.</caption><thead><tr><th scope="col">Dedicated<br>grounded</th><th scope="col">Row</th>${popeyeColumnColors.map((color,i)=>`<th scope="col"><strong>${i+1}</strong><span>${color}</span></th>`).join('')}<th id="romMatrixFlipperHeader" scope="col">Flipper<br>grounded</th></tr></thead><tbody id="romMatrixRows">${matrixRows()}</tbody></table></div><p id="romMatrixHint" class="matrix-hint">Pulse briefly activates a switch. Hold / release toggles it until released. Trough, shooter, and end-of-stroke inputs are automatic; switch 24 stays closed. Pause or leaving the player releases held inputs.</p></section>
   <div id="romManualInputs" class="panel rom-inputs" hidden><h2>Service and manual controls</h2><div class="rom-buttons"><button id="romDoor" aria-pressed="false">Coin door · closed</button></div><section class="service-panel" aria-label="Coin-door service buttons"><div class="service-heading"><h3>Service buttons</h3><span>COIN DOOR PANEL</span></div><div class="service-assembly"><i class="service-screw screw-left" aria-hidden="true"></i><i class="service-screw screw-right" aria-hidden="true"></i><div class="service-legend" aria-hidden="true"><span>SERVICE<br>CREDITS</span><span class="service-volume">VOLUME</span><span>BEGIN<br>TEST</span></div><div class="service-switches">${[
     [33,'black','Service credits / Escape','7'],[34,'red','Volume down / Test minus','8'],[35,'red','Volume up / Test plus','9'],[26,'black','Begin test / Enter','0']
   ].map(([code,color,label,shortcut])=>`<button class="service-button service-${color}" data-rom-key="${code}" aria-label="${label} · ${shortcut}" title="${label} (keyboard ${shortcut})"><span class="service-hardware" aria-hidden="true"><span class="service-bezel"></span><span class="service-cap"></span></span></button>`).join('')}</div><div class="service-functions" aria-hidden="true"><span>ESCAPE</span><span>−</span><span>+</span><span>ENTER</span></div><div class="service-function-caption" aria-hidden="true"><span>TEST MODE FUNCTION</span></div></div></section><div class="rom-switch"><label>Switch number <input id="romSwitch" type="number" min="1" max="1023" value="13"></label><button id="romPulse">Pulse switch</button><button id="romHold" aria-pressed="false">Hold switch</button></div><p>Use the game’s service menus to test animations and sound. Switch numbers depend on the game. This is a ROM test bench; ball movement is controlled manually. Live PAC colorization is experimental until checked with your ROM/PAC pair.</p></div>
-  <div class="panel rom-history"><div class="rom-history-buttons"><button id="romPreviousAnimation" disabled>← Previous animation</button><select id="romAnimation" aria-label="Captured animation" disabled><option value="">Live game</option></select><button id="romNextAnimation" disabled>Next animation →</button><button id="romReplayAnimation" disabled>↶ Replay animation</button><button id="romLive" disabled>Return to live</button></div><div class="rom-export-buttons"><button id="romExportSelected" disabled>Export selected animation</button><button id="romExportAll" disabled>Export learned library</button></div><p id="romExportStatus" role="status" hidden></p><p id="romHistoryInfo" role="status">Animations and matching sound are learned as you play and saved on this device.</p></div>
   <div class="panel rom-controls"><button id="romPause" disabled>Ⅱ Pause</button><button id="romReset" disabled>↶ Reset ROM</button><button id="romStop" disabled>■ Stop</button><label><input id="romSound" type="checkbox" checked> Sound on</label><label>Volume <input id="romVolume" type="range" min="0" max="100" value="70" aria-label="ROM audio volume"></label><button id="romFullscreen">⛶ Fullscreen</button></div>
   <p id="romStatus" role="status" class="status">Select a game above to run its ROMs with color DMD and sound.</p><details class="panel rom-log"><summary>Emulator log</summary><pre id="romLog"></pre></details>`;
   let files=[],pac=null,colorizer=null,worker=null,active=false,running=false,busy=false,paused=false,raw=null,frameCount=0,tick=0,hold=null,door=false,generation=0;
-  const audio=new RomAudio(),history=new SavedRomHistory(),pressed=new Set(),timers=new Set();
-  let exporting=false,replay=null,replayRequest=0,historyVersion='',machineState=null,sceneGroups=new Map();
+  const audio=new RomAudio(),pressed=new Set(),timers=new Set();
+  let machineState=null,recipeRunning=false,recipeGame='';
   const canvas=$('romDmd'),ctx=canvas.getContext('2d');
   function pinDmd(){
     document.body?.classList.toggle('rom-dmd-pinned',active);
@@ -61,93 +60,30 @@ export function createRomViewer({setMode,onSoundChange=()=>{}}){
   function status(text,error=false){$('romStatus').textContent=text;$('romStatus').classList.toggle('error',error);}
   function appendLog(text){$('romLog').textContent=($('romLog').textContent+'\n'+text).slice(-20000);}
   function send(data){worker?.postMessage(data)}
-  function controls(){eventControls();historyControls();$('romSourceBadge').textContent=replay?'CAPTURED COLOR + SOUND':'LIVE COLOR + SOUND';for(const id of ['romPause','romReset','romStop','romPulse','romHold','romDoor'])$(id).disabled=id==='romStop'?!(running||busy):id==='romPause'?!(running||replay):!running;panel.querySelectorAll('[data-rom-key]').forEach(b=>b.disabled=!running||!!replay);$('romStart').disabled=busy||running||!pac||!files.length||!globalThis.crossOriginIsolated;$('romGame').disabled=busy||running;$('romOpen').disabled=busy||running;$('romIsolation').hidden=!!globalThis.crossOriginIsolated;$('romPause').textContent=(replay?!replay.playing:paused)?'▶ Resume':'Ⅱ Pause';}
-  function release(){for(const code of pressed)send({type:'key',code,state:0});pressed.clear();if(hold!==null)send({type:'switch',number:hold,state:0});hold=null;$('romHold').setAttribute('aria-pressed','false');}
-  function stop(){pressedFlippers.clear();machineState=null;replay=null;history.clear();historyVersion='';generation++;release();for(const timer of timers)clearTimeout(timer);timers.clear();send({type:'stop'});worker?.terminate();worker=null;audio.clear();running=false;busy=false;paused=false;door=false;$('romDoor').setAttribute('aria-pressed','false');$('romDoor').textContent='Coin door · closed';$('romState').textContent='STOPPED';controls();}
-  function pause(value){if(value)pressedFlippers.clear();if(replay){pauseReplay(value);return}if(!running)return;release();paused=value;send({type:'pause',paused});audio.clear();$('romState').textContent=paused?'PAUSED':'RUNNING';controls();}
+  function controls(){eventControls();$('romSourceBadge').textContent='LIVE COLOR + SOUND';for(const id of ['romPause','romReset','romStop','romPulse','romHold','romDoor'])$(id).disabled=id==='romStop'?!(running||busy):id==='romPause'?!running:!running;panel.querySelectorAll('[data-rom-key]').forEach(b=>b.disabled=!running);$('romStart').disabled=busy||running||!pac||!files.length||!globalThis.crossOriginIsolated;$('romGame').disabled=busy||running;$('romOpen').disabled=busy||running;$('romIsolation').hidden=!!globalThis.crossOriginIsolated;$('romPause').textContent=paused?'▶ Resume':'Ⅱ Pause';}
+  function release(){if(recipeRunning){send({type:'cancel-recipe'});recipeRunning=false;$('romRecipeStatus').textContent='Recipe cancelled.';}for(const code of pressed)send({type:'key',code,state:0});pressed.clear();if(hold!==null)send({type:'switch',number:hold,state:0});hold=null;$('romHold').setAttribute('aria-pressed','false');}
+  function stop(){pressedFlippers.clear();machineState=null;generation++;release();for(const timer of timers)clearTimeout(timer);timers.clear();send({type:'stop'});worker?.terminate();worker=null;audio.clear();running=false;busy=false;paused=false;door=false;$('romDoor').setAttribute('aria-pressed','false');$('romDoor').textContent='Coin door · closed';$('romState').textContent='STOPPED';controls();}
+  function pause(value){if(value)pressedFlippers.clear();if(!running)return;release();paused=value;send({type:'pause',paused});audio.clear();$('romState').textContent=paused?'PAUSED':'RUNNING';controls();}
   function drawFrame(f){
     const {w,h}=f;
     if(canvas.width!==w*8||canvas.height!==h*8){canvas.width=w*8;canvas.height=h*8;}
     ctx.fillStyle='#080b0c';ctx.fillRect(0,0,canvas.width,canvas.height);
     for(let i=0;i<f.data.length;i++){const value=f.data[i],c=f.colors?.[value]||[Math.round(255*value/(f.levels-1)),Math.round(135*value/(f.levels-1)),Math.round(36*value/(f.levels-1))];ctx.fillStyle='rgb('+c.join(',')+')';ctx.beginPath();ctx.arc((i%w)*8+4,Math.floor(i/w)*8+4,3,0,Math.PI*2);ctx.fill();}
   }
-  function historyControls(){
-    const clips=history.clips,version=clips.map(c=>c.id+':'+!!c.truncated).join(',');
-    if(version!==historyVersion){$('romAnimation').replaceChildren(new Option('Live game',''),...clips.map((c,i)=>new Option((i+1)+'. '+c.label+(c.builtIn?' · built-in':'')+(c.truncated?' (partial capture)':''),String(c.id))));historyVersion=version;}
-    $('romAnimation').value=replay?String(replay.clip.id):'';$('romAnimation').disabled=!clips.length;
-    const index=replay?clips.findIndex(c=>c.id===replay.clip.id):clips.length;
-    $('romPreviousAnimation').disabled=!clips.length||index===0;
-    $('romNextAnimation').disabled=!replay||index>=clips.length-1;
-    $('romExportSelected').disabled=exporting||!replay;$('romExportAll').disabled=exporting||!clips.some(c=>!c.builtIn);
-    $('romReplayAnimation').disabled=!replay;$('romLive').disabled=!replay;
-    $('romHistoryInfo').textContent=replay?'Captured animation '+(index+1)+' / '+clips.length+' · all captured parts with original sound'+(replay.clip.truncated?' · beginning no longer buffered':'')+' · Return to live to capture more.':clips.filter(c=>c.builtIn).length+' built-in · '+clips.filter(c=>!c.builtIn).length+' learned animations · Saved on this device with matching sound. No recording time limit.'+(history.error?' · '+history.error:'');
-  }
-  async function exportAnimations(all){
-    if(exporting)return;
-    const entries=all?history.clips.filter(c=>!c.builtIn):history.clips.filter(c=>c.id===replay?.clip.id);if(!entries.length)return;
-    const session=generation,resume=running&&!paused&&!replay;
-    exporting=true;if(resume)pause(true);historyControls();
-    const progress=$('romExportStatus');progress.hidden=false;progress.classList.remove('error');progress.textContent='Preparing animation export…';
-    try{
-      const clips=(async function*(){for(const entry of entries){if(session!==generation)throw Error('Game changed during export. Please export again.');const clip=await history.clip(entry.id);if(!clip)throw Error('Could not load '+entry.label+' for export.');yield clip;}})();
-      const pack=await createAnimationPack({game:history.game,clips,onProgress:count=>{progress.textContent='Exporting '+count+' / '+entries.length+' animations…';}});
-      if(session!==generation)throw Error('Game changed during export. Please export again.');
-      const url=URL.createObjectURL(pack.blob),link=document.createElement('a');link.href=url;link.download=pack.filename;document.body.append(link);link.click();link.remove();const cleanup=setTimeout(()=>URL.revokeObjectURL(url),60000);cleanup.unref?.();
-      progress.textContent='Exported '+pack.manifest.animations.length+' animation'+(entries.length===1?'':'s')+' with DMD frames, sound, timing, and switch triggers. Send the ZIP back to add it to the built-in library.';
-    }catch(error){progress.textContent=error.message;progress.classList.add('error');}
-    finally{exporting=false;if(resume&&session===generation&&!replay)pause(false);historyControls();}
-  }
-  $('romExportSelected').onclick=()=>exportAnimations(false);$('romExportAll').onclick=()=>exportAnimations(true);
-  function replayTime(){return Math.min(replay.clip.duration,replay.offset+(replay.playing?Math.max(0,performance.now()-replay.started):0));}
-  function resumeReplay(){replay.started=performance.now()+30;replay.audioStart=(audio.context?.currentTime||0)+0.03;replay.audioIndex=0;replay.playing=true;}
-  function pauseReplay(value){if(!replay)return;if(value){replay.offset=replayTime();replay.playing=false;audio.clear()}else {if(replay.offset>=replay.clip.duration)replay.offset=0;resumeReplay()}$('romState').textContent=value?'REPLAY PAUSED':'REPLAYING';controls();}
-  async function playClip(id){
-    const session=generation,request=++replayRequest;if(!id)return;
-    try{
-      if(!audio.muted)await audio.unlock();
-      if(session!==generation||request!==replayRequest)return;
-      if(!replay&&running)pause(true);else audio.clear();
-      const clip=await history.clip(String(id));
-      if(!clip||session!==generation||request!==replayRequest)return;
-      replay={clip,offset:0,playing:false};resumeReplay();drawFrame(clip.frames[0]);$('romState').textContent='REPLAYING';$('romMatch').textContent=clip.label+' · saved color DMD + sound';controls();
-    }catch(error){status('Could not load saved animation: '+error.message,true);}
-  }
-  async function returnLive(){
-    try{if(!audio.muted)await audio.unlock();}catch(error){status(error.message,true);return;}
-    replayRequest++;replay=null;audio.clear();pause(false);if(!running){$('romState').textContent='STOPPED';controls();}status(running?'Live game resumed. Animations and sound are being learned and saved.':'Saved animation closed. Select a game to resume learning.');
-  }
-  $('romPreviousAnimation').onclick=()=>{const clips=history.clips,index=replay?clips.findIndex(c=>c.id===replay.clip.id):clips.length;return playClip(clips[index-1]?.id)};
-  $('romNextAnimation').onclick=()=>{const clips=history.clips,index=clips.findIndex(c=>c.id===replay?.clip.id);return playClip(clips[index+1]?.id)};
-  $('romReplayAnimation').onclick=()=>playClip(replay?.clip.id);
-  $('romAnimation').onchange=()=>{$('romAnimation').value?playClip($('romAnimation').value):returnLive()};
-  $('romLive').onclick=returnLive;
   function render(){
     if(!raw)return;
     const f={...colorizer.render(raw.data,raw.w,raw.h,raw.depth,tick,raw.planes),w:raw.w,h:raw.h};drawFrame(f);
-    const scene=colorizer.active?.scene,group=sceneGroups.get(scene),key=scene?(group?.key||scene.name||String(scene.offset)):null;
-    history.recordFrame(tick,f,key,group?.label||scene?.name||'Game display');historyControls();
     $('romMatch').textContent=colorizer.matches+' triggers · '+colorizer.lastMatch;
   }
-  function renderReplay(){
-    const t=replayTime(),clip=replay.clip,absolute=clip.start+t;
-    let frame=clip.frames[0];for(const f of clip.frames){if(f.time>absolute)break;frame=f}drawFrame(frame);
-    if(!replay.playing)return;
-    while(replay.audioIndex<clip.audio.length&&clip.audio[replay.audioIndex].start-clip.start<=t+100){
-      const packet=clip.audio[replay.audioIndex++],offset=Math.max(0,replay.offset-(packet.start-clip.start));
-      const first=Math.ceil(offset*packet.rate/1000)*packet.channels;
-      if(first<packet.data.length)audio.play({...packet,data:packet.data.subarray(first)},replay.audioStart+Math.max(0,packet.start-clip.start-replay.offset)/1000);
-    }
-    if(t>=clip.duration){replay.offset=clip.duration;replay.playing=false;audio.clear();$('romState').textContent='REPLAY FINISHED';controls();}
-  }
   let lastTime=0;
-  function loop(time){const delta=lastTime?Math.min(100,time-lastTime):0;lastTime=time;if(replay)renderReplay();else if(running&&!paused){tick+=delta;if(raw)render();}requestAnimationFrame(loop)}requestAnimationFrame(loop);
+  function loop(time){const delta=lastTime?Math.min(100,time-lastTime):0;lastTime=time;if(running&&!paused){tick+=delta;if(raw)render();}requestAnimationFrame(loop)}requestAnimationFrame(loop);
   async function accept(incoming){
     const selected=Array.from(incoming),roms=selected.filter(f=>/\.zip$/i.test(f.name)),pacs=selected.filter(f=>/\.pac$/i.test(f.name));
     if(!roms.length||pacs.length!==1){status('Choose at least one ROM ZIP and exactly one matching PAC together.',true);return false;}
     if(selected.some(f=>f.size>64*1024*1024)||roms.reduce((n,f)=>n+f.size,0)>128*1024*1024){status('ROM selection exceeds the 128 MB session limit (64 MB per ZIP).',true);return false;}
     stop();const session=generation;setMode();busy=true;controls();status('Decoding PAC and preparing the ROM pair…');
     try{const decoded=await parsePac(new Uint8Array(await pacs[0].arrayBuffer()),$('pacKey')?.value||'');if(session!==generation)return false;if(!decoded.mappings?.length)throw Error('This PAC contains no live frame mappings.');
-      files=roms;pac=pacs[0];colorizer=new LiveColorizer(decoded);await history.open(roms[0].name.toLowerCase()+':'+pacs[0].name.toLowerCase());if(session!==generation)return false;sceneGroups=animationGroups(decoded.scenes);$('romGame').replaceChildren(...files.map(f=>new Option(f.name.replace(/\.zip$/i,''),f.name.replace(/\.zip$/i,'').toLowerCase())));$('romPair').textContent=pac.name+' · '+decoded.mappings.length+' mappings';status('ROM/PAC pair ready. Select the game ROM set, then Start ROM.');return true;
+      files=roms;pac=pacs[0];colorizer=new LiveColorizer(decoded);$('romGame').replaceChildren(...files.map(f=>new Option(f.name.replace(/\.zip$/i,''),f.name.replace(/\.zip$/i,'').toLowerCase())));$('romPair').textContent=pac.name+' · '+decoded.mappings.length+' mappings';status('ROM/PAC pair ready. Select the game ROM set, then Start ROM.');return true;
     }catch(error){files=[];pac=null;colorizer=null;status(error.message,true);return false;}finally{busy=false;controls();}
   }
   async function start({background=false}={}){
@@ -157,14 +93,15 @@ export function createRomViewer({setMode,onSoundChange=()=>{}}){
     try{
       if(!background&&!audio.muted)await audio.unlock();
       const payload=await Promise.all(files.map(async file=>({name:file.name,bytes:await file.arrayBuffer()})));
-      if(session!==generation)return;worker=new Worker(new URL('./rom-worker.mjs?v=flippers-views-1',import.meta.url),{type:'module'});const currentWorker=worker;
+      if(session!==generation)return;worker=new Worker(new URL('./rom-worker.mjs?v=recipes-1',import.meta.url),{type:'module'});const currentWorker=worker;
       worker.onerror=e=>{if(worker!==currentWorker)return;appendLog(e.message);stop();status('Emulator error: '+e.message,true)};
       worker.onmessage=({data})=>{if(worker!==currentWorker)return;
         if(data.type==='started'){busy=false;running=true;paused=false;$('romTitle').textContent=data.info.split('\n')[0];$('romState').textContent='RUNNING';controls();if(!active)pause(true);status('ROM running. Use game controls or the service menus to test DMD animations and sound.');}
-        if(data.type==='machine'){machineState=data;history.recordTriggers((data.active||[]).filter(n=>!currentMatrix.get(n)?.managed));eventControls();}
+        if(data.type==='machine'){machineState=data;eventControls();}
         if(data.type==='event-status')status(data.text,!!data.error);
+        if(data.type==='recipe-status'){recipeRunning=data.phase==='running';$('romRecipeStatus').textContent=data.text;$('romRecipeStatus').classList.toggle('error',data.phase==='error');eventControls();}
         if(data.type==='frame'){raw=data;frameCount++;$('romDimensions').textContent=data.w+' × '+data.h;}
-        if(data.type==='audio'&&!paused&&!replay){history.recordAudio(tick,data);audio.play(data);}
+        if(data.type==='audio'&&!paused){audio.play(data);}
         if(data.type==='log')appendLog(data.text);
         if(data.type==='error'){appendLog(data.message);stop();status(data.message,true);}
         if(data.type==='stopped'){stop();status('ROM stopped. Check the emulator log if it stopped during startup.');}
@@ -197,7 +134,11 @@ export function createRomViewer({setMode,onSoundChange=()=>{}}){
   $('romPlayfieldRelease').onclick=()=>send({type:'matrix',release:true});
   $('romShowSwitches').onchange=()=>$('romPlayfield').classList.toggle('hide-switches',!$('romShowSwitches').checked);
   function eventControls(){
-    const game=$('romGame').value,popeye=game==='pop_lx5',t2=game==='t2_l8',enabled=(popeye||t2)&&running&&!paused&&!replay;
+    const game=$('romGame').value,popeye=game==='pop_lx5',t2=game==='t2_l8',enabled=(popeye||t2)&&running&&!paused;
+    const recipes=recipesForGame(game);$('romRecipes').hidden=!recipes.length;
+    if(recipeGame!==game){recipeGame=game;$('romRecipe').replaceChildren(...recipes.map(r=>new Option(r.label,r.id)));$('romRecipeStatus').textContent='Recipes use the live emulator’s DMD and sound.';}
+    $('romRecipe').disabled=!enabled||recipeRunning;$('romRunRecipe').disabled=!enabled||!machineState||recipeRunning;$('romCancelRecipe').disabled=!recipeRunning;
+    recipeHint();
     if((popeye||t2)&&game!==matrixGame){matrixGame=game;currentMatrix=popeye?popeyeSwitchByNumber:t2SwitchByNumber;$('romMatrixRows').innerHTML=matrixRows();$('romMatrixTitle').textContent=popeye?'Popeye switch matrix':'Terminator 2 switch matrix';$('romMatrixFlipperHeader').hidden=t2;$('romMatrixHint').textContent=popeye?'Pulse activates a switch; Hold / release toggles it. Ball-handling switches and flipper EOS are automatic.':'Pulse activates a switch; Hold / release toggles it. Red outlines mark targets 71–75. Unused positions are disabled; trough and shooter follow the ball simulator.';bindMatrixButtons();}
     if(game!==inputGame){inputGame=game;inputView=popeye?'table':t2?'matrix':'service';}
     $('romEvents').hidden=!(popeye&&inputView==='shots');$('romPlayfield').hidden=!(popeye&&inputView==='table');$('romMatrix').hidden=!((popeye||t2)&&inputView==='matrix');$('romManualInputs').hidden=inputView!=='service';
@@ -211,13 +152,17 @@ export function createRomViewer({setMode,onSoundChange=()=>{}}){
     else $('romBallState').textContent='Start the selected game to enable input controls.';
     panel.querySelectorAll('[data-popeye-event]').forEach(button=>{button.disabled=!enabled||!machineState||machineState.busy||(button.dataset.popeyeEvent==='launch'?!machineState.shooter:!machineState.playfield);});
   }
-  panel.querySelectorAll('[data-popeye-event]').forEach(button=>{button.onclick=()=>{if(running&&!paused&&!replay)send({type:'event',id:button.dataset.popeyeEvent});};});
+  function recipeHint(){const recipe=recipesForGame($('romGame').value).find(r=>r.id===$('romRecipe').value);$('romRecipeHint').textContent=recipe?(recipe.id.endsWith('light-start')?'Begin with Credits and start, wait for the ball, then run Ball launch.':recipe.id.endsWith('light-attract')?'Run while idle. Reset the ROM first if a game is in progress.':recipe.id.endsWith('light-launch')?'Wait for a ball in the shooter lane.':'Run after starting a game and launching a ball.')+' Results depend on the current game mode.':'Start a game to run its built-in switch sequences.';}
+  $('romRecipe').onchange=recipeHint;
+  $('romRunRecipe').onclick=async()=>{try{if($('romRunRecipe').disabled)return;if(!audio.muted)await audio.unlock();if(!running||paused||recipeRunning)return;recipeRunning=true;send({type:'recipe',id:$('romRecipe').value});$('romRecipeStatus').textContent='Starting recipe…';eventControls();}catch(error){status(error.message,true);}};
+  $('romCancelRecipe').onclick=()=>send({type:'cancel-recipe'});
+  panel.querySelectorAll('[data-popeye-event]').forEach(button=>{button.onclick=()=>{if(running&&!paused)send({type:'event',id:button.dataset.popeyeEvent});};});
   function bindMatrixButtons(){panel.querySelectorAll('[data-popeye-switch]').forEach(button=>{button.onclick=()=>{if(!button.disabled)send({type:'matrix',number:+button.dataset.popeyeSwitch,hold:$('romMatrixMode').value==='hold'});};});}
   bindMatrixButtons();
   $('romMatrixRelease').onclick=()=>send({type:'matrix',release:true});
   $('romMatrixMode').onchange=()=>{$('romPlayfieldMode').value=$('romMatrixMode').value;pressedFlippers.clear();send({type:'matrix',release:true});};
   $('romCoinStart').onclick=async()=>{
-    try{if(!audio.muted)await audio.unlock();if(!running||paused||replay)return;
+    try{if(!audio.muted)await audio.unlock();if(!running||paused )return;
       send({type:'event',id:'begin-game'});
       status('Adding credit and pressing Start. The ROM will serve a ball when ready.');
     }catch(error){status(error.message,true)}
@@ -225,10 +170,10 @@ export function createRomViewer({setMode,onSoundChange=()=>{}}){
   function key(code,state){if(!running||paused)return;if(state)pressed.add(code);else pressed.delete(code);send({type:'key',code,state});}
   const keyCodes={Digit0:26,Digit1:27,Digit2:28,Digit3:29,Digit4:30,Digit5:31,Digit6:32,Digit7:33,Digit8:34,Digit9:35,Enter:66,ArrowLeft:81,ArrowRight:82,ArrowUp:83,ArrowDown:84,ShiftLeft:93,ShiftRight:94,ControlLeft:95,ControlRight:96};
   function inputFocused(){return ['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName)||document.activeElement?.isContentEditable||!!document.activeElement?.closest?.('#romMatrix,#romPlayfield');}
-  document.addEventListener('keydown',event=>{if(!active||!running||inputFocused()||event.ctrlKey||event.metaKey)return;if(event.code==='Space'){event.preventDefault();if(!event.repeat)pause(replay?replay.playing:!paused);return}if(keyCodes[event.code]!==undefined){event.preventDefault();key(keyCodes[event.code],1)}});
+  document.addEventListener('keydown',event=>{if(!active||!running||inputFocused()||event.ctrlKey||event.metaKey)return;if(event.code==='Space'){event.preventDefault();if(!event.repeat)pause(!paused);return}if(keyCodes[event.code]!==undefined){event.preventDefault();key(keyCodes[event.code],1)}});
   document.addEventListener('keyup',event=>{if(keyCodes[event.code]!==undefined&&pressed.has(keyCodes[event.code])){event.preventDefault();key(keyCodes[event.code],0)}});
-  globalThis.addEventListener?.('blur',()=>{release();if(running&&(!paused||replay?.playing))pause(true)});
-  document.addEventListener('visibilitychange',()=>{if(document.hidden&&running&&(!paused||replay?.playing))pause(true)});
+  globalThis.addEventListener?.('blur',()=>{release();if(running&&!paused)pause(true)});
+  document.addEventListener('visibilitychange',()=>{if(document.hidden&&running&&!paused)pause(true)});
   panel.querySelectorAll('[data-rom-key]').forEach(button=>{
     const code=+button.dataset.romKey;
     button.addEventListener('pointerdown',event=>{event.preventDefault();button.setPointerCapture?.(event.pointerId);key(code,1)});
@@ -236,8 +181,8 @@ export function createRomViewer({setMode,onSoundChange=()=>{}}){
     button.onclick=event=>{if(event.detail===0){key(code,1);const timer=setTimeout(()=>{key(code,0);timers.delete(timer)},120);timers.add(timer)}};
   });
   $('romOpen').onclick=()=>$('romFiles').click();$('romFiles').onchange=async event=>{await accept(event.target.files);event.target.value=''};$('romStart').onclick=start;
-  $('romPause').onclick=async()=>{try{if(!audio.muted)await audio.unlock();pause(replay?replay.playing:!paused)}catch(error){status(error.message,true)}};$('romReset').onclick=()=>{pressedFlippers.clear();machineState=null;replay=null;history.clear();historyVersion='';pause(false);release();audio.clear();colorizer.reset();raw=null;tick=0;send({type:'reset'});};$('romStop').onclick=()=>{stop();status('ROM stopped. Your selected ROM/PAC pair is ready to start again.')};
-  async function setSound(enabled){audio.muted=!enabled;audio.update();audio.clear();$('romSound').checked=enabled;onSoundChange(enabled);if(replay){replay.offset=replayTime();if(replay.playing)resumeReplay()}if(enabled&&running){try{await audio.unlock()}catch(error){audio.muted=true;audio.update();$('romSound').checked=false;onSoundChange(false);status(error.message,true)}}}
+  $('romPause').onclick=async()=>{try{if(!audio.muted)await audio.unlock();pause(!paused)}catch(error){status(error.message,true)}};$('romReset').onclick=()=>{pressedFlippers.clear();machineState=null;pause(false);release();audio.clear();colorizer.reset();raw=null;tick=0;send({type:'reset'});};$('romStop').onclick=()=>{stop();status('ROM stopped. Your selected ROM/PAC pair is ready to start again.')};
+  async function setSound(enabled){audio.muted=!enabled;audio.update();audio.clear();$('romSound').checked=enabled;onSoundChange(enabled);if(enabled&&running){try{await audio.unlock()}catch(error){audio.muted=true;audio.update();$('romSound').checked=false;onSoundChange(false);status(error.message,true)}}}
   $('romSound').oninput=()=>setSound($('romSound').checked);$('romVolume').oninput=()=>{audio.volume=+$('romVolume').value/100;audio.update()};
   $('romFullscreen').onclick=async()=>{try{if(document.fullscreenElement)await document.exitFullscreen();else await $('romScreen').requestFullscreen()}catch{status('Fullscreen is unavailable in this browser.',true)}};
   $('romDoor').onclick=()=>{key(78,1);const timer=setTimeout(()=>{key(78,0);timers.delete(timer)},120);timers.add(timer);door=!door;$('romDoor').setAttribute('aria-pressed',String(door));$('romDoor').textContent='Coin door · '+(door?'open':'closed')};
@@ -246,7 +191,6 @@ export function createRomViewer({setMode,onSoundChange=()=>{}}){
   $('romHold').onclick=()=>{try{if(!running||paused)return;if(hold!==null){send({type:'switch',number:hold,state:0});hold=null}else{hold=switchNumber();send({type:'switch',number:hold,state:1})}$('romHold').setAttribute('aria-pressed',String(hold!==null))}catch(error){status(error.message,true)}};
   $('romEnable').onclick=async()=>{try{if(!isSecureContext||!navigator.serviceWorker)throw Error('Browser emulation needs HTTPS and service-worker support.');status('Enabling browser emulation. The page will reload once…');if($('includedGame')?.value){const url=new URL(location.href);url.searchParams.set('game',$('includedGame').value);url.searchParams.set('playback','rom');globalThis.history.replaceState(null,'',url);}await navigator.serviceWorker.register(new URL('coi-serviceworker.js',location.href),{scope:new URL('./',location.href).pathname});await navigator.serviceWorker.ready;if(navigator.serviceWorker.controller)location.reload();else navigator.serviceWorker.addEventListener('controllerchange',()=>location.reload(),{once:true})}catch(error){status(error.message,true)}};
   for(const type of ['pointerdown','keydown'])addEventListener(type,()=>{if(!audio.muted&&audio.context?.state!=='running')audio.unlock().catch(error=>status(error.message,true));});
-  addEventListener('pagehide',()=>history.flush());
-  addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')history.flush()});
-  controls();return {accept,start,stop,setSound,prepareAudio:()=>audio.muted?Promise.resolve():audio.unlock(),setActive(value){active=value;pinDmd();if(!value&&running&&(!paused||replay?.playing))pause(true);},get running(){return running}};
+  deleteStoredRecordings(()=>status('Close other DMD Viewer tabs to finish removing saved recordings.')).catch(error=>status('Could not remove old recordings: '+error.message,true));
+  controls();return {accept,start,stop,setSound,prepareAudio:()=>audio.muted?Promise.resolve():audio.unlock(),setActive(value){active=value;pinDmd();if(!value&&running&&!paused)pause(true);},get running(){return running}};
 }

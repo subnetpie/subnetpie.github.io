@@ -3,9 +3,10 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node check-formats.mjs && node check-fsq.mjs && node check-pac.mjs && node check-zip.mjs && node check-controls.mjs && node check-pup.mjs && node check-live-colorizer.mjs && node check-published-library.mjs && node check-rom-history.mjs && node check-popeye-events.mjs && node check-playfield-t2.mjs"
+    "test": "node check-formats.mjs && node check-fsq.mjs && node check-pac.mjs && node check-zip.mjs && node check-controls.mjs && node check-pup.mjs && node check-live-colorizer.mjs && node check-published-library.mjs && node check-animation-groups.mjs && node check-no-baked-media.mjs && node check-popeye-events.mjs && node check-playfield-t2.mjs && node check-trigger-recipes.mjs && node check-trigger-player.mjs"
   },
   "devDependencies": {
+    "fake-indexeddb": "^6.2.8",
     "jsdom": "^26.1.0"
   }
 }

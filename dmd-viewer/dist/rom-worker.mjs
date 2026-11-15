@@ -3,6 +3,8 @@ import {PopeyeMachine} from './popeye-events.mjs?v=flippers-1';
 import {T2MatrixInputs} from './t2-matrix.mjs?v=flippers-1';
 import {popeyeLamps} from './popeye-playfield.mjs?v=flippers-1';
 import {popeyeInitialNvram} from './popeye-initial-nvram.mjs';
+import {TriggerRunner} from './trigger-runner.mjs';
+let recipeRunner=null;
 let core,timer,framePtr,audioPtr,metaPtr,machine=null,gameName='',paused=false,lastPoll=0,simTime=0,lastMachineState='',lastMatrixScan=0,hasRun=false,startRequestedAt=0,startInfo='';
 const call=(name,result,types=[],args=[])=>core.ccall('viewer_'+name,result,types,args);
 function poll(){
@@ -11,7 +13,8 @@ function poll(){
   if(!hasRun){hasRun=true;postMessage({type:'started',info:startInfo});}
   if(['pop_lx5','t2_l8'].includes(gameName)&&core._viewer_running()){
     machine??=gameName==='pop_lx5'?new PopeyeMachine({setSwitch:(n,v)=>core._viewer_switch(n,v)}):new T2MatrixInputs({setSwitch:(n,v)=>core._viewer_switch(n===11?112:n===12?114:n,v)});
-    if(!paused){simTime+=delta;machine.update(simTime,n=>core._viewer_solenoid(n));}
+    recipeRunner??=new TriggerRunner(machine,gameName,data=>postMessage({type:'recipe-status',...data}));
+    if(!paused){simTime+=delta;machine.update(simTime,n=>core._viewer_solenoid(n));recipeRunner.tick(simTime);}
     if(now-lastMatrixScan>=50){lastMatrixScan=now;const state=machine.snapshot(n=>core._viewer_get_switch(n));if(gameName==='pop_lx5')state.lamps=popeyeLamps.filter(l=>core._viewer_lamp(l.number)).map(l=>l.number);const json=JSON.stringify(state);if(json!==lastMachineState){lastMachineState=json;postMessage({type:'machine',...state});}}
   }
   const size=core._viewer_frame(framePtr,metaPtr);
@@ -22,7 +25,7 @@ function poll(){
   if(!core._viewer_running()){clearInterval(timer);postMessage({type:'stopped'});}
 }
 async function start({files,game}){
-  gameName=game;machine=null;paused=false;lastPoll=0;simTime=0;lastMachineState='';hasRun=false;lastMatrixScan=0;
+  gameName=game;machine=null;recipeRunner=null;paused=false;lastPoll=0;simTime=0;lastMachineState='';hasRun=false;lastMatrixScan=0;
   const response=await fetch(new URL('./emulator/dmd-runtime.wasm.gz',import.meta.url),{cache:'no-cache'});if(!response.ok)throw Error('Could not download the browser emulator.');
   const wasmBinary=await new Response(response.body.pipeThrough(new DecompressionStream('gzip'))).arrayBuffer();
   core=await createRuntime({wasmBinary,print:text=>postMessage({type:'log',text}),printErr:text=>postMessage({type:'log',text}),onAbort:text=>postMessage({type:'error',message:String(text)})});
@@ -42,13 +45,16 @@ onmessage=async({data})=>{
   try{
     if(data.type==='start')await start(data);
     else if(core){
+      if(data.type==='recipe'){try{if(!recipeRunner||paused||!core._viewer_running())throw Error('Resume the running game first.');recipeRunner.run(data.id,simTime);}catch(error){postMessage({type:'recipe-status',phase:'error',text:error.message});}}
+      if(data.type==='cancel-recipe')recipeRunner?.cancel();
+      if(['event','matrix','key','switch'].includes(data.type))recipeRunner?.cancel();
       if(data.type==='event'){try{if(!machine||paused||gameName!=='pop_lx5')throw Error('Resume the running Popeye game first.');postMessage({type:'event-status',text:data.id==='begin-game'?machine.beginGame():machine.event(data.id)});}catch(error){postMessage({type:'event-status',text:error.message,error:true});}}
       if(data.type==='matrix'){try{if(!machine||paused)throw Error('Resume the running game first.');postMessage({type:'event-status',text:data.release?(machine.releaseHeld(),'Held switches released.'):data.pressed!==undefined?machine.setHeld(data.number,!!data.pressed):machine.trigger(data.number,!!data.hold)});}catch(error){postMessage({type:'event-status',text:error.message,error:true});}}
       if(data.type==='key')core._viewer_key(data.code,data.state);
       if(data.type==='switch')core._viewer_switch(data.number,data.state);
-      if(data.type==='pause'){paused=data.paused;if(paused)machine?.releaseHeld();lastPoll=0;core._viewer_pause(paused?1:0);}
-      if(data.type==='reset'){machine?.reset();core._viewer_reset();}
-      if(data.type==='stop'){clearInterval(timer);core._viewer_stop();postMessage({type:'stopped'});}
+      if(data.type==='pause'){paused=data.paused;if(paused){recipeRunner?.cancel();machine?.releaseHeld();}lastPoll=0;core._viewer_pause(paused?1:0);}
+      if(data.type==='reset'){recipeRunner?.cancel();simTime=0;lastPoll=0;if(machine){machine.now=0;machine.reset();}core._viewer_reset();}
+      if(data.type==='stop'){recipeRunner?.cancel();clearInterval(timer);core._viewer_stop();postMessage({type:'stopped'});}
     }
   }catch(error){postMessage({type:'error',message:error.message||String(error)});}
 };
