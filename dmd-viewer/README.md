@@ -116,3 +116,11 @@ Recipes are small built-in switch instructions and execute against the live emul
 `node check-trigger-recipes.mjs` checks scheduling, prerequisites, cancellation, timeout and ball handling. `node check-trigger-player.mjs` checks UI wiring and lifecycle. `node check-trigger-worker.mjs` runs real WASM start/serve/launch/shot recipes for both games.
 
 The app includes recipes only; pre-recorded frame/audio catalogs and baked-in recordings are not shipped or fetched. The retired recording database is deleted automatically when the updated viewer opens. If another old viewer tab keeps it open, close that tab to let deletion finish. The emulator and selected game ROM/PAC assets are still required.
+
+## Unique trigger event list
+
+Running a recipe observes its DMD event names and sound activity, then saves only the timed recipe and scalar metadata. Repeating the same timed inputs in the same game merges into one entry. The downloadable JSON also includes a deduplicated index of named DMD events and the recipes that produced them. Numbered PAC parts are grouped into their named animation families. Cancelled and interrupted runs are discarded.
+
+Open **Trigger recipes → Unique recipe events** to see the list or use **Download recipe list**. The initial metadata list is compiled by `node compile-recipe-events.mjs` using the real local emulator for both games, including repeated bumper/jet runs to check deduplication. No audio or pixel files are generated. New observations are kept as small JSON metadata in browser local storage; the retired media-recording database is still cleared.
+
+Sound activity is measured during the recipe and may include background music. It is not an extracted sound-command identifier or a guarantee that the same scene/sound will occur in another game state. Run a recipe with Sound on to hear the original ROM output live.

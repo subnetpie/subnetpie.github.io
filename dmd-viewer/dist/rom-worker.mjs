@@ -3,7 +3,7 @@ import {PopeyeMachine} from './popeye-events.mjs?v=flippers-1';
 import {T2MatrixInputs} from './t2-matrix.mjs?v=flippers-1';
 import {popeyeLamps} from './popeye-playfield.mjs?v=flippers-1';
 import {popeyeInitialNvram} from './popeye-initial-nvram.mjs';
-import {TriggerRunner} from './trigger-runner.mjs';
+import {TriggerRunner} from './trigger-runner.mjs?v=recipe-events-1';
 let recipeRunner=null;
 let core,timer,framePtr,audioPtr,metaPtr,machine=null,gameName='',paused=false,lastPoll=0,simTime=0,lastMachineState='',lastMatrixScan=0,hasRun=false,startRequestedAt=0,startInfo='';
 const call=(name,result,types=[],args=[])=>core.ccall('viewer_'+name,result,types,args);

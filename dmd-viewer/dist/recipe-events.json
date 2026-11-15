@@ -1,0 +1,776 @@
+{
+  "format": "dmd-trigger-event-list",
+  "version": 1,
+  "note": "Timed trigger recipes and observed event/sound metadata only. Sound was observed during the recipe; background music may contribute. No sound command IDs, PCM, DMD pixels, or media are stored. Re-run recipes in the emulator to hear sound; game state affects results.",
+  "entries": [
+    {
+      "key": "[\"pop_lx5\",[[0,64,120],[250,65,120],[500,66,120],[750,67,120],[1000,68,120]]]",
+      "game": "pop_lx5",
+      "id": "builtin:popeye:light-animal-targets",
+      "label": "Animal targets",
+      "steps": [
+        {
+          "atMs": 0,
+          "switch": 64,
+          "holdMs": 120
+        },
+        {
+          "atMs": 250,
+          "switch": 65,
+          "holdMs": 120
+        },
+        {
+          "atMs": 500,
+          "switch": 66,
+          "holdMs": 120
+        },
+        {
+          "atMs": 750,
+          "switch": 67,
+          "holdMs": 120
+        },
+        {
+          "atMs": 1000,
+          "switch": 68,
+          "holdMs": 120
+        }
+      ],
+      "durationMs": 5005,
+      "precondition": "after the preceding sample in this game",
+      "runs": 1,
+      "events": [],
+      "soundObserved": true,
+      "audioPeak": 0.0244140625,
+      "audioSamplesObserved": 252105,
+      "observationMs": 5749
+    },
+    {
+      "key": "[\"pop_lx5\",[]]",
+      "game": "pop_lx5",
+      "id": "builtin:popeye:light-attract",
+      "label": "Attract demonstration",
+      "steps": [],
+      "durationMs": 6009,
+      "precondition": "idle",
+      "runs": 1,
+      "events": [
+        {
+          "key": "128:32:att2_credit start",
+          "label": "ATT2_credit start"
+        },
+        {
+          "key": "128:32:att1_ship crew",
+          "label": "ATT1_ship crew"
+        },
+        {
+          "key": "128:32:att1_game over",
+          "label": "ATT1_game over"
+        },
+        {
+          "key": "128:32:att1_bally",
+          "label": "ATT1_bally"
+        }
+      ],
+      "soundObserved": false,
+      "audioPeak": 0.000030517578125,
+      "audioSamplesObserved": 297675,
+      "observationMs": 6762
+    },
+    {
+      "key": "[\"pop_lx5\",[[0,23,120]]]",
+      "game": "pop_lx5",
+      "id": "builtin:popeye:light-launch",
+      "label": "Ball launch",
+      "steps": [
+        {
+          "atMs": 0,
+          "switch": 23,
+          "holdMs": 120
+        }
+      ],
+      "durationMs": 5001,
+      "precondition": "ball served into shooter lane",
+      "runs": 1,
+      "events": [
+        {
+          "key": "128:32:fp4_skill shot",
+          "label": "FP4_skill shot"
+        },
+        {
+          "key": "128:32:fp4_palme",
+          "label": "FP4_palme"
+        }
+      ],
+      "soundObserved": true,
+      "audioPeak": 0.0596923828125,
+      "audioSamplesObserved": 221235,
+      "observationMs": 5008
+    },
+    {
+      "key": "[\"pop_lx5\",[[0,16,120],[250,18,120],[500,17,120],[750,16,120],[1000,18,120],[1250,17,120]]]",
+      "game": "pop_lx5",
+      "id": "builtin:popeye:light-bumpers",
+      "label": "Bumper sequence",
+      "steps": [
+        {
+          "atMs": 0,
+          "switch": 16,
+          "holdMs": 120
+        },
+        {
+          "atMs": 250,
+          "switch": 18,
+          "holdMs": 120
+        },
+        {
+          "atMs": 500,
+          "switch": 17,
+          "holdMs": 120
+        },
+        {
+          "atMs": 750,
+          "switch": 16,
+          "holdMs": 120
+        },
+        {
+          "atMs": 1000,
+          "switch": 18,
+          "holdMs": 120
+        },
+        {
+          "atMs": 1250,
+          "switch": 17,
+          "holdMs": 120
+        }
+      ],
+      "durationMs": 5010,
+      "precondition": "after the preceding sample in this game",
+      "runs": 2,
+      "events": [],
+      "soundObserved": true,
+      "audioPeak": 0.04315185546875,
+      "audioSamplesObserved": 507150,
+      "observationMs": 5763
+    },
+    {
+      "key": "[\"pop_lx5\",[[0,5,120],[400,1,120],[800,1,120],[1300,13,120]]]",
+      "game": "pop_lx5",
+      "id": "builtin:popeye:light-start",
+      "label": "Credits and start",
+      "steps": [
+        {
+          "atMs": 0,
+          "switch": 5,
+          "holdMs": 120
+        },
+        {
+          "atMs": 400,
+          "switch": 1,
+          "holdMs": 120
+        },
+        {
+          "atMs": 800,
+          "switch": 1,
+          "holdMs": 120
+        },
+        {
+          "atMs": 1300,
+          "switch": 13,
+          "holdMs": 120
+        }
+      ],
+      "durationMs": 5008,
+      "precondition": "after the preceding sample in this game",
+      "runs": 1,
+      "events": [
+        {
+          "key": "128:32:att1_bally",
+          "label": "ATT1_bally"
+        },
+        {
+          "key": "128:32:att1_ship crew",
+          "label": "ATT1_ship crew"
+        },
+        {
+          "key": "128:32:att2_credit start",
+          "label": "ATT2_credit start"
+        }
+      ],
+      "soundObserved": true,
+      "audioPeak": 0.06298828125,
+      "audioSamplesObserved": 221235,
+      "observationMs": 5018
+    },
+    {
+      "key": "[\"pop_lx5\",[[0,74,120]]]",
+      "game": "pop_lx5",
+      "id": "builtin:popeye:light-drain-left",
+      "label": "Drain demonstration",
+      "steps": [
+        {
+          "atMs": 0,
+          "switch": 74,
+          "holdMs": 120
+        }
+      ],
+      "durationMs": 5001,
+      "precondition": "after the preceding sample in this game",
+      "runs": 1,
+      "events": [
+        {
+          "key": "scene:3671101",
+          "label": "FP1_fight bonus"
+        }
+      ],
+      "soundObserved": true,
+      "audioPeak": 0.032806396484375,
+      "audioSamplesObserved": 253575,
+      "observationMs": 5757
+    },
+    {
+      "key": "[\"pop_lx5\",[[0,25,120]]]",
+      "game": "pop_lx5",
+      "id": "builtin:popeye:light-left-loop",
+      "label": "Left loop",
+      "steps": [
+        {
+          "atMs": 0,
+          "switch": 25,
+          "holdMs": 120
+        }
+      ],
+      "durationMs": 5014,
+      "precondition": "after the preceding sample in this game",
+      "runs": 1,
+      "events": [],
+      "soundObserved": true,
+      "audioPeak": 0.0252685546875,
+      "audioSamplesObserved": 254310,
+      "observationMs": 5765
+    },
+    {
+      "key": "[\"pop_lx5\",[[0,71,120],[250,72,120],[500,73,120],[750,26,120],[1000,27,120],[1250,28,120]]]",
+      "game": "pop_lx5",
+      "id": "builtin:popeye:light-popeye-targets",
+      "label": "P-O-P-E-Y-E targets",
+      "steps": [
+        {
+          "atMs": 0,
+          "switch": 71,
+          "holdMs": 120
+        },
+        {
+          "atMs": 250,
+          "switch": 72,
+          "holdMs": 120
+        },
+        {
+          "atMs": 500,
+          "switch": 73,
+          "holdMs": 120
+        },
+        {
+          "atMs": 750,
+          "switch": 26,
+          "holdMs": 120
+        },
+        {
+          "atMs": 1000,
+          "switch": 27,
+          "holdMs": 120
+        },
+        {
+          "atMs": 1250,
+          "switch": 28,
+          "holdMs": 120
+        }
+      ],
+      "durationMs": 5005,
+      "precondition": "after the preceding sample in this game",
+      "runs": 1,
+      "events": [
+        {
+          "key": "scene:9408315",
+          "label": "FP1_braccio spinaci"
+        },
+        {
+          "key": "scene:8689234",
+          "label": "FP1_pop targets"
+        }
+      ],
+      "soundObserved": true,
+      "audioPeak": 0.047637939453125,
+      "audioSamplesObserved": 253575,
+      "observationMs": 5760
+    },
+    {
+      "key": "[\"pop_lx5\",[[0,34,120],[250,35,120]]]",
+      "game": "pop_lx5",
+      "id": "builtin:popeye:light-ramp",
+      "label": "Ramp shot",
+      "steps": [
+        {
+          "atMs": 0,
+          "switch": 34,
+          "holdMs": 120
+        },
+        {
+          "atMs": 250,
+          "switch": 35,
+          "holdMs": 120
+        }
+      ],
+      "durationMs": 5002,
+      "precondition": "after the preceding sample in this game",
+      "runs": 1,
+      "events": [
+        {
+          "key": "128:32:fp4_ramp loop",
+          "label": "FP4_ramp loop"
+        }
+      ],
+      "soundObserved": true,
+      "audioPeak": 0.03314208984375,
+      "audioSamplesObserved": 252840,
+      "observationMs": 5752
+    },
+    {
+      "key": "[\"pop_lx5\",[[0,33,120]]]",
+      "game": "pop_lx5",
+      "id": "builtin:popeye:light-right-loop",
+      "label": "Right loop",
+      "steps": [
+        {
+          "atMs": 0,
+          "switch": 33,
+          "holdMs": 120
+        }
+      ],
+      "durationMs": 5003,
+      "precondition": "after the preceding sample in this game",
+      "runs": 1,
+      "events": [],
+      "soundObserved": true,
+      "audioPeak": 0.023895263671875,
+      "audioSamplesObserved": 252840,
+      "observationMs": 5752
+    },
+    {
+      "key": "[\"t2_l8\",[]]",
+      "game": "t2_l8",
+      "id": "builtin:terminator-2:light-attract",
+      "label": "Attract demonstration",
+      "steps": [],
+      "durationMs": 6013,
+      "precondition": "idle",
+      "runs": 1,
+      "events": [
+        {
+          "key": "128:32:intrologo",
+          "label": "IntroLogo"
+        },
+        {
+          "key": "128:32:introjudge",
+          "label": "IntroJudge"
+        },
+        {
+          "key": "scene:3564930",
+          "label": "SpecialThanks"
+        }
+      ],
+      "soundObserved": true,
+      "audioPeak": 0.60223388671875,
+      "audioSamplesObserved": 296940,
+      "observationMs": 6768
+    },
+    {
+      "key": "[\"t2_l8\",[[0,34,120]]]",
+      "game": "t2_l8",
+      "id": "builtin:terminator-2:light-launch",
+      "label": "Ball launch",
+      "steps": [
+        {
+          "atMs": 0,
+          "switch": 34,
+          "holdMs": 120
+        }
+      ],
+      "durationMs": 5012,
+      "precondition": "ball served into shooter lane",
+      "runs": 1,
+      "events": [],
+      "soundObserved": true,
+      "audioPeak": 0.909332275390625,
+      "audioSamplesObserved": 221235,
+      "observationMs": 5017
+    },
+    {
+      "key": "[\"t2_l8\",[[0,65,120],[250,66,120]]]",
+      "game": "t2_l8",
+      "id": "builtin:terminator-2:light-chase",
+      "label": "Chase loop",
+      "steps": [
+        {
+          "atMs": 0,
+          "switch": 65,
+          "holdMs": 120
+        },
+        {
+          "atMs": 250,
+          "switch": 66,
+          "holdMs": 120
+        }
+      ],
+      "durationMs": 5009,
+      "precondition": "after the preceding sample in this game",
+      "runs": 1,
+      "events": [
+        {
+          "key": "scene:2085616",
+          "label": "Chase Loop"
+        }
+      ],
+      "soundObserved": true,
+      "audioPeak": 0.84771728515625,
+      "audioSamplesObserved": 252840,
+      "observationMs": 5761
+    },
+    {
+      "key": "[\"t2_l8\",[[0,5,120],[250,1,120],[1000,1,120],[1750,13,500]]]",
+      "game": "t2_l8",
+      "id": "builtin:terminator-2:light-start",
+      "label": "Credits and start",
+      "steps": [
+        {
+          "atMs": 0,
+          "switch": 5,
+          "holdMs": 120
+        },
+        {
+          "atMs": 250,
+          "switch": 1,
+          "holdMs": 120
+        },
+        {
+          "atMs": 1000,
+          "switch": 1,
+          "holdMs": 120
+        },
+        {
+          "atMs": 1750,
+          "switch": 13,
+          "holdMs": 500
+        }
+      ],
+      "durationMs": 5015,
+      "precondition": "after the preceding sample in this game",
+      "runs": 1,
+      "events": [
+        {
+          "key": "scene:3564930",
+          "label": "SpecialThanks"
+        },
+        {
+          "key": "128:32:credits",
+          "label": "Credits"
+        },
+        {
+          "key": "scene:2922912",
+          "label": "LosAngeles4-11-2029"
+        }
+      ],
+      "soundObserved": true,
+      "audioPeak": 0.78216552734375,
+      "audioSamplesObserved": 220500,
+      "observationMs": 5020
+    },
+    {
+      "key": "[\"t2_l8\",[[0,41,120],[250,42,120],[500,43,120]]]",
+      "game": "t2_l8",
+      "id": "builtin:terminator-2:light-jets",
+      "label": "Jet bumpers",
+      "steps": [
+        {
+          "atMs": 0,
+          "switch": 41,
+          "holdMs": 120
+        },
+        {
+          "atMs": 250,
+          "switch": 42,
+          "holdMs": 120
+        },
+        {
+          "atMs": 500,
+          "switch": 43,
+          "holdMs": 120
+        }
+      ],
+      "durationMs": 5008,
+      "precondition": "after the preceding sample in this game",
+      "runs": 2,
+      "events": [],
+      "soundObserved": true,
+      "audioPeak": 0.83538818359375,
+      "audioSamplesObserved": 506415,
+      "observationMs": 5769
+    },
+    {
+      "key": "[\"t2_l8\",[[0,61,120],[250,62,120]]]",
+      "game": "t2_l8",
+      "id": "builtin:terminator-2:light-left-ramp",
+      "label": "Left ramp",
+      "steps": [
+        {
+          "atMs": 0,
+          "switch": 61,
+          "holdMs": 120
+        },
+        {
+          "atMs": 250,
+          "switch": 62,
+          "holdMs": 120
+        }
+      ],
+      "durationMs": 5017,
+      "precondition": "after the preceding sample in this game",
+      "runs": 1,
+      "events": [],
+      "soundObserved": true,
+      "audioPeak": 0.7452392578125,
+      "audioSamplesObserved": 253575,
+      "observationMs": 5766
+    },
+    {
+      "key": "[\"t2_l8\",[[0,63,120],[250,64,120]]]",
+      "game": "t2_l8",
+      "id": "builtin:terminator-2:light-right-ramp",
+      "label": "Right ramp",
+      "steps": [
+        {
+          "atMs": 0,
+          "switch": 63,
+          "holdMs": 120
+        },
+        {
+          "atMs": 250,
+          "switch": 64,
+          "holdMs": 120
+        }
+      ],
+      "durationMs": 5008,
+      "precondition": "after the preceding sample in this game",
+      "runs": 1,
+      "events": [
+        {
+          "key": "scene:6257228",
+          "label": "Game-million-mk"
+        }
+      ],
+      "soundObserved": true,
+      "audioPeak": 1,
+      "audioSamplesObserved": 252840,
+      "observationMs": 5753
+    },
+    {
+      "key": "[\"t2_l8\",[[0,71,120],[250,72,120],[500,73,120],[750,74,120],[1000,75,120]]]",
+      "game": "t2_l8",
+      "id": "builtin:terminator-2:light-targets",
+      "label": "Target bank",
+      "steps": [
+        {
+          "atMs": 0,
+          "switch": 71,
+          "holdMs": 120
+        },
+        {
+          "atMs": 250,
+          "switch": 72,
+          "holdMs": 120
+        },
+        {
+          "atMs": 500,
+          "switch": 73,
+          "holdMs": 120
+        },
+        {
+          "atMs": 750,
+          "switch": 74,
+          "holdMs": 120
+        },
+        {
+          "atMs": 1000,
+          "switch": 75,
+          "holdMs": 120
+        }
+      ],
+      "durationMs": 5009,
+      "precondition": "after the preceding sample in this game",
+      "runs": 1,
+      "events": [],
+      "soundObserved": true,
+      "audioPeak": 0.65301513671875,
+      "audioSamplesObserved": 253575,
+      "observationMs": 5771
+    }
+  ],
+  "events": [
+    {
+      "key": "[\"pop_lx5\",\"att2_credit start\"]",
+      "game": "pop_lx5",
+      "label": "ATT2_credit start",
+      "recipeIds": [
+        "builtin:popeye:light-attract",
+        "builtin:popeye:light-start"
+      ],
+      "soundObservedDuringRecipes": true
+    },
+    {
+      "key": "[\"pop_lx5\",\"att1_ship crew\"]",
+      "game": "pop_lx5",
+      "label": "ATT1_ship crew",
+      "recipeIds": [
+        "builtin:popeye:light-attract",
+        "builtin:popeye:light-start"
+      ],
+      "soundObservedDuringRecipes": true
+    },
+    {
+      "key": "[\"pop_lx5\",\"att1_game over\"]",
+      "game": "pop_lx5",
+      "label": "ATT1_game over",
+      "recipeIds": [
+        "builtin:popeye:light-attract"
+      ],
+      "soundObservedDuringRecipes": false
+    },
+    {
+      "key": "[\"pop_lx5\",\"att1_bally\"]",
+      "game": "pop_lx5",
+      "label": "ATT1_bally",
+      "recipeIds": [
+        "builtin:popeye:light-attract",
+        "builtin:popeye:light-start"
+      ],
+      "soundObservedDuringRecipes": true
+    },
+    {
+      "key": "[\"pop_lx5\",\"fp4_skill shot\"]",
+      "game": "pop_lx5",
+      "label": "FP4_skill shot",
+      "recipeIds": [
+        "builtin:popeye:light-launch"
+      ],
+      "soundObservedDuringRecipes": true
+    },
+    {
+      "key": "[\"pop_lx5\",\"fp4_palme\"]",
+      "game": "pop_lx5",
+      "label": "FP4_palme",
+      "recipeIds": [
+        "builtin:popeye:light-launch"
+      ],
+      "soundObservedDuringRecipes": true
+    },
+    {
+      "key": "[\"pop_lx5\",\"fp1_fight bonus\"]",
+      "game": "pop_lx5",
+      "label": "FP1_fight bonus",
+      "recipeIds": [
+        "builtin:popeye:light-drain-left"
+      ],
+      "soundObservedDuringRecipes": true
+    },
+    {
+      "key": "[\"pop_lx5\",\"fp1_braccio spinaci\"]",
+      "game": "pop_lx5",
+      "label": "FP1_braccio spinaci",
+      "recipeIds": [
+        "builtin:popeye:light-popeye-targets"
+      ],
+      "soundObservedDuringRecipes": true
+    },
+    {
+      "key": "[\"pop_lx5\",\"fp1_pop targets\"]",
+      "game": "pop_lx5",
+      "label": "FP1_pop targets",
+      "recipeIds": [
+        "builtin:popeye:light-popeye-targets"
+      ],
+      "soundObservedDuringRecipes": true
+    },
+    {
+      "key": "[\"pop_lx5\",\"fp4_ramp loop\"]",
+      "game": "pop_lx5",
+      "label": "FP4_ramp loop",
+      "recipeIds": [
+        "builtin:popeye:light-ramp"
+      ],
+      "soundObservedDuringRecipes": true
+    },
+    {
+      "key": "[\"t2_l8\",\"intrologo\"]",
+      "game": "t2_l8",
+      "label": "IntroLogo",
+      "recipeIds": [
+        "builtin:terminator-2:light-attract"
+      ],
+      "soundObservedDuringRecipes": true
+    },
+    {
+      "key": "[\"t2_l8\",\"introjudge\"]",
+      "game": "t2_l8",
+      "label": "IntroJudge",
+      "recipeIds": [
+        "builtin:terminator-2:light-attract"
+      ],
+      "soundObservedDuringRecipes": true
+    },
+    {
+      "key": "[\"t2_l8\",\"specialthanks\"]",
+      "game": "t2_l8",
+      "label": "SpecialThanks",
+      "recipeIds": [
+        "builtin:terminator-2:light-attract",
+        "builtin:terminator-2:light-start"
+      ],
+      "soundObservedDuringRecipes": true
+    },
+    {
+      "key": "[\"t2_l8\",\"chase loop\"]",
+      "game": "t2_l8",
+      "label": "Chase Loop",
+      "recipeIds": [
+        "builtin:terminator-2:light-chase"
+      ],
+      "soundObservedDuringRecipes": true
+    },
+    {
+      "key": "[\"t2_l8\",\"credits\"]",
+      "game": "t2_l8",
+      "label": "Credits",
+      "recipeIds": [
+        "builtin:terminator-2:light-start"
+      ],
+      "soundObservedDuringRecipes": true
+    },
+    {
+      "key": "[\"t2_l8\",\"losangeles4-11-2029\"]",
+      "game": "t2_l8",
+      "label": "LosAngeles4-11-2029",
+      "recipeIds": [
+        "builtin:terminator-2:light-start"
+      ],
+      "soundObservedDuringRecipes": true
+    },
+    {
+      "key": "[\"t2_l8\",\"game-million-mk\"]",
+      "game": "t2_l8",
+      "label": "Game-million-mk",
+      "recipeIds": [
+        "builtin:terminator-2:light-right-ramp"
+      ],
+      "soundObservedDuringRecipes": true
+    }
+  ]
+}

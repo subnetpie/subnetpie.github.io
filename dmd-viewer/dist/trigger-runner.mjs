@@ -20,6 +20,7 @@ export class TriggerRunner {
  tick(now){
   const a=this.active;if(!a||now<a.start)return;const m=this.machine;
   try{
+   if(!a.observing){a.observing=true;this.notify({phase:'running',stage:'inputs',id:a.recipe.id,text:a.recipe.label+' — observing triggered events and sound'});}
    // Let the existing ball model return a drained ball to the trough.
    if(this.game==='pop_lx5'&&a.type==='drain-left'&&!a.drain){m.event('drain-left');a.drain=true;a.index=a.events.length;}
    while(a.index<a.events.length&&now-a.start>=a.events[a.index].at){const e=a.events[a.index++];m.setHeld(e.number,e.state);if(e.state)this.held.add(e.number);else this.held.delete(e.number);}

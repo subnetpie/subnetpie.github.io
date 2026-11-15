@@ -5,7 +5,7 @@ const dom=new JSDOM(readFileSync('index.html','utf8'),{url:'https://subnetpie.gi
 Object.assign(globalThis,{document:dom.window.document,Option:dom.window.Option,location:dom.window.location,requestAnimationFrame:()=>{},crossOriginIsolated:true,addEventListener:()=>{}});
 dom.window.HTMLCanvasElement.prototype.getContext=()=>({fillRect(){},beginPath(){},arc(){},fill(){}});
 let requests=[];
-globalThis.fetch=async url=>{if(String(url).includes('/library/learned/'))return new Response(readFileSync(new URL(url).pathname.replace('/dmd-viewer/','')));const name=String(url).split('/').pop();requests.push(name);return new Response(readFileSync('dist/library/'+name))};
+globalThis.fetch=async url=>{if(String(url).endsWith('/recipe-events.json'))return new Response(readFileSync('dist/recipe-events.json'));if(String(url).includes('/library/learned/'))throw Error('Recorded media must not be fetched');const name=String(url).split('/').pop();requests.push(name);return new Response(readFileSync('dist/library/'+name))};
 class Worker{constructor(){Worker.last=this}postMessage(data){this.data=data}terminate(){}}
 globalThis.Worker=Worker;
 const app=await import('./dist/app.mjs');await app.includedStartup;
