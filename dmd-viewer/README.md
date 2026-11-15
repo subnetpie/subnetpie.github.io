@@ -109,7 +109,7 @@ Terminator 2 has its own 8×8 matrix and dedicated inputs. Targets 71–75 have 
 
 ## Built-in live trigger recipes
 
-Choose a game, then use **Trigger recipes → Credits and start → Run recipe**. Wait for a ball, run **Ball launch**, and then choose a shot recipe. Popeye has ten recipes and Terminator 2 has eight. Attract runs while idle; reset the ROM first if a game is already in progress. A fresh Terminator 2 ROM may request its initial factory-reset restart on the DMD; use Reset ROM, wait for startup, then run Credits and start.
+Choose a game, then use **Trigger recipes → Credits and start → Run recipe**. Wait for a ball, run **Ball launch**, and then choose a shot recipe. Popeye has ten recipes and Terminator 2 has fourteen. Attract runs while idle; reset the ROM first if a game is already in progress. A fresh Terminator 2 ROM may request its initial factory-reset restart on the DMD; use Reset ROM, wait for startup, then run Credits and start.
 
 Recipes are small built-in switch instructions and execute against the live emulator with its original DMD and audio. Selecting a recipe does not load a recorded clip. Results depend on the current ROM state. Switch sequences run on emulator time. Cancel, pause, reset, stop, changing games, and manual input cancel the active recipe and release its held inputs. Automatic ball return after an already-triggered drain continues normally.
 
@@ -138,3 +138,11 @@ The table has 45 numbered switch locations. Fifteen other inputs appear beside i
 The list is unique by game, ordered switches, relative timing and hold lengths, quantized to 25 ms to remove display-frame jitter. Repeated sequences merge and increment the learned use count. Simultaneous inputs are sorted consistently. Automatic ball/coil outputs and preset recipe playback are not learned as manual input. A group exceeding 128 activations is discarded with a status message rather than exporting an incomplete recipe.
 
 **Export learned recipes** downloads only unique recipes learned from viewer use, across both games. **Download recipe list** includes both the built-in observations and learned entries. JSON contains switch instructions, initial game state, observed event names and sound activity statistics. Only this metadata is saved to browser local storage; no DMD frames, audio, or video are retained. Exact game mode and sound still depend on ROM state. If browser storage is full, the list stays available for export in the current session.
+
+## Imported unique T2 animations
+
+The contributed 27-recipe export adds six representative recipes: Service-T2 Version Screen, NewScore-Credits, Door opening, Service-Press Enter for Main, Service-Sound Rev, and Bonus2X. PullTrigger is associated with the existing Ball launch recipe instead of duplicating its switch sequence. T2 now has 14 built-in recipes; Popeye retains 10.
+
+The import compares named PAC animations per game, ignores recipes without a matched animation, and merges repeated observations. Door4 through Door8 are grouped with the eight-frame Door Opening animation; palette suffixes do not create additional entries. Each new preset keeps one representative timed switch sequence and its observed sound metadata. Service recipes require the same idle/service-menu context as the capture. These observations do not reconstruct hidden ROM state or guarantee the same output in another mode.
+
+`node import-animation-recipes.mjs exported-recipes.json` validates scene names against the supplied PACs and adds only novel animation identities. Re-importing the same export makes no changes. The compiler preserves contributed metadata while rechecking the original baseline recipes. No recording or media data is included.

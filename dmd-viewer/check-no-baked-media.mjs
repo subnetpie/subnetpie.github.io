@@ -13,5 +13,5 @@ const databases=await indexedDB.databases();assert(!databases.some(d=>d.name==='
 await deleteStoredRecordings();
 for(const path of ['dist/library/learned','dist/library/popeye-sound-effects.zip','dist/built-in-animations.mjs','dist/rom-history.mjs','dist/saved-rom-history.mjs','dist/animation-export.mjs'])assert(!existsSync(path),path+' must not ship');
 const player=readFileSync('dist/rom-viewer.mjs','utf8');assert(!/recordFrame|recordAudio|recordTriggers|romExportAll|romAnimation|SavedRomHistory/.test(player));
-assert.equal(recipesForGame('pop_lx5').length,10);assert.equal(recipesForGame('t2_l8').length,8);
-console.log('Recording removal passed: stored frames/audio/clips deleted, open legacy tabs handled, unrelated data preserved, recorder/replay/export removed, all 18 live recipes retained.');
+assert.equal(recipesForGame('pop_lx5').length,10);assert.equal(recipesForGame('t2_l8').length,14);
+console.log('Recording removal passed: stored frames/audio/clips deleted, open legacy tabs handled, unrelated data preserved, recorder/replay/export removed, all 24 live recipes retained.');

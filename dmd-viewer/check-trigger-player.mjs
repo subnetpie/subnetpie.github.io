@@ -11,7 +11,7 @@ Object.assign(globalThis,{Worker});globalThis.fetch=async url=>new Response(read
 let downloadBlob,downloadName;URL.createObjectURL=blob=>{downloadBlob=blob;return 'blob:recipe-test'};dom.window.HTMLAnchorElement.prototype.click=function(){downloadName=this.download;};
 const {createRomViewer}=await import('./dist/rom-viewer.mjs');
 const viewer=createRomViewer({setMode(){}}),$=id=>document.getElementById(id);await viewer.setSound(false);viewer.setActive(true);
-for(const [rom,pac,count] of [['pop_lx5','popeye',10],['t2_l8','terminator-2',8]]){
+for(const [rom,pac,count] of [['pop_lx5','popeye',10],['t2_l8','terminator-2',14]]){
  await viewer.accept([new File([new Uint8Array(10)],rom+'.zip'),new File([readFileSync('dist/library/'+pac+'.pac')],pac+'.pac')]);
  assert.equal($('romRecipe').options.length,count);assert($('romRunRecipe').disabled);await viewer.start();const w=Worker.last;
  w.onmessage({data:{type:'started',info:rom}});assert($('romRunRecipe').disabled);

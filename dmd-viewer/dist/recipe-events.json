@@ -4,7 +4,7 @@
   "note": "Timed trigger recipes and observed event/sound metadata only. Sound was observed during the recipe; background music may contribute. No sound command IDs, PCM, DMD pixels, or media are stored. Re-run recipes in the emulator to hear sound; game state affects results.",
   "entries": [
     {
-      "key": "[\"pop_lx5\",[[0,64,120],[250,65,120],[500,66,120],[750,67,120],[1000,68,120]]]",
+      "key": "[\"pop_lx5\",[[0,64,125],[250,65,125],[500,66,125],[750,67,125],[1000,68,125]]]",
       "game": "pop_lx5",
       "id": "builtin:popeye:light-animal-targets",
       "label": "Animal targets",
@@ -38,6 +38,8 @@
       "durationMs": 5005,
       "precondition": "after the preceding sample in this game",
       "runs": 1,
+      "learned": false,
+      "learnedRuns": 0,
       "events": [],
       "soundObserved": true,
       "audioPeak": 0.0244140625,
@@ -53,21 +55,23 @@
       "durationMs": 6009,
       "precondition": "idle",
       "runs": 1,
+      "learned": false,
+      "learnedRuns": 0,
       "events": [
         {
-          "key": "128:32:att2_credit start",
+          "key": "pop_lx5:animation:att2_credit start",
           "label": "ATT2_credit start"
         },
         {
-          "key": "128:32:att1_ship crew",
+          "key": "pop_lx5:animation:att1_ship crew",
           "label": "ATT1_ship crew"
         },
         {
-          "key": "128:32:att1_game over",
+          "key": "pop_lx5:animation:att1_game over",
           "label": "ATT1_game over"
         },
         {
-          "key": "128:32:att1_bally",
+          "key": "pop_lx5:animation:att1_bally",
           "label": "ATT1_bally"
         }
       ],
@@ -77,7 +81,7 @@
       "observationMs": 6762
     },
     {
-      "key": "[\"pop_lx5\",[[0,23,120]]]",
+      "key": "[\"pop_lx5\",[[0,23,125]]]",
       "game": "pop_lx5",
       "id": "builtin:popeye:light-launch",
       "label": "Ball launch",
@@ -91,13 +95,15 @@
       "durationMs": 5001,
       "precondition": "ball served into shooter lane",
       "runs": 1,
+      "learned": false,
+      "learnedRuns": 0,
       "events": [
         {
-          "key": "128:32:fp4_skill shot",
+          "key": "pop_lx5:animation:fp4_skill shot",
           "label": "FP4_skill shot"
         },
         {
-          "key": "128:32:fp4_palme",
+          "key": "pop_lx5:animation:fp4_palme",
           "label": "FP4_palme"
         }
       ],
@@ -107,7 +113,7 @@
       "observationMs": 5008
     },
     {
-      "key": "[\"pop_lx5\",[[0,16,120],[250,18,120],[500,17,120],[750,16,120],[1000,18,120],[1250,17,120]]]",
+      "key": "[\"pop_lx5\",[[0,16,125],[250,18,125],[500,17,125],[750,16,125],[1000,18,125],[1250,17,125]]]",
       "game": "pop_lx5",
       "id": "builtin:popeye:light-bumpers",
       "label": "Bumper sequence",
@@ -146,6 +152,8 @@
       "durationMs": 5010,
       "precondition": "after the preceding sample in this game",
       "runs": 2,
+      "learned": false,
+      "learnedRuns": 0,
       "events": [],
       "soundObserved": true,
       "audioPeak": 0.04315185546875,
@@ -153,7 +161,7 @@
       "observationMs": 5763
     },
     {
-      "key": "[\"pop_lx5\",[[0,5,120],[400,1,120],[800,1,120],[1300,13,120]]]",
+      "key": "[\"pop_lx5\",[[0,5,125],[400,1,125],[800,1,125],[1300,13,125]]]",
       "game": "pop_lx5",
       "id": "builtin:popeye:light-start",
       "label": "Credits and start",
@@ -182,17 +190,19 @@
       "durationMs": 5008,
       "precondition": "after the preceding sample in this game",
       "runs": 1,
+      "learned": false,
+      "learnedRuns": 0,
       "events": [
         {
-          "key": "128:32:att1_bally",
+          "key": "pop_lx5:animation:att1_bally",
           "label": "ATT1_bally"
         },
         {
-          "key": "128:32:att1_ship crew",
+          "key": "pop_lx5:animation:att1_ship crew",
           "label": "ATT1_ship crew"
         },
         {
-          "key": "128:32:att2_credit start",
+          "key": "pop_lx5:animation:att2_credit start",
           "label": "ATT2_credit start"
         }
       ],
@@ -202,7 +212,7 @@
       "observationMs": 5018
     },
     {
-      "key": "[\"pop_lx5\",[[0,74,120]]]",
+      "key": "[\"pop_lx5\",[[0,74,125]]]",
       "game": "pop_lx5",
       "id": "builtin:popeye:light-drain-left",
       "label": "Drain demonstration",
@@ -216,9 +226,11 @@
       "durationMs": 5001,
       "precondition": "after the preceding sample in this game",
       "runs": 1,
+      "learned": false,
+      "learnedRuns": 0,
       "events": [
         {
-          "key": "scene:3671101",
+          "key": "pop_lx5:animation:fp1_fight bonus",
           "label": "FP1_fight bonus"
         }
       ],
@@ -228,7 +240,7 @@
       "observationMs": 5757
     },
     {
-      "key": "[\"pop_lx5\",[[0,25,120]]]",
+      "key": "[\"pop_lx5\",[[0,25,125]]]",
       "game": "pop_lx5",
       "id": "builtin:popeye:light-left-loop",
       "label": "Left loop",
@@ -242,6 +254,8 @@
       "durationMs": 5014,
       "precondition": "after the preceding sample in this game",
       "runs": 1,
+      "learned": false,
+      "learnedRuns": 0,
       "events": [],
       "soundObserved": true,
       "audioPeak": 0.0252685546875,
@@ -249,7 +263,7 @@
       "observationMs": 5765
     },
     {
-      "key": "[\"pop_lx5\",[[0,71,120],[250,72,120],[500,73,120],[750,26,120],[1000,27,120],[1250,28,120]]]",
+      "key": "[\"pop_lx5\",[[0,71,125],[250,72,125],[500,73,125],[750,26,125],[1000,27,125],[1250,28,125]]]",
       "game": "pop_lx5",
       "id": "builtin:popeye:light-popeye-targets",
       "label": "P-O-P-E-Y-E targets",
@@ -288,13 +302,15 @@
       "durationMs": 5005,
       "precondition": "after the preceding sample in this game",
       "runs": 1,
+      "learned": false,
+      "learnedRuns": 0,
       "events": [
         {
-          "key": "scene:9408315",
+          "key": "pop_lx5:animation:fp1_braccio spinaci",
           "label": "FP1_braccio spinaci"
         },
         {
-          "key": "scene:8689234",
+          "key": "pop_lx5:animation:fp1_pop targets",
           "label": "FP1_pop targets"
         }
       ],
@@ -304,7 +320,7 @@
       "observationMs": 5760
     },
     {
-      "key": "[\"pop_lx5\",[[0,34,120],[250,35,120]]]",
+      "key": "[\"pop_lx5\",[[0,34,125],[250,35,125]]]",
       "game": "pop_lx5",
       "id": "builtin:popeye:light-ramp",
       "label": "Ramp shot",
@@ -323,9 +339,11 @@
       "durationMs": 5002,
       "precondition": "after the preceding sample in this game",
       "runs": 1,
+      "learned": false,
+      "learnedRuns": 0,
       "events": [
         {
-          "key": "128:32:fp4_ramp loop",
+          "key": "pop_lx5:animation:fp4_ramp loop",
           "label": "FP4_ramp loop"
         }
       ],
@@ -335,7 +353,7 @@
       "observationMs": 5752
     },
     {
-      "key": "[\"pop_lx5\",[[0,33,120]]]",
+      "key": "[\"pop_lx5\",[[0,33,125]]]",
       "game": "pop_lx5",
       "id": "builtin:popeye:light-right-loop",
       "label": "Right loop",
@@ -349,6 +367,8 @@
       "durationMs": 5003,
       "precondition": "after the preceding sample in this game",
       "runs": 1,
+      "learned": false,
+      "learnedRuns": 0,
       "events": [],
       "soundObserved": true,
       "audioPeak": 0.023895263671875,
@@ -364,17 +384,19 @@
       "durationMs": 6013,
       "precondition": "idle",
       "runs": 1,
+      "learned": false,
+      "learnedRuns": 0,
       "events": [
         {
-          "key": "128:32:intrologo",
+          "key": "t2_l8:animation:intrologo",
           "label": "IntroLogo"
         },
         {
-          "key": "128:32:introjudge",
+          "key": "t2_l8:animation:introjudge",
           "label": "IntroJudge"
         },
         {
-          "key": "scene:3564930",
+          "key": "t2_l8:animation:specialthanks",
           "label": "SpecialThanks"
         }
       ],
@@ -384,10 +406,10 @@
       "observationMs": 6768
     },
     {
-      "key": "[\"t2_l8\",[[0,34,120]]]",
+      "key": "[\"t2_l8\",[[0,34,125]]]",
       "game": "t2_l8",
       "id": "builtin:terminator-2:light-launch",
-      "label": "Ball launch",
+      "label": "Ball launch / Pull trigger",
       "steps": [
         {
           "atMs": 0,
@@ -397,15 +419,65 @@
       ],
       "durationMs": 5012,
       "precondition": "ball served into shooter lane",
-      "runs": 1,
-      "events": [],
+      "runs": 3,
+      "learned": false,
+      "learnedRuns": 0,
+      "events": [
+        {
+          "key": "t2_l8:animation:pulltrigger",
+          "label": "PullTrigger"
+        }
+      ],
       "soundObserved": true,
       "audioPeak": 0.909332275390625,
       "audioSamplesObserved": 221235,
       "observationMs": 5017
     },
     {
-      "key": "[\"t2_l8\",[[0,65,120],[250,66,120]]]",
+      "key": "[\"t2_l8\",[[0,58,125],[525,57,125],[1175,56,125]]]",
+      "game": "t2_l8",
+      "id": "builtin:terminator-2:animation-bonus2x",
+      "label": "Bonus2X",
+      "steps": [
+        {
+          "atMs": 0,
+          "switch": 58,
+          "holdMs": 125
+        },
+        {
+          "atMs": 525,
+          "switch": 57,
+          "holdMs": 125
+        },
+        {
+          "atMs": 1175,
+          "switch": 56,
+          "holdMs": 125
+        }
+      ],
+      "durationMs": 5000,
+      "precondition": "Start a game and launch a ball; the captured game mode is required.",
+      "runs": 1,
+      "learned": false,
+      "learnedRuns": 0,
+      "events": [
+        {
+          "key": "t2_l8:animation:bonus2x",
+          "label": "Bonus2X"
+        }
+      ],
+      "soundObserved": true,
+      "audioPeak": 0.440582275390625,
+      "audioSamplesObserved": 122010,
+      "observationMs": 2800,
+      "initialState": {
+        "trough": 2,
+        "shooter": false,
+        "playfield": 1
+      }
+    },
+    {
+      "key": "[\"t2_l8\",[[0,65,125],[250,66,125]]]",
       "game": "t2_l8",
       "id": "builtin:terminator-2:light-chase",
       "label": "Chase loop",
@@ -424,9 +496,11 @@
       "durationMs": 5009,
       "precondition": "after the preceding sample in this game",
       "runs": 1,
+      "learned": false,
+      "learnedRuns": 0,
       "events": [
         {
-          "key": "scene:2085616",
+          "key": "t2_l8:animation:chase loop",
           "label": "Chase Loop"
         }
       ],
@@ -436,7 +510,7 @@
       "observationMs": 5761
     },
     {
-      "key": "[\"t2_l8\",[[0,5,120],[250,1,120],[1000,1,120],[1750,13,500]]]",
+      "key": "[\"t2_l8\",[[0,5,125],[250,1,125],[1000,1,125],[1750,13,500]]]",
       "game": "t2_l8",
       "id": "builtin:terminator-2:light-start",
       "label": "Credits and start",
@@ -465,17 +539,19 @@
       "durationMs": 5015,
       "precondition": "after the preceding sample in this game",
       "runs": 1,
+      "learned": false,
+      "learnedRuns": 0,
       "events": [
         {
-          "key": "scene:3564930",
+          "key": "t2_l8:animation:specialthanks",
           "label": "SpecialThanks"
         },
         {
-          "key": "128:32:credits",
+          "key": "t2_l8:animation:credits",
           "label": "Credits"
         },
         {
-          "key": "scene:2922912",
+          "key": "t2_l8:animation:losangeles4-11-2029",
           "label": "LosAngeles4-11-2029"
         }
       ],
@@ -485,7 +561,50 @@
       "observationMs": 5020
     },
     {
-      "key": "[\"t2_l8\",[[0,41,120],[250,42,120],[500,43,120]]]",
+      "key": "[\"t2_l8\",[[0,62,125],[475,53,125],[1050,54,125]]]",
+      "game": "t2_l8",
+      "id": "builtin:terminator-2:animation-door-opening",
+      "label": "Door opening",
+      "steps": [
+        {
+          "atMs": 0,
+          "switch": 62,
+          "holdMs": 125
+        },
+        {
+          "atMs": 475,
+          "switch": 53,
+          "holdMs": 125
+        },
+        {
+          "atMs": 1050,
+          "switch": 54,
+          "holdMs": 125
+        }
+      ],
+      "durationMs": 5000,
+      "precondition": "Start a game and launch a ball; the captured game mode is required.",
+      "runs": 1,
+      "learned": false,
+      "learnedRuns": 0,
+      "events": [
+        {
+          "key": "t2_l8:animation:door opening",
+          "label": "Door opening"
+        }
+      ],
+      "soundObserved": true,
+      "audioPeak": 1,
+      "audioSamplesObserved": 116865,
+      "observationMs": 2683,
+      "initialState": {
+        "trough": 2,
+        "shooter": false,
+        "playfield": 1
+      }
+    },
+    {
+      "key": "[\"t2_l8\",[[0,41,125],[250,42,125],[500,43,125]]]",
       "game": "t2_l8",
       "id": "builtin:terminator-2:light-jets",
       "label": "Jet bumpers",
@@ -509,6 +628,8 @@
       "durationMs": 5008,
       "precondition": "after the preceding sample in this game",
       "runs": 2,
+      "learned": false,
+      "learnedRuns": 0,
       "events": [],
       "soundObserved": true,
       "audioPeak": 0.83538818359375,
@@ -516,7 +637,7 @@
       "observationMs": 5769
     },
     {
-      "key": "[\"t2_l8\",[[0,61,120],[250,62,120]]]",
+      "key": "[\"t2_l8\",[[0,61,125],[250,62,125]]]",
       "game": "t2_l8",
       "id": "builtin:terminator-2:light-left-ramp",
       "label": "Left ramp",
@@ -535,6 +656,8 @@
       "durationMs": 5017,
       "precondition": "after the preceding sample in this game",
       "runs": 1,
+      "learned": false,
+      "learnedRuns": 0,
       "events": [],
       "soundObserved": true,
       "audioPeak": 0.7452392578125,
@@ -542,7 +665,40 @@
       "observationMs": 5766
     },
     {
-      "key": "[\"t2_l8\",[[0,63,120],[250,64,120]]]",
+      "key": "[\"t2_l8\",[[0,51,125]]]",
+      "game": "t2_l8",
+      "id": "builtin:terminator-2:animation-newscore-credits",
+      "label": "NewScore-Credits",
+      "steps": [
+        {
+          "atMs": 0,
+          "switch": 51,
+          "holdMs": 125
+        }
+      ],
+      "durationMs": 5000,
+      "precondition": "Start a game and launch a ball; the captured game mode is required.",
+      "runs": 2,
+      "learned": false,
+      "learnedRuns": 0,
+      "events": [
+        {
+          "key": "t2_l8:animation:newscore-credits",
+          "label": "NewScore-Credits"
+        }
+      ],
+      "soundObserved": true,
+      "audioPeak": 0.32891845703125,
+      "audioSamplesObserved": 142590,
+      "observationMs": 1625,
+      "initialState": {
+        "trough": 1,
+        "shooter": false,
+        "playfield": 2
+      }
+    },
+    {
+      "key": "[\"t2_l8\",[[0,63,125],[250,64,125]]]",
       "game": "t2_l8",
       "id": "builtin:terminator-2:light-right-ramp",
       "label": "Right ramp",
@@ -561,9 +717,11 @@
       "durationMs": 5008,
       "precondition": "after the preceding sample in this game",
       "runs": 1,
+      "learned": false,
+      "learnedRuns": 0,
       "events": [
         {
-          "key": "scene:6257228",
+          "key": "t2_l8:animation:game-million-mk",
           "label": "Game-million-mk"
         }
       ],
@@ -573,7 +731,121 @@
       "observationMs": 5753
     },
     {
-      "key": "[\"t2_l8\",[[0,71,120],[250,72,120],[500,73,120],[750,74,120],[1000,75,120]]]",
+      "key": "[\"t2_l8\",[[0,5,125],[1250,5,100]]]",
+      "game": "t2_l8",
+      "id": "builtin:terminator-2:animation-service-press-enter-for-main",
+      "label": "Service-Press Enter for Main",
+      "steps": [
+        {
+          "atMs": 0,
+          "switch": 5,
+          "holdMs": 125
+        },
+        {
+          "atMs": 1250,
+          "switch": 5,
+          "holdMs": 100
+        }
+      ],
+      "durationMs": 5000,
+      "precondition": "Use the same idle/service-menu state as the capture. Service screens depend on the current menu.",
+      "runs": 1,
+      "learned": false,
+      "learnedRuns": 0,
+      "events": [
+        {
+          "key": "t2_l8:animation:service-press enter for main",
+          "label": "Service-Press Enter for Main"
+        }
+      ],
+      "soundObserved": true,
+      "audioPeak": 0.096710205078125,
+      "audioSamplesObserved": 125685,
+      "observationMs": 2867,
+      "initialState": {
+        "trough": 3,
+        "shooter": false,
+        "playfield": 0
+      }
+    },
+    {
+      "key": "[\"t2_l8\",[[0,5,125],[475,5,125]]]",
+      "game": "t2_l8",
+      "id": "builtin:terminator-2:animation-service-sound-rev",
+      "label": "Service-Sound Rev",
+      "steps": [
+        {
+          "atMs": 0,
+          "switch": 5,
+          "holdMs": 125
+        },
+        {
+          "atMs": 475,
+          "switch": 5,
+          "holdMs": 125
+        }
+      ],
+      "durationMs": 5000,
+      "precondition": "Use the same idle/service-menu state as the capture. Service screens depend on the current menu.",
+      "runs": 1,
+      "learned": false,
+      "learnedRuns": 0,
+      "events": [
+        {
+          "key": "t2_l8:animation:service-sound rev",
+          "label": "Service-Sound Rev"
+        }
+      ],
+      "soundObserved": true,
+      "audioPeak": 0.60223388671875,
+      "audioSamplesObserved": 92610,
+      "observationMs": 2117,
+      "initialState": {
+        "trough": 3,
+        "shooter": false,
+        "playfield": 0
+      }
+    },
+    {
+      "key": "[\"t2_l8\",[[0,8,100],[1525,5,150]]]",
+      "game": "t2_l8",
+      "id": "builtin:terminator-2:animation-service-t2-version-screen",
+      "label": "Service-T2 Version Screen",
+      "steps": [
+        {
+          "atMs": 0,
+          "switch": 8,
+          "holdMs": 100
+        },
+        {
+          "atMs": 1525,
+          "switch": 5,
+          "holdMs": 150
+        }
+      ],
+      "durationMs": 5000,
+      "precondition": "Use the same idle/service-menu state as the capture. Service screens depend on the current menu.",
+      "runs": 1,
+      "learned": false,
+      "learnedRuns": 0,
+      "events": [
+        {
+          "key": "t2_l8:animation:service-t2 version screen",
+          "label": "Service-T2 Version Screen"
+        }
+      ],
+      "soundObserved": true,
+      "audioPeak": 0.148193359375,
+      "audioSamplesObserved": 139650,
+      "observationMs": 3183,
+      "initialState": {
+        "trough": 3,
+        "shooter": false,
+        "playfield": 0
+      }
+    },
+    {
+      "key": "[\"t2_l8\",[[0,71,125],[250,72,125],[500,73,125],[750,74,125],[1000,75,125]]]",
       "game": "t2_l8",
       "id": "builtin:terminator-2:light-targets",
       "label": "Target bank",
@@ -607,6 +879,8 @@
       "durationMs": 5009,
       "precondition": "after the preceding sample in this game",
       "runs": 1,
+      "learned": false,
+      "learnedRuns": 0,
       "events": [],
       "soundObserved": true,
       "audioPeak": 0.65301513671875,
@@ -737,6 +1011,24 @@
       "soundObservedDuringRecipes": true
     },
     {
+      "key": "[\"t2_l8\",\"pulltrigger\"]",
+      "game": "t2_l8",
+      "label": "PullTrigger",
+      "recipeIds": [
+        "builtin:terminator-2:light-launch"
+      ],
+      "soundObservedDuringRecipes": true
+    },
+    {
+      "key": "[\"t2_l8\",\"bonus2x\"]",
+      "game": "t2_l8",
+      "label": "Bonus2X",
+      "recipeIds": [
+        "builtin:terminator-2:animation-bonus2x"
+      ],
+      "soundObservedDuringRecipes": true
+    },
+    {
       "key": "[\"t2_l8\",\"chase loop\"]",
       "game": "t2_l8",
       "label": "Chase Loop",
@@ -764,11 +1056,56 @@
       "soundObservedDuringRecipes": true
     },
     {
+      "key": "[\"t2_l8\",\"door opening\"]",
+      "game": "t2_l8",
+      "label": "Door opening",
+      "recipeIds": [
+        "builtin:terminator-2:animation-door-opening"
+      ],
+      "soundObservedDuringRecipes": true
+    },
+    {
+      "key": "[\"t2_l8\",\"newscore-credits\"]",
+      "game": "t2_l8",
+      "label": "NewScore-Credits",
+      "recipeIds": [
+        "builtin:terminator-2:animation-newscore-credits"
+      ],
+      "soundObservedDuringRecipes": true
+    },
+    {
       "key": "[\"t2_l8\",\"game-million-mk\"]",
       "game": "t2_l8",
       "label": "Game-million-mk",
       "recipeIds": [
         "builtin:terminator-2:light-right-ramp"
+      ],
+      "soundObservedDuringRecipes": true
+    },
+    {
+      "key": "[\"t2_l8\",\"service-press enter for main\"]",
+      "game": "t2_l8",
+      "label": "Service-Press Enter for Main",
+      "recipeIds": [
+        "builtin:terminator-2:animation-service-press-enter-for-main"
+      ],
+      "soundObservedDuringRecipes": true
+    },
+    {
+      "key": "[\"t2_l8\",\"service-sound rev\"]",
+      "game": "t2_l8",
+      "label": "Service-Sound Rev",
+      "recipeIds": [
+        "builtin:terminator-2:animation-service-sound-rev"
+      ],
+      "soundObservedDuringRecipes": true
+    },
+    {
+      "key": "[\"t2_l8\",\"service-t2 version screen\"]",
+      "game": "t2_l8",
+      "label": "Service-T2 Version Screen",
+      "recipeIds": [
+        "builtin:terminator-2:animation-service-t2-version-screen"
       ],
       "soundObservedDuringRecipes": true
     }

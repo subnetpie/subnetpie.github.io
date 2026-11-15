@@ -1,8 +1,8 @@
 import {parsePac} from './pac.mjs';
 import {LiveColorizer} from './live-colorizer.mjs';
 import {deleteStoredRecordings} from './recording-cleanup.mjs';
-import {recipesForGame} from './trigger-recipes.mjs';
-import {RecipeEventList} from './recipe-event-list.mjs?v=switch-learning-1';
+import {recipesForGame} from './trigger-recipes.mjs?v=animation-import-1';
+import {RecipeEventList} from './recipe-event-list.mjs?v=animation-import-1';
 import {SwitchRecipeLearner} from './switch-recipe-learner.mjs?v=switch-learning-1';
 import {animationGroups} from './animation-groups.mjs';
 import {popeyeSwitchByNumber,popeyeColumnColors} from './popeye-matrix.mjs';
@@ -123,7 +123,7 @@ export function createRomViewer({setMode,onSoundChange=()=>{}}){
     try{
       if(!background&&!audio.muted)await audio.unlock();
       const payload=await Promise.all(files.map(async file=>({name:file.name,bytes:await file.arrayBuffer()})));
-      if(session!==generation)return;worker=new Worker(new URL('./rom-worker.mjs?v=t2-table-1',import.meta.url),{type:'module'});const currentWorker=worker;
+      if(session!==generation)return;worker=new Worker(new URL('./rom-worker.mjs?v=animation-import-1',import.meta.url),{type:'module'});const currentWorker=worker;
       worker.onerror=e=>{if(worker!==currentWorker)return;appendLog(e.message);stop();status('Emulator error: '+e.message,true)};
       worker.onmessage=({data})=>{if(worker!==currentWorker)return;
         if(data.type==='started'){busy=false;running=true;paused=false;$('romTitle').textContent=data.info.split('\n')[0];$('romState').textContent='RUNNING';controls();if(!active)pause(true);status('ROM running. Use game controls or the service menus to test DMD animations and sound.');}
@@ -185,7 +185,7 @@ export function createRomViewer({setMode,onSoundChange=()=>{}}){
     if(machineState)$('romBallState').textContent='Trough: '+machineState.trough+' / '+(popeye?6:3)+' · Shooter: '+(machineState.shooter?'ball ready':'empty')+' · In play: '+machineState.playfield+' · '+machineState.event;
     else $('romBallState').textContent='Start the selected game to enable input controls.';
   }
-  function recipeHint(){const recipe=recipesForGame($('romGame').value).find(r=>r.id===$('romRecipe').value);$('romRecipeHint').textContent=recipe?(recipe.id.endsWith('light-start')?'Begin with Credits and start, wait for the ball, then run Ball launch.':recipe.id.endsWith('light-attract')?'Run while idle. Reset the ROM first if a game is in progress.':recipe.id.endsWith('light-launch')?'Wait for a ball in the shooter lane.':'Run after starting a game and launching a ball.')+' Results depend on the current game mode.':'Start a game to run its built-in switch sequences.';}
+  function recipeHint(){const recipe=recipesForGame($('romGame').value).find(r=>r.id===$('romRecipe').value);$('romRecipeHint').textContent=recipe?(recipe.expectedAnimations?.length?recipe.precondition+' Observed animation: '+recipe.expectedAnimations.join(', ')+'.':recipe.id.endsWith('light-start')?'Begin with Credits and start, wait for the ball, then run Ball launch.':recipe.id.endsWith('light-attract')?'Run while idle. Reset the ROM first if a game is in progress.':recipe.id.endsWith('light-launch')?'Wait for a ball in the shooter lane.':'Run after starting a game and launching a ball.')+' Results depend on the current game mode.':'Start a game to run its built-in switch sequences.';}
   $('romRecipe').onchange=recipeHint;
   $('romRunRecipe').onclick=async()=>{try{if($('romRunRecipe').disabled)return;eventList.cancel();if(!audio.muted)await audio.unlock();if(!running||paused||recipeRunning)return;recipeRunning=true;send({type:'recipe',id:$('romRecipe').value});$('romRecipeStatus').textContent='Starting recipe…';eventControls();}catch(error){status(error.message,true);}};
   $('romCancelRecipe').onclick=()=>{send({type:'cancel-recipe'});eventControls();};

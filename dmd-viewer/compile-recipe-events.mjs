@@ -10,10 +10,10 @@ import {popeyeInitialNvram} from './dist/popeye-initial-nvram.mjs';
 import {parsePac} from './dist/pac.mjs';
 import {LiveColorizer} from './dist/live-colorizer.mjs';
 import {animationGroups} from './dist/animation-groups.mjs';
-import {recipesForGame} from './dist/trigger-recipes.mjs';
+import {recipesForGame} from './dist/trigger-recipes.mjs?v=animation-import-1';
 import {TriggerRunner} from './dist/trigger-runner.mjs';
 import {RecipeEventList} from './dist/recipe-event-list.mjs';
-const list=new RecipeEventList();
+const list=new RecipeEventList();try{list.load(JSON.parse(await readFile('dist/recipe-events.json','utf8')));}catch{}
 for(const [game,prefix,asset] of [['pop_lx5','popeye','pop_lx5.zip'],['t2_l8','terminator-2','t2_l8-complete.zip']]){
  const core=await createRuntime({wasmBinary:gunzipSync(await readFile('dist/emulator/dmd-runtime.wasm.gz')),print(){},printErr(){}});
  try{
@@ -41,7 +41,7 @@ for(const [game,prefix,asset] of [['pop_lx5','popeye','pop_lx5.zip'],['t2_l8','t
   console.log(game+': auditing and booting ROM; no media will be written.');
   await wait(game==='pop_lx5'?14000:18000);
   if(game==='t2_l8'){core._viewer_reset();machine.now=0;machine.reset();origin=performance.now();now=0;colorizer.reset();previousMatch=0;await wait(12000);}
-  for(const recipe of recipesForGame(game)){
+  for(const recipe of recipesForGame(game).filter(r=>!r.contributed)){
    const repetitions=recipe.id.endsWith('light-bumpers')||recipe.id.endsWith('light-jets')?2:1;
    for(let repeat=0;repeat<repetitions;repeat++){
     runner.run(recipe.id,now);const limit=performance.now()+30000;
@@ -51,7 +51,7 @@ for(const [game,prefix,asset] of [['pop_lx5','popeye','pop_lx5.zip'],['t2_l8','t
   }
  }finally{core._viewer_stop();core.PThread.terminateAllThreads();}
 }
-const catalog=list.export();assert.equal(catalog.entries.length,18);assert(catalog.entries.some(e=>e.runs===2));
+const catalog=list.export();assert.equal(catalog.entries.length,recipesForGame('pop_lx5').length+recipesForGame('t2_l8').length);assert(catalog.entries.some(e=>e.runs>=2));
 const text=JSON.stringify(catalog,null,2)+'\n';await writeFile('dist/recipe-events.json',text);await writeFile(homedir()+'/Downloads/DMD-trigger-events.json',text);
 const quote=v=>'"'+String(v).replaceAll('"','""')+'"';
 await writeFile(homedir()+'/Downloads/DMD-trigger-events.csv',['Game,Recipe,Sound observed,Runs,Triggered DMD events',...catalog.entries.map(e=>[e.game,e.label,e.soundObserved,e.runs,e.events.map(v=>v.label).join('; ')].map(quote).join(','))].join('\n')+'\n');

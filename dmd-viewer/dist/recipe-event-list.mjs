@@ -1,4 +1,5 @@
-import {recipesForGame} from './trigger-recipes.mjs';
+import {recipesForGame} from './trigger-recipes.mjs?v=animation-import-1';
+import {animationIdentity} from './animation-identity.mjs';
 import {learnedRecipe,normaliseSteps} from './switch-recipe-learner.mjs?v=switch-learning-1';
 
 const format='dmd-trigger-event-list';
@@ -12,7 +13,7 @@ export class RecipeEventList {
  }
  beginManual(game,recipe,now){this.active={game,recipe,kind:'manual',start:now,finishAt:Infinity,events:new Map(),peak:0,samples:0,completed:false};}
  finishManual(now){if(this.active?.kind==='manual'){this.active.completed=true;return this.finish(now);}}
- observeEvent(key,label,now=Infinity){const a=this.active;if(a&&now>=a.start&&key&&a.events.size<128)a.events.set(String(key),String(label).slice(0,160));}
+ observeEvent(key,label,now=Infinity){const a=this.active;if(a&&now>=a.start&&key&&a.events.size<128){const event=animationIdentity(a.game,key,String(label).slice(0,160));a.events.set(event.key,event.label);}}
  observeAudio(data,now=Infinity){const a=this.active;if(!a||now<a.start)return;for(const value of data)if(Number.isFinite(value))a.peak=Math.max(a.peak,Math.abs(value));a.samples+=data.length;}
  complete(now){const a=this.active;if(a){a.completed=true;a.finishAt=Math.max(a.start+a.recipe.durationMs,now+750);}}
  advance(now){if(this.active?.completed&&now>=this.active.finishAt)this.finish(now);}
@@ -39,7 +40,8 @@ export class RecipeEventList {
   for(const item of data.entries){
    if(!item)continue;const preset=recipesForGame(item.game).find(r=>r.id===item.id),recipe=preset||((item.learned===true||String(item.id).startsWith('learned:'))?learnedRecipe(item.game,item.steps,item.initialState):null);if(!recipe)continue;
    // Whitelist fields: imported metadata cannot introduce samples or extra steps.
-   const entry={key:recipeKey(item.game,recipe),game:item.game,id:recipe.id,label:recipe.label,steps:recipe.steps.map(s=>({...s})),durationMs:recipe.durationMs,precondition:recipe.precondition,runs:Math.max(0,Math.min(1e9,Number(item.runs)||0)),learned:item.learned===true||!preset,learnedRuns:Math.max(0,Math.min(1e9,Number(item.learnedRuns)||0)),events:Array.isArray(item.events)?item.events.filter(e=>e&&typeof e.key==='string'&&typeof e.label==='string').slice(0,128).map(e=>({key:e.key.slice(0,180),label:e.label.slice(0,160)})):[],soundObserved:item.soundObserved===true,audioPeak:Math.max(0,Math.min(100,Number(item.audioPeak)||0)),audioSamplesObserved:Math.max(0,Math.min(1e15,Number(item.audioSamplesObserved)||0)),observationMs:Math.max(0,Math.min(3600000,Number(item.observationMs)||0))};
+   const events=Array.isArray(item.events)?item.events.filter(e=>e&&typeof e.key==='string'&&typeof e.label==='string').slice(0,128).map(e=>animationIdentity(item.game,e.key.slice(0,180),e.label.slice(0,160))):[];
+   const entry={key:recipeKey(item.game,recipe),game:item.game,id:recipe.id,label:recipe.label,steps:recipe.steps.map(s=>({...s})),durationMs:recipe.durationMs,precondition:recipe.precondition,runs:Math.max(0,Math.min(1e9,Number(item.runs)||0)),learned:item.learned===true||!preset,learnedRuns:Math.max(0,Math.min(1e9,Number(item.learnedRuns)||0)),events:[...new Map(events.map(e=>[e.key,e])).values()],soundObserved:item.soundObserved===true,audioPeak:Math.max(0,Math.min(100,Number(item.audioPeak)||0)),audioSamplesObserved:Math.max(0,Math.min(1e15,Number(item.audioSamplesObserved)||0)),observationMs:Math.max(0,Math.min(3600000,Number(item.observationMs)||0))};
    if(recipe.initialState)entry.initialState=recipe.initialState;
    else if(item.initialState&&item.learned){const learned=learnedRecipe(item.game,recipe.steps,item.initialState);if(learned)entry.initialState=learned.initialState;}
    const old=this.entries.get(entry.key);

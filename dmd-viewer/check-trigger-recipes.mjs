@@ -3,7 +3,7 @@ import {recipesForGame} from './dist/trigger-recipes.mjs';
 import {TriggerRunner} from './dist/trigger-runner.mjs';
 import {PopeyeMachine} from './dist/popeye-events.mjs';
 import {T2MatrixInputs} from './dist/t2-matrix.mjs';
-assert.equal(recipesForGame('pop_lx5').length,10);assert.equal(recipesForGame('t2_l8').length,8);assert.deepEqual(recipesForGame('other'),[]);
+assert.equal(recipesForGame('pop_lx5').length,10);assert.equal(recipesForGame('t2_l8').length,14);assert.deepEqual(recipesForGame('other'),[]);
 for(const [game,Machine] of [['pop_lx5',PopeyeMachine],['t2_l8',T2MatrixInputs]]){
  const states=new Map(),messages=[],machine=new Machine({setSwitch:(n,v)=>states.set(n,v)}),runner=new TriggerRunner(machine,game,m=>messages.push(m));
  const find=s=>recipesForGame(game).find(r=>r.id.endsWith('light-'+s)).id;
