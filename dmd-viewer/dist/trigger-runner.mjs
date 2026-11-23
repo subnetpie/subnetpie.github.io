@@ -8,7 +8,7 @@ export class TriggerRunner {
   const recipe=recipesForGame(this.game).find(r=>r.id===id);if(!recipe)throw Error('Recipe does not belong to this game.');
   const type=recipe.kind||id.split('light-').at(-1),m=this.machine,idle=['start','attract','service','idle'].includes(type);
   if(m.pending?.some?.(p=>p.event||p.begin))throw Error('Wait for the current shot or startup sequence.');
-  if(idle&&(m.playfield||m.shooter))throw Error('Reset the ROM before starting this recipe.');
+  if(idle&&(m.playfield||m.shooter||m.popper||m.gunLoaded||m.gunTransfer||m.gunFiring))throw Error('Reset the ROM before starting this recipe.');
   if(type==='launch'&&!m.shooter)throw Error('Start a game and wait for a ball in the shooter lane.');
   if(!idle&&type!=='launch'&&!m.playfield)throw Error('Start a game and launch a ball before running a shot recipe.');
   if((m.held||m.holds).size)throw Error('Release held switches before running a recipe.');

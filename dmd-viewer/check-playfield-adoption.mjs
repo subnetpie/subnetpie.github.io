@@ -1,0 +1,14 @@
+import assert from 'node:assert/strict';
+import {parseRaw} from './dist/formats.mjs';
+import {MachineActivity} from './dist/machine-activity.mjs';
+import {insertColor,t2Flashers} from './dist/playfield-lighting.mjs';
+const capture=new Uint8Array(8+1540*2);capture.set([82,65,87,0,1,128,32,3]);
+const view=new DataView(capture.buffer);view.setUint32(8,100,true);view.setUint32(1548,140,true);
+capture[12]=0xe0;capture[524]=0x60;capture[1036]=0x20;
+const scene=parseRaw(capture,256,64,'rgb')[0];assert.equal(scene.w,128);assert.equal(scene.h,32);assert.equal(scene.frames.length,2);assert.deepEqual([...scene.frames[0].data.slice(0,4)],[1,2,3,0]);assert.equal(scene.frames[0].levels,4);assert.equal(scene.frames[0].delay,40);assert.equal(scene.frames[1].delay,40);
+assert.throws(()=>parseRaw(capture.slice(0,-1),128,32,'2'),/Truncated/);
+const bad=capture.slice();bad[4]=2;assert.throws(()=>parseRaw(bad),/Unsupported/);
+view.setUint32(8,0xfffffff0,true);view.setUint32(1548,9,true);assert.equal(parseRaw(capture)[0].frames[0].delay,25);
+const log=new MachineActivity(3);for(let i=0;i<4;i++)log.add('sensor','76 · closed',i);assert.equal(log.rows.length,3);assert.equal(log.rows[0].time,1);assert.equal(log.drain().length,3);assert.equal(log.drain().length,0);log.clear();assert.equal(log.rows.length,0);
+assert.notEqual(insertColor('t2_l8',11),insertColor('t2_l8',22));assert(t2Flashers.some(f=>f.number===21));assert(!t2Flashers.some(f=>f.number===28),'A target-reset coil must never appear as a flasher');
+console.log('Playfield adoption passed: temporal-plane RAW decoding and timestamps, malformed input, timestamp wrap, bounded metadata log and insert/flasher identities.');
