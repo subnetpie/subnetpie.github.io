@@ -1,4 +1,4 @@
-import {playfieldArtwork,artworkPosition} from './color-playfield.mjs?v=color-playfield-1';
+import {playfieldArtwork,artworkPosition} from './color-playfield.mjs?v=color-playfield-2';
 import {parsePac} from './pac.mjs';
 import {LiveColorizer} from './live-colorizer.mjs';
 import {deleteStoredRecordings} from './recording-cleanup.mjs';
@@ -9,7 +9,7 @@ import {animationGroups} from './animation-groups.mjs';
 import {popeyeSwitchByNumber,popeyeColumnColors} from './popeye-matrix.mjs';
 import {t2SwitchByNumber} from './t2-matrix.mjs?v=t2-table-1';
 import {popeyeLamps,popeyeHotspots} from './popeye-playfield.mjs?v=flippers-1';
-import {t2Lamps,t2Hotspots,t2OtherInputs} from './t2-playfield.mjs';
+import {t2Lamps,t2Hotspots,t2OtherInputs} from './t2-playfield.mjs?v=t2-popper-1';
 
 export class RomAudio {
   constructor(){this.context=null;this.nodes=new Set();this.next=0;this.volume=0.7;this.muted=false;}

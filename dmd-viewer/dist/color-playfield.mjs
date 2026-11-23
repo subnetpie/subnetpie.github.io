@@ -27,6 +27,7 @@ export function artworkPosition(point,game,kind='switch'){
   }else{
     x=point.x*.96+2;
     y=interpolate(point.y,[[0,0],[35,35],[65,68],[84,87],[100,99]]);
+    if(kind==='switch'&&point.number===76){x=32;y=18;}
     if(kind==='switch'&&point.flipper){x=point.number===11?91:9;y=84;}
     if(kind==='lamp'&&point.number===84){x=12;y=95;}
   }

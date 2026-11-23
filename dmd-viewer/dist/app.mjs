@@ -1,10 +1,10 @@
 import {joinAnimationParts} from './animation-groups.mjs';
-import {createRomViewer} from './rom-viewer.mjs?v=color-playfield-20261122';
+import {createRomViewer} from './rom-viewer.mjs?v=t2-popper-20261122';
 import {parsePal,parseVni,parseDump,parseRaw} from './formats.mjs';
 import {parsePac} from './pac.mjs';
 import {extractDmdZip} from './zip.mjs';
 import {createPupViewer} from './pup-viewer.mjs';
-import {fetchIncludedRomGame,includedGames} from './library.mjs?v=color-playfield-20261122';
+import {fetchIncludedRomGame,includedGames} from './library.mjs?v=t2-popper-20261122';
 import {parseFsq,parsePalMappings} from './fsq.mjs';
 let currentPal=null;
 let pendingPac=null;
