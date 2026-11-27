@@ -121,3 +121,7 @@ Recipe playback, automatic switch learning, event catalogs and recipe exports ar
 ## Workbench layout
 
 Game selection, sound and advanced tools share one toolbar. Table options contains zoom, switch-marker visibility and pulse/hold controls. Lighting keeps lamp selection and LED configuration visible; its factory evidence and source links expand under Bulb details & sources. Engine settings contains reset, stop and volume. Other switches and artwork references are expandable beside the playfield.
+
+## Lamp matrix
+
+Choose **Lamp matrix** beside Color playfield to see each game's 8×8 controlled-lamp outputs, labeled by column and row. Filled dots and ON/OFF labels follow live ROM lamp states; cell outlines mark selection. Each circuit appears once even when it drives multiple physical bulbs. T2 lamp 18 is unused and disabled. Colors follow the first physical bulb's saved LED plan, or the planner baseline. Select a circuit and use **Open in Lighting** to edit its bulb; selection does not send a machine input or force lamp output. GI strings and flashers remain separate in Lighting. The matrix scrolls horizontally on small screens.

@@ -6,7 +6,7 @@ export function lampPickMarkup(game,area){return lampCatalog(game).filter(l=>l.a
  return '';
 }).join('');}
 
-export function createLampPlanner({root,table}){
+export function createLampPlanner({root,table,onChange=()=>{}}){
  root.innerHTML=`<div class="lamp-planner-heading"><div><h3>Lighting</h3><p>Choose a lamp. Plan its color and bulb.</p></div><label class="lamp-edit-toggle"><input id="lampSelectMode" type="checkbox"> Pick on playfield</label></div>
  <div class="lamp-planner-grid"><div class="lamp-browser"><div class="lamp-filters"><label>Type<select id="lampKind"><option value="all">All lighting</option><option value="insert">Inserts / controlled lamps</option><option value="gi">GI strings</option><option value="flasher">Flasher bulbs</option></select></label><label>Find<input id="lampSearch" type="search" placeholder="Name, number, backbox…"></label></div><div id="lampCount" class="lamp-list-count"></div><div id="lampList" class="lamp-list" role="group" aria-label="Selectable lamps"></div></div>
  <section class="lamp-detail" aria-label="Selected lamp"><h4 id="lampSelectedName"></h4><p id="lampLocation"></p>
@@ -48,7 +48,7 @@ export function createLampPlanner({root,table}){
   $('lampQuantityLabel').hidden=lamp.kind!=='gi';$('lampQuantity').value=value.quantity||'';
   $('lampRecommendation').textContent=rec.text;$('lampCompatibility').textContent=(rec.ready?'Confirm the voltage, socket and physical fit before ordering. ':'Verify the socket and color before ordering. ')+rec.note;$('lampSupplier').href=rec.profile.url;
   $('lampAccuracy').textContent=lamp.kind==='gi'?'This entry selects a whole GI string. Individual GI bulb positions and quantities are not verified.':lamp.point?'Artwork alignment is approximate. Your LED color choice changes the preview; it is not a factory color specification.':'This bulb is selectable from the factory list, but its exact position is not mapped on the artwork.';
-  $('lampFactorySource').href=lamp.source;updateExport();paint();
+  $('lampFactorySource').href=lamp.source;updateExport();paint();const colors={};for(const entry of catalog.filter(l=>l.kind==='insert'))colors[entry.number]??=lampRecommendation(entry,choice(entry)).color.hex;onChange({selected:lamp,colors});
  }
  function select(id){if(!catalog.some(l=>l.id===id))return;selected=id;for(const b of $('lampList').querySelectorAll('button'))b.setAttribute('aria-pressed',String(b.dataset.lampRow===id));renderDetail();}
  function change(){const lamp=selectedLamp();if(!lamp)return;plans[game]??={};plans[game][lamp.id]=normalizeLampChoice(lamp,{base:$('lampBase').value,color:$('lampColor').value,profile:$('lampProfile').value,quantity:$('lampQuantity').value?Number($('lampQuantity').value):null});save();renderDetail();}
@@ -62,5 +62,5 @@ export function createLampPlanner({root,table}){
   for(const lamp of catalog.filter(l=>plans[game]?.[l.id])){const rec=lampRecommendation(lamp,choice(lamp));rows.push([game,lamp.id,lamp.kind,lamp.number,lamp.name,areaLabel(lamp.area),bulbBases[rec.choice.base],rec.color.label,rec.profile.label,rec.choice.quantity??'count required',rec.ready?'Confirm fit before ordering':'Socket / color verification required',lamp.source]);}
   const csv=rows.map(r=>r.map(v=>'"'+String(v).replaceAll('"','""')+'"').join(',')).join('\r\n'),url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'})),a=document.createElement('a');a.href=url;a.download=game+'-lamp-led-plan.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
  };
- return {updateGame(next){if(next===game)return;game=next;table.querySelector('.playfield-boards>div:last-child')?.prepend(root);catalog=lampCatalog(game);cacheNodes();liveSignature='';selected=catalog[0]?.id;live=null;$('lampSearch').value='';$('lampKind').value='all';$('lampPreview').checked=false;renderList();renderDetail();},updateLive(state){live=state;const lamp=selectedLamp();if(lamp){const text=liveText(lamp);if($('lampLive').textContent!==text)$('lampLive').textContent=text;}const signature=JSON.stringify([live?.lamps,live?.flashers||live?.solenoids]);if(signature!==liveSignature){liveSignature=signature;paintLive();}}};
+ return {selectCircuit(number){const lamp=catalog.find(l=>l.kind==='insert'&&l.number===number);if(lamp)select(lamp.id);},updateGame(next){if(next===game)return;game=next;table.querySelector('.playfield-boards>div:last-child')?.prepend(root);catalog=lampCatalog(game);cacheNodes();liveSignature='';selected=catalog[0]?.id;live=null;$('lampSearch').value='';$('lampKind').value='all';$('lampPreview').checked=false;renderList();renderDetail();},updateLive(state){live=state;const lamp=selectedLamp();if(lamp){const text=liveText(lamp);if($('lampLive').textContent!==text)$('lampLive').textContent=text;}const signature=JSON.stringify([live?.lamps,live?.flashers||live?.solenoids]);if(signature!==liveSignature){liveSignature=signature;paintLive();}}};
 }

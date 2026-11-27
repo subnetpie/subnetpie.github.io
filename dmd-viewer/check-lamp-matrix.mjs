@@ -1,0 +1,16 @@
+import assert from 'node:assert/strict';
+import {JSDOM} from 'jsdom';
+import {createLampMatrix} from './dist/lamp-matrix.mjs';
+const dom=new JSDOM('<section id="matrix"></section>');const root=dom.window.document.getElementById('matrix');let picked=null,opened=null;
+const matrix=createLampMatrix({root,onSelect:n=>picked=n,onOpen:n=>opened=n});matrix.updateGame('t2_l8');
+assert.equal(root.querySelectorAll('[data-lamp-matrix]').length,64);assert(root.querySelector('[data-lamp-matrix="18"]').disabled);
+assert.deepEqual([...root.querySelectorAll('tbody tr:first-child [data-lamp-matrix]')].map(b=>Number(b.dataset.lampMatrix)),[11,21,31,41,51,61,71,81]);
+assert.deepEqual([...root.querySelectorAll('tbody tr:last-child [data-lamp-matrix]')].map(b=>Number(b.dataset.lampMatrix)),[18,28,38,48,58,68,78,88]);
+root.querySelector('[data-lamp-matrix="22"]').click();assert.equal(picked,22);assert.equal(root.querySelectorAll('[data-lamp-matrix="22"]').length,1,'Two physical bulbs share one matrix circuit');
+matrix.updatePlan({selected:{kind:'insert',number:22},colors:{22:'#579cff'}});matrix.updateLive({lamps:[22,52,18,999]});
+assert.equal(root.querySelector('#lampMatrixCount').textContent,'2 / 63 on');assert.equal(root.querySelectorAll('.lamp-output-on').length,2);assert.equal(root.querySelector('[data-lamp-matrix="22"]').style.getPropertyValue('--matrix-color'),'#579cff');assert.equal(root.querySelector('[data-lamp-matrix="22"]').getAttribute('aria-pressed'),'true');
+root.querySelector('#lampMatrixOpen').click();assert.equal(opened,22);matrix.updateLive({lamps:[]});assert.equal(root.querySelectorAll('.lamp-output-on').length,0);assert.equal(root.querySelectorAll('.lamp-output-selected').length,1,'Selection does not manufacture live output');
+matrix.updateLive(null);assert.match(root.querySelector('#lampMatrixCount').textContent,/Waiting/);assert.match(root.querySelector('#lampMatrixSelected').textContent,/unavailable/);
+matrix.updateGame('pop_lx5');assert.equal(root.querySelectorAll('[data-lamp-matrix]').length,64);assert(!root.querySelector('[data-lamp-matrix="18"]').disabled);assert.equal(root.querySelectorAll('.lamp-output-selected').length,0);matrix.updateLive({lamps:[18,71,88]});assert.equal(root.querySelector('#lampMatrixCount').textContent,'3 / 64 on');assert.match(root.querySelector('[data-lamp-matrix="71"]').textContent,/Backbox tail/);
+matrix.updatePlan({selected:{kind:'gi',number:1},colors:{}});assert(root.querySelector('#lampMatrixOpen').disabled);
+console.log('Lamp matrix passed: 8×8 addressing, unused output guard, shared-bulb circuits, live states, planned colors, selection without activation, game isolation and planner navigation.');
