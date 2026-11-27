@@ -1,0 +1,25 @@
+import assert from 'node:assert/strict';
+import {JSDOM} from 'jsdom';
+import {lampCatalog,compatibleProfiles,normalizeLampChoice,lampRecommendation} from './dist/lamp-catalog.mjs';
+import {createLampPlanner,lampPickMarkup} from './dist/lamp-planner.mjs';
+const t2=lampCatalog('t2_l8'),popeye=lampCatalog('pop_lx5');
+assert.equal(new Set(t2.map(l=>l.id)).size,t2.length);assert.equal(new Set(popeye.map(l=>l.id)).size,popeye.length);
+assert.equal(t2.filter(l=>l.kind==='flasher').length,23);assert.equal(popeye.filter(l=>l.kind==='flasher').length,24);
+assert(!t2.some(l=>l.kind==='flasher'&&l.number===28));assert(!popeye.some(l=>l.kind==='flasher'&&[17,25].includes(l.number)));
+for(const catalog of [t2,popeye]){assert.equal(catalog.filter(l=>l.kind==='gi').length,5);assert(catalog.filter(l=>l.kind==='gi').every(l=>l.quantity===null&&!l.point));for(const l of catalog)assert(compatibleProfiles(l).every(p=>p.voltage===l.voltage));}
+const gun=t2.find(l=>l.id==='flasher:21:0');assert.equal(gun.base,'89');assert(!compatibleProfiles(gun).some(p=>p.id==='2smd'));assert.equal(normalizeLampChoice(gun,{base:'906',profile:'8smd-tower'}).profile,'5smd');
+assert.equal(popeye.find(l=>l.id==='gi:5').base,'bayonet');assert.equal(popeye.find(l=>l.id==='gi:3').base,'wedge');assert(!lampRecommendation(t2[0],{}).ready);
+const dom=new JSDOM('<div id="table"><section id="planner"></section><div class="playfield-boards"><div>'+lampPickMarkup('t2_l8','main')+'<button data-playfield-switch="76">Ball popper</button></div><div></div></div></div>',{url:'https://subnetpie.github.io/dmd-viewer/'});
+Object.assign(globalThis,{document:dom.window.document,Option:dom.window.Option,localStorage:dom.window.localStorage});
+const table=document.getElementById('table'),root=document.getElementById('planner'),$=id=>root.querySelector('#'+id);let machineInputs=0;table.querySelector('[data-playfield-switch]').onclick=()=>machineInputs++;
+const planner=createLampPlanner({root,table});planner.updateGame('t2_l8');assert.equal(root.parentElement,table.querySelector('.playfield-boards>div:last-child'));
+$('lampKind').value='gi';$('lampKind').onchange();assert.equal($('lampList').children.length,5);root.querySelector('[data-lamp-row="gi:3"]').click();assert.equal($('lampProfile').value,'2smd');assert.equal($('lampBase').value,'wedge');assert.match($('lampLive').textContent,/not available/);
+$('lampColor').value='blue';$('lampColor').onchange();$('lampQuantity').value='8';$('lampQuantity').onchange();$('lampPreview').checked=true;$('lampPreview').onchange();assert(table.querySelector('[data-light-zone="gi:3"]').classList.contains('gi-preview'));
+$('lampSelectMode').checked=true;$('lampSelectMode').onchange();assert(table.classList.contains('lamp-selecting'));table.querySelector('[data-light-pick="flasher:21:0"]').click();assert.equal(machineInputs,0);assert.match($('lampSelectedName').textContent,/Gun/);assert.equal($('lampProfile').value,'5smd');
+$('lampColor').value='blue';$('lampColor').onchange();$('lampProfile').value='8smd-tower';$('lampProfile').onchange();assert.match($('lampRecommendation').textContent,/Super bright/);assert.match($('lampRecommendation').textContent,/Blue/);
+const saved=JSON.parse(localStorage.getItem('dmd-lamp-plans-v1'));assert.equal(saved.t2_l8['gi:3'].quantity,8);assert.equal(saved.t2_l8['flasher:21:0'].color,'blue');assert.equal(saved.t2_l8['flasher:21:0'].profile,'8smd-tower');
+planner.updateLive({lamps:[],flashers:[21]});assert(table.querySelector('[data-light-glow="flasher:21:0"]').classList.contains('planned-on'));
+table.querySelector('.playfield-boards').innerHTML='<div>'+lampPickMarkup('pop_lx5','main')+'</div><div>'+lampPickMarkup('pop_lx5','upper')+'</div>';planner.updateGame('pop_lx5');assert(root.isConnected);assert.equal($('lampColor').value,'unverified');assert.equal($('lampBase').value,'unknown');assert.match($('lampCompatibility').textContent,/Verify/);
+$('lampKind').value='gi';$('lampKind').onchange();root.querySelector('[data-lamp-row="gi:5"]').click();assert.equal($('lampBase').value,'bayonet');assert.equal($('lampQuantity').value,'');
+assert.equal(JSON.parse(localStorage.getItem('dmd-lamp-plans-v1')).t2_l8['flasher:21:0'].profile,'8smd-tower');
+console.log('Lamp planner passed: factory bulb counts and circuit exclusions, voltage/base compatibility, individual selection without switch input, GI preview/counts, blue super-bright flasher choice, saved plans and game isolation.');

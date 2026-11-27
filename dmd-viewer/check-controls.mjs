@@ -3,9 +3,9 @@ import assert from 'node:assert/strict';
 const elements=new Map(),events=new Map();
 const defaults={brightness:'100',palette:'amber',speed:'1',search:'',sceneFilter:'all'};
 class Element{
-  constructor(id=''){this.id=id;this.value=defaults[id]??'';this.checked=['dots','glow'].includes(id);this.tagName='BUTTON';this.style={};this.children=[];this.attrs={};this.classList={toggle(){},add(){},remove(){}}}
+  constructor(id=''){this.id=id;this.dataset={};this.value=defaults[id]??'';this.checked=['dots','glow'].includes(id);this.tagName='BUTTON';this.style={};this.children=[];this.attrs={};this.classList={toggle(){},add(){},remove(){}}}
   replaceChildren(...children){this.children=children}append(...children){this.children.push(...children)}
-  setAttribute(name,value){this.attrs[name]=value}querySelector(){return null}add(option){this.children.push(option)}
+  setAttribute(name,value){this.attrs[name]=value}querySelector(selector){return /^#[\w-]+$/.test(selector)?document.getElementById(selector.slice(1)):null}add(option){this.children.push(option)}
   querySelectorAll(){return []}addEventListener(){}
   click(){this.onclick?.()}getContext(){return {fillRect(){},beginPath(){},arc(){},fill(){}}}
 }
