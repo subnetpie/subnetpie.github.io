@@ -117,3 +117,7 @@ The table has 45 numbered switch locations. Fifteen other inputs appear beside i
 ## Recipe removal
 
 Recipe playback, automatic switch learning, event catalogs and recipe exports are removed. Opening the updated viewer clears its old recipe metadata from browser local storage. Manual game controls, machine activity, animation browsing and saved lamp plans remain available.
+
+## Workbench layout
+
+Game selection, sound and advanced tools share one toolbar. Table options contains zoom, switch-marker visibility and pulse/hold controls. Lighting keeps lamp selection and LED configuration visible; its factory evidence and source links expand under Bulb details & sources. Engine settings contains reset, stop and volume. Other switches and artwork references are expandable beside the playfield.

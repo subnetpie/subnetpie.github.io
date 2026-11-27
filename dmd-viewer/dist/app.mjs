@@ -1,10 +1,10 @@
 import {joinAnimationParts} from './animation-groups.mjs';
-import {createRomViewer} from './rom-viewer.mjs?v=no-recipes-20261127';
+import {createRomViewer} from './rom-viewer.mjs?v=clean-ui-20261127';
 import {parsePal,parseVni,parseDump,parseRaw} from './formats.mjs?v=playfield-adoption-1';
 import {parsePac} from './pac.mjs';
 import {extractDmdZip} from './zip.mjs';
 import {createPupViewer} from './pup-viewer.mjs';
-import {fetchIncludedRomGame,includedGames} from './library.mjs?v=no-recipes-20261127';
+import {fetchIncludedRomGame,includedGames} from './library.mjs?v=clean-ui-20261127';
 import {parseFsq,parsePalMappings} from './fsq.mjs';
 let currentPal=null;
 let pendingPac=null;
