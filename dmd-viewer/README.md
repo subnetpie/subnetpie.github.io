@@ -90,7 +90,7 @@ The game selector starts the selected ROM automatically. Browser audio starts af
 
 ## Popeye table inputs
 
-Select Popeye, use **Coin + start game**, then **Launch ball**. The table diagram's numbered switches and the trigger recipes drive the original ROM's scoring, DMD, lamps, music and effects. The six-ball trough and shooter-lane model responds to the ROM's coils. No VPX table is required. There is no separate shot-controls panel.
+Select Popeye, use **Coin + start game**, then **Launch ball**. The color playfield's numbered switches drive the original ROM's scoring, DMD, lamps, music and effects. The six-ball trough and shooter-lane model responds to the ROM's coils. No VPX table is required. There is no separate shot-controls panel.
 
 Switch and coil numbers come from PinMAME's `src/wpc/sims/wpc/prelim/pop.c`. The Popeye input bridge uses direct WPC cabinet switches to keep the browser's ball model in control.
 
@@ -107,42 +107,13 @@ Popeye now includes main and upper playfield illustrations extracted from the su
 Terminator 2 has its own 8×8 matrix and dedicated inputs. Targets 71–75 have the red bank outline from the supplied chart; unused positions are disabled. It uses direct switch inputs with a small three-ball trough, shooter, launch, and outhole model. Targets and other inputs activate their numbered switches directly. Gun positioning can be tested with the gun switches; full gun mechanics are not simulated.
 
 
-## Built-in live trigger recipes
-
-Choose a game, then use **Trigger recipes → Credits and start → Run recipe**. Wait for a ball, run **Ball launch**, and then choose a shot recipe. Popeye has ten recipes and Terminator 2 has fourteen. Attract runs while idle; reset the ROM first if a game is already in progress. A fresh Terminator 2 ROM may request its initial factory-reset restart on the DMD; use Reset ROM, wait for startup, then run Credits and start.
-
-Recipes are small built-in switch instructions and execute against the live emulator with its original DMD and audio. Selecting a recipe does not load a recorded clip. Results depend on the current ROM state. Switch sequences run on emulator time. Cancel, pause, reset, stop, changing games, and manual input cancel the active recipe and release its held inputs. Automatic ball return after an already-triggered drain continues normally.
-
-`node check-trigger-recipes.mjs` checks scheduling, prerequisites, cancellation, timeout and ball handling. `node check-trigger-player.mjs` checks UI wiring and lifecycle. `node check-trigger-worker.mjs` runs real WASM start/serve/launch/shot recipes for both games.
-
-The app includes recipes only; pre-recorded frame/audio catalogs and baked-in recordings are not shipped or fetched. The retired recording database is deleted automatically when the updated viewer opens. If another old viewer tab keeps it open, close that tab to let deletion finish. The emulator and selected game ROM/PAC assets are still required.
-
-## Unique trigger event list
-
-Running a recipe observes its DMD event names and sound activity, then saves only the timed recipe and scalar metadata. Repeating the same timed inputs in the same game merges into one entry. The downloadable JSON also includes a deduplicated index of named DMD events and the recipes that produced them. Numbered PAC parts are grouped into their named animation families. Cancelled and interrupted runs are discarded.
-
-Open **Trigger recipes → Unique recipe events** to see the list or use **Download recipe list**. The initial metadata list is compiled by `node compile-recipe-events.mjs` using the real local emulator for both games, including repeated bumper/jet runs to check deduplication. No audio or pixel files are generated. New observations are kept as small JSON metadata in browser local storage; the retired media-recording database is still cleared.
-
-Sound activity is measured during the recipe and may include background music. It is not an extracted sound-command identifier or a guarantee that the same scene/sound will occur in another game state. Run a recipe with Sound on to hear the original ROM output live.
-
 ## Terminator 2 table diagram
 
 Terminator 2 defaults to **Table diagram**, with the supplied Operations Manual's lamp-location illustration (printed p. 2-35) and switch positions aligned from p. 2-37. Amber highlights follow the ROM's 63 used lamp addresses; lamp 18 is unused. Special 2 (22) and Eyes Lower (51) illuminate their two printed bulbs together. Eyes Upper (52), marked "in head" by the manual, has a separate indicator.
 
-The table has 45 numbered switch locations. Fifteen other inputs appear beside it, covering cabinet switches and entries without a reliable printed location. Together these expose all 60 used T2 inputs; unused matrix positions have no table control. Trough, shooter, outhole and always-closed inputs stay automatic. Switches support pulse/hold, while the 11/12 flipper buttons hold for pointer or keyboard presses. The matrix and service views remain available. **Shot controls** has been removed from both games; trigger recipes remain available.
+The table has 45 numbered switch locations. Fifteen other inputs appear beside it, covering cabinet switches and entries without a reliable printed location. Together these expose all 60 used T2 inputs; unused matrix positions have no table control. Trough, shooter, outhole and always-closed inputs stay automatic. Switches support pulse/hold, while the 11/12 flipper buttons hold for pointer or keyboard presses. The matrix and service views remain available. **Shot controls** has been removed from both games. Recipe playback, learning and exports have been removed.
 
-## Learn recipes from viewer switch inputs
 
-**Learn switch inputs** is on by default. Table switches, matrix pulse/hold actions, flipper pointer/keyboard presses, cabinet/service keys, and manual numbered switch inputs are captured as instructions. Coin/start and launch helpers are included. Nearby inputs form one recipe; after the last release or pulse, a 1.5-second idle gap saves it automatically. **Finish recipe** saves sooner once held inputs are released. Switching games, pausing, resetting or stopping ends the current input group; disabling learning discards an unfinished group.
+## Recipe removal
 
-The list is unique by game, ordered switches, relative timing and hold lengths, quantized to 25 ms to remove display-frame jitter. Repeated sequences merge and increment the learned use count. Simultaneous inputs are sorted consistently. Automatic ball/coil outputs and preset recipe playback are not learned as manual input. A group exceeding 128 activations is discarded with a status message rather than exporting an incomplete recipe.
-
-**Export learned recipes** downloads only unique recipes learned from viewer use, across both games. **Download recipe list** includes both the built-in observations and learned entries. JSON contains switch instructions, initial game state, observed event names and sound activity statistics. Only this metadata is saved to browser local storage; no DMD frames, audio, or video are retained. Exact game mode and sound still depend on ROM state. If browser storage is full, the list stays available for export in the current session.
-
-## Imported unique T2 animations
-
-The contributed 27-recipe export adds six representative recipes: Service-T2 Version Screen, NewScore-Credits, Door opening, Service-Press Enter for Main, Service-Sound Rev, and Bonus2X. PullTrigger is associated with the existing Ball launch recipe instead of duplicating its switch sequence. T2 now has 14 built-in recipes; Popeye retains 10.
-
-The import compares named PAC animations per game, ignores recipes without a matched animation, and merges repeated observations. Door4 through Door8 are grouped with the eight-frame Door Opening animation; palette suffixes do not create additional entries. Each new preset keeps one representative timed switch sequence and its observed sound metadata. Service recipes require the same idle/service-menu context as the capture. These observations do not reconstruct hidden ROM state or guarantee the same output in another mode.
-
-`node import-animation-recipes.mjs exported-recipes.json` validates scene names against the supplied PACs and adds only novel animation identities. Re-importing the same export makes no changes. The compiler preserves contributed metadata while rechecking the original baseline recipes. No recording or media data is included.
+Recipe playback, automatic switch learning, event catalogs and recipe exports are removed. Opening the updated viewer clears its old recipe metadata from browser local storage. Manual game controls, machine activity, animation browsing and saved lamp plans remain available.

@@ -1,5 +1,4 @@
 import assert from 'node:assert/strict';
-import {TriggerRunner} from './dist/trigger-runner.mjs';
 import {T2MatrixInputs} from './dist/t2-matrix.mjs';
 const switches=new Map(),m=new T2MatrixInputs({setSwitch:(n,v)=>switches.set(n,v)});
 const read=n=>switches.get(n),step=(time,...coils)=>m.update(time,n=>coils.includes(n));
@@ -10,7 +9,7 @@ m.trigger(77);assert.equal(read(77),1);step(370);assert.equal(read(77),1);step(3
 m.trigger(76);assert.equal(m.playfield,0);assert.equal(read(76),1);m.releaseHeld();assert.equal(read(76),1);
 step(1000);assert.equal(read(31),0,'The ball must wait for the ROM popper coil');
 step(1010,1);assert.equal(read(76),0);assert(m.gunTransfer);step(1509);assert.equal(read(31),0);step(1510);assert.equal(read(31),1);
-assert.throws(()=>m.trigger(76),/gun to fire/);assert.throws(()=>new TriggerRunner(m,'t2_l8').run('builtin:terminator-2:light-start',m.now),/Reset the ROM/);
+assert.throws(()=>m.trigger(76),/gun to fire/);
 step(2760,11);assert.equal(read(32),1);assert.equal(read(33),0);
 step(3260,11);assert.equal(m.gunTarget(),71);assert.equal(read(32),0);
 m.trigger(34);step(3300);assert.equal(read(31),1,'The trigger alone cannot manufacture a gun shot');

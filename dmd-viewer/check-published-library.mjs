@@ -2,13 +2,15 @@ import {JSDOM} from 'jsdom';
 import {readFileSync} from 'node:fs';
 import assert from 'node:assert/strict';
 const dom=new JSDOM(readFileSync('index.html','utf8'),{url:'https://subnetpie.github.io/dmd-viewer/'});
-Object.assign(globalThis,{document:dom.window.document,Option:dom.window.Option,location:dom.window.location,requestAnimationFrame:()=>{},crossOriginIsolated:true,addEventListener:()=>{}});
+Object.assign(globalThis,{document:dom.window.document,localStorage:dom.window.localStorage,Option:dom.window.Option,location:dom.window.location,requestAnimationFrame:()=>{},crossOriginIsolated:true,addEventListener:()=>{}});
 dom.window.HTMLCanvasElement.prototype.getContext=()=>({fillRect(){},beginPath(){},arc(){},fill(){}});
 let requests=[];
-globalThis.fetch=async url=>{if(String(url).endsWith('/recipe-events.json'))return new Response(readFileSync('dist/recipe-events.json'));if(String(url).includes('/library/learned/'))throw Error('Recorded media must not be fetched');const name=String(url).split('/').pop();requests.push(name);return new Response(readFileSync('dist/library/'+name))};
+globalThis.fetch=async url=>{if(String(url).includes('/library/learned/'))throw Error('Recorded media must not be fetched');const name=String(url).split('/').pop();requests.push(name);return new Response(readFileSync('dist/library/'+name))};
 class Worker{constructor(){Worker.last=this}postMessage(data){this.data=data}terminate(){}}
 globalThis.Worker=Worker;
+localStorage.setItem('dmd-trigger-event-list-v1','{"entries":[]}');localStorage.setItem('dmd-lamp-plans-v1','{}');
 const app=await import('./dist/app.mjs');await app.includedStartup;
+assert.equal(localStorage.getItem('dmd-trigger-event-list-v1'),null);assert.equal(localStorage.getItem('dmd-lamp-plans-v1'),'{}');
 const $=id=>document.getElementById(id);
 class Audio{state='running';async resume(){Audio.unlocked=true}}
 globalThis.AudioContext=Audio;
@@ -18,7 +20,7 @@ $('includedGame').value='popeye';await $('includedGame').onchange();
 assert.deepEqual(requests.sort(),['pop_lx5.zip','popeye.pac']);assert.equal($('romGame').value,'pop_lx5');
 assert.equal(Worker.last.data.game,'pop_lx5');assert.equal(Worker.last.data.files[0].bytes.byteLength,3391042);assert.equal(Audio.unlocked,true);
 Worker.last.onmessage({data:{type:'started',info:'Popeye LX5'}});
-assert.equal($('romEvents'),null);assert.equal($('romPlayfield').hidden,false);assert.equal(document.querySelectorAll('[data-playfield-switch]').length,68);assert.equal($('romMatrix').hidden,true);assert.equal(document.querySelectorAll('[data-popeye-switch]').length,80);
+assert.equal($('romRecipes'),null);assert.equal($('romLearnInputs'),null);assert.equal($('romLampPlanner').isConnected,true);assert.equal($('romEvents'),null);assert.equal($('romPlayfield').hidden,false);assert.equal(document.querySelectorAll('[data-playfield-switch]').length,68);assert.equal($('romMatrix').hidden,true);assert.equal(document.querySelectorAll('[data-popeye-switch]').length,80);
 Worker.last.onmessage({data:{type:'machine',trough:6,shooter:false,playfield:0,event:'Ready',busy:false,starting:false}});
 assert.equal($('romCoinStart').disabled,false);await $('romCoinStart').onclick();assert.equal(Worker.last.data.id,'begin-game');
 assert.equal(document.querySelector('[data-input-view=shots]'),null);
@@ -48,7 +50,7 @@ $('romSound').checked=true;await $('romSound').oninput();assert.equal($('include
 // Switching the dropdown stops the old worker and starts the new matched pair.
 requests=[];const oldWorker=Worker.last;$('includedGame').value='terminator-2';await $('includedGame').onchange();
 assert.deepEqual(requests.sort(),['t2_l8-complete.zip','terminator-2.pac']);assert.notEqual(Worker.last,oldWorker);
-assert.equal(Worker.last.data.game,'t2_l8');assert.equal(Worker.last.data.files[0].name,'t2_l8.zip');assert.equal($('romEvents'),null);assert.equal($('romPlayfield').hidden,false);assert.equal($('romMatrix').hidden,true);assert.equal($('romPlayfieldTitle').textContent,'Terminator 2 playfield');assert.equal($('romMatrixTitle').textContent,'Terminator 2 switch matrix');assert.equal(document.querySelectorAll('[data-popeye-switch]').length,72);assert.equal(document.querySelector('[data-popeye-switch="81"]').disabled,true);
+assert.equal(Worker.last.data.game,'t2_l8');assert.equal(Worker.last.data.files[0].name,'t2_l8.zip');assert.equal($('romRecipes'),null);assert.equal($('romLearnInputs'),null);assert.equal($('romLampPlanner').isConnected,true);assert.equal($('romEvents'),null);assert.equal($('romPlayfield').hidden,false);assert.equal($('romMatrix').hidden,true);assert.equal($('romPlayfieldTitle').textContent,'Terminator 2 playfield');assert.equal($('romMatrixTitle').textContent,'Terminator 2 switch matrix');assert.equal(document.querySelectorAll('[data-popeye-switch]').length,72);assert.equal(document.querySelector('[data-popeye-switch="81"]').disabled,true);
 assert.equal(document.querySelectorAll('[data-playfield-switch]').length,60);assert.equal(document.querySelectorAll('.playfield-diagram [data-playfield-switch]').length,47);assert(document.querySelector('.playfield-diagram img').src.includes('/dist/playfield/t2-main-color.webp'));
 Worker.last.onmessage({data:{type:'started',info:'Terminator 2'}});
 Worker.last.onmessage({data:{type:'machine',active:[24,61],held:[61],trough:2,shooter:false,playfield:1,event:'Left ramp',lamps:[11,22,51,52,84]}});

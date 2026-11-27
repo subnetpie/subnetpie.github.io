@@ -5,9 +5,6 @@ import {playfieldArtwork,artworkPosition} from './color-playfield.mjs?v=color-pl
 import {parsePac} from './pac.mjs';
 import {LiveColorizer} from './live-colorizer.mjs';
 import {deleteStoredRecordings} from './recording-cleanup.mjs';
-import {recipesForGame} from './trigger-recipes.mjs?v=animation-import-1';
-import {RecipeEventList} from './recipe-event-list.mjs?v=animation-import-1';
-import {SwitchRecipeLearner} from './switch-recipe-learner.mjs?v=switch-learning-1';
 import {animationGroups} from './animation-groups.mjs';
 import {popeyeSwitchByNumber,popeyeColumnColors} from './popeye-matrix.mjs';
 import {t2SwitchByNumber} from './t2-matrix.mjs?v=t2-gun-1';
@@ -46,7 +43,6 @@ export function createRomViewer({setMode,onSoundChange=()=>{}}){
   <div class="panel rom-selection"><label>ROM set <select id="romGame"><option value="">Choose ROM + PAC files first</option></select></label><span id="romPair">No ROM/PAC pair loaded</span><button id="romStart" class="primary" disabled>Start ROM</button></div>
   <div class="panel display-panel"><div class="display-top"><span id="romTitle">Choose a game above</span><span id="romSourceBadge" class="badge">LIVE COLOR + SOUND</span></div><div class="screen-wrap" id="romScreen"><canvas id="romDmd" width="1024" height="256" aria-label="Live ROM dot matrix display"></canvas><div class="screen-label"><span id="romDimensions">128 × 32</span><span>LIVE DMD</span></div></div><div class="display-bottom"><span id="romState">STOPPED</span><span id="romMatch">Live color DMD</span></div></div>
   <section class="panel rom-input-picker"><div class="rom-input-start"><button id="romCoinStart" disabled>Coin + start game</button><button id="romQuickLaunch" disabled>Launch ball</button><div id="romStartKeys"><button data-rom-key="31">Coin · 5</button><button data-rom-key="27">Start · 1</button></div></div><p id="romBallState" role="status">Choose a game to enable input controls.</p><div class="rom-input-views" role="group" aria-label="Input controls"><button data-input-view="table" aria-controls="romPlayfield" aria-pressed="true">Color playfield</button><button data-input-view="matrix" aria-controls="romMatrix" aria-pressed="false">Switch matrix</button><button data-input-view="service" aria-controls="romManualInputs" aria-pressed="false">Service buttons</button></div></section>
-  <section id="romRecipes" class="panel rom-events"><div class="panel-heading"><h2>Trigger recipes</h2></div><div class="rom-event-buttons"><select id="romRecipe" aria-label="Trigger recipe" disabled></select><button id="romRunRecipe" disabled>Run recipe</button><button id="romCancelRecipe" disabled>Cancel recipe</button></div><p id="romRecipeHint">Start a game to run its built-in switch sequences.</p><p id="romRecipeStatus" role="status">Recipes use the live emulator’s DMD and sound.</p><div class="recipe-learning-controls"><label><input id="romLearnInputs" type="checkbox" checked> Learn switch inputs</label><button id="romFinishLearned" disabled>Finish recipe</button><button id="romExportLearnedRecipes" disabled>Export learned recipes</button><span id="romLearnedCount">0 learned</span></div><p id="romLearnStatus" role="status">Nearby inputs form a recipe after a 1.5-second pause. Release held switches before finishing.</p><details><summary>Unique recipe events <span id="romRecipeListCount">0</span></summary><ul id="romRecipeList"></ul><button id="romExportRecipeList" disabled>Download recipe list</button><p>Only recipes, event names, and sound activity are saved. Sound plays live from the emulator.</p></details></section>
   <section id="romPlayfield" class="panel rom-playfield" hidden><div class="matrix-heading"><div><h2 id="romPlayfieldTitle">Popeye playfield</h2><p>Touch a numbered switch to trigger the ROM. Lamps follow the game. Hide switch markers for a clear view of the artwork. Markers for mechanisms beneath ramps or the upper deck are approximate; use Switch matrix for the full input list.</p></div><div class="playfield-options"><label>Touch <select id="romPlayfieldMode"><option value="pulse">Pulse</option><option value="hold">Hold / release</option></select></label><button id="romPlayfieldRelease" disabled>Release held</button><label>Zoom <input id="romPlayfieldZoom" type="range" min="100" max="250" step="25" value="100"><output id="romPlayfieldZoomValue">100%</output></label><label><input id="romShowSwitches" type="checkbox" checked> Switch markers</label></div></div><section id="romLampPlanner" class="lamp-planner" aria-label="Lamp selection and LED recommendations"></section><div id="romPlayfieldBoards" class="playfield-boards">${playfieldBoards()}</div></section>
   <section id="romMatrix" class="panel rom-matrix" hidden><div class="matrix-heading"><div><h2 id="romMatrixTitle">Popeye switch matrix</h2><p>Choose a switch to trigger the game’s DMD and sound.</p></div><div class="matrix-actions"><label>Input <select id="romMatrixMode"><option value="pulse">Pulse</option><option value="hold">Hold / release</option></select></label><button id="romMatrixRelease" disabled>Release held switches</button></div></div><div class="matrix-key"><span><i class="matrix-key-opto"></i> Opto, typically closed</span><span><i class="matrix-key-active"></i> Active input</span><span>AUTO · ball simulator / flipper EOS</span></div><div class="matrix-scroll" tabindex="0" role="region" aria-label="Popeye switch matrix; scroll horizontally for all columns"><table class="popeye-matrix"><caption>Columns across, rows down. Switch number = column × 10 + row.</caption><thead><tr><th scope="col">Dedicated<br>grounded</th><th scope="col">Row</th>${popeyeColumnColors.map((color,i)=>`<th scope="col"><strong>${i+1}</strong><span>${color}</span></th>`).join('')}<th id="romMatrixFlipperHeader" scope="col">Flipper<br>grounded</th></tr></thead><tbody id="romMatrixRows">${matrixRows()}</tbody></table></div><p id="romMatrixHint" class="matrix-hint">Pulse briefly activates a switch. Hold / release toggles it until released. Trough, shooter, and end-of-stroke inputs are automatic; switch 24 stays closed. Pause or leaving the player releases held inputs.</p></section>
   <div id="romManualInputs" class="panel rom-inputs" hidden><h2>Service and manual controls</h2><div class="rom-buttons"><button id="romDoor" aria-pressed="false">Coin door · closed</button></div><section class="service-panel" aria-label="Coin-door service buttons"><div class="service-heading"><h3>Service buttons</h3><span>COIN DOOR PANEL</span></div><div class="service-assembly"><i class="service-screw screw-left" aria-hidden="true"></i><i class="service-screw screw-right" aria-hidden="true"></i><div class="service-legend" aria-hidden="true"><span>SERVICE<br>CREDITS</span><span class="service-volume">VOLUME</span><span>BEGIN<br>TEST</span></div><div class="service-switches">${[
@@ -64,20 +60,8 @@ export function createRomViewer({setMode,onSoundChange=()=>{}}){
   $('romActivity').ontoggle=drawActivity;$('romActivityFilter').onchange=drawActivity;
   $('romActivityPause').onclick=()=>{activityPaused=!activityPaused;$('romActivityPause').textContent=activityPaused?'Resume log':'Pause log';$('romActivityPause').setAttribute('aria-pressed',String(activityPaused));drawActivity();};
   $('romActivityClear').onclick=()=>{activity.clear();$('romActivityRows').replaceChildren();$('romActivityCount').textContent='0 events';};
-  let machineState=null,recipeRunning=false,recipeGame='',sceneGroups=new Map(),previousMatch=0;
-  const recipeStorage='dmd-trigger-event-list-v1';
-  const eventList=new RecipeEventList(data=>{try{globalThis.localStorage?.setItem(recipeStorage,JSON.stringify(data));}catch{status('Recipe list is available for download; browser storage is full.',true);}recipeListControls();if(!recipeRunning)$('romRecipeStatus').textContent='Recipe event list updated. Run a recipe to hear its live ROM sound.';eventControls();});
-  try{const saved=globalThis.localStorage?.getItem(recipeStorage);if(saved)eventList.load(JSON.parse(saved));}catch{}
-  fetch(new URL('./recipe-events.json',import.meta.url),{cache:'no-cache'}).then(r=>r.ok?r.json():null).then(data=>{eventList.load(data);recipeListControls();}).catch(()=>{});
-  const learner=new SwitchRecipeLearner({
-    onBegin:(game,recipe,now)=>{eventList.beginManual(game,recipe,now);eventControls();},
-    onFinish:(_recipe,now)=>eventList.finishManual(now),
-    onCancel:reason=>{if(eventList.active?.kind==='manual')eventList.cancel();if(reason)$('romLearnStatus').textContent=reason;},
-    onPending:(steps,held)=>{$('romFinishLearned').disabled=!steps||!!held;$('romLearnStatus').textContent=steps?'Learning '+steps+' switch activation'+(steps===1?'':'s')+(held?' · release held switches to finish.':' · saves after a 1.5-second pause, or choose Finish recipe.'):$('romLearnInputs').checked?'Switch learning is on. Nearby inputs group until a 1.5-second pause.':'Switch learning is off.';}
-  });
-  $('romLearnInputs').onchange=()=>{learner.cancel();learner.enabled=$('romLearnInputs').checked;$('romLearnStatus').textContent=learner.enabled?'Switch learning is on. Nearby inputs group until a 1.5-second pause.':'Switch learning is off.';eventControls();};
-  $('romFinishLearned').onclick=()=>{if(!learner.finish(tick))$('romLearnStatus').textContent='Release held switches before finishing.';};
-  addEventListener('pagehide',()=>learner.finish(tick,true));
+  let machineState=null,sceneGroups=new Map(),previousMatch=0;
+  try{globalThis.localStorage?.removeItem('dmd-trigger-event-list-v1');}catch{}
   const canvas=$('romDmd'),ctx=canvas.getContext('2d');
   function pinDmd(){
     document.body?.classList.toggle('rom-dmd-pinned',active);
@@ -89,14 +73,9 @@ export function createRomViewer({setMode,onSoundChange=()=>{}}){
   addEventListener('resize',pinDmd);
   function status(text,error=false){$('romStatus').textContent=text;$('romStatus').classList.toggle('error',error);}
   function appendLog(text){$('romLog').textContent=($('romLog').textContent+'\n'+text).slice(-20000);}
-  function send(data){
-    if(['event','matrix','key','switch'].includes(data.type)&&running&&!paused){if(eventList.active?.kind!=='manual')eventList.cancel();recipeRunning=false;learner.command($('romGame').value,data,tick,machineState||{});}
-    if(data.type==='cancel-recipe'){learner.cancel();eventList.cancel();}
-    if(['reset','stop'].includes(data.type)||(data.type==='pause'&&data.paused)){learner.finish(tick,true);eventList.cancel();}
-    worker?.postMessage(data);
-  }
+  function send(data){worker?.postMessage(data);}
   function controls(){eventControls();$('romSourceBadge').textContent='LIVE COLOR + SOUND';for(const id of ['romPause','romReset','romStop','romPulse','romHold','romDoor'])$(id).disabled=id==='romStop'?!(running||busy):id==='romPause'?!running:!running;panel.querySelectorAll('[data-rom-key]').forEach(b=>b.disabled=!running);$('romStart').disabled=busy||running||!pac||!files.length||!globalThis.crossOriginIsolated;$('romGame').disabled=busy||running;$('romOpen').disabled=busy||running;$('romIsolation').hidden=!!globalThis.crossOriginIsolated;$('romPause').textContent=paused?'▶ Resume':'Ⅱ Pause';}
-  function release(){if(recipeRunning){send({type:'cancel-recipe'});recipeRunning=false;$('romRecipeStatus').textContent='Recipe cancelled.';}for(const code of pressed)send({type:'key',code,state:0});pressed.clear();if(hold!==null)send({type:'switch',number:hold,state:0});hold=null;$('romHold').setAttribute('aria-pressed','false');}
+  function release(){for(const code of pressed)send({type:'key',code,state:0});pressed.clear();if(hold!==null)send({type:'switch',number:hold,state:0});hold=null;$('romHold').setAttribute('aria-pressed','false');}
   function stop(){pressedFlippers.clear();machineState=null;generation++;release();for(const timer of timers)clearTimeout(timer);timers.clear();send({type:'stop'});worker?.terminate();worker=null;audio.clear();running=false;busy=false;paused=false;door=false;$('romDoor').setAttribute('aria-pressed','false');$('romDoor').textContent='Coin door · closed';$('romState').textContent='STOPPED';controls();}
   function pause(value){if(value)pressedFlippers.clear();if(!running)return;release();paused=value;send({type:'pause',paused});audio.clear();$('romState').textContent=paused?'PAUSED':'RUNNING';controls();}
   function drawFrame(f){
@@ -105,20 +84,14 @@ export function createRomViewer({setMode,onSoundChange=()=>{}}){
     ctx.fillStyle='#080b0c';ctx.fillRect(0,0,canvas.width,canvas.height);
     for(let i=0;i<f.data.length;i++){const value=f.data[i],c=f.colors?.[value]||[Math.round(255*value/(f.levels-1)),Math.round(135*value/(f.levels-1)),Math.round(36*value/(f.levels-1))];ctx.fillStyle='rgb('+c.join(',')+')';ctx.beginPath();ctx.arc((i%w)*8+4,Math.floor(i/w)*8+4,3,0,Math.PI*2);ctx.fill();}
   }
-  function recipeListControls(){
-    const entries=eventList.export().entries,game=$('romGame').value,visible=entries.filter(e=>e.game===game);$('romRecipeListCount').textContent=String(visible.length);$('romExportRecipeList').disabled=!entries.length;$('romExportLearnedRecipes').disabled=!entries.some(e=>e.learned);$('romLearnedCount').textContent=visible.filter(e=>e.learned).length+' learned';$('romRecipeList').replaceChildren(...visible.map(e=>{const row=document.createElement('li');row.textContent=e.label+(e.learned?' · learned ×'+e.learnedRuns:'')+' — '+(e.soundObserved?'sound observed':'no audible sound observed')+(e.events.length?' · '+e.events.map(v=>v.label).join(', '):' · live ROM response');return row;}));
-  }
-  function downloadRecipeList(learnedOnly=false){learner.finish(tick);const data=eventList.export({learnedOnly});if(!data.entries.length)return;const url=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'})),link=document.createElement('a');link.href=url;link.download=learnedOnly?'dmd-learned-trigger-recipes.json':'dmd-trigger-events.json';link.click();const timer=setTimeout(()=>URL.revokeObjectURL(url),1000);timer.unref?.();}
-  $('romExportRecipeList').onclick=()=>downloadRecipeList();
-  $('romExportLearnedRecipes').onclick=()=>downloadRecipeList(true);
   function render(){
     if(!raw)return;
     const f={...colorizer.render(raw.data,raw.w,raw.h,raw.depth,tick,raw.planes),w:raw.w,h:raw.h};drawFrame(f);
-    if(colorizer.matches!==previousMatch){previousMatch=colorizer.matches;const scene=colorizer.active?.scene,group=sceneGroups.get(scene);eventList.observeEvent(scene?(group?.key||'scene:'+scene.offset):'palette:'+colorizer.lastMatch,group?.label||scene?.name||colorizer.lastMatch,tick);addActivity('match',group?.label||scene?.name||colorizer.lastMatch,raw.simTime??tick);}
+    if(colorizer.matches!==previousMatch){previousMatch=colorizer.matches;const scene=colorizer.active?.scene,group=sceneGroups.get(scene);addActivity('match',group?.label||scene?.name||colorizer.lastMatch,raw.simTime??tick);}
     $('romMatch').textContent=colorizer.matches+' triggers · '+colorizer.lastMatch;
   }
   let lastTime=0;
-  function loop(time){const delta=lastTime?Math.min(100,time-lastTime):0;lastTime=time;if(running&&!paused){tick+=delta;if(raw)render();learner.advance(tick);eventList.advance(tick);}requestAnimationFrame(loop)}requestAnimationFrame(loop);
+  function loop(time){const delta=lastTime?Math.min(100,time-lastTime):0;lastTime=time;if(running&&!paused){tick+=delta;if(raw)render();}requestAnimationFrame(loop)}requestAnimationFrame(loop);
   async function accept(incoming){
     const selected=Array.from(incoming),roms=selected.filter(f=>/\.zip$/i.test(f.name)),pacs=selected.filter(f=>/\.pac$/i.test(f.name));
     if(!roms.length||pacs.length!==1){status('Choose at least one ROM ZIP and exactly one matching PAC together.',true);return false;}
@@ -135,16 +108,15 @@ export function createRomViewer({setMode,onSoundChange=()=>{}}){
     try{
       if(!background&&!audio.muted)await audio.unlock();
       const payload=await Promise.all(files.map(async file=>({name:file.name,bytes:await file.arrayBuffer()})));
-      if(session!==generation)return;worker=new Worker(new URL('./rom-worker.mjs?v=playfield-adoption-1',import.meta.url),{type:'module'});const currentWorker=worker;
+      if(session!==generation)return;worker=new Worker(new URL('./rom-worker.mjs?v=no-recipes-1',import.meta.url),{type:'module'});const currentWorker=worker;
       worker.onerror=e=>{if(worker!==currentWorker)return;appendLog(e.message);stop();status('Emulator error: '+e.message,true)};
       worker.onmessage=({data})=>{if(worker!==currentWorker)return;
         if(data.type==='started'){busy=false;running=true;paused=false;$('romTitle').textContent=data.info.split('\n')[0];$('romState').textContent='RUNNING';controls();if(!active)pause(true);status('ROM running. Use game controls or the service menus to test DMD animations and sound.');}
         if(data.type==='machine'){machineState=data;eventControls();}
         if(data.type==='activity'){for(const row of data.rows||[])activity.add(row.type,row.detail,row.time);drawActivity();}
         if(data.type==='event-status')status(data.text,!!data.error);
-        if(data.type==='recipe-status'){if(eventList.active?.kind!=='manual'){if(data.phase==='running'&&data.stage==='inputs'&&running&&!paused)eventList.begin($('romGame').value,data.id,tick);else if(data.phase==='completed')eventList.complete(tick);else if(data.phase!=='running')eventList.cancel();}recipeRunning=data.phase==='running';$('romRecipeStatus').textContent=data.phase==='completed'&&eventList.active?data.text+' · finishing event and sound observation…':data.text;$('romRecipeStatus').classList.toggle('error',data.phase==='error');eventControls();}
         if(data.type==='frame'){raw=data;frameCount++;$('romDimensions').textContent=data.w+' × '+data.h;}
-        if(data.type==='audio'&&!paused){eventList.observeAudio(data.data,tick);audio.play(data);}
+        if(data.type==='audio'&&!paused){audio.play(data);}
         if(data.type==='log')appendLog(data.text);
         if(data.type==='error'){appendLog(data.message);stop();status(data.message,true);}
         if(data.type==='stopped'){stop();status('ROM stopped. Check the emulator log if it stopped during startup.');}
@@ -184,10 +156,6 @@ export function createRomViewer({setMode,onSoundChange=()=>{}}){
   $('romShowSwitches').onchange=()=>$('romPlayfield').classList.toggle('hide-switches',!$('romShowSwitches').checked);
   function eventControls(){
     const game=$('romGame').value,popeye=game==='pop_lx5',t2=game==='t2_l8',enabled=(popeye||t2)&&running&&!paused;
-    const recipes=recipesForGame(game);$('romRecipes').hidden=!recipes.length;
-    if(recipeGame!==game){recipeGame=game;$('romRecipe').replaceChildren(...recipes.map(r=>new Option(r.label,r.id)));$('romRecipeStatus').textContent='Recipes use the live emulator’s DMD and sound.';}
-    $('romRecipe').disabled=!enabled||recipeRunning||!!eventList.active;$('romRunRecipe').disabled=!enabled||!machineState||recipeRunning||!!eventList.active;$('romCancelRecipe').disabled=!recipeRunning&&!eventList.active;
-    recipeHint();recipeListControls();
     if((popeye||t2)&&game!==matrixGame){matrixGame=game;currentMatrix=popeye?popeyeSwitchByNumber:t2SwitchByNumber;$('romMatrixRows').innerHTML=matrixRows();$('romMatrixTitle').textContent=popeye?'Popeye switch matrix':'Terminator 2 switch matrix';$('romMatrixFlipperHeader').hidden=t2;$('romMatrixHint').textContent=popeye?'Pulse activates a switch; Hold / release toggles it. Ball-handling switches and flipper EOS are automatic.':'Pulse activates a switch; Hold / release toggles it. Red outlines mark targets 71–75. Unused positions are disabled; trough, shooter, and gun sensors follow the machine automatically.';bindMatrixButtons();}
     if(game!==inputGame){inputGame=game;inputView=(popeye||t2)?'table':'service';}
     if((popeye||t2)&&playfieldGame!==game){playfieldGame=game;currentLamps=t2?t2Lamps:popeyeLamps;$('romPlayfieldTitle').textContent=t2?'Terminator 2 playfield':'Popeye playfield';$('romPlayfieldBoards').innerHTML=playfieldBoards(game);bindPlayfieldButtons();$('romPlayfieldZoom').oninput();}
@@ -201,10 +169,6 @@ export function createRomViewer({setMode,onSoundChange=()=>{}}){
     if(machineState)$('romBallState').textContent='Trough: '+machineState.trough+' / '+(popeye?6:3)+' · Shooter: '+(machineState.shooter?'ball ready':'empty')+' · In play: '+machineState.playfield+(t2&&machineState.gun?' · Gun: '+(machineState.gun.loaded?'loaded':machineState.gun.popper?'skull':machineState.gun.transfer?'loading':'empty'):'')+' · '+machineState.event;
     else $('romBallState').textContent='Start the selected game to enable input controls.';
   }
-  function recipeHint(){const recipe=recipesForGame($('romGame').value).find(r=>r.id===$('romRecipe').value);$('romRecipeHint').textContent=recipe?(recipe.expectedAnimations?.length?recipe.precondition+' Observed animation: '+recipe.expectedAnimations.join(', ')+'.':recipe.id.endsWith('light-start')?'Begin with Credits and start, wait for the ball, then run Ball launch.':recipe.id.endsWith('light-attract')?'Run while idle. Reset the ROM first if a game is in progress.':recipe.id.endsWith('light-launch')?'Wait for a ball in the shooter lane.':'Run after starting a game and launching a ball.')+' Results depend on the current game mode.':'Start a game to run its built-in switch sequences.';}
-  $('romRecipe').onchange=recipeHint;
-  $('romRunRecipe').onclick=async()=>{try{if($('romRunRecipe').disabled)return;eventList.cancel();if(!audio.muted)await audio.unlock();if(!running||paused||recipeRunning)return;recipeRunning=true;send({type:'recipe',id:$('romRecipe').value});$('romRecipeStatus').textContent='Starting recipe…';eventControls();}catch(error){status(error.message,true);}};
-  $('romCancelRecipe').onclick=()=>{send({type:'cancel-recipe'});eventControls();};
   function bindMatrixButtons(){panel.querySelectorAll('[data-popeye-switch]').forEach(button=>{button.onclick=()=>{if(!button.disabled)send({type:'matrix',number:+button.dataset.popeyeSwitch,hold:$('romMatrixMode').value==='hold'});};});}
   bindMatrixButtons();
   $('romMatrixRelease').onclick=()=>send({type:'matrix',release:true});
